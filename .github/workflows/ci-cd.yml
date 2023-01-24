@@ -23,14 +23,11 @@ jobs:
       - name: Install package
         run: poetry install
       
-      - name: flake8 checks
-        run: flake8 tests/ databallpy/ 
-      
-      - name: isort checks
-        run: isort --check-only --filter-files tests/ databallpy/ 
-      
-      - name: black checks
-        run: black --check tests/ databallpy
+      - name: Linters
+        run: |
+        flake8 tests/ databallpy/ 
+        isort --check-only --filter-files tests/ databallpy/ 
+        black --check tests/ databallpy
 
       - name: Test with pytest
         run: poetry run pytest tests/ --pythonwarnings=once --cov=databallpy --cov-report=term-missing --cov-report=html --cov-config=.coveragerc
