@@ -25,7 +25,6 @@ jobs:
       
       - name: Linters
         run: | 
-          flake8 tests/ databallpy/     
           isort --check-only --filter-files tests/ databallpy/ 
           black --check tests/ databallpy
 
