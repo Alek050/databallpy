@@ -24,7 +24,9 @@ jobs:
         run: poetry install
       
       - name: Linter checks
-        run: flake8 tests/ databallpy/ isort --check-only --filter-files tests/ databallpy/ black --check tests/ databallpy
+        run: flake8 tests/ databallpy/ 
+        run: isort --check-only --filter-files tests/ databallpy/ 
+        run: black --check tests/ databallpy
 
       - name: Test with pytest
         run: poetry run pytest tests/ --pythonwarnings=once --cov=databallpy --cov-report=term-missing --cov-report=html --cov-config=.coveragerc
