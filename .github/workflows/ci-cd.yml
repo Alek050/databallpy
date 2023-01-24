@@ -25,9 +25,9 @@ jobs:
       
       - name: Linters
         run: |
-        flake8 tests/ databallpy/ 
-        isort --check-only --filter-files tests/ databallpy/ 
-        black --check tests/ databallpy
+          flake8 tests/ databallpy/ 
+          isort --check-only --filter-files tests/ databallpy/ 
+          black --check tests/ databallpy
 
       - name: Test with pytest
         run: poetry run pytest tests/ --pythonwarnings=once --cov=databallpy --cov-report=term-missing --cov-report=html --cov-config=.coveragerc
