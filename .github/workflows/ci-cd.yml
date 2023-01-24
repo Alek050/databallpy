@@ -23,9 +23,13 @@ jobs:
       - name: Install package
         run: poetry install
       
-      - name: Linter checks
+      - name: flake8 checks
         run: flake8 tests/ databallpy/ 
+      
+      - name: isort checks
         run: isort --check-only --filter-files tests/ databallpy/ 
+      
+      - name: black checks
         run: black --check tests/ databallpy
 
       - name: Test with pytest
