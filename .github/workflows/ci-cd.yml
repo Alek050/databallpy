@@ -12,7 +12,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: ">3.6"
+          python-version: ">=3.8.1"
 
       - name: Check-out repository
         uses: actions/checkout@v3
@@ -24,8 +24,8 @@ jobs:
         run: poetry install
       
       - name: Linters
-        run: |
-          flake8 tests/ databallpy/ 
+        run: | 
+          flake8 tests/ databallpy/     
           isort --check-only --filter-files tests/ databallpy/ 
           black --check tests/ databallpy
 
@@ -53,12 +53,12 @@ jobs:
     # Define job steps
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
-          python-version: ">3.6"
+          python-version: ">=3.8.1"
 
       - name: Check-out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
