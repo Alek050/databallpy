@@ -2,14 +2,24 @@
 name = "databallpy"
 version = "0.0.0"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
-authors = ["Alexander Oonk & Daan Grob"]
+authors = ["Alexander Oonk", "Daan Grob"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^>3.6"
+python = ">=3.8.1"
+pandas = "^1.5.3"
+numpy = "^1.24.1"
 
 [tool.poetry.dev-dependencies]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+pytest-cov = "^4.0.0"
+flake8 = "^6.0.0"
+black = "^22.12.0"
+isort = "^5.11.4"
+
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
 branch = "main"                             # branch to make releases of
