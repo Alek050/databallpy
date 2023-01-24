@@ -21,10 +21,11 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install package
-        run: poetry install
+        run:  poetry install --with dev
       
       - name: Linters
         run: | 
+          flake8 tests/ databallpy/     
           isort --check-only --filter-files tests/ databallpy/ 
           black --check tests/ databallpy
 
