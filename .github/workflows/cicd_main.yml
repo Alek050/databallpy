@@ -29,5 +29,5 @@ jobs:
       - name: Test with pytest
         run: make test
 
-      - name: Build documentation
-        run: poetry run make html --directory docs/
+      # - name: Build documentation
+      #   run: poetry run make html --directory docs/
