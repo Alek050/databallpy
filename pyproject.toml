@@ -1,10 +1,14 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.0.0"
+version = "0.0.1"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
-authors = ["Alexander Oonk", "Daan Grob"]
+authors =  [
+    "Alexander Oonk <alexanderoonk26@gmail.com>",
+    "Daan Grob <daaniogrob@gmail.com>",
+]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/Alek050/databallpy"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1"
