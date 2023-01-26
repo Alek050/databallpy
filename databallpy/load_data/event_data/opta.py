@@ -2,7 +2,7 @@ from typing import Tuple
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
-# from databallpy.load_data.metadata.py import MetaData
+from databallpy.load_data.metadata import Metadata
 
 EVENT_TYPE_IDS = {
     1: "pass",
@@ -83,13 +83,29 @@ EVENT_TYPE_IDS = {
     77: "player off pitch",
 }
 
-def load_opta_event_data(f7_loc:str, f24_loc:str) -> Tuple[pd.Series, pd.DataFrame]:
-    
-    assert f7_loc[-4:] == ".xml", "f7 opta file should by of .xml format!"
-    assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format!"
+def load_opta_event_data(f7_loc:str=None, f24_loc:str=None) -> Tuple[pd.Series, pd.DataFrame]:
+    """Function to get the event data and metadata of a match
 
-    # metadata = _load_metadata(f7_loc)
-    event_data = _load_event_data(f24_loc)
+    Args:
+        f7_loc (str, optional): location of the f7.xml file. Defaults to None.
+        f24_loc (str, optional): location of the f24.xml file. Defaults to None.
+
+    Returns:
+        Tuple[pd.Series, pd.DataFrame]: the metadata file and the event data, if f7_loc is not specified
+        metadata is set to None, if f24_loc is not specified, event data is set to None
+    """
+    
+    if f7_loc:
+        assert f7_loc[-4:] == ".xml", "f7 opta file should by of .xml format!"
+        metadata = _load_metadata(f7_loc)
+    else:
+        metadata = None
+    
+    if f24_loc:
+        assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format!"
+        event_data = _load_event_data(f24_loc)
+    else: event_data = None
+    
     return metadata, event_data
 
 def _load_metadata(f7_loc:str):
@@ -104,7 +120,13 @@ def _load_metadata(f7_loc:str):
     file = open(f7_loc, "r").read()
     soup = BeautifulSoup(file, "xml")
     
-    # opta has a TeamData and Team attribute with information...
+    # obtai match id and match start datetime
+    match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
+    start_match = soup.find("Stat", attrs={"Type":"first_half_start"})
+    datetime_string = start_match.contents[0][:-5].replace("T", "")
+    start_match_datetime = np.datetime64(datetime_string)
+    
+    # opta has a TeamData and Team attribute in the f7 file
     team_datas = soup.find_all("TeamData")
     teams = soup.find_all("Team")
     teams_info = {}
@@ -115,10 +137,10 @@ def _load_metadata(f7_loc:str):
         team_name = team.findChildren("Name")[0].contents[0]
         team_info = {}
         team_info["team_name"] = team_name
-        team_info["side"] = team["Side"].lower()
-        team_info["formation"] = team["Formation"]
-        team_info["score"] = int(team["Score"])
-        team_info["team_id"] = int(team["TeamRef"][1:])
+        team_info["side"] = team_data["Side"].lower()
+        team_info["formation"] = team_data["Formation"]
+        team_info["score"] = int(team_data["Score"])
+        team_info["team_id"] = int(team_data["TeamRef"][1:])
         teams_info[team_info["side"]] = team_info
         
         # player information
@@ -133,7 +155,23 @@ def _load_metadata(f7_loc:str):
         player_info = _get_player_info(player_data, player_names)
         teams_player_info[team_info["side"]] = player_info
 
-    metadata = MetaData(teams_info, teams_player_info)
+    metadata = Metadata(
+        match_id=match_id,
+        pitch_dimensions=None,
+        match_start_datetime=start_match_datetime,
+        periods_frames=None,
+        frame_rate=None,
+        home_team_id=teams_info["home"]["team_id"],
+        home_team_name=teams_info["home"]["team_name"],
+        home_players=teams_player_info["home"],
+        home_score=teams_info["home"]["score"],
+        home_formation=teams_info["home"]["formation"],
+        away_team_id=teams_info["away"]["team_id"],
+        away_team_name=teams_info["away"]["team_name"],
+        away_players=teams_player_info["away"],
+        away_score=teams_info["away"]["score"],
+        away_formation=teams_info["away"]["formation"],
+        )
     return metadata
 
 def _get_player_info(player_data:list, player_names:dict) -> pd.DataFrame:
