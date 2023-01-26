@@ -1,14 +1,23 @@
 import numpy as np
 import pandas as pd
 
-def _get_lines_from_dat(tracab_loc, verbose):   
+def _get_lines_from_dat(tracab_loc: str, verbose: bool):   
+    """_summary_
+
+    Args:
+        tracab_loc (_type_): _description_
+        verbose (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
    
     if verbose:
-        match = tracab_loc.split["\"][-1]
-        print(f"Reading in {match}:")
+        print(f"Reading in {tracab_loc}:")
 
     file = open(tracab_loc, "r")
     lines = file.readlines()
+    import pdb;pdb.set_trace()
     return lines
 
 def _add_player_data_to_dict(player, data, idx):
