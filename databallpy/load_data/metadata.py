@@ -7,8 +7,7 @@ import pandas as pd
 @dataclass
 class Metadata:
     match_id: int
-    pitch_size_x_m: float
-    pitch_size_y_m: float
+    pitch_dimensions: list
     match_start_datetime: np.datetime64
     periods_frames: pd.DataFrame
 
