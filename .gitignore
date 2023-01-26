@@ -141,6 +141,11 @@ dmypy.json
 # MacOS
 .DS_Store
 
+<<<<<<< HEAD
 # testing files
 test.py
 data/
+=======
+test.py
+/data
+>>>>>>> develop
