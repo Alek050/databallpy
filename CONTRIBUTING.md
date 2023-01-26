@@ -77,7 +77,7 @@ Before you submit a pull request, check that it meets these guidelines:
       $ # for windows
       $ poetry run py.test tests/ --pythonwarnings=once --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
       ```
-      
+
   2. All linters should pass:
       
       ```console
@@ -93,6 +93,9 @@ Before you submit a pull request, check that it meets these guidelines:
   4. All functions and classes should contain docstrings in the [google](https://github.com/NilsJPWerner/autoDocstring/blob/HEAD/docs/google.md) format.
   5. If applicable, for instance when adding a new feature, docs should be updated.
   6. The code should work for all currently supported operating systems and versions of Python
+
+When opening the pull request, make sure to link to the approriate issue. For example, when opening a pull request that solves issue 5, add this in the title of the 
+of the pull request and add in the description of the pull request `close #5`. This will close issue 5 automatically when the pull request is approved.
 
 ## Code of Conduct
 
