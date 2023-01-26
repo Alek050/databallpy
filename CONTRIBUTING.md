@@ -42,30 +42,53 @@ If you are proposing a feature:
 
 Ready to contribute? Here's how to set up `databallpy` for local development.
 
-1. Download a copy of `databallpy` locally.
-2. Install `databallpy` using `poetry`:
+1. Install [poetry](https://python-poetry.org/) on your device. 
+2. Download a copy of `databallpy` locally.
+3. Install `databallpy` dependencies using `poetry` by running one of the following commands:
 
     ```console
     $ poetry install
+    & make deps
     ```
-
-3. Use `git` (or similar) to create a branch for local development and make your changes:
+4. Use `git` (or similar) to create a branch for local development and make your changes (Make sure to first checkout to the development branch before checking out to your local brach):
 
     ```console
-    $ git checkout -b name-of-your-bugfix-or-feature
+    $ git checkout -b <issue number>-<type of issue>-<short description of issue>
+    $ # example for issue 5, a new features that normalizes playing direction in tracking data
+    $ git checkout development
+    $ git checkout -b 5-feat-normalize_playing_direction_td
     ```
 
-4. When you're done making changes, check that your changes conform to any code formatting requirements and pass any tests.
+5. Make changes to the code. Make sure to only change and add code that is within the scope of your issue. If you find any bugs or inconsistency on the way, please open a new issue in the git repository. This will help in keeping pull requests clear.
 
-5. Commit your changes and open a pull request.
+6. When you're done making changes, check that your changes conform to any code formatting requirements and pass any tests.
+      
+7. Commit your changes and open a pull request.
 
 ## Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include additional tests if appropriate.
-2. If the pull request adds functionality, the docs should be updated.
-3. The pull request should work for all currently supported operating systems and versions of Python.
+  1. All tests should pass (add/update tests for added code if applicable): 
+    ```console
+    $ # for linux and macos
+    $ make test
+    $ # for windows
+    $ poetry run py.test tests/ --pythonwarnings=once --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
+    ```
+  2. All linters should pass:
+    ```console
+    $ # for linux and macos
+    $ make formatlint
+    $ # for windows
+    $ poetry run isort --filter-files tests/ databallpy/
+    $ poetry run black tests/ databallpy/
+    $ poetry run flake8
+    ```
+  3. All functions variables that are not intended to call for users should start with a `_`.
+  4. All functions and classes should contain docstrings in the [google](https://github.com/NilsJPWerner/autoDocstring/blob/HEAD/docs/google.md) format.
+  5. If applicable, for instance when adding a new feature, docs should be updated.
+  6. The code should work for all currently supported operating systems and versions of Python
 
 ## Code of Conduct
 
