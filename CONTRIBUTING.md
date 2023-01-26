@@ -86,7 +86,7 @@ Before you submit a pull request, check that it meets these guidelines:
       $ # for windows
       $ poetry run isort --filter-files tests/ databallpy/
       $ poetry run black tests/ databallpy/
-      $ poetry run flake8
+      $ poetry run flake8 tests/ databallpy/
       ```
 
   3. All functions variables that are not intended to call for users should start with a `_`.
