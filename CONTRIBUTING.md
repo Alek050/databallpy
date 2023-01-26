@@ -48,7 +48,7 @@ Ready to contribute? Here's how to set up `databallpy` for local development.
 
     ```console
     $ poetry install
-    & make deps
+    $ make deps
     ```
 4. Use `git` (or similar) to create a branch for local development and make your changes (Make sure to first checkout to the development branch before checking out to your local brach):
 
@@ -70,21 +70,25 @@ Ready to contribute? Here's how to set up `databallpy` for local development.
 Before you submit a pull request, check that it meets these guidelines:
 
   1. All tests should pass (add/update tests for added code if applicable): 
-    ```console
-    $ # for linux and macos
-    $ make test
-    $ # for windows
-    $ poetry run py.test tests/ --pythonwarnings=once --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
-    ```
+     
+      ```console
+      $ # for linux and macos
+      $ make test
+      $ # for windows
+      $ poetry run py.test tests/ --pythonwarnings=once --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
+      ```
+      
   2. All linters should pass:
-    ```console
-    $ # for linux and macos
-    $ make formatlint
-    $ # for windows
-    $ poetry run isort --filter-files tests/ databallpy/
-    $ poetry run black tests/ databallpy/
-    $ poetry run flake8
-    ```
+      
+      ```console
+      $ # for linux and macos
+      $ make formatlint
+      $ # for windows
+      $ poetry run isort --filter-files tests/ databallpy/
+      $ poetry run black tests/ databallpy/
+      $ poetry run flake8
+      ```
+
   3. All functions variables that are not intended to call for users should start with a `_`.
   4. All functions and classes should contain docstrings in the [google](https://github.com/NilsJPWerner/autoDocstring/blob/HEAD/docs/google.md) format.
   5. If applicable, for instance when adding a new feature, docs should be updated.
