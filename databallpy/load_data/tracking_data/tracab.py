@@ -1,9 +1,11 @@
 from databallpy.load_data.metadata import Metadata
+from typing import Tuple
+from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
-
+import bs4
 
 def _get_lines_from_dat(tracab_loc: str, verbose: bool) -> list:
     """Function that reads .dat file and returns a list with all lines
@@ -18,11 +20,12 @@ def _get_lines_from_dat(tracab_loc: str, verbose: bool) -> list:
 
     if verbose:
         match = tracab_loc.split("\\")[-1]
-        print(f"Reading in {match}:")
+        print(f"Reading in {match}", end="")
 
     file = open(tracab_loc, "r")
     lines = file.readlines()
-
+    if verbose:
+        print(" - Complete")
     return lines
 
 def _add_player_data_to_dict(player: str, data: dict, idx: int) -> dict:
@@ -124,7 +127,11 @@ def _get_tracking_data(tracab_loc:str, verbose:bool) -> pd.DataFrame:
         "ball_posession": [None] * size_lines,
     }
 
-    for idx, line in enumerate(lines):
+    if verbose:
+        print(f"Writing lines to dataframe:")
+        
+    for idx, line in enumerate(tqdm(lines)):
+        
         timestamp, players_info, ball_info, _ = line.split(":")
         data["timestamp"][idx] = int(timestamp)
 
@@ -140,8 +147,16 @@ def _get_tracking_data(tracab_loc:str, verbose:bool) -> pd.DataFrame:
     
     return df
 
-def _get_player_data(team) -> pd.DataFrame:
-    
+def _get_player_data(team:bs4.element.Tag) -> pd.DataFrame:
+    """Function that creates a df containing info on all players for a team
+
+    Args:
+        team (bs4.element.Tag): containing info no all players of a team
+
+    Returns:
+        pd.DataFrame: contains all player information for a team
+    """
+
     player_dict = {"id":[], "full_name":[], "shirt_num":[], "start_frame":[], "end_frame":[]}
     for player in team.find("Players").find_all("Player"):
         player_dict["id"].append(int(player.find("PlayerId").text))
@@ -150,6 +165,7 @@ def _get_player_data(team) -> pd.DataFrame:
         player_dict["start_frame"].append(int(player.find("StartFrameCount").text))
         player_dict["end_frame"].append(int(player.find("EndFrameCount").text))
     df = pd.DataFrame(player_dict)
+
     return df
 
 def _get_meta_data(meta_data_loc:str) -> Metadata:
@@ -161,6 +177,7 @@ def _get_meta_data(meta_data_loc:str) -> Metadata:
     Returns:
         Metadata: class that contains metadata
     """
+
     file = open(meta_data_loc, "r").read()
     file = file.replace("ï»¿", "")
     soup = BeautifulSoup(file, "xml")
@@ -209,7 +226,18 @@ def _get_meta_data(meta_data_loc:str) -> Metadata:
     return meta_data
 
 
-def load_tracking_data_tracab(tracab_loc, meta_data_loc, verbose=True):
+def load_tracking_data_tracab(tracab_loc:str, meta_data_loc:str, verbose:bool=True) -> Tuple[pd.DataFrame, Metadata]:
+    """Function to load tracking data and metadata in the tracab format
+
+    Args:
+        tracab_loc (str): location of the tracking_data.dat file
+        meta_data-loc (str): location of the meta_data.xml file
+        verbose (bool): whether to print info, defaults to True
+
+    Returns:
+        Tuple[pd.DataFrame, Metadata], the tracking data and metadate class
+    """
+
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     meta_data = _get_meta_data(meta_data_loc)
 
