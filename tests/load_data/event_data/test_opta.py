@@ -14,8 +14,8 @@ from databallpy.load_data.metadata import Metadata
 
 class TestOpta(unittest.TestCase):
     def setUp(self):
-        self.f7_loc = "tests/data/f7_test.xml"
-        self.f24_loc = "tests/data/f24_test.xml"
+        self.f7_loc = "tests/test_data/f7_test.xml"
+        self.f24_loc = "tests/test_data/f24_test.xml"
         self.expected_metadata = Metadata(
             match_id=1908,
             pitch_dimensions=[np.nan, np.nan],
