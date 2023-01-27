@@ -1,7 +1,9 @@
 from typing import Tuple
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from bs4 import BeautifulSoup
+
 from databallpy.load_data.metadata import Metadata
 
 EVENT_TYPE_IDS = {
@@ -83,32 +85,76 @@ EVENT_TYPE_IDS = {
     77: "player off pitch",
 }
 
-def load_opta_event_data(f7_loc:str=None, f24_loc:str=None) -> Tuple[pd.Series, pd.DataFrame]:
-    """Function to get the event data and metadata of a match
+
+def load_opta_event_data(
+    f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
+) -> Tuple[pd.Series, pd.DataFrame]:
+    """Function to get the event data and metadata of a match. Note that the x and y
+    coordinates are scaled to the pitch_dimensions such that (0, 0) is the center of
+    the pitch. Also, opta coordinates are standardized that the team of the primary
+    player in the event plays from left to right. We change this that the home team is
+    represented as playing the full match from left to right and the away team from
+    right to left.
 
     Args:
-        f7_loc (str, optional): location of the f7.xml file. Defaults to None.
-        f24_loc (str, optional): location of the f24.xml file. Defaults to None.
+        f7_loc (str): location of the f7.xml file.
+        f24_loc (str): location of the f24.xml file.
+        pitch_dimensions (list, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.Series, pd.DataFrame]: the metadata file and the event data, if f7_loc is not specified
-        metadata is set to None, if f24_loc is not specified, event data is set to None
+        Tuple[pd.Series, pd.DataFrame]: the metadata and the event data of the match
     """
-    
-    if f7_loc:
-        assert f7_loc[-4:] == ".xml", "f7 opta file should by of .xml format!"
-        metadata = _load_metadata(f7_loc)
-    else:
-        metadata = None
-    
-    if f24_loc:
-        assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format!"
-        event_data = _load_event_data(f24_loc)
-    else: event_data = None
-    
+
+    assert isinstance(f7_loc, str), f"f7_loc should be a string, not a {type(f7_loc)}"
+    assert isinstance(
+        f24_loc, str
+    ), f"f24_loc should be a string, not a {type(f24_loc)}"
+    assert f7_loc[-4:] == ".xml", "f7 opta file should by of .xml format"
+    assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format"
+
+    event_data = _load_event_data(f24_loc)
+    metadata = _load_metadata(f7_loc)
+
+    # Add player names to the event data dataframe
+    home_players = dict(
+        zip(metadata.home_players["player_id"], metadata.home_players["player_name"])
+    )
+    away_players = dict(
+        zip(metadata.away_players["player_id"], metadata.away_players["player_name"])
+    )
+
+    home_mask = (event_data["team_id"] == metadata.home_team_id) & ~pd.isnull(
+        event_data["player_id"]
+    )
+    away_mask = (event_data["team_id"] == metadata.away_team_id) & ~pd.isnull(
+        event_data["player_id"]
+    )
+
+    event_data.loc[home_mask, "player_name"] = event_data.loc[
+        home_mask, "player_id"
+    ].map(home_players)
+    event_data.loc[away_mask, "player_name"] = event_data.loc[
+        away_mask, "player_id"
+    ].map(away_players)
+
+    # Rescale the x and y coordinates relative to the pitch dimensions
+    # The original dimension of the x and y data are from 0 to 100
+    event_data.loc[:, ["start_x"]] = (
+        event_data.loc[:, ["start_x"]] / 100 * pitch_dimensions[0]
+    ) - (pitch_dimensions[0] / 2.0)
+    event_data.loc[:, ["start_y"]] = (
+        event_data.loc[:, ["start_y"]] / 100 * pitch_dimensions[1]
+    ) - (pitch_dimensions[1] / 2.0)
+
+    # Change direction of play of the away team so it is represented from right to left
+    event_data.loc[
+        event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
+    ] *= -1
+
     return metadata, event_data
 
-def _load_metadata(f7_loc:str):
+
+def _load_metadata(f7_loc: str):
     """Function to load metadata from the f7.xml opta file
 
     Args:
@@ -117,23 +163,24 @@ def _load_metadata(f7_loc:str):
     Returns:
         MetaData: all metadata information of the current match
     """
-    file = open(f7_loc, "r").read()
-    soup = BeautifulSoup(file, "xml")
-    
-    # obtai match id and match start datetime
+    file = open(f7_loc, "r")
+    lines = file.read()
+    soup = BeautifulSoup(lines, "xml")
+
+    # Obtain match id and match start datetime
     match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
-    start_match = soup.find("Stat", attrs={"Type":"first_half_start"})
+    start_match = soup.find("Stat", attrs={"Type": "first_half_start"})
     datetime_string = start_match.contents[0][:-5].replace("T", "")
     start_match_datetime = np.datetime64(datetime_string)
-    
-    # opta has a TeamData and Team attribute in the f7 file
+
+    # Opta has a TeamData and Team attribute in the f7 file
     team_datas = soup.find_all("TeamData")
     teams = soup.find_all("Team")
     teams_info = {}
     teams_player_info = {}
     for team_data, team in zip(team_datas, teams):
-        
-        # team information
+
+        # Team information
         team_name = team.findChildren("Name")[0].contents[0]
         team_info = {}
         team_info["team_name"] = team_name
@@ -142,8 +189,8 @@ def _load_metadata(f7_loc:str):
         team_info["score"] = int(team_data["Score"])
         team_info["team_id"] = int(team_data["TeamRef"][1:])
         teams_info[team_info["side"]] = team_info
-        
-        # player information
+
+        # Player information
         player_data = [player.attrs for player in team_data.findChildren("MatchPlayer")]
         player_names = {}
         for player in team.findChildren("Player"):
@@ -151,16 +198,18 @@ def _load_metadata(f7_loc:str):
             first_name = player.contents[1].contents[1].contents[0]
             last_name = player.contents[1].contents[3].contents[0]
             player_names[str(player_id)] = f"{first_name} {last_name}"
-        
+
         player_info = _get_player_info(player_data, player_names)
         teams_player_info[team_info["side"]] = player_info
 
+    file.close()
+
     metadata = Metadata(
         match_id=match_id,
-        pitch_dimensions=None,
+        pitch_dimensions=[np.nan, np.nan],
         match_start_datetime=start_match_datetime,
-        periods_frames=None,
-        frame_rate=None,
+        periods_frames=pd.DataFrame(),
+        frame_rate=np.nan,
         home_team_id=teams_info["home"]["team_id"],
         home_team_name=teams_info["home"]["team_name"],
         home_players=teams_player_info["home"],
@@ -171,35 +220,49 @@ def _load_metadata(f7_loc:str):
         away_players=teams_player_info["away"],
         away_score=teams_info["away"]["score"],
         away_formation=teams_info["away"]["formation"],
-        )
+    )
     return metadata
 
-def _get_player_info(player_data:list, player_names:dict) -> pd.DataFrame:
+
+def _get_player_info(player_data: list, player_names: dict) -> pd.DataFrame:
     """Function to loop over all players and save data in a pd.DataFrame
 
     Args:
-        player_data (list): for every player a dictionary with info about the player, except the player name
-        player_names (dict): dictionary with player id as key and the player name as value
+        player_data (list): for every player a dictionary with info about the player
+        except the player name
+        player_names (dict): dictionary with player id as key and the player name as
+        value
 
     Returns:
         pd.DataFrame: all information of the players
     """
-    result_dict = {"player_id": [], "player_name": [], "formation_place": [], "position": [], "starter":[], "shirt_number":[]}
+    result_dict = {
+        "player_id": [],
+        "player_name": [],
+        "formation_place": [],
+        "position": [],
+        "starter": [],
+        "shirt_number": [],
+    }
     for player in player_data:
         player_id = int(player["PlayerRef"][1:])
         result_dict["player_id"].append(player_id)
         result_dict["player_name"].append(player_names[str(player_id)])
         result_dict["formation_place"].append(int(player["Formation_Place"]))
-        position = player["Position"] if player["Position"] != "Substitute" else player["SubPosition"]
+        position = (
+            player["Position"]
+            if player["Position"] != "Substitute"
+            else player["SubPosition"]
+        )
         result_dict["position"].append(position.lower())
         result_dict["starter"].append(player["Status"] == "Start")
-        result_dict["shirt_number"].append(player["ShirtNumber"])
-    
+        result_dict["shirt_number"].append(int(player["ShirtNumber"]))
+
     return pd.DataFrame(result_dict)
 
 
-def _load_event_data(f24_loc:str) -> pd.DataFrame:
-    """Function to load the f27 .xml, the events of the match. 
+def _load_event_data(f24_loc: str) -> pd.DataFrame:
+    """Function to load the f27 .xml, the events of the match.
     Note: this function does ignore qualifiers for now
 
     Args:
@@ -209,22 +272,23 @@ def _load_event_data(f24_loc:str) -> pd.DataFrame:
         pd.DataFrame: all events of the match in a pd dataframe
     """
 
-    file = open(f24_loc, "r").read()
-    soup = BeautifulSoup(file, "xml")
+    file = open(f24_loc, "r")
+    lines = file.read()
+    soup = BeautifulSoup(lines, "xml")
 
     result_dict = {
-        "event_id": [], 
-        "type_id": [], 
+        "event_id": [],
+        "type_id": [],
         "event": [],
-        "period_id": [], 
-        "minutes": [], 
-        "seconds": [] ,  
-        "player_id": [], 
-        "team_id": [], 
+        "period_id": [],
+        "minutes": [],
+        "seconds": [],
+        "player_id": [],
+        "team_id": [],
         "outcome": [],
-        "start_x": [], 
-        "start_y": [], 
-        "datetime": [], 
+        "start_x": [],
+        "start_y": [],
+        "datetime": [],
     }
 
     events = soup.find_all("Event")
@@ -232,23 +296,23 @@ def _load_event_data(f24_loc:str) -> pd.DataFrame:
         result_dict["event_id"].append(int(event.attrs["id"]))
         event_type_id = int(event.attrs["type_id"])
         result_dict["type_id"].append(event_type_id)
-        
+
         if event_type_id in EVENT_TYPE_IDS.keys():
             event_name = EVENT_TYPE_IDS[event_type_id].lower()
         else:
-            # unknown event
+            # Unknown event
             event_name = None
-        
+
         result_dict["event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
         result_dict["minutes"].append(int(event.attrs["min"]))
         result_dict["seconds"].append(int(event.attrs["sec"]))
-        
+
         if "player_id" in event.attrs.keys():
             result_dict["player_id"].append(int(event.attrs["player_id"]))
         else:
             result_dict["player_id"].append(np.nan)
-       
+
         result_dict["team_id"].append(int(event.attrs["team_id"]))
         result_dict["outcome"].append(int(event.attrs["outcome"]))
         result_dict["start_x"].append(float(event.attrs["x"]))
@@ -256,4 +320,5 @@ def _load_event_data(f24_loc:str) -> pd.DataFrame:
         date = np.datetime64(event.attrs["timestamp"])
         result_dict["datetime"].append(date)
 
+    file.close()
     return pd.DataFrame(result_dict)
