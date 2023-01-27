@@ -1,26 +1,31 @@
+from databallpy.load_data.metadata import Metadata
+
 import numpy as np
 import pandas as pd
+from bs4 import BeautifulSoup
 
-def _get_lines_from_dat(tracab_loc: str, verbose: bool):   
-    """_summary_
+
+def _get_lines_from_dat(tracab_loc: str, verbose: bool) -> list:
+    """Function that reads .dat file and returns a list with all lines
 
     Args:
-        tracab_loc (_type_): _description_
-        verbose (_type_): _description_
+        tracab_loc (str): location of the tracking_data.dat file
+        verbose (bool): whether to print info in terminal
 
     Returns:
-        _type_: _description_
+        list: list containing all lines from .dat file
     """
-   
+
     if verbose:
-        print(f"Reading in {tracab_loc}:")
+        match = tracab_loc.split("\\")[-1]
+        print(f"Reading in {match}:")
 
     file = open(tracab_loc, "r")
     lines = file.readlines()
-    import pdb;pdb.set_trace()
+    print(type(lines))
     return lines
 
-def _add_player_data_to_dict(player, data, idx):
+def _add_player_data_to_dict(player: str, data: dict, idx: int):
     
     team_id, _, shirt_num, x, y, speed = player.split(",")
         
@@ -96,9 +101,68 @@ def _get_tracking_data(tracab_loc, verbose):
     
     return df
 
+def _get_player_data(team) -> pd.DataFrame:
+    
+    player_dict = {"id":[], "full_name":[], "shirt_num":[], "start_frame":[], "end_frame":[]}
+    for player in team.find("Players").find_all("Player"):
+        player_dict["id"].append(int(player.find("PlayerId").text))
+        player_dict["full_name"].append(player.find("FirstName").text + " " + player.find("LastName").text)
+        player_dict["shirt_num"].append(int(player.find("JerseyNo").text))
+        player_dict["start_frame"].append(int(player.find("StartFrameCount").text))
+        player_dict["end_frame"].append(int(player.find("EndFrameCount").text))
+    df = pd.DataFrame(player_dict)
+    return df
 
-def load_tracking_data_tracab(tracab_loc, verbose=True):
+def _get_meta_data(meta_data_loc):
+    file = open(meta_data_loc, "r").read()
+    soup = BeautifulSoup(file[3:], "xml")
+    
+    match_id = int(soup.find("match")["iId"])
+    pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
+    pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
+    frame_rate = int(soup.find("match")["iFrameRateFps"])
+    datetime_string = soup.find("match")["dtDate"]
+    match_start_datetime = np.datetime64(datetime_string)
+
+    frames_dict = {"period":[], "start_frame":[], "end_frame":[]}
+    for i, period in enumerate(soup.find_all("period")):    
+        frames_dict["period"].append(period["iId"])
+        frames_dict["start_frame"].append(period["iStartFrame"])
+        frames_dict["end_frame"].append(period["iEndFrame"])
+    df_frames = pd.DataFrame(frames_dict)
+        
+    home_team = soup.find("HomeTeam")
+    home_team_name = home_team.find("LongName").text
+    home_team_id = int(home_team.find("TeamId").text)
+    df_home_players = _get_player_data(home_team)
+
+    away_team = soup.find("AwayTeam")
+    away_team_name = away_team.find("LongName").text
+    away_team_id = int(away_team.find("TeamId").text)
+    df_away_players = _get_player_data(away_team)
+
+    meta_data = Metadata(match_id=match_id,
+                         pitch_dimensions=[pitch_size_x, pitch_size_y],
+                         match_start_datetime=match_start_datetime,
+                         periods_frames=df_frames,
+                         frame_rate=frame_rate,
+                         home_team_id=home_team_id,
+                         home_team_name=home_team_name,
+                         home_players=df_home_players,
+                         home_score=None,
+                         home_formation=None,
+                         away_team_id=away_team_id,
+                         away_team_name=away_team_name,
+                         away_players=df_away_players,
+                         away_score=None,
+                         away_formation=None
+                         )
+    
+    return meta_data
+
+
+def load_tracking_data_tracab(tracab_loc, meta_data_loc, verbose=True):
     tracking_data = _get_tracking_data(tracab_loc, verbose)
-    #meta_data = _get_meta_data(tracab_loc)
+    meta_data = _get_meta_data(meta_data_loc)
 
-    return tracking_data
+    return tracking_data, meta_data
