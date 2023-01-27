@@ -22,10 +22,20 @@ def _get_lines_from_dat(tracab_loc: str, verbose: bool) -> list:
 
     file = open(tracab_loc, "r")
     lines = file.readlines()
-    print(type(lines))
+
     return lines
 
-def _add_player_data_to_dict(player: str, data: dict, idx: int):
+def _add_player_data_to_dict(player: str, data: dict, idx: int) -> dict:
+    """Function that adds the data of one player to the data dict for one frame
+
+    Args:
+        player (str): containing data from player
+        data (dict): data dictionary to write results to
+        idx (int): indicates position in data dictionary
+
+    Returns:
+        dict: contains all tracking data
+    """
     
     team_id, _, shirt_num, x, y, speed = player.split(",")
         
@@ -34,7 +44,7 @@ def _add_player_data_to_dict(player: str, data: dict, idx: int):
     if team is None: #player is unknown or referee
         return data
 
-    if f"{team}_{shirt_num}_x" not in data.keys():
+    if f"{team}_{shirt_num}_x" not in data.keys(): #create keys for new player
         data[f"{team}_{shirt_num}_x"] = [np.nan] * len(data["timestamp"])
         data[f"{team}_{shirt_num}_y"] = [np.nan] * len(data["timestamp"])
         data[f"{team}_{shirt_num}_speed"] = [np.nan] * len(data["timestamp"])
@@ -45,8 +55,18 @@ def _add_player_data_to_dict(player: str, data: dict, idx: int):
 
     return data
         
-def _add_ball_data_to_dict(ball_info, data, idx):
-    
+def _add_ball_data_to_dict(ball_info:str, data:dict, idx:str) -> dict:
+    """Function that adds the data of the ball to the data dict for one frame
+
+    Args:
+        ball_info (str): containing data from the ball
+        data (dict): data dictionary to write results to
+        idx (int): indicates position in data dictionary
+
+    Returns:
+        dict: contains all tracking data
+    """
+
     x, y, z, speed, posession, status = ball_info.split(";")[0].split(",")[:6]
     data["ball_x"][idx] = int(x)
     data["ball_y"][idx] = int(y)
@@ -57,7 +77,17 @@ def _add_ball_data_to_dict(ball_info, data, idx):
 
     return data
 
-def _insert_missing_rows(df):
+def _insert_missing_rows(df:pd.DataFrame) -> pd.DataFrame:
+    """Functions that inserts missing rows based on gaps in timestamp
+
+    Args:
+        df (pd.DataFrame): containing tracking data
+
+    Returns:
+        pd.DataFrame: contains tracking data with inserted missing rows
+    """
+    assert "timestamp" in df.columns, "Calculations are based on timestamp column, which is not in the df"
+
     missing = np.where(df["timestamp"].diff() > 1)[0]
     for start_missing in missing:
         n_missing = int(df["timestamp"].diff()[start_missing] - 1)
@@ -70,7 +100,16 @@ def _insert_missing_rows(df):
     
     return df
 
-def _get_tracking_data(tracab_loc, verbose):
+def _get_tracking_data(tracab_loc:str, verbose:bool) -> pd.DataFrame:
+    """Function that reads tracking data from .dat file and stores it in a pd.DataFrame
+
+    Args:
+        tracab_loc (str): location of the tracking_data.dat file
+        verbose (bool): whether to print info in terminal
+
+    Returns:
+        pd.DataFrame: contains tracking data
+    """
     
     lines = _get_lines_from_dat(tracab_loc, verbose)
     size_lines = len(lines)
@@ -113,9 +152,18 @@ def _get_player_data(team) -> pd.DataFrame:
     df = pd.DataFrame(player_dict)
     return df
 
-def _get_meta_data(meta_data_loc):
+def _get_meta_data(meta_data_loc:str) -> Metadata:
+    """Function that reads metadata.xml file and stores it in Metadata class
+
+    Args:
+        meta_data_loc (str): location of the metadata.xml file
+
+    Returns:
+        Metadata: class that contains metadata
+    """
     file = open(meta_data_loc, "r").read()
-    soup = BeautifulSoup(file[3:], "xml")
+    file = file.replace("ï»¿", "")
+    soup = BeautifulSoup(file, "xml")
     
     match_id = int(soup.find("match")["iId"])
     pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
