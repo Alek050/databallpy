@@ -96,7 +96,7 @@ Before you submit a pull request, check that it meets these guidelines:
   7. Make sure to open a pull request to the `develop` branch. Do not open pull requests to the `main` branch unless you made a hot fix!
 
 When opening the pull request, make sure to link to the approriate issue. For example, when opening a pull request that solves issue 5, add this in the title of the 
-of the pull request and add in the description of the pull request `close #5`. This will close issue 5 automatically when the pull request is approved.
+of the pull request and add in the description of the pull request `resolve #5`. This will close issue 5 automatically when the pull request is approved.
 
 ## Code of Conduct
 
