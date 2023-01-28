@@ -26,23 +26,30 @@ class Metadata:
     away_formation: str
 
     def __eq__(self, other):
-        result = (
-            self.match_id == other.match_id
-            and self.pitch_dimensions == other.pitch_dimensions
-            and self.match_start_datetime == other.match_start_datetime
-            and self.periods_frames.equals(other.periods_frames)
-            and self.frame_rate == other.frame_rate
-            if not pd.isnull(self.frame_rate)
-            else pd.isnull(other.frame_rate)
-            and self.home_team_id == other.home_team_id
-            and self.home_team_name == other.home_team_name
-            and self.home_players.equals(other.home_players)
-            and self.home_score == other.home_score
-            and self.home_formation == other.home_formation
-            and self.away_team_id == other.away_team_id
-            and self.away_team_name == other.away_team_name
-            and self.away_players.equals(other.away_players)
-            and self.away_score == other.away_score
-            and self.away_formation == other.away_formation
+        result = all(
+            [
+                self.match_id == other.match_id,
+                all(
+                    [
+                        s == o
+                        for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
+                    ]
+                ),
+                self.match_start_datetime == other.match_start_datetime,
+                self.periods_frames.equals(other.periods_frames),
+                self.frame_rate == other.frame_rate
+                if not pd.isnull(self.frame_rate)
+                else pd.isnull(other.frame_rate),
+                self.home_team_id == other.home_team_id,
+                self.home_team_name == other.home_team_name,
+                self.home_players.equals(other.home_players),
+                self.home_score == other.home_score,
+                self.home_formation == other.home_formation,
+                self.away_team_id == other.away_team_id,
+                self.away_team_name == other.away_team_name,
+                self.away_players.equals(other.away_players),
+                self.away_score == other.away_score,
+                self.away_formation == other.away_formation,
+            ]
         )
         return result

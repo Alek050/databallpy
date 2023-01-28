@@ -18,7 +18,7 @@ class TestOpta(unittest.TestCase):
         self.f24_loc = "tests/test_data/f24_test.xml"
         self.expected_metadata = Metadata(
             match_id=1908,
-            pitch_dimensions=[np.nan, np.nan],
+            pitch_dimensions=[10, 10],
             match_start_datetime=np.datetime64("20230122111832"),
             periods_frames=pd.DataFrame(),
             frame_rate=np.nan,
@@ -134,7 +134,7 @@ class TestOpta(unittest.TestCase):
 
     def test_load_metadata(self):
 
-        metadata = _load_metadata(self.f7_loc)
+        metadata = _load_metadata(self.f7_loc, [10, 10])
         assert metadata == self.expected_metadata
 
     def test_get_player_info(self):

@@ -88,13 +88,12 @@ EVENT_TYPE_IDS = {
 
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
-) -> Tuple[pd.Series, pd.DataFrame]:
-    """Function to get the event data and metadata of a match. Note that the x and y
-    coordinates are scaled to the pitch_dimensions such that (0, 0) is the center of
-    the pitch. Also, opta coordinates are standardized that the team of the primary
-    player in the event plays from left to right. We change this that the home team is
-    represented as playing the full match from left to right and the away team from
-    right to left.
+) -> Tuple[Metadata, pd.DataFrame]:
+    """This function retrieves the metadata and event data of a specific match. The x
+    and y coordinates provided have been scaled to the dimensions of the pitch, with
+    (0, 0) being the center. Additionally, the coordinates have been standardized so
+    that the home team is represented as playing from left to right for the entire
+    match, and the away team is represented as playing from right to left.
 
     Args:
         f7_loc (str): location of the f7.xml file.
@@ -102,7 +101,7 @@ def load_opta_event_data(
         pitch_dimensions (list, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.Series, pd.DataFrame]: the metadata and the event data of the match
+        Tuple[Metadata, pd.DataFrame]: the metadata and the event data of the match
     """
 
     assert isinstance(f7_loc, str), f"f7_loc should be a string, not a {type(f7_loc)}"
@@ -113,7 +112,7 @@ def load_opta_event_data(
     assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format"
 
     event_data = _load_event_data(f24_loc)
-    metadata = _load_metadata(f7_loc)
+    metadata = _load_metadata(f7_loc, pitch_dimensions=pitch_dimensions)
 
     # Add player names to the event data dataframe
     home_players = dict(
@@ -138,7 +137,7 @@ def load_opta_event_data(
     ].map(away_players)
 
     # Rescale the x and y coordinates relative to the pitch dimensions
-    # The original dimension of the x and y data are from 0 to 100
+    # The original dimension of the x and y coordinates range from 0 to 100
     event_data.loc[:, ["start_x"]] = (
         event_data.loc[:, ["start_x"]] / 100 * pitch_dimensions[0]
     ) - (pitch_dimensions[0] / 2.0)
@@ -154,11 +153,12 @@ def load_opta_event_data(
     return metadata, event_data
 
 
-def _load_metadata(f7_loc: str):
+def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     """Function to load metadata from the f7.xml opta file
 
     Args:
         f7_loc (str): location of the f7.xml opta file
+        pitch_dimensions (list): the length and width of the pitch in meters
 
     Returns:
         MetaData: all metadata information of the current match
@@ -191,22 +191,24 @@ def _load_metadata(f7_loc: str):
         teams_info[team_info["side"]] = team_info
 
         # Player information
-        player_data = [player.attrs for player in team_data.findChildren("MatchPlayer")]
-        player_names = {}
+        players_data = [
+            player.attrs for player in team_data.findChildren("MatchPlayer")
+        ]
+        players_names = {}
         for player in team.findChildren("Player"):
             player_id = int(player.attrs["uID"][1:])
             first_name = player.contents[1].contents[1].contents[0]
             last_name = player.contents[1].contents[3].contents[0]
-            player_names[str(player_id)] = f"{first_name} {last_name}"
+            players_names[str(player_id)] = f"{first_name} {last_name}"
 
-        player_info = _get_player_info(player_data, player_names)
+        player_info = _get_player_info(players_data, players_names)
         teams_player_info[team_info["side"]] = player_info
 
     file.close()
 
     metadata = Metadata(
         match_id=match_id,
-        pitch_dimensions=[np.nan, np.nan],
+        pitch_dimensions=pitch_dimensions,
         match_start_datetime=start_match_datetime,
         periods_frames=pd.DataFrame(),
         frame_rate=np.nan,
@@ -224,13 +226,13 @@ def _load_metadata(f7_loc: str):
     return metadata
 
 
-def _get_player_info(player_data: list, player_names: dict) -> pd.DataFrame:
+def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
     """Function to loop over all players and save data in a pd.DataFrame
 
     Args:
-        player_data (list): for every player a dictionary with info about the player
+        players_data (list): for every player a dictionary with info about the player
         except the player name
-        player_names (dict): dictionary with player id as key and the player name as
+        players_names (dict): dictionary with player id as key and the player name as
         value
 
     Returns:
@@ -244,10 +246,10 @@ def _get_player_info(player_data: list, player_names: dict) -> pd.DataFrame:
         "starter": [],
         "shirt_number": [],
     }
-    for player in player_data:
+    for player in players_data:
         player_id = int(player["PlayerRef"][1:])
         result_dict["player_id"].append(player_id)
-        result_dict["player_name"].append(player_names[str(player_id)])
+        result_dict["player_name"].append(players_names[str(player_id)])
         result_dict["formation_place"].append(int(player["Formation_Place"]))
         position = (
             player["Position"]
@@ -317,8 +319,7 @@ def _load_event_data(f24_loc: str) -> pd.DataFrame:
         result_dict["outcome"].append(int(event.attrs["outcome"]))
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
-        date = np.datetime64(event.attrs["timestamp"])
-        result_dict["datetime"].append(date)
+        result_dict["datetime"].append(np.datetime64(event.attrs["timestamp"]))
 
     file.close()
     return pd.DataFrame(result_dict)
