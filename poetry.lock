@@ -656,4 +656,8 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1"
+<<<<<<< HEAD
 content-hash = "18d7abfcaf1c0570ca3d5a42e01e38a05d3b98eadb001f1c2a40cd1e259cab81"
+=======
+content-hash = "f0bebd629a27919cf16fbe609dcdbe3602da75408d23d18b1328ec959249be86"
+>>>>>>> develop

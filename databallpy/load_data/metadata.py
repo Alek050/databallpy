@@ -24,3 +24,32 @@ class Metadata:
     away_players: pd.DataFrame
     away_score: int
     away_formation: str
+
+    def __eq__(self, other):
+        result = all(
+            [
+                self.match_id == other.match_id,
+                all(
+                    [
+                        s == o
+                        for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
+                    ]
+                ),
+                self.match_start_datetime == other.match_start_datetime,
+                self.periods_frames.equals(other.periods_frames),
+                self.frame_rate == other.frame_rate
+                if not pd.isnull(self.frame_rate)
+                else pd.isnull(other.frame_rate),
+                self.home_team_id == other.home_team_id,
+                self.home_team_name == other.home_team_name,
+                self.home_players.equals(other.home_players),
+                self.home_score == other.home_score,
+                self.home_formation == other.home_formation,
+                self.away_team_id == other.away_team_id,
+                self.away_team_name == other.away_team_name,
+                self.away_players.equals(other.away_players),
+                self.away_score == other.away_score,
+                self.away_formation == other.away_formation,
+            ]
+        )
+        return result

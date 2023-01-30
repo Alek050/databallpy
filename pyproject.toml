@@ -16,7 +16,10 @@ pandas = "^1.5.3"
 numpy = "^1.24.1"
 beautifulsoup4 = "^4.11.1"
 lxml = "^4.9.2"
+<<<<<<< HEAD
 tqdm = "4.64.1"
+=======
+>>>>>>> develop
 
 [tool.poetry.dev-dependencies]
 
@@ -41,3 +44,13 @@ patch_without_tag = true                    # patch release by default
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line_length = 88
+
+[tool.isort]
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+src_paths=['databallpy', 'tests']
+known_third_party = 'pytest,mock'
