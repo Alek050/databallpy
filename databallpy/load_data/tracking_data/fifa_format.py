@@ -33,14 +33,16 @@ def _get_tracking_data(fifa_loc:str, verbose:bool) -> pd.DataFrame:
         pd.DataFrame: _description_
     """
     if verbose:
-        match = fifa_loc.split("\\")[-1]
-        print(f"Reading in {match}", end="")
+        print(f"Reading in {tracab_loc}", end="")
 
     file = open(tracab_loc, "r")
     lines = file.readlines()
     
     if verbose:
-        print(" - Complete")
+        print(" - Completed")
+
+    file.close()
+    
 
 def _get_meta_data(meta_data_loc:str, verbose:bool) -> Metadata:
     """_summary_
@@ -52,7 +54,7 @@ def _get_meta_data(meta_data_loc:str, verbose:bool) -> Metadata:
     Returns:
         Metadata: _description_
     """
-    print("here")
+    
     file = open(meta_data_loc, "r", encoding="UTF-8").read()
     soup = BeautifulSoup(file, "xml")
     import pdb;pdb.set_trace()
