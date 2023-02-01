@@ -198,7 +198,7 @@ def _get_meta_data(meta_data_loc: str) -> Metadata:
     """
 
     file = open(meta_data_loc, "r")
-    lines =file.read()
+    lines = file.read()
     lines = lines.replace("ï»¿", "")
     soup = BeautifulSoup(lines, "xml")
 
