@@ -40,7 +40,16 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         pd.DataFrame: contains tracking data
     """
 
-    lines = _get_lines_from_dat(tracab_loc, verbose)
+    if verbose:
+        print(f"Reading in {tracab_loc}", end="")
+
+    file = open(tracab_loc, "r")
+    lines = file.readlines()
+    if verbose:
+        print(" - Completed")
+
+    file.close()
+
     size_lines = len(lines)
 
     data = {
@@ -79,30 +88,6 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     df = _insert_missing_rows(df)
 
     return df
-
-
-def _get_lines_from_dat(tracab_loc: str, verbose: bool) -> list:
-    """Function that reads .dat file and returns a list with all lines
-
-    Args:
-        tracab_loc (str): location of the tracking_data.dat file
-        verbose (bool): whether to print info in terminal
-
-    Returns:
-        list: list containing all lines from .dat file
-    """
-
-    if verbose:
-        print(f"Reading in {tracab_loc}", end="")
-
-    file = open(tracab_loc, "r")
-    lines = file.readlines()
-    if verbose:
-        print(" - Completed")
-
-    file.close()
-
-    return lines
 
 
 def _add_player_data_to_dict(player: str, data: dict, idx: int) -> dict:
