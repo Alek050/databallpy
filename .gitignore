@@ -141,5 +141,7 @@ dmypy.json
 # MacOS
 .DS_Store
 
+# testing files
 test.py
-/data
+data/
+.vscode/
