@@ -1,7 +1,12 @@
 from typing import Tuple
 
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from load_data.Match import Match
 
 
 def plot_soccer_pitch(
@@ -22,7 +27,7 @@ def plot_soccer_pitch(
         markersize (int, optional): Size of the dots on the pitch. Defaults to 20.
 
     Returns:
-        Tuple[plt.fig, plt.axes]: figure and axes with the pitch depicted on it
+        Tuple[plt.figure, plt.axes]: figure and axes with the pitch depicted on it
     """
 
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -177,4 +182,188 @@ def plot_soccer_pitch(
     ax.set_xlim([-xmax, xmax])
     ax.set_ylim([-ymax, ymax])
     ax.set_axisbelow(True)
+
     return fig, ax
+
+
+def save_match_clip(
+    match: Match,
+    start_idx: int,
+    end_idx: int,
+    save_location: str,
+    *,
+    title: str = "test_clip",
+    team_colors: list = ["green", "red"],
+    pitch_color: str = "mediumseagreen",
+    events: list = [],
+    variable_of_interest: pd.Series = None,
+):
+    """Function to save a subset of a match clip of the tracking data.
+
+    Args:
+        match (Match): Match with tracking data and ohter info of the match.
+        start_idx (int): Start index of what to save of the match.tracking_data df.
+        end_idx (int): End index of what to save of the match.tracking_data df.
+        save_location (str): Location where to save the clip.
+        title (str, optional): Title of the clip. Defaults to "test_clip".
+        team_colors (list, optional): Colors of the home and away team. Defaults to
+        ["green", "red"].
+        pitch_color (str, optional): Color of the pitch. Defaults to "mediumseagreen".
+        events (list, optional): What events should be plotted as well. Defaults to [].
+        variable_of_interest (pd.Series, optional): Variable you want to have plotted
+        in the clip, this is a pd.Series that should have the same index
+        (start_idx:end_idx) as the tracking data that will be plotted. Defaults to None.
+    """
+
+    td = match.tracking_data.loc[start_idx:end_idx]
+    td_ht = td[match.home_players_location_ids]
+    td_at = td[match.away_players_location_ids]
+
+    if variable_of_interest is not None:
+        assert (
+            variable_of_interest.index == td.index
+        ), "Index of variable of interest and of the tracking data should be alike!"
+
+    if len(events) > 0:
+        assert (
+            "event" in match.tracking_data.columns
+        ), "No event column found in match.tracking_data.columns, did you synchronize"
+        "event and tracking data?"
+
+    animation_metadata = {
+        "title": title,
+        "artist": "Matpltlib",
+        "comment": "Made with databallpy",
+    }
+    writer = animation.FFMpegWriter(fps=match.frame_rate, metadata=animation_metadata)
+    video_loc = f"{save_location}/{title}.mp4"
+
+    fig, ax = plot_soccer_pitch(
+        field_dimen=match.pitch_dimensions, pitch_color=pitch_color
+    )
+
+    # Set match name, non variable over time
+    ax.text(
+        match.pitch_size[0] / -2.0 + 2,
+        match.pitch_size[1] / 2.0 + 1.0,
+        match.home_team_name,
+        fontsize=14,
+        color=team_colors[0],
+    )
+    ax.text(
+        match.pitch_size[0] / 2.0 - 15,
+        match.pitch_size[1] / 2.0 + 1.0,
+        match.away_team_name,
+        fontsize=14,
+        color=team_colors[1],
+    )
+
+    # Generate movie with variable info
+    with writer.saving(fig, video_loc, 100):
+        for _, idx in enumerate(tqdm(td.index)):
+
+            variable_fig_objs = []
+
+            # Scatter plot the teams
+            for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
+                x_cols = [x for x in td_team.columns if x[-2:] == "_x"]
+                y_cols = [y for y in td_team.columns if y[-2:] == "_y"]
+                fig_obj = ax.scatter(
+                    td_team[x_cols], td_team[y_cols], c=c, alpha=0.7, s=90, zorder=2.5
+                )
+                variable_fig_objs.append(fig_obj)
+
+                # Add shirt number to every dot
+                for x, y in zip(x_cols, y_cols):
+                    if pd.isnull(td_team[x]):
+                        # Player not on the pitch currently
+                        continue
+
+                    # Slightly different place needed if the number has a len of 2
+                    correction = 0.5 if len(x.split("_")[1]) == 1 else 0.7
+                    fig_obj = ax.text(
+                        td_team[x] - correction,
+                        td_team[y] - 0.5,
+                        x.split("_")[1],  # the shirt number
+                        fontsize=9,
+                        c="white",
+                        zorder=3.0,
+                    )
+                    variable_fig_objs.append(fig_obj)
+
+            # Plot the ball
+            fig_obj = ax.scatter(
+                td.loc[idx, "ball_x"], td.loc[idx, "ball_y"], c="black"
+            )
+            variable_fig_objs.append(fig_obj)
+
+            # Add time info
+            fig_obj = ax.scatter(
+                -20.5,
+                match.pitch_dimensions[1] / 2.0 + 2.0,
+                td.loc[idx, "match_time"],
+                c="k",
+                fontsize=14,
+            )
+            variable_fig_objs.append(fig_obj)
+
+            # Add variable of interest
+            if variable_of_interest is not None:
+                fig_obj = ax.text(
+                    -7,
+                    match.pitch_dimensions[1] / 2.0 + 2,
+                    str(variable_of_interest[idx]),
+                    fontsize=14,
+                )
+                variable_fig_objs.append(fig_obj)
+
+            # Add events
+            # Note: this should be last in this function since it assumes that all
+            # other info is already plotted in the axes
+            if len(events) > 0:
+                if td.loc[idx, "event"] in events:
+                    event = (
+                        match.event_data[
+                            match.event_data["event_id"] == td.loc[idx, "event_id"]
+                        ]
+                        .iloc[0]
+                        .T
+                    )
+
+                    player_name = event["player_name"]
+                    event_name = event["event"]
+
+                    # Add event text
+                    fig_obj = ax.text(
+                        15,
+                        match.pitch_dimension[1] / 2.0 + 2.0,
+                        f"{player_name}: {event_name}",
+                        fontsize=14,
+                    )
+                    variable_fig_objs.append(fig_obj)
+
+                    # Highligh location on the pitch of the event
+                    fig_obj = ax.scatter(
+                        event["start_x"],
+                        event["start_y"],
+                        color="red",
+                        marker="x",
+                        markersize=14,
+                    )
+                    variable_fig_objs.append(fig_obj)
+
+                    # Grap frame match.frame_rate times to 'pause' the video at
+                    # this moment
+                    for _ in range(match.frame_rate):
+                        writer.grab_frame()
+
+            # Save current frame
+            writer.grab_frame()
+
+            # Delete all variable axis objects
+            for fig_obj in variable_fig_objs:
+                fig_obj.remove()
+
+    # Close figure
+    plt.clf()
+    plt.close(fig)
