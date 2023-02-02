@@ -166,11 +166,11 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     return metadata
 
 
-def _get_player_data(players_info: bs4.element.Tag) -> pd.DataFrame:
+def _get_player_data(players_info: list) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
 
     Args:
-        team (bs4.element.Tag): containing info on all players of a team
+        team (list): contains an information dictionary for each player
 
     Returns:
         pd.DataFrame: contains all player information for a team
@@ -184,7 +184,7 @@ def _get_player_data(players_info: bs4.element.Tag) -> pd.DataFrame:
         "end_frame": [],
     }
     for player in players_info:
-        player_dict["id"].append(player["PlayerId"])
+        player_dict["id"].append(int(player["PlayerId"]))
         player_dict["full_name"].append(
             player["FirstName"] + " " + player["LastName"]
         )
