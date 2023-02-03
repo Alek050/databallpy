@@ -19,8 +19,19 @@ class TestOpta(unittest.TestCase):
         self.expected_metadata = Metadata(
             match_id=1908,
             pitch_dimensions=[10, 10],
-            match_start_datetime=np.datetime64("20230122111832"),
-            periods_frames=pd.DataFrame(),
+            periods_frames=pd.DataFrame(
+                {
+                    "period": [1, 2],
+                    "start_datetime_opta": [
+                        pd.to_datetime("20230122T121832+0000"),
+                        pd.to_datetime("20230122T132113+0000"),
+                    ],
+                    "end_datetime_opta": [
+                        pd.to_datetime("20230122T130432+0000"),
+                        pd.to_datetime("20230122T140958+0000"),
+                    ],
+                }
+            ),
             frame_rate=np.nan,
             home_team_id=318,
             home_team_name="sc Heerenveen",
@@ -28,12 +39,12 @@ class TestOpta(unittest.TestCase):
             home_score=3,
             home_players=pd.DataFrame(
                 {
-                    "player_id": [181078, 510654],
-                    "player_name": ["Anas Tahiri", "Timo Zaal"],
+                    "id": [181078, 510654],
+                    "full_name": ["Anas Tahiri", "Timo Zaal"],
                     "formation_place": [4, 0],
                     "position": ["midfielder", "midfielder"],
                     "starter": [True, False],
-                    "shirt_number": [26, 34],
+                    "shirt_num": [26, 34],
                 }
             ),
             away_team_id=425,
@@ -42,12 +53,12 @@ class TestOpta(unittest.TestCase):
             away_score=1,
             away_players=pd.DataFrame(
                 {
-                    "player_id": [223089, 213399],
-                    "player_name": ["Johan Hove", "Ramon Pascal Lundqvist"],
+                    "id": [223089, 213399],
+                    "full_name": ["Johan Hove", "Ramon Pascal Lundqvist"],
                     "formation_place": [8, 0],
                     "position": ["midfielder", "midfielder"],
                     "starter": [True, False],
-                    "shirt_number": [8, 22],
+                    "shirt_num": [8, 22],
                 }
             ),
         )
@@ -126,7 +137,7 @@ class TestOpta(unittest.TestCase):
 
     def test_load_opta_event_data(self):
 
-        metadata, event_data = load_opta_event_data(
+        event_data, metadata = load_opta_event_data(
             self.f7_loc, self.f24_loc, pitch_dimensions=[10, 10]
         )
         pd.testing.assert_frame_equal(event_data, self.expected_event_data)
@@ -159,12 +170,12 @@ class TestOpta(unittest.TestCase):
 
         expected_result = pd.DataFrame(
             {
-                "player_id": [123, 234],
-                "player_name": ["Sven Kerhoffs", "Niels Smits"],
+                "id": [123, 234],
+                "full_name": ["Sven Kerhoffs", "Niels Smits"],
                 "formation_place": [0, 1],
                 "position": ["midfielder", "goalkeeper"],
                 "starter": [False, True],
-                "shirt_number": [33, 2],
+                "shirt_num": [33, 2],
             }
         )
 

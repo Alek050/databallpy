@@ -1,9 +1,9 @@
+import datetime as dt
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
-import datetime as dt
 
 from databallpy.load_data.metadata import Metadata
 
@@ -102,7 +102,7 @@ def load_opta_event_data(
         pitch_dimensions (list, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: the event data of the match and the metadata 
+        Tuple[pd.DataFrame, Metadata]: the event data of the match and the metadata
     """
 
     assert isinstance(f7_loc, str), f"f7_loc should be a string, not a {type(f7_loc)}"
@@ -168,12 +168,12 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
-    # Obtain match id 
+    # Obtain match id
     match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
 
     # Obtain match start and end of period datetime
     periods = {
-        "period": [1, 2], 
+        "period": [1, 2],
         "start_datetime_opta": [],
         "end_datetime_opta": [],
     }
@@ -181,10 +181,16 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     end_period_1 = soup.find("Stat", attrs={"Type": "first_half_stop"})
     start_period_2 = soup.find("Stat", attrs={"Type": "second_half_start"})
     end_period_2 = soup.find("Stat", attrs={"Type": "second_half_stop"})
-    for start, end in zip([start_period_1, start_period_2], [end_period_1, end_period_2]):
+    for start, end in zip(
+        [start_period_1, start_period_2], [end_period_1, end_period_2]
+    ):
         # Add one hour to go from utc to Dutch time
-        periods["start_datetime_opta"].append(pd.to_datetime(start.contents[0]) + dt.timedelta(hours=1))
-        periods["end_datetime_opta"].append(pd.to_datetime(end.contents[0]) + dt.timedelta(hours=1))
+        periods["start_datetime_opta"].append(
+            pd.to_datetime(start.contents[0]) + dt.timedelta(hours=1)
+        )
+        periods["end_datetime_opta"].append(
+            pd.to_datetime(end.contents[0]) + dt.timedelta(hours=1)
+        )
 
     # Opta has a TeamData and Team attribute in the f7 file
     team_datas = soup.find_all("TeamData")

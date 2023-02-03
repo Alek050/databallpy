@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 def _insert_missing_rows(df: pd.DataFrame, col: str) -> pd.DataFrame:
     """Functions that inserts missing rows based on gaps in timestamp
 

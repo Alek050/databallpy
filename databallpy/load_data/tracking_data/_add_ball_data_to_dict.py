@@ -1,4 +1,12 @@
-def _add_ball_data_to_dict(ball_x: str, ball_y: str, ball_z: str, posession: str, status: str, data: dict, idx: str) -> dict:
+def _add_ball_data_to_dict(
+    ball_x: str,
+    ball_y: str,
+    ball_z: str,
+    posession: str,
+    status: str,
+    data: dict,
+    idx: str,
+) -> dict:
     """Function that adds the data of the ball to the data dict for one frame
 
     Args:
@@ -9,10 +17,7 @@ def _add_ball_data_to_dict(ball_x: str, ball_y: str, ball_z: str, posession: str
     Returns:
         dict: contains all tracking data
     """
-    home_away_map = {
-        "H": "Home",
-        "A": "Away"
-        }
+    home_away_map = {"H": "Home", "A": "Away"}
 
     data["ball_x"][idx] = float(ball_x)
     data["ball_y"][idx] = float(ball_y)

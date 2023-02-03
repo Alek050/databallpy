@@ -33,7 +33,6 @@ class Metadata:
                         for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
                     ]
                 ),
-                self.match_start_datetime == other.match_start_datetime,
                 self.periods_frames.equals(other.periods_frames),
                 self.frame_rate == other.frame_rate
                 if not pd.isnull(self.frame_rate)

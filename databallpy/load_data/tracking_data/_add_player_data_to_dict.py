@@ -1,6 +1,9 @@
 import numpy as np
 
-def _add_player_data_to_dict(team_id:str, shirt_num:str, x:str, y:str, data: dict, idx: int) -> dict:
+
+def _add_player_data_to_dict(
+    team_id: str, shirt_num: str, x: str, y: str, data: dict, idx: int
+) -> dict:
     """Function that adds the data of one player to the data dict for one frame
 
     Args:
