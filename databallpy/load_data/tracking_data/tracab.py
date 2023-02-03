@@ -149,7 +149,6 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     metadata = Metadata(
         match_id=match_id,
         pitch_dimensions=[pitch_size_x, pitch_size_y],
-        match_start_datetime=match_start_datetime,
         periods_frames=df_frames,
         frame_rate=frame_rate,
         home_team_id=home_team_id,

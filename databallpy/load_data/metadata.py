@@ -8,9 +8,7 @@ import pandas as pd
 class Metadata:
     match_id: int
     pitch_dimensions: list
-    match_start_datetime: np.datetime64
     periods_frames: pd.DataFrame
-
     frame_rate: int
 
     home_team_id: int

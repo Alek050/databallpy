@@ -15,7 +15,7 @@ def _add_player_data_to_dict(team_id:str, shirt_num:str, x:str, y:str, data: dic
         dict: contains all tracking data
     """
 
-    team_ids = {0: "home", 1: "away"}
+    team_ids = {0: "away", 1: "home"}
     team = team_ids.get(int(team_id))
     if team is None:  # player is unknown or referee
         return data
@@ -23,7 +23,7 @@ def _add_player_data_to_dict(team_id:str, shirt_num:str, x:str, y:str, data: dic
     if f"{team}_{shirt_num}_x" not in data.keys():  # create keys for new player
         data[f"{team}_{shirt_num}_x"] = [np.nan] * len(data["timestamp"])
         data[f"{team}_{shirt_num}_y"] = [np.nan] * len(data["timestamp"])
-    #import pdb;pdb.set_trace()
+
     data[f"{team}_{shirt_num}_x"][idx] = float(x)
     data[f"{team}_{shirt_num}_y"][idx] = float(y)
 
