@@ -8,9 +8,9 @@ from databallpy.load_data.tracking_data.tracab import (
     _get_metadata,
     _get_tracking_data,
     load_tracab_tracking_data,
-    _get_player_data
+    _get_players_metadata
 )
-from databallpy.load_data.tracking_data._add_player_data_to_dict import _add_player_data_to_dict
+from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import _add_player_tracking_data_to_dict
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import _add_ball_data_to_dict
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
 
@@ -28,6 +28,21 @@ class TestTracab(unittest.TestCase):
                     "period": [1, 2, 3, 4, 5],
                     "start_frame": [100, 200, 300, 400, 0],
                     "end_frame": [400, 600, 900, 1200, 0],
+                    "start_time": [
+                        np.datetime64("2023-01-14 00:00:04"),
+                        np.datetime64("2023-01-14 00:00:08"),
+                        np.datetime64("2023-01-14 00:00:12"),
+                        np.datetime64("2023-01-14 00:00:16"),
+                        np.nan
+                    ],
+
+                    "end_time": [
+                        np.datetime64("2023-01-14 00:00:16"),
+                        np.datetime64("2023-01-14 00:00:24"),
+                        np.datetime64("2023-01-14 00:00:36"),
+                        np.datetime64("2023-01-14 00:00:48"),
+                        np.nan
+                    ]
                 }
             ),
             frame_rate=25,
@@ -71,17 +86,19 @@ class TestTracab(unittest.TestCase):
                 "away_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
                 "home_17_x": [1.22, 1.21, 1.21, np.nan, 1.21],
                 "home_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
+                "matchtime_td": ["Break", "Break", "Break", "Break", "Break"]
             }
         )
 
     def test_get_metadata(self):
 
-        meta_data = _get_metadata(self.metadata_loc)
-        assert meta_data == self.expected_metadata
+        metadata = _get_metadata(self.metadata_loc)
+        assert metadata == self.expected_metadata
 
     def test_get_tracking_data(self):
         tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=True)
-        pd.testing.assert_frame_equal(tracking_data, self.expected_tracking_data)
+        expected_td = self.expected_tracking_data.iloc[:, :-1]
+        pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     def test_load_tracking_data(self):
         tracking_data, metadata = load_tracab_tracking_data(
@@ -91,7 +108,7 @@ class TestTracab(unittest.TestCase):
         assert metadata == self.expected_metadata
         pd.testing.assert_frame_equal(tracking_data, self.expected_tracking_data)
 
-    def test_get_player_data(self):
+    def test_get_players_metadata(self):
         input_players_info = [
             {
                 "PlayerId": "1234",
@@ -120,5 +137,5 @@ class TestTracab(unittest.TestCase):
                 "end_frame": [2323, 2327]
             }
         )
-        df_players = _get_player_data(input_players_info)
+        df_players = _get_players_metadata(input_players_info)
         pd.testing.assert_frame_equal(df_players, expected_df_players)

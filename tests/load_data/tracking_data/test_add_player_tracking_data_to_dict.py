@@ -2,11 +2,11 @@ import unittest
 
 import numpy as np
 
-from databallpy.load_data.tracking_data._add_player_data_to_dict import _add_player_data_to_dict
+from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import _add_player_tracking_data_to_dict
 
 
 
-class TestTracab(unittest.TestCase):
+class TestAddPlayerTrackingDataToDict(unittest.TestCase):
     def setUp(self):
         self.input_t0 = [
             ["0", "10", np.nan, "-100"],
@@ -33,7 +33,7 @@ class TestTracab(unittest.TestCase):
             "away_10_y": [np.nan, 40.0]
         }
 
-    def test_add_player_to_data_dict(self):
+    def test_add_player_tracking_to_data_dict(self):
         data = {
             "timestamp": [0,1],
             "home_10_x": [np.nan, np.nan],
@@ -44,10 +44,10 @@ class TestTracab(unittest.TestCase):
 
         for player in self.input_t0:
             team_id, shirt_num, x, y = player
-            data = _add_player_data_to_dict(team_id, shirt_num, x, y, data, 0)
+            data = _add_player_tracking_data_to_dict(team_id, shirt_num, x, y, data, 0)
 
         for player in self.input_t1:
             team_id, shirt_num, x, y = player
-            data = _add_player_data_to_dict(team_id, shirt_num, x, y, data, 1)
+            data = _add_player_tracking_data_to_dict(team_id, shirt_num, x, y, data, 1)
 
         assert data == self.expected_output

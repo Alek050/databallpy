@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from databallpy.load_data.metadata import Metadata
-def _to_match_time(s:int, max_m:int, start_m:int) -> str:
+def _to_matchtime(s:int, max_m:int, start_m:int) -> str:
     """Transforms the number of seconds into matchtime format
 
     Args:
@@ -31,7 +31,7 @@ def _to_match_time(s:int, max_m:int, start_m:int) -> str:
     return time_string
 
 
-def _get_match_time(timestamp_column:pd.Series, metadata:Metadata) -> pd.Series:
+def _get_matchtime(timestamp_column:pd.Series, metadata:Metadata) -> pd.Series:
     """Gives a series with time in the matchtime format based on the original timestamps and framerate
 
     Args:
@@ -66,7 +66,7 @@ def _get_match_time(timestamp_column:pd.Series, metadata:Metadata) -> pd.Series:
     matchtime_list = []
     for seconds in df[df["period"] == 1]["seconds"].unique():
         if seconds < (45*60):
-            matchtime_list.extend([_to_match_time(seconds, 45, 0)]*frame_rate)
+            matchtime_list.extend([_to_matchtime(seconds, 45, 0)]*frame_rate)
         else:
             matchtime_list.extend(["Break"]*frame_rate)
     
@@ -74,7 +74,7 @@ def _get_match_time(timestamp_column:pd.Series, metadata:Metadata) -> pd.Series:
 
     for seconds in df[df["period"] == 2]["seconds"].unique():
         if seconds < (90*60):
-            matchtime_list.extend([_to_match_time(seconds, 90, 45)]*frame_rate)
+            matchtime_list.extend([_to_matchtime(seconds, 90, 45)]*frame_rate)
         else:
             matchtime_list.extend(["Break"]*frame_rate)
     
@@ -82,7 +82,7 @@ def _get_match_time(timestamp_column:pd.Series, metadata:Metadata) -> pd.Series:
 
     for seconds in df[df["period"] == 3]["seconds"].unique():
         if seconds < (105*60):
-            matchtime_list.extend([_to_match_time(seconds, 105, 90)]*frame_rate)
+            matchtime_list.extend([_to_matchtime(seconds, 105, 90)]*frame_rate)
         else:
             matchtime_list.extend(["Break"]*frame_rate)
     
@@ -90,7 +90,7 @@ def _get_match_time(timestamp_column:pd.Series, metadata:Metadata) -> pd.Series:
     
     for seconds in df[df["period"] == 4]["seconds"].unique():
         if seconds < (120*60):
-            matchtime_list.extend([_to_match_time(seconds, 120, 105)]*frame_rate)
+            matchtime_list.extend([_to_matchtime(seconds, 120, 105)]*frame_rate)
         else:
             matchtime_list.extend(["Break"]*frame_rate)
     

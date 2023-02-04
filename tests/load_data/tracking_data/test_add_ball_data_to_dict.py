@@ -7,7 +7,7 @@ from databallpy.load_data.tracking_data._add_ball_data_to_dict import _add_ball_
 
 
 
-class TestTracab(unittest.TestCase):
+class TestAddBallDataToDict(unittest.TestCase):
     def setUp(self):
         self.ball_info = [
             ["150", "-46", "7", "A", "Alive"],
