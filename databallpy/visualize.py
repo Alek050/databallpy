@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from load_data.Match import Match
+from databallpy.match import Match
 
 
 def plot_soccer_pitch(
@@ -190,7 +190,7 @@ def save_match_clip(
     match: Match,
     start_idx: int,
     end_idx: int,
-    save_location: str,
+    save_folder: str,
     *,
     title: str = "test_clip",
     team_colors: list = ["green", "red"],
@@ -204,7 +204,7 @@ def save_match_clip(
         match (Match): Match with tracking data and ohter info of the match.
         start_idx (int): Start index of what to save of the match.tracking_data df.
         end_idx (int): End index of what to save of the match.tracking_data df.
-        save_location (str): Location where to save the clip.
+        save_folder (str): Location where to save the clip.
         title (str, optional): Title of the clip. Defaults to "test_clip".
         team_colors (list, optional): Colors of the home and away team. Defaults to
         ["green", "red"].
@@ -216,8 +216,8 @@ def save_match_clip(
     """
 
     td = match.tracking_data.loc[start_idx:end_idx]
-    td_ht = td[match.home_players_location_ids]
-    td_at = td[match.away_players_location_ids]
+    td_ht = td[[x for x in match.home_players_column_ids if "_x" in x or "_y" in x]]
+    td_at = td[[x for x in match.away_players_column_ids if "_x" in x or "_y" in x]]
 
     if variable_of_interest is not None:
         assert (
@@ -228,7 +228,7 @@ def save_match_clip(
         assert (
             "event" in match.tracking_data.columns
         ), "No event column found in match.tracking_data.columns, did you synchronize"
-        "event and tracking data?"
+        "event and tracking data?" 
 
     animation_metadata = {
         "title": title,
@@ -236,7 +236,7 @@ def save_match_clip(
         "comment": "Made with databallpy",
     }
     writer = animation.FFMpegWriter(fps=match.frame_rate, metadata=animation_metadata)
-    video_loc = f"{save_location}/{title}.mp4"
+    video_loc = f"{save_folder}/{title}.mp4"
 
     fig, ax = plot_soccer_pitch(
         field_dimen=match.pitch_dimensions, pitch_color=pitch_color
@@ -244,15 +244,15 @@ def save_match_clip(
 
     # Set match name, non variable over time
     ax.text(
-        match.pitch_size[0] / -2.0 + 2,
-        match.pitch_size[1] / 2.0 + 1.0,
+        match.pitch_dimensions[0] / -2.0 + 2,
+        match.pitch_dimensions[1] / 2.0 + 1.0,
         match.home_team_name,
         fontsize=14,
         color=team_colors[0],
     )
     ax.text(
-        match.pitch_size[0] / 2.0 - 15,
-        match.pitch_size[1] / 2.0 + 1.0,
+        match.pitch_dimensions[0] / 2.0 - 15,
+        match.pitch_dimensions[1] / 2.0 + 1.0,
         match.away_team_name,
         fontsize=14,
         color=team_colors[1],
@@ -266,8 +266,8 @@ def save_match_clip(
 
             # Scatter plot the teams
             for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
-                x_cols = [x for x in td_team.columns if x[-2:] == "_x"]
-                y_cols = [y for y in td_team.columns if y[-2:] == "_y"]
+                x_cols = [x for x in td_team.index if x[-2:] == "_x"]
+                y_cols = [y for y in td_team.index if y[-2:] == "_y"]
                 fig_obj = ax.scatter(
                     td_team[x_cols], td_team[y_cols], c=c, alpha=0.7, s=90, zorder=2.5
                 )
@@ -280,7 +280,7 @@ def save_match_clip(
                         continue
 
                     # Slightly different place needed if the number has a len of 2
-                    correction = 0.5 if len(x.split("_")[1]) == 1 else 0.7
+                    correction = 0.5 if len(x.split("_")[1]) == 1 else 0.8
                     fig_obj = ax.text(
                         td_team[x] - correction,
                         td_team[y] - 0.5,
@@ -298,10 +298,10 @@ def save_match_clip(
             variable_fig_objs.append(fig_obj)
 
             # Add time info
-            fig_obj = ax.scatter(
+            fig_obj = ax.text(
                 -20.5,
-                match.pitch_dimensions[1] / 2.0 + 2.0,
-                td.loc[idx, "match_time"],
+                match.pitch_dimensions[1] / 2.0 + 1.0,
+                td.loc[idx, "match_time_td"],
                 c="k",
                 fontsize=14,
             )
@@ -311,7 +311,7 @@ def save_match_clip(
             if variable_of_interest is not None:
                 fig_obj = ax.text(
                     -7,
-                    match.pitch_dimensions[1] / 2.0 + 2,
+                    match.pitch_dimensions[1] / 2.0 + 1.,
                     str(variable_of_interest[idx]),
                     fontsize=14,
                 )
