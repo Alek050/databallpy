@@ -92,7 +92,7 @@ class TestTracab(unittest.TestCase):
 
     def test_load_tracking_data(self):
         tracking_data, metadata = load_tracab_tracking_data(
-            self.tracking_data_loc, self.metadata_loc, verbose=True
+            self.tracking_data_loc, self.metadata_loc, verbose=False
         )
 
         assert metadata == self.expected_metadata

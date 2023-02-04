@@ -44,7 +44,7 @@ class Match:
     tracking_data_provider: str
     event_data: pd.DataFrame
     event_data_provider: str
-    pitch_dimensions: List[float, float]
+    pitch_dimensions: List[float]
     periods: pd.DataFrame
     frame_rate: int
     home_team_id: int
@@ -88,6 +88,30 @@ class Match:
             return self.away_players.loc[
                 self.away_players["shirt_num"] == shirt_num, "full_name"
             ].iloc[0]
+
+    def __eq__(self, other):
+        if isinstance(other, Match):
+            res = [
+                self.tracking_data.equals(other.tracking_data),
+                self.tracking_data_provider == other.tracking_data_provider,
+                self.event_data.equals(other.event_data),
+                self.pitch_dimensions == other.pitch_dimensions,
+                self.periods.equals(other.periods),
+                self.frame_rate == other.frame_rate,
+                self.home_team_id == other.home_team_id,
+                self.home_team_name == other.home_team_name,
+                self.home_formation == other.home_formation,
+                self.home_players.equals(other.home_players),
+                self.home_score == other.home_score,
+                self.away_team_id == other.away_team_id,
+                self.away_team_name == other.away_team_name,
+                self.away_formation == other.away_formation,
+                self.away_players.equals(other.away_players),
+                self.away_score == other.away_score,
+            ]
+            return all(res)
+        else:
+            return False
 
 
 def get_match(
