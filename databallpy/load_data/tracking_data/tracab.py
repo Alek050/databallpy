@@ -10,7 +10,7 @@ from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data._add_player_data_to_dict import _add_player_data_to_dict
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import _add_ball_data_to_dict
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._to_match_time import _to_match_time
+from databallpy.load_data.tracking_data._to_matchtime import _to_matchtime, _get_matchtime
 
 def load_tracab_tracking_data(
     tracab_loc: str, meta_data_loc: str, verbose: bool = True
@@ -29,7 +29,7 @@ def load_tracab_tracking_data(
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     metadata = _get_metadata(meta_data_loc)
 
-    tracking_data["match_time_td"] = [_to_match_time(x, metadata) for x in tqdm(tracking_data["timestamp"])]
+    tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
   
     return tracking_data, metadata
 
