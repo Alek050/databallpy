@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 
 
@@ -8,9 +7,7 @@ import pandas as pd
 class Metadata:
     match_id: int
     pitch_dimensions: list
-    match_start_datetime: np.datetime64
     periods_frames: pd.DataFrame
-
     frame_rate: int
 
     home_team_id: int
@@ -35,7 +32,6 @@ class Metadata:
                         for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
                     ]
                 ),
-                self.match_start_datetime == other.match_start_datetime,
                 self.periods_frames.equals(other.periods_frames),
                 self.frame_rate == other.frame_rate
                 if not pd.isnull(self.frame_rate)
@@ -43,12 +39,16 @@ class Metadata:
                 self.home_team_id == other.home_team_id,
                 self.home_team_name == other.home_team_name,
                 self.home_players.equals(other.home_players),
-                self.home_score == other.home_score,
+                self.home_score == other.home_score
+                if not pd.isnull(self.home_score)
+                else pd.isnull(other.home_score),
                 self.home_formation == other.home_formation,
                 self.away_team_id == other.away_team_id,
                 self.away_team_name == other.away_team_name,
                 self.away_players.equals(other.away_players),
-                self.away_score == other.away_score,
+                self.away_score == other.away_score
+                if not pd.isnull(self.away_score)
+                else pd.isnull(other.away_score),
                 self.away_formation == other.away_formation,
             ]
         )
