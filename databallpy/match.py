@@ -9,7 +9,8 @@ from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
 
 @dataclass
 class Match:
-    """This is the match class. It contains all information of the match and has some simple functions to easily obtain information about the match.
+    """This is the match class. It contains all information of the match and has
+    some simple functions to easily obtain information about the match.
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the match.
@@ -60,7 +61,9 @@ class Match:
 
     @property
     def name(self) -> str:
-        return f"{self.home_team_name} {self.home_score} - {self.away_score} {self.away_team_name}"
+        home_text = f"{self.home_team_name} {self.home_score}"
+        away_text = f"{self.away_score} {self.away_team_name}"
+        return f"{home_text} - {away_text}"
 
     @property
     def home_players_column_ids(self) -> List[str]:
@@ -126,10 +129,12 @@ def get_match(
 
     assert tracking_data_provider in [
         "tracab"
-    ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, please open an issue in our Github repository."
+    ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
+    "please open an issue in our Github repository."
     assert event_data_provider in [
         "opta"
-    ], f"We do not supper '{event_data_provider}' as event data provider yet, please open an issue in our Github repository."
+    ], f"We do not supper '{event_data_provider}' as event data provider yet, "
+    "please open an issue in our Github repository."
 
     # Get event data and event metadata
     if event_data_provider == "opta":
@@ -164,8 +169,12 @@ def get_match(
     )
 
     # Merged player info
-    home_players = tracking_metadata.home_players.merge(event_metadata.home_players)
-    away_players = tracking_metadata.away_players.merge(event_metadata.away_players)
+    home_players = tracking_metadata.home_players.merge(
+        event_metadata.home_players, how="outer"
+    )
+    away_players = tracking_metadata.away_players.merge(
+        event_metadata.away_players, how="outer"
+    )
 
     match = Match(
         tracking_data=tracking_data,

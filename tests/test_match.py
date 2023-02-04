@@ -1,6 +1,5 @@
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from databallpy.load_data.event_data.opta import load_opta_event_data
@@ -130,6 +129,22 @@ class TestMatch(unittest.TestCase):
         )
 
         assert match == self.expected_match
-    
+
     def test_match__eq__(self):
         assert not self.expected_match == pd.DataFrame()
+
+    def test_match_name(self):
+        assert self.expected_match.name == "TeamOne 3 - 1 TeamTwo"
+
+    def test_match_home_players_column_ids(self):
+        assert self.expected_match.home_players_column_ids == ["home_34_x", "home_34_y"]
+
+    def test_match_away_players_column_ids(self):
+        assert self.expected_match.away_players_column_ids == ["away_17_x", "away_17_y"]
+
+    def test_match_player_column_id_to_full_name(self):
+        res_name_home = self.expected_match.player_column_id_to_full_name("home_1")
+        assert res_name_home == "Piet Schrijvers"
+
+        res_name_away = self.expected_match.player_column_id_to_full_name("away_2")
+        assert res_name_away == "Test Speler"

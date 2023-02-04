@@ -1,6 +1,5 @@
 from typing import Tuple
 
-import bs4
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -25,7 +24,8 @@ def load_tracab_tracking_data(
     Args:
         tracab_loc (str): location of the tracking_data.dat file
         meta_data_loc (str): location of the meta_data.xml file
-        verbose (bool): whether to print on progress of loading in the terminal , defaults to True
+        verbose (bool): whether to print on progress of loading in the terminal,
+        defaults to True
 
     Returns:
         Tuple[pd.DataFrame, Metadata], the tracking data and metadata class
@@ -123,11 +123,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
     frame_rate = int(soup.find("match")["iFrameRateFps"])
-    datetime_string = soup.find("match")["dtDate"]
-    match_start_datetime = np.datetime64(datetime_string)
 
     frames_dict = {"period": [], "start_frame": [], "end_frame": []}
-    for i, period in enumerate(soup.find_all("period")):
+    for _, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
         frames_dict["start_frame"].append(int(period["iStartFrame"]))
         frames_dict["end_frame"].append(int(period["iEndFrame"]))
