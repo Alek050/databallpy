@@ -222,13 +222,15 @@ def save_match_clip(
     if variable_of_interest is not None:
         assert (
             variable_of_interest.index == td.index
-        ), "Index of variable of interest and of the tracking data should be alike!"
+        ).all(), (
+            "Index of variable of interest and of the tracking data should be alike!"
+        )
 
     if len(events) > 0:
         assert (
             "event" in match.tracking_data.columns
         ), "No event column found in match.tracking_data.columns, did you synchronize"
-        "event and tracking data?" 
+        "event and tracking data?"
 
     animation_metadata = {
         "title": title,
@@ -311,7 +313,7 @@ def save_match_clip(
             if variable_of_interest is not None:
                 fig_obj = ax.text(
                     -7,
-                    match.pitch_dimensions[1] / 2.0 + 1.,
+                    match.pitch_dimensions[1] / 2.0 + 1.0,
                     str(variable_of_interest[idx]),
                     fontsize=14,
                 )
