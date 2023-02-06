@@ -43,61 +43,54 @@ def _get_matchtime(timestamp_column:pd.Series, metadata:Metadata) -> pd.Series:
     """
     frame_rate = metadata.frame_rate
     periods_frames = metadata.periods_frames
+    
     bins = list(periods_frames["start_frame"].values.flatten())
     bins = [b for b in bins if b != 0]
     periods = np.digitize(timestamp_column, bins, right=True)
-    periods[0] = 1
+    periods[0] = periods[1]
 
     period_start_dict = {}
     for _, row in periods_frames.iterrows():
-        period_start_dict[row["period"]] = row["start_frame"]
-
+        period_start_dict[int(row["period"])] = int(row["start_frame"])
+    
+    max_seconds_period = (periods_frames["end_frame"] - periods_frames["start_frame"])//frame_rate
     rel_timestamp = np.array([x - period_start_dict[p] for x, p in zip(timestamp_column.values, periods)])
     seconds = rel_timestamp//frame_rate
     df = pd.DataFrame(
         {
-            "rel_timestamp": rel_timestamp,
             "seconds": seconds,
             "period": periods,
-            "matchtime": [""]*len(timestamp_column)
         }
     )
 
+    start_m_dict = {
+        1:0,
+        2:45,
+        3:90,
+        4:105
+    }
+
+    max_m_dict = {
+        1:45,
+        2:90,
+        3:105,
+        4:120
+    }
+
+
     matchtime_list = []
-    for seconds in df[df["period"] == 1]["seconds"].unique():
-        if seconds < (45*60):
-            matchtime_list.extend([_to_matchtime(seconds, 45, 0)]*frame_rate)
-        else:
-            matchtime_list.extend(["Break"]*frame_rate)
-    
-    matchtime_list = matchtime_list[:len(df[df["period"] == 1])]
+    for p in [1,2,3,4]:
+        for seconds in df[df["period"] == p]["seconds"].unique():
+            if seconds <= (max_seconds_period[p-1]):
+                matchtime_list.extend([_to_matchtime(seconds, max_m_dict[p], start_m_dict[p])]*frame_rate)
+            else:
+                matchtime_list.extend([f"Break ({p})"]*frame_rate)
+        
+        matchtime_list = matchtime_list[:len(df[df["period"] <= p])]
 
-    for seconds in df[df["period"] == 2]["seconds"].unique():
-        if seconds < (90*60):
-            matchtime_list.extend([_to_matchtime(seconds, 90, 45)]*frame_rate)
-        else:
-            matchtime_list.extend(["Break"]*frame_rate)
-    
-    matchtime_list = matchtime_list[:len(df[df["period"] <= 2])]
-
-    for seconds in df[df["period"] == 3]["seconds"].unique():
-        if seconds < (105*60):
-            matchtime_list.extend([_to_matchtime(seconds, 105, 90)]*frame_rate)
-        else:
-            matchtime_list.extend(["Break"]*frame_rate)
-    
-    matchtime_list = matchtime_list[:len(df[df["period"] <= 3])]
-    
-    for seconds in df[df["period"] == 4]["seconds"].unique():
-        if seconds < (120*60):
-            matchtime_list.extend([_to_matchtime(seconds, 120, 105)]*frame_rate)
-        else:
-            matchtime_list.extend(["Break"]*frame_rate)
-    
-    matchtime_list = matchtime_list[:len(df[df["period"] <= 4])]
     
     for _ in df[df["period"] == 5]["seconds"].unique():
-        matchtime_list.extend(["Break"]*frame_rate)
+        matchtime_list.extend(["Penalty Shootout"]*frame_rate)
     
     matchtime_list = matchtime_list[:len(df)]
     df["matchtime"] = matchtime_list

@@ -86,7 +86,7 @@ class TestTracab(unittest.TestCase):
                 "away_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
                 "home_17_x": [1.22, 1.21, 1.21, np.nan, 1.21],
                 "home_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
-                "matchtime_td": ["Break", "Break", "Break", "Break", "Break"]
+                "matchtime_td": ["Break (1)", "Break (4)", "Break (4)", "Break (4)", "Break (4)"]
             }
         )
 
