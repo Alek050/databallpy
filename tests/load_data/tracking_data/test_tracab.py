@@ -6,7 +6,7 @@ import pandas as pd
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data.tracab import (
     _get_metadata,
-    _get_player_data,
+    _get_players_metadata,
     _get_tracking_data,
     load_tracab_tracking_data,
 )
@@ -24,6 +24,20 @@ class TestTracab(unittest.TestCase):
                     "period": [1, 2, 3, 4, 5],
                     "start_frame": [100, 200, 300, 400, 0],
                     "end_frame": [400, 600, 900, 1200, 0],
+                    "start_time": [
+                        np.datetime64("2023-01-14 00:00:04"),
+                        np.datetime64("2023-01-14 00:00:08"),
+                        np.datetime64("2023-01-14 00:00:12"),
+                        np.datetime64("2023-01-14 00:00:16"),
+                        np.nan,
+                    ],
+                    "end_time": [
+                        np.datetime64("2023-01-14 00:00:16"),
+                        np.datetime64("2023-01-14 00:00:24"),
+                        np.datetime64("2023-01-14 00:00:36"),
+                        np.datetime64("2023-01-14 00:00:48"),
+                        np.nan,
+                    ],
                 }
             ),
             frame_rate=25,
@@ -61,27 +75,31 @@ class TestTracab(unittest.TestCase):
                 "ball_x": [1.50, 1.81, 2.13, np.nan, 2.76],
                 "ball_y": [-0.43, -0.49, -0.56, np.nan, -0.70],
                 "ball_z": [0.07, 0.09, 0.11, np.nan, 0.15],
-                "ball_status": ["Alive", "Dead", "Alive", np.nan, "Alive"],
-                "ball_posession": ["Away", "Away", "Away", np.nan, "Home"],
+                "ball_status": ["alive", "dead", "alive", np.nan, "alive"],
+                "ball_posession": ["away", "away", "away", np.nan, "home"],
                 "home_34_x": [-13.50, -13.50, -13.50, np.nan, -13.49],
                 "home_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
                 "away_17_x": [1.22, 1.21, 1.21, np.nan, 1.21],
                 "away_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
-                "match_time_td": ["Break", "Break", "Break", "Break", "Break"],
+                "matchtime_td": [
+                    "Break (4)",
+                    "Break (4)",
+                    "Break (4)",
+                    "Break (4)",
+                    "Break (4)",
+                ],
             }
         )
 
     def test_get_metadata(self):
 
-        meta_data = _get_metadata(self.metadata_loc)
-        assert meta_data == self.expected_metadata
+        metadata = _get_metadata(self.metadata_loc)
+        assert metadata == self.expected_metadata
 
     def test_get_tracking_data(self):
-        tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=True)
-        expected_tracking_data = self.expected_tracking_data.drop(
-            "match_time_td", axis=1
-        ).copy()
-        pd.testing.assert_frame_equal(tracking_data, expected_tracking_data)
+        tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=False)
+        expected_td = self.expected_tracking_data.iloc[:, :-1]
+        pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     def test_load_tracking_data(self):
         tracking_data, metadata = load_tracab_tracking_data(
@@ -91,7 +109,7 @@ class TestTracab(unittest.TestCase):
         assert metadata == self.expected_metadata
         pd.testing.assert_frame_equal(tracking_data, self.expected_tracking_data)
 
-    def test_get_player_data(self):
+    def test_get_players_metadata(self):
         input_players_info = [
             {
                 "PlayerId": "1234",
@@ -120,5 +138,5 @@ class TestTracab(unittest.TestCase):
                 "end_frame": [2323, 2327],
             }
         )
-        df_players = _get_player_data(input_players_info)
+        df_players = _get_players_metadata(input_players_info)
         pd.testing.assert_frame_equal(df_players, expected_df_players)

@@ -216,8 +216,12 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         players_names = {}
         for player in team.findChildren("Player"):
             player_id = int(player.attrs["uID"][1:])
-            first_name = player.contents[1].contents[1].contents[0]
-            last_name = player.contents[1].contents[3].contents[0]
+            first_name = player.contents[1].contents[1].text
+            if "Last" in str(player.contents[1].contents[3]):
+                last_name_idx = 3
+            else:
+                last_name_idx = 5
+            last_name = player.contents[1].contents[last_name_idx].contents[0]
             players_names[str(player_id)] = f"{first_name} {last_name}"
 
         player_info = _get_player_info(players_data, players_names)
@@ -264,6 +268,7 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
         "starter": [],
         "shirt_num": [],
     }
+
     for player in players_data:
         player_id = int(player["PlayerRef"][1:])
         result_dict["id"].append(player_id)

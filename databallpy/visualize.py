@@ -303,7 +303,7 @@ def save_match_clip(
             fig_obj = ax.text(
                 -20.5,
                 match.pitch_dimensions[1] / 2.0 + 1.0,
-                td.loc[idx, "match_time_td"],
+                td.loc[idx, "matchtime_td"],
                 c="k",
                 fontsize=14,
             )

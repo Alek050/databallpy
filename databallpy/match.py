@@ -18,7 +18,7 @@ class Match:
         event_data (pd.DataFrame): Event data of the match.
         event_data_provider (str): Provider of the event data.
         pitch_dimensions (Tuple): The size of the pitch in meters in x and y direction.
-        periods (pd.DataFrame): The start and end indicatiors of all periods.
+        periods (pd.DataFrame): The start and end idicators of all periods.
         frame_rate (int): The frequency of the tracking data.
         home_team_id (int): The id of the home team.
         home_team_name (str): The name of the home team.
@@ -30,7 +30,7 @@ class Match:
         away_players (pd.DataFrame): Information about the away players.
         away_score (int): Number of goals scored over the match by the away team.
         away_formation (str): Indication of the formation of the away team.
-        name (str): The home and away team name and score.
+        name (str): The home and away team name and score (e.g "nameH 3 - 1 nameA").
         home_players_column_ids (list): All column ids of the tracking data that refer
                                         to information about the home team players.
         away_players_column_ids (list): All column ids of the tracking data that refer
@@ -170,10 +170,12 @@ def get_match(
 
     # Merged player info
     home_players = tracking_metadata.home_players.merge(
-        event_metadata.home_players, how="outer"
+        event_metadata.home_players[["id", "formation_place", "position", "starter"]],
+        on="id",
     )
     away_players = tracking_metadata.away_players.merge(
-        event_metadata.away_players, how="outer"
+        event_metadata.away_players[["id", "formation_place", "position", "starter"]],
+        on="id",
     )
 
     match = Match(
