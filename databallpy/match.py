@@ -199,3 +199,11 @@ def get_match(
     )
 
     return match
+
+
+def synchronise_event_and_tracking_data(match):
+    tracking_data = match.tracking_data
+    event_data = match.event_data
+    
+
+    import pdb; pdb.set_trace()
