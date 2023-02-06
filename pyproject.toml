@@ -36,6 +36,7 @@ beautifulsoup4 = "^4.11.1"
 lxml = "^4.9.2"
 tqdm = "^4.64.1"
 matplotlib = "^3.6.3"
+ffmpeg = "^1.4"
 
 [tool.poetry.dev-dependencies]
 
