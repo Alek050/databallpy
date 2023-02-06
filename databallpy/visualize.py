@@ -200,6 +200,9 @@ def save_match_clip(
 ):
     """Function to save a subset of a match clip of the tracking data.
 
+    Note that making animation is build with FFMPEG. You need to have FFMPEG installed
+    on you device before being able to use this function.
+
     Args:
         match (Match): Match with tracking data and ohter info of the match.
         start_idx (int): Start index of what to save of the match.tracking_data df.
