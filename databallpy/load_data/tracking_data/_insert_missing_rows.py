@@ -29,6 +29,5 @@ def _insert_missing_rows(df: pd.DataFrame, col: str) -> pd.DataFrame:
         df = pd.concat((df, to_add_df)).sort_values(by=col)
 
     df.reset_index(drop=True, inplace=True)
-    # df[col] = df[col].astype(int)
 
     return df

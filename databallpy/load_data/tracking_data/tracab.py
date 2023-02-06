@@ -124,7 +124,6 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
     frame_rate = int(soup.find("match")["iFrameRateFps"])
     datetime_string = soup.find("match")["dtDate"]
-    match_start_datetime = np.datetime64(datetime_string)
     date = np.datetime64(datetime_string[:10])
 
     frames_dict = {
@@ -180,7 +179,6 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     metadata = Metadata(
         match_id=match_id,
         pitch_dimensions=[pitch_size_x, pitch_size_y],
-        match_start_datetime=match_start_datetime,
         periods_frames=df_frames,
         frame_rate=frame_rate,
         home_team_id=home_team_id,

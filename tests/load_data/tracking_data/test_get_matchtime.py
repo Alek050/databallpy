@@ -15,7 +15,6 @@ class TestGetMatchtime(unittest.TestCase):
         self.metadata = Metadata(
             match_id=np.nan,
             pitch_dimensions=None,
-            match_start_datetime=np.nan,
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],

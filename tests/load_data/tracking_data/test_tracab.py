@@ -19,7 +19,6 @@ class TestTracab(unittest.TestCase):
         self.expected_metadata = Metadata(
             match_id=1908,
             pitch_dimensions=[100, 50],
-            match_start_datetime=np.datetime64("2023-01-14 13:17:00"),
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],
