@@ -7,7 +7,7 @@ from databallpy.load_data.tracking_data._add_player_data_to_dict import (
 )
 
 
-class TestTracab(unittest.TestCase):
+class TestAddPlayerDataToDict(unittest.TestCase):
     def setUp(self):
         self.input_t0 = [
             ["1", "10", np.nan, "-100"],
@@ -20,6 +20,7 @@ class TestTracab(unittest.TestCase):
             ["1", "11", "120", "-50"],
             ["0", "9", "40", "100"],
             ["0", "10", "200", "40"],
+            ["-1", "12", "0", "0"],
         ]
 
         self.expected_output = {

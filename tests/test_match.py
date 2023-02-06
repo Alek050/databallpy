@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from databallpy.load_data.event_data.opta import load_opta_event_data
@@ -32,6 +33,20 @@ class TestMatch(unittest.TestCase):
                 "period": [1, 2, 3, 4, 5],
                 "start_frame": [100, 200, 300, 400, 0],
                 "end_frame": [400, 600, 900, 1200, 0],
+                "start_time": [
+                    np.datetime64("2023-01-14 00:00:04"),
+                    np.datetime64("2023-01-14 00:00:08"),
+                    np.datetime64("2023-01-14 00:00:12"),
+                    np.datetime64("2023-01-14 00:00:16"),
+                    np.nan,
+                ],
+                "end_time": [
+                    np.datetime64("2023-01-14 00:00:16"),
+                    np.datetime64("2023-01-14 00:00:24"),
+                    np.datetime64("2023-01-14 00:00:36"),
+                    np.datetime64("2023-01-14 00:00:48"),
+                    np.nan,
+                ],
                 "start_datetime_opta": [
                     pd.to_datetime("20230122T121832+0000"),
                     pd.to_datetime("20230122T132113+0000"),
