@@ -35,6 +35,28 @@ $ match.event_data # pandas dataframe with event data of the match
 
 See the documentation of the `Match` object for more options. Note that this package is developed to combine event and tracking data, therefore both datastreams are necessary to create a `Match` object.
 
+## Visualizing
+
+The packages also provides tools to visualise the data. Note that to save a match clip the package relies on the use of ffmpeg. Make sure to have installed it to your machine and added it to your python path, otherwise the `save_match_clip()` function will produce an error.
+
+```console
+$ from databallpy.match import get_match
+$ from databallpy.visualize import save_match_clip
+$
+$ match = get_match(
+$   tracking_data_loc="data/tracking_data.dat",
+$   tracking_metadata_loc="data/tracking_metadata.xml",
+$   tracking_data_provider="tracab"
+$   event_data_loc="data/event_data_f24.xml",
+$   event_metadata_loc="data/event_metadata_f7.xml",
+$   event_data_provider="opta",
+$ )
+$
+$ save_match_clip(match, start_idx=0, end_idx=10, folder_loc="data", title="some_title")
+```
+
+This function will save a .mp4 file in `"data/"` directory of the `match.tracking_data` from index 0 untill index 10.
+
 ## Providers
 For now we only have one tracking data and one event data provider. We are planning on adding more providers later on.
 
