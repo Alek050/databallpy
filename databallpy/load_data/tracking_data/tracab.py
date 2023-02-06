@@ -9,21 +9,21 @@ from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
     _add_ball_data_to_dict,
 )
-from databallpy.load_data.tracking_data._add_player_data_to_dict import (
-    _add_player_data_to_dict,
+from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
+    _add_player_tracking_data_to_dict,
 )
+from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._to_match_time import _to_match_time
 
 
 def load_tracab_tracking_data(
-    tracab_loc: str, meta_data_loc: str, verbose: bool = True
+    tracab_loc: str, metadata_loc: str, verbose: bool = True
 ) -> Tuple[pd.DataFrame, Metadata]:
     """Function to load tracking data and metadata from the tracab format
 
     Args:
         tracab_loc (str): location of the tracking_data.dat file
-        meta_data_loc (str): location of the meta_data.xml file
+        metadata_loc (str): location of the meta_data.xml file
         verbose (bool): whether to print on progress of loading in the terminal,
         defaults to True
 
@@ -32,11 +32,9 @@ def load_tracab_tracking_data(
     """
 
     tracking_data = _get_tracking_data(tracab_loc, verbose)
-    metadata = _get_metadata(meta_data_loc)
+    metadata = _get_metadata(metadata_loc)
 
-    tracking_data["match_time_td"] = [
-        _to_match_time(x, metadata) for x in tqdm(tracking_data["timestamp"])
-    ]
+    tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
 
     return tracking_data, metadata
 
@@ -84,13 +82,15 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         players = players_info.split(";")[:-1]
         for player in players:
             team_id, _, shirt_num, x, y, _ = player.split(",")
-            data = _add_player_data_to_dict(team_id, shirt_num, x, y, data, idx)
+            data = _add_player_tracking_data_to_dict(
+                team_id, shirt_num, x, y, data, idx
+            )
 
         ball_x, ball_y, ball_z, _, posession, status = ball_info.split(";")[0].split(
             ","
         )[:6]
         data = _add_ball_data_to_dict(
-            ball_x, ball_y, ball_z, posession, status, data, idx
+            ball_x, ball_y, ball_z, posession, status.lower(), data, idx
         )
 
     df = pd.DataFrame(data)
@@ -123,12 +123,34 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
     frame_rate = int(soup.find("match")["iFrameRateFps"])
+    datetime_string = soup.find("match")["dtDate"]
+    match_start_datetime = np.datetime64(datetime_string)
+    date = np.datetime64(datetime_string[:10])
 
-    frames_dict = {"period": [], "start_frame": [], "end_frame": []}
-    for _, period in enumerate(soup.find_all("period")):
+    frames_dict = {
+        "period": [],
+        "start_frame": [],
+        "end_frame": [],
+        "start_time": [],
+        "end_time": [],
+    }
+    for i, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
-        frames_dict["start_frame"].append(int(period["iStartFrame"]))
-        frames_dict["end_frame"].append(int(period["iEndFrame"]))
+        start_frame = int(period["iStartFrame"])
+        end_frame = int(period["iEndFrame"])
+
+        frames_dict["start_frame"].append(start_frame)
+        frames_dict["end_frame"].append(end_frame)
+        if start_frame != 0:
+            frames_dict["start_time"].append(
+                date + np.timedelta64(int(start_frame / frame_rate), "s")
+            )
+            frames_dict["end_time"].append(
+                date + np.timedelta64(int(end_frame / frame_rate), "s")
+            )
+        else:
+            frames_dict["start_time"].append(np.nan)
+            frames_dict["end_time"].append(np.nan)
     df_frames = pd.DataFrame(frames_dict)
 
     home_team = soup.find("HomeTeam")
@@ -141,7 +163,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         for element in player.findChildren():
             player_dict[element.name] = element.text
         home_players_info.append(player_dict)
-    df_home_players = _get_player_data(home_players_info)
+    df_home_players = _get_players_metadata(home_players_info)
 
     away_team = soup.find("AwayTeam")
     away_team_name = away_team.find("LongName").text
@@ -153,11 +175,12 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         for element in player.findChildren():
             player_dict[element.name] = element.text
         away_players_info.append(player_dict)
-    df_away_players = _get_player_data(away_players_info)
+    df_away_players = _get_players_metadata(away_players_info)
 
     metadata = Metadata(
         match_id=match_id,
         pitch_dimensions=[pitch_size_x, pitch_size_y],
+        match_start_datetime=match_start_datetime,
         periods_frames=df_frames,
         frame_rate=frame_rate,
         home_team_id=home_team_id,
@@ -177,7 +200,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     return metadata
 
 
-def _get_player_data(players_info: list) -> pd.DataFrame:
+def _get_players_metadata(players_info: list) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
 
     Args:
@@ -196,7 +219,10 @@ def _get_player_data(players_info: list) -> pd.DataFrame:
     }
     for player in players_info:
         player_dict["id"].append(int(player["PlayerId"]))
-        player_dict["full_name"].append(player["FirstName"] + " " + player["LastName"])
+        full_name = player["FirstName"] + " " + player["LastName"]
+        if player["FirstName"] == "":
+            full_name = full_name.lstrip()
+        player_dict["full_name"].append(full_name)
         player_dict["shirt_num"].append(int(player["JerseyNo"]))
         player_dict["start_frame"].append(int(player["StartFrameCount"]))
         player_dict["end_frame"].append(int(player["EndFrameCount"]))
