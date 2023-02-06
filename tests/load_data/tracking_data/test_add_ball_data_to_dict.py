@@ -1,6 +1,6 @@
 import unittest
 
-import numpy as np
+import numpy as np 
 
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
     _add_ball_data_to_dict,
