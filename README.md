@@ -21,7 +21,7 @@ $ from databallpy.match import get_match
 $
 $ match = get_match(
 $   tracking_data_loc="data/tracking_data.dat",
-$   tracking_metadata_loc="data/"tracking_metadata.xml",
+$   tracking_metadata_loc="data/tracking_metadata.xml",
 $   tracking_data_provider="tracab"
 $   event_data_loc="data/event_data_f24.xml",
 $   event_metadata_loc="data/event_metadata_f7.xml",
