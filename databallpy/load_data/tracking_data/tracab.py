@@ -219,7 +219,10 @@ def _get_players_metadata(players_info: list) -> pd.DataFrame:
     }
     for player in players_info:
         player_dict["id"].append(int(player["PlayerId"]))
-        player_dict["full_name"].append(player["FirstName"] + " " + player["LastName"])
+        full_name = player["FirstName"] + " " + player["LastName"]
+        if player["FirstName"] == "":
+            full_name = full_name.lstrip()
+        player_dict["full_name"].append(full_name)
         player_dict["shirt_num"].append(int(player["JerseyNo"]))
         player_dict["start_frame"].append(int(player["StartFrameCount"]))
         player_dict["end_frame"].append(int(player["EndFrameCount"]))
