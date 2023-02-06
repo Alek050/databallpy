@@ -319,45 +319,46 @@ def save_match_clip(
                 )
                 variable_fig_objs.append(fig_obj)
 
-            # Add events
-            # Note: this should be last in this function since it assumes that all
-            # other info is already plotted in the axes
-            if len(events) > 0:
-                if td.loc[idx, "event"] in events:
-                    event = (
-                        match.event_data[
-                            match.event_data["event_id"] == td.loc[idx, "event_id"]
-                        ]
-                        .iloc[0]
-                        .T
-                    )
+            # This code will only work after match has a synchronise() function
+            # # Add events
+            # # Note: this should be last in this function since it assumes that all
+            # # other info is already plotted in the axes
+            # if len(events) > 0:
+            #     if td.loc[idx, "event"] in events:
+            #         event = (
+            #             match.event_data[
+            #                 match.event_data["event_id"] == td.loc[idx, "event_id"]
+            #             ]
+            #             .iloc[0]
+            #             .T
+            #         )
 
-                    player_name = event["player_name"]
-                    event_name = event["event"]
+            #         player_name = event["player_name"]
+            #         event_name = event["event"]
 
-                    # Add event text
-                    fig_obj = ax.text(
-                        15,
-                        match.pitch_dimension[1] / 2.0 + 2.0,
-                        f"{player_name}: {event_name}",
-                        fontsize=14,
-                    )
-                    variable_fig_objs.append(fig_obj)
+            #         # Add event text
+            #         fig_obj = ax.text(
+            #             15,
+            #             match.pitch_dimension[1] / 2.0 + 2.0,
+            #             f"{player_name}: {event_name}",
+            #             fontsize=14,
+            #         )
+            #         variable_fig_objs.append(fig_obj)
 
-                    # Highligh location on the pitch of the event
-                    fig_obj = ax.scatter(
-                        event["start_x"],
-                        event["start_y"],
-                        color="red",
-                        marker="x",
-                        markersize=14,
-                    )
-                    variable_fig_objs.append(fig_obj)
+            #         # Highligh location on the pitch of the event
+            #         fig_obj = ax.scatter(
+            #             event["start_x"],
+            #             event["start_y"],
+            #             color="red",
+            #             marker="x",
+            #             markersize=14,
+            #         )
+            #         variable_fig_objs.append(fig_obj)
 
-                    # Grap frame match.frame_rate times to 'pause' the video at
-                    # this moment
-                    for _ in range(match.frame_rate):
-                        writer.grab_frame()
+            #         # Grap frame match.frame_rate times to 'pause' the video at
+            #         # this moment
+            #         for _ in range(match.frame_rate):
+            #             writer.grab_frame()
 
             # Save current frame
             writer.grab_frame()
