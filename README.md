@@ -26,7 +26,7 @@ $   tracking_data_provider="tracab"
 $   event_data_loc="data/event_data_f24.xml",
 $   event_metadata_loc="data/event_metadata_f7.xml",
 $   event_data_provider="opta",
-$)
+$ )
 $ match.home_team_name # the team name of the home playing team
 $ match.away_players # pandas dataframe with the names, ids, shirt numbers and positions of the away team
 $ match.tracking_data # pandas dataframe with tracking data of the match
