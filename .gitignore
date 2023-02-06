@@ -144,7 +144,3 @@ dmypy.json
 # testing files
 test.py
 data/
-<<<<<<< HEAD
-=======
-.vscode/
->>>>>>> develop

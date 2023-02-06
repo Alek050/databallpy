@@ -54,8 +54,10 @@ def _get_matchtime(timestamp_column: pd.Series, metadata: Metadata) -> pd.Series
     periods = np.digitize(timestamp_column, bins, right=True)
     periods[0] = periods[1]
 
-    period_start_dict = dict(zip(periods_frames["period"], periods_frames["start_frame"]))
-    
+    period_start_dict = dict(
+        zip(periods_frames["period"], periods_frames["start_frame"])
+    )
+
     max_seconds_period = (
         periods_frames["end_frame"] - periods_frames["start_frame"]
     ) // frame_rate
