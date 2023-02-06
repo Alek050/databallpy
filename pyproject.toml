@@ -11,7 +11,7 @@ readme = "README.md"
 repository = "https://github.com/Alek050/databallpy"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1"
+python = ">=3.8.1,<4.0"
 pandas = "^1.5.3"
 numpy = "^1.24.1"
 beautifulsoup4 = "^4.11.1"
@@ -25,6 +25,15 @@ pytest-cov = "^4.0.0"
 flake8 = "^6.0.0"
 black = "^22.12.0"
 isort = "^5.11.4"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+myst-nb = "^0.17.1"
+sphinx-autoapi = "^2.0.1"
+sphinx-rtd-theme = "^1.1.1"
+
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
