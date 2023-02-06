@@ -1,6 +1,10 @@
 # databallpy
 
-A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data.
+A package for loading, preprocessing, vizualising and synchronizing soccere event and tracking data.
+
+This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodligth](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
+
+We are currently working on adding more data sources and on creating a `Match.synchronise_tracking_and_event_data()` function to efficiently align all events with a timeframe in the tracking data. This would make it possible to get contextual information from the tracking data at the exact moment that the event is taking place.
 
 ## Installation
 
@@ -16,13 +20,13 @@ The package is centered around the `Match` object. A `Match` has tracking data, 
 $ from databallpy.match import get_match
 $
 $ match = get_match(
-    tracking_data_loc="data/tracking_data.dat",
-    tracking_metadata_loc="data/"tracking_metadata.xml",
-    tracking_data_provider="tracab"
-    event_data_loc="data/event_data_f24.xml",
-    event_metadata_loc="data/event_metadata_f7.xml",
-    event_data_provider="opta",
-)
+$   tracking_data_loc="data/tracking_data.dat",
+$   tracking_metadata_loc="data/"tracking_metadata.xml",
+$   tracking_data_provider="tracab"
+$   event_data_loc="data/event_data_f24.xml",
+$   event_metadata_loc="data/event_metadata_f7.xml",
+$   event_data_provider="opta",
+$)
 $ match.home_team_name # the team name of the home playing team
 $ match.away_players # pandas dataframe with the names, ids, shirt numbers and positions of the away team
 $ match.tracking_data # pandas dataframe with tracking data of the match
