@@ -237,7 +237,7 @@ def save_match_clip(
 
     animation_metadata = {
         "title": title,
-        "artist": "Matpltlib",
+        "artist": "Matplotlib",
         "comment": "Made with databallpy",
     }
     writer = animation.FFMpegWriter(fps=match.frame_rate, metadata=animation_metadata)
