@@ -43,12 +43,16 @@ class Metadata:
                 self.home_team_id == other.home_team_id,
                 self.home_team_name == other.home_team_name,
                 self.home_players.equals(other.home_players),
-                self.home_score == other.home_score,
+                self.home_score == other.home_score
+                if not pd.isnull(self.home_score)
+                else pd.isnull(other.home_score),
                 self.home_formation == other.home_formation,
                 self.away_team_id == other.away_team_id,
                 self.away_team_name == other.away_team_name,
                 self.away_players.equals(other.away_players),
-                self.away_score == other.away_score,
+                self.away_score == other.away_score
+                if not pd.isnull(self.away_score)
+                else pd.isnull(other.away_score),
                 self.away_formation == other.away_formation,
             ]
         )
