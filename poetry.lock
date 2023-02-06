@@ -2299,7 +2299,6 @@ files = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "tornado"
 version = "6.2"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
@@ -2335,7 +2334,6 @@ files = [
 [package.extras]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=2.0)", "pre-commit", "pytest", "pytest-mock"]
-=======
 name = "tqdm"
 version = "4.64.1"
 description = "Fast, Extensible Progress Meter"
@@ -2355,7 +2353,6 @@ dev = ["py-make (>=0.1.0)", "twine", "wheel"]
 notebook = ["ipywidgets (>=6)"]
 slack = ["slack-sdk"]
 telegram = ["requests"]
->>>>>>> develop
 
 [[package]]
 name = "typing-extensions"
@@ -2502,10 +2499,5 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 
 [metadata]
 lock-version = "2.0"
-<<<<<<< HEAD
-python-versions = ">=3.8.1,<4.0"
-content-hash = "7451b4fdccc46b3f4fd69298c373a53f3b6e961fb433d8f01b4f7bf2ab5ed5da"
-=======
 python-versions = ">=3.8.1"
 content-hash = "d1667796a692ad09b46b3368e85dc0a8acb1936f251441acd5bf311436fc498a"
->>>>>>> develop
