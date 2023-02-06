@@ -7,8 +7,8 @@
      production module:  Opta::Feed::XML::Soccer::F24
 -->
 <Games timestamp="2023-01-22T20:38:49">
-  <Game id="2291877" away_score="1" away_team_id="425" away_team_name="FC Groningen" competition_id="9" competition_name="Dutch Eredivisie" game_date="2023-01-22T11:15:00" home_score="3" home_team_id="318" home_team_name="sc Heerenveen" matchday="17" period_1_start="2023-01-22T11:18:32" period_2_start="2023-01-22T12:21:13" season_id="2022" season_name="Season 2022/2023">
-    <Event id="2499582269" event_id="1" type_id="34" period_id="16" min="0" sec="0" team_id="425" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T10:28:32.117" timestamp_utc="2023-01-22T10:28:32.117" last_modified="2023-01-22T11:20:44" version="1674386443894">
+  <Game id="2291877" away_score="1" away_team_id="194" away_team_name="TeamTwo" competition_id="9" competition_name="Dutch Eredivisie" game_date="2023-01-22T11:15:00" home_score="3" home_team_id="3" home_team_name="TeamOne" matchday="17" period_1_start="2023-01-22T11:18:32" period_2_start="2023-01-22T12:21:13" season_id="2022" season_name="Season 2022/2023">
+    <Event id="2499582269" event_id="1" type_id="34" period_id="16" min="0" sec="0" team_id="194" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T10:28:32.117" timestamp_utc="2023-01-22T10:28:32.117" last_modified="2023-01-22T11:20:44" version="1674386443894">
       <Q id="3989561045" qualifier_id="227" value="0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0" />
       <Q id="3989561033" qualifier_id="30" value="194126, 450049, 502577, 451644, 538777, 228044, 432146, 223089, 538779, 439742, 461468, 166376, 173956, 133937, 85144, 502251, 234961, 512352, 213399, 479569, 483091, 601181, 597363" />
       <Q id="3989621391" qualifier_id="197" value="16526" />
@@ -18,13 +18,13 @@
       <Q id="3989561043" qualifier_id="194" value="194126" />
       <Q id="3989561037" qualifier_id="59" value="20, 19, 18, 12, 42, 29, 34, 8, 40, 9, 23, 1, 2, 4, 5, 7, 10, 15, 22, 25, 31, 39, 55" />
     </Event>
-    <Event id="2499594199" event_id="2" type_id="32" period_id="1" min="0" sec="0" team_id="318" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T11:18:32.152" timestamp_utc="2023-01-22T11:18:32.152" last_modified="2023-01-22T14:44:52" version="1674398693469">
+    <Event id="2499594199" event_id="2" type_id="32" period_id="1" min="0" sec="0" team_id="3" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T11:18:32.152" timestamp_utc="2023-01-22T11:18:32.152" last_modified="2023-01-22T14:44:52" version="1674398693469">
       <Q id="3989624193" qualifier_id="127" value="Left to Right" />
     </Event>
-    <Event id="2499594195" event_id="2" type_id="32" period_id="1" min="0" sec="0" team_id="425" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T11:18:32.152" timestamp_utc="2023-01-22T11:18:32.152" last_modified="2023-01-22T11:18:32" version="1674386312211">
+    <Event id="2499594195" event_id="2" type_id="32" period_id="1" min="0" sec="0" team_id="194" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T11:18:32.152" timestamp_utc="2023-01-22T11:18:32.152" last_modified="2023-01-22T11:18:32" version="1674386312211">
       <Q id="3989624175" qualifier_id="127" value="Right to Left" />
     </Event>
-    <Event id="2499594225" event_id="3" type_id="1" period_id="1" min="0" sec="1" player_id="181078" team_id="318" outcome="1" x="49.7" y="50.1" timestamp="2023-01-22T11:18:33.637" timestamp_utc="2023-01-22T11:18:33.637" last_modified="2023-01-22T14:45:09" version="1674398709980">
+    <Event id="2499594225" event_id="3" type_id="1" period_id="1" min="0" sec="1" player_id="19367" team_id="3" outcome="1" x="49.7" y="50.1" timestamp="2023-01-22T11:18:33.637" timestamp_utc="2023-01-22T11:18:33.637" last_modified="2023-01-22T14:45:09" version="1674398709980">
       <Q id="3989624329" qualifier_id="279" value="S" />
       <Q id="3989624327" qualifier_id="213" value="3.4" />
       <Q id="3989624319" qualifier_id="56" value="Back" />
@@ -32,7 +32,7 @@
       <Q id="3989624321" qualifier_id="140" value="29.1" />
       <Q id="3989624323" qualifier_id="141" value="40.0" />
     </Event>
-    <Event id="2499594243" event_id="4" type_id="1" period_id="1" min="0" sec="4" player_id="510654" team_id="318" outcome="0" x="31.6" y="40.7" timestamp="2023-01-22T11:18:36.207" timestamp_utc="2023-01-22T11:18:36.207" last_modified="2023-01-22T11:18:39" version="1674386318719">
+    <Event id="2499594243" event_id="4" type_id="1" period_id="1" min="0" sec="4" player_id="45849" team_id="3" outcome="0" x="31.6" y="40.7" timestamp="2023-01-22T11:18:36.207" timestamp_utc="2023-01-22T11:18:36.207" last_modified="2023-01-22T11:18:39" version="1674386318719">
       <Q id="3989624391" qualifier_id="56" value="Center" />
       <Q id="3989624393" qualifier_id="140" value="70.6" />
       <Q id="3989624389" qualifier_id="155" />
@@ -41,7 +41,7 @@
       <Q id="3989624399" qualifier_id="213" value="0.3" />
       <Q id="3989624397" qualifier_id="212" value="42.5" />
     </Event>
-    <Event id="2499594271" event_id="3" type_id="100" period_id="1" min="0" sec="6" player_id="510654" team_id="318" outcome="0" x="31.0" y="44.3" timestamp="2023-01-22T11:18:39.109" timestamp_utc="2023-01-22T11:18:39.109" last_modified="2023-01-22T12:07:57" version="1674389277835">
+    <Event id="2499594271" event_id="3" type_id="100" period_id="1" min="0" sec="6" player_id="45849" team_id="3" outcome="0" x="31.0" y="44.3" timestamp="2023-01-22T11:18:39.109" timestamp_utc="2023-01-22T11:18:39.109" last_modified="2023-01-22T12:07:57" version="1674389277835">
       <Q id="3989624557" qualifier_id="140" value="41.2" />
       <Q id="3989624559" qualifier_id="141" value="65.0" />
       <Q id="3989624555" qualifier_id="56" value="Back" />
@@ -49,7 +49,7 @@
       <Q id="3989624553" qualifier_id="3" />
       <Q id="3989624563" qualifier_id="213" value="0.9" />
     </Event>
-    <Event id="2499594279" event_id="5" type_id="43" period_id="2" min="30" sec="9" player_id="223089" team_id="425" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T11:18:41.615" timestamp_utc="2023-01-22T11:18:41.615" last_modified="2023-01-22T11:18:45" version="1674386322593">
+    <Event id="2499594279" event_id="5" type_id="43" period_id="2" min="30" sec="9" player_id="184934" team_id="194" outcome="1" x="0.0" y="0.0" timestamp="2023-01-22T11:18:41.615" timestamp_utc="2023-01-22T11:18:41.615" last_modified="2023-01-22T11:18:45" version="1674386322593">
       <Q id="3989624607" qualifier_id="212" value="2.5" />
       <Q id="3989624601" qualifier_id="56" value="Center" />
       <Q id="3989624609" qualifier_id="213" value="4.9" />
@@ -57,13 +57,13 @@
       <Q id="3989624605" qualifier_id="141" value="24.1" />
       <Q id="3989624683" qualifier_id="144" value="1" />
     </Event>
-    <Event id="2499594285" event_id="6" type_id="3" period_id="2" min="30" sec="10" player_id="510654" team_id="318" outcome="0" x="65.7" y="23.2" timestamp="2023-01-22T11:18:43.119" timestamp_utc="2023-01-22T11:18:43.119" last_modified="2023-01-22T14:45:23" version="1674398724240">
+    <Event id="2499594285" event_id="6" type_id="3" period_id="2" min="30" sec="10" player_id="45849" team_id="3" outcome="0" x="65.7" y="23.2" timestamp="2023-01-22T11:18:43.119" timestamp_utc="2023-01-22T11:18:43.119" last_modified="2023-01-22T14:45:23" version="1674398724240">
       <Q id="3990155957" qualifier_id="464" />
       <Q id="3989624629" qualifier_id="286" />
       <Q id="3989658107" qualifier_id="233" value="4" />
       <Q id="3989624627" qualifier_id="56" value="Center" />
     </Event>
-    <Event id="2499594291" event_id="4" type_id="7" period_id="2" min="31" sec="10" player_id="223089" team_id="425" outcome="1" x="34.3" y="76.8" timestamp="2023-01-22T11:18:43.120" timestamp_utc="2023-01-22T11:18:43.120" last_modified="2023-01-22T14:45:32" version="1674398732917">
+    <Event id="2499594291" event_id="4" type_id="7" period_id="2" min="31" sec="10" player_id="184934" team_id="194" outcome="1" x="34.3" y="76.8" timestamp="2023-01-22T11:18:43.120" timestamp_utc="2023-01-22T11:18:43.120" last_modified="2023-01-22T14:45:32" version="1674398732917">
       <Q id="3989624671" qualifier_id="233" value="6" />
       <Q id="3990156399" qualifier_id="383" />
       <Q id="3989624657" qualifier_id="56" value="Back" />
