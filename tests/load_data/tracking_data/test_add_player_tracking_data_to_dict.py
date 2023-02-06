@@ -2,8 +2,9 @@ import unittest
 
 import numpy as np
 
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import _add_player_tracking_data_to_dict
-
+from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
+    _add_player_tracking_data_to_dict,
+)
 
 
 class TestAddPlayerTrackingDataToDict(unittest.TestCase):
@@ -18,7 +19,7 @@ class TestAddPlayerTrackingDataToDict(unittest.TestCase):
             ["0", "10", "60", "100"],
             ["0", "11", "120", "-50"],
             ["1", "9", "40", "100"],
-            ["1", "10", "200", "40"]
+            ["1", "10", "200", "40"],
         ]
 
         self.expected_output = {
@@ -30,16 +31,16 @@ class TestAddPlayerTrackingDataToDict(unittest.TestCase):
             "away_9_x": [400.0, 40.0],
             "away_9_y": [np.nan, 100.0],
             "away_10_x": [np.nan, 200.0],
-            "away_10_y": [np.nan, 40.0]
+            "away_10_y": [np.nan, 40.0],
         }
 
     def test_add_player_tracking_to_data_dict(self):
         data = {
-            "timestamp": [0,1],
+            "timestamp": [0, 1],
             "home_10_x": [np.nan, np.nan],
             "home_10_y": [np.nan, np.nan],
             "away_9_x": [np.nan, np.nan],
-            "away_9_y": [np.nan, np.nan]
+            "away_9_y": [np.nan, np.nan],
         }
 
         for player in self.input_t0:

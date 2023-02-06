@@ -6,13 +6,10 @@ import pandas as pd
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data.tracab import (
     _get_metadata,
+    _get_players_metadata,
     _get_tracking_data,
     load_tracab_tracking_data,
-    _get_players_metadata
 )
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import _add_player_tracking_data_to_dict
-from databallpy.load_data.tracking_data._add_ball_data_to_dict import _add_ball_data_to_dict
-from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
 
 
 class TestTracab(unittest.TestCase):
@@ -33,16 +30,15 @@ class TestTracab(unittest.TestCase):
                         np.datetime64("2023-01-14 00:00:08"),
                         np.datetime64("2023-01-14 00:00:12"),
                         np.datetime64("2023-01-14 00:00:16"),
-                        np.nan
+                        np.nan,
                     ],
-
                     "end_time": [
                         np.datetime64("2023-01-14 00:00:16"),
                         np.datetime64("2023-01-14 00:00:24"),
                         np.datetime64("2023-01-14 00:00:36"),
                         np.datetime64("2023-01-14 00:00:48"),
-                        np.nan
-                    ]
+                        np.nan,
+                    ],
                 }
             ),
             frame_rate=25,
@@ -86,7 +82,13 @@ class TestTracab(unittest.TestCase):
                 "away_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
                 "home_17_x": [1.22, 1.21, 1.21, np.nan, 1.21],
                 "home_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
-                "matchtime_td": ["Break (1)", "Break (4)", "Break (4)", "Break (4)", "Break (4)"]
+                "matchtime_td": [
+                    "Break (1)",
+                    "Break (4)",
+                    "Break (4)",
+                    "Break (4)",
+                    "Break (4)",
+                ],
             }
         )
 
@@ -116,7 +118,7 @@ class TestTracab(unittest.TestCase):
                 "LastName": "Bakker",
                 "JerseyNo": "4",
                 "StartFrameCount": "1212",
-                "EndFrameCount": "2323"
+                "EndFrameCount": "2323",
             },
             {
                 "PlayerId": "1235",
@@ -124,8 +126,8 @@ class TestTracab(unittest.TestCase):
                 "LastName": "Slager",
                 "JerseyNo": "3",
                 "StartFrameCount": "1218",
-                "EndFrameCount": "2327"                
-            }
+                "EndFrameCount": "2327",
+            },
         ]
 
         expected_df_players = pd.DataFrame(
@@ -134,7 +136,7 @@ class TestTracab(unittest.TestCase):
                 "full_name": ["Bart Bakker", "Bram Slager"],
                 "shirt_num": [4, 3],
                 "start_frame": [1212, 1218],
-                "end_frame": [2323, 2327]
+                "end_frame": [2323, 2327],
             }
         )
         df_players = _get_players_metadata(input_players_info)

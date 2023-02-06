@@ -1,16 +1,21 @@
 from typing import Tuple
 
-import bs4
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import _add_player_tracking_data_to_dict
-from databallpy.load_data.tracking_data._add_ball_data_to_dict import _add_ball_data_to_dict
-from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
+    _add_ball_data_to_dict,
+)
+from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
+    _add_player_tracking_data_to_dict,
+)
 from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
+from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+
+
 def load_tracab_tracking_data(
     tracab_loc: str, metadata_loc: str, verbose: bool = True
 ) -> Tuple[pd.DataFrame, Metadata]:
@@ -19,7 +24,8 @@ def load_tracab_tracking_data(
     Args:
         tracab_loc (str): location of the tracking_data.dat file
         metadata_loc (str): location of the meta_data.xml file
-        verbose (bool): whether to print on progress of loading in the terminal , defaults to True
+        verbose (bool): whether to print on progress of loading in the terminal,
+        defaults to True
 
     Returns:
         Tuple[pd.DataFrame, Metadata], the tracking data and metadata class
@@ -29,7 +35,7 @@ def load_tracab_tracking_data(
     metadata = _get_metadata(metadata_loc)
 
     tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
-  
+
     return tracking_data, metadata
 
 
@@ -76,16 +82,22 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         players = players_info.split(";")[:-1]
         for player in players:
             team_id, _, shirt_num, x, y, _ = player.split(",")
-            data = _add_player_tracking_data_to_dict(team_id, shirt_num, x, y, data, idx)
+            data = _add_player_tracking_data_to_dict(
+                team_id, shirt_num, x, y, data, idx
+            )
 
-        ball_x, ball_y, ball_z, _, posession, status = ball_info.split(";")[0].split(",")[:6]
-        data = _add_ball_data_to_dict(ball_x, ball_y, ball_z, posession, status, data, idx)
+        ball_x, ball_y, ball_z, _, posession, status = ball_info.split(";")[0].split(
+            ","
+        )[:6]
+        data = _add_ball_data_to_dict(
+            ball_x, ball_y, ball_z, posession, status, data, idx
+        )
 
     df = pd.DataFrame(data)
 
     for col in df.columns:
         if "_x" in col or "_y" in col or "_z" in col:
-            df[col] = np.round(df[col]/100, 3) #change cm to m
+            df[col] = np.round(df[col] / 100, 3)  # change cm to m
 
     df = _insert_missing_rows(df, "timestamp")
 
@@ -114,19 +126,28 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     datetime_string = soup.find("match")["dtDate"]
     match_start_datetime = np.datetime64(datetime_string)
     date = np.datetime64(datetime_string[:10])
-    
 
-    frames_dict = {"period": [], "start_frame": [], "end_frame": [], "start_time": [], "end_time": []}
+    frames_dict = {
+        "period": [],
+        "start_frame": [],
+        "end_frame": [],
+        "start_time": [],
+        "end_time": [],
+    }
     for i, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
         start_frame = int(period["iStartFrame"])
         end_frame = int(period["iEndFrame"])
-        
+
         frames_dict["start_frame"].append(start_frame)
         frames_dict["end_frame"].append(end_frame)
         if start_frame != 0:
-            frames_dict["start_time"].append(date + np.timedelta64(int(start_frame/frame_rate), "s"))
-            frames_dict["end_time"].append(date + np.timedelta64(int(end_frame/frame_rate), "s"))
+            frames_dict["start_time"].append(
+                date + np.timedelta64(int(start_frame / frame_rate), "s")
+            )
+            frames_dict["end_time"].append(
+                date + np.timedelta64(int(end_frame / frame_rate), "s")
+            )
         else:
             frames_dict["start_time"].append(np.nan)
             frames_dict["end_time"].append(np.nan)
@@ -135,7 +156,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     home_team = soup.find("HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)
-    
+
     home_players_info = []
     for player in home_team.find_all("Player"):
         player_dict = {}
@@ -147,7 +168,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     away_team = soup.find("AwayTeam")
     away_team_name = away_team.find("LongName").text
     away_team_id = int(away_team.find("TeamId").text)
-    
+
     away_players_info = []
     for player in away_team.find_all("Player"):
         player_dict = {}
@@ -198,9 +219,7 @@ def _get_players_metadata(players_info: list) -> pd.DataFrame:
     }
     for player in players_info:
         player_dict["id"].append(int(player["PlayerId"]))
-        player_dict["full_name"].append(
-            player["FirstName"] + " " + player["LastName"]
-        )
+        player_dict["full_name"].append(player["FirstName"] + " " + player["LastName"])
         player_dict["shirt_num"].append(int(player["JerseyNo"]))
         player_dict["start_frame"].append(int(player["StartFrameCount"]))
         player_dict["end_frame"].append(int(player["EndFrameCount"]))
