@@ -24,23 +24,23 @@ class TestAddPlayerTrackingDataToDict(unittest.TestCase):
 
         self.expected_output = {
             "timestamp": [0, 1],
-            "home_10_x": [np.nan, 60.0],
-            "home_10_y": [-100.0, 100],
-            "home_11_x": [300.0, 120.0],
-            "home_11_y": [60.0, -50.0],
-            "away_9_x": [400.0, 40.0],
-            "away_9_y": [np.nan, 100.0],
-            "away_10_x": [np.nan, 200.0],
-            "away_10_y": [np.nan, 40.0],
+            "away_10_x": [np.nan, 60.0],
+            "away_10_y": [-100.0, 100],
+            "away_11_x": [300.0, 120.0],
+            "away_11_y": [60.0, -50.0],
+            "home_9_x": [400.0, 40.0],
+            "home_9_y": [np.nan, 100.0],
+            "home_10_x": [np.nan, 200.0],
+            "home_10_y": [np.nan, 40.0],
         }
 
     def test_add_player_tracking_to_data_dict(self):
         data = {
             "timestamp": [0, 1],
-            "home_10_x": [np.nan, np.nan],
-            "home_10_y": [np.nan, np.nan],
-            "away_9_x": [np.nan, np.nan],
-            "away_9_y": [np.nan, np.nan],
+            "away_10_x": [np.nan, np.nan],
+            "away_10_y": [np.nan, np.nan],
+            "home_9_x": [np.nan, np.nan],
+            "home_9_y": [np.nan, np.nan],
         }
 
         for player in self.input_t0:

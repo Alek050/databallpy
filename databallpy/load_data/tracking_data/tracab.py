@@ -90,7 +90,7 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
             ","
         )[:6]
         data = _add_ball_data_to_dict(
-            ball_x, ball_y, ball_z, posession, status, data, idx
+            ball_x, ball_y, ball_z, posession, status.lower(), data, idx
         )
 
     df = pd.DataFrame(data)

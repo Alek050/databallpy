@@ -76,14 +76,14 @@ class TestTracab(unittest.TestCase):
                 "ball_x": [1.50, 1.81, 2.13, np.nan, 2.76],
                 "ball_y": [-0.43, -0.49, -0.56, np.nan, -0.70],
                 "ball_z": [0.07, 0.09, 0.11, np.nan, 0.15],
-                "ball_status": ["Alive", "Dead", "Alive", np.nan, "Alive"],
-                "ball_posession": ["Away", "Away", "Away", np.nan, "Home"],
-                "away_34_x": [-13.50, -13.50, -13.50, np.nan, -13.49],
-                "away_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
-                "home_17_x": [1.22, 1.21, 1.21, np.nan, 1.21],
-                "home_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
+                "ball_status": ["alive", "dead", "alive", np.nan, "alive"],
+                "ball_posession": ["away", "away", "away", np.nan, "home"],
+                "home_34_x": [-13.50, -13.50, -13.50, np.nan, -13.49],
+                "home_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
+                "away_17_x": [1.22, 1.21, 1.21, np.nan, 1.21],
+                "away_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
                 "matchtime_td": [
-                    "Break (1)",
+                    "Break (4)",
                     "Break (4)",
                     "Break (4)",
                     "Break (4)",
@@ -98,13 +98,13 @@ class TestTracab(unittest.TestCase):
         assert metadata == self.expected_metadata
 
     def test_get_tracking_data(self):
-        tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=True)
+        tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=False)
         expected_td = self.expected_tracking_data.iloc[:, :-1]
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     def test_load_tracking_data(self):
         tracking_data, metadata = load_tracab_tracking_data(
-            self.tracking_data_loc, self.metadata_loc, verbose=True
+            self.tracking_data_loc, self.metadata_loc, verbose=False
         )
 
         assert metadata == self.expected_metadata

@@ -20,8 +20,8 @@ class TestAddBallDataToDict(unittest.TestCase):
             "ball_x": [150.0, 22.0, 124.0],
             "ball_y": [-46.0, 17.0, np.nan],
             "ball_z": [7.0, 15.0, 7.0],
-            "ball_posession": ["Away", "Home", "Away"],
-            "ball_status": ["Alive", "Dead", "Dead"],
+            "ball_posession": ["away", "home", "away"],
+            "ball_status": ["alive", "dead", "dead"],
         }
 
     def test_add_ball_data_to_dict(self):
@@ -38,7 +38,7 @@ class TestAddBallDataToDict(unittest.TestCase):
             data["timestamp"][i] = int(i)
             ball_x, ball_y, ball_z, ball_posession, ball_status = input
             data = _add_ball_data_to_dict(
-                ball_x, ball_y, ball_z, ball_posession, ball_status, data, i
+                ball_x, ball_y, ball_z, ball_posession, ball_status.lower(), data, i
             )
 
         assert data == self.expected_dict
