@@ -265,6 +265,7 @@ def save_match_clip(
 
     # Generate movie with variable info
     with writer.saving(fig, video_loc, 100):
+        print("Making match clip...")
         for _, idx in enumerate(tqdm(td.index)):
 
             variable_fig_objs = []

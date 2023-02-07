@@ -33,7 +33,7 @@ $ match.tracking_data # pandas dataframe with tracking data of the match
 $ match.event_data # pandas dataframe with event data of the match
 ```
 
-See the documentation of the `Match` object for more options. Note that this package is developed to combine event and tracking data, therefore both datastreams are necessary to create a `Match` object.
+See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/match/index.html) of the `Match` object for more options. Note that this package is developed to combine event and tracking data, therefore both datastreams are necessary to create a `Match` object.
 
 ## Visualizing
 
@@ -57,14 +57,19 @@ $ save_match_clip(match, start_idx=0, end_idx=10, folder_loc="data", title="some
 
 This function will save a .mp4 file in `"data/"` directory of the `match.tracking_data` from index 0 untill index 10.
 
+## Documentation
+
+The official documentation can be found [here](https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/index.html).
+
 ## Providers
+
 For now we only have one tracking data and one event data provider. We are planning on adding more providers later on.
 
 Event data providers:
-1. Opta
+- Opta
 
 Tracking data providers:
-1. Tracab
+- Tracab
 
 ## Contributing
 
@@ -73,3 +78,13 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 ## License
 
 `databallpy` was created by Alexander Oonk & Daan Grob. It is licensed under the terms of the MIT license.
+
+## Similar projects
+
+Although we think this package helps when starting to analyse soccer data, other packages may be better suited for your specific needs. Make sure to check out the following packages as well:
+- [kloppy](https://github.com/PySport/kloppy)
+- [floodlight](https://github.com/floodlight-sports/floodlight)
+- [codeball](https://github.com/metrica-sports/codeball)
+
+And for a more specific toturials on how to get started with soccer data"
+- [Friends of Tracking](https://github.com/Friends-of-Tracking-Data-FoTD)
