@@ -52,7 +52,7 @@ $   event_metadata_loc="data/event_metadata_f7.xml",
 $   event_data_provider="opta",
 $ )
 $
-$ save_match_clip(match, start_idx=0, end_idx=10, folder_loc="data", title="some_title")
+$ save_match_clip(match, start_idx=0, end_idx=100, folder_loc="data", title="some_title")
 ```
 
 This function will save a .mp4 file in `"data/"` directory of the `match.tracking_data` from index 0 untill index 10.
