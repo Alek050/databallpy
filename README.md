@@ -57,6 +57,8 @@ $ save_match_clip(match, start_idx=0, end_idx=10, folder_loc="data", title="some
 
 This function will save a .mp4 file in `"data/"` directory of the `match.tracking_data` from index 0 untill index 10.
 
+https://user-images.githubusercontent.com/49450063/217216924-748841e3-dddd-4149-a3c5-000320a91865.mp4
+
 ## Documentation
 
 The official documentation can be found [here](https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/index.html).
@@ -88,3 +90,6 @@ Although we think this package helps when starting to analyse soccer data, other
 
 And for a more specific toturials on how to get started with soccer data"
 - [Friends of Tracking](https://github.com/Friends-of-Tracking-Data-FoTD)
+
+
+
