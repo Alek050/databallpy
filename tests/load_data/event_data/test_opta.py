@@ -54,7 +54,7 @@ class TestOpta(unittest.TestCase):
             away_players=pd.DataFrame(
                 {
                     "id": [184934, 450445],
-                    "full_name": ["Pepijn Blok", "Test Speler"],
+                    "full_name": ["Pepijn Blok", "TestSpeler"],
                     "formation_place": [8, 0],
                     "position": ["midfielder", "midfielder"],
                     "starter": [True, False],
