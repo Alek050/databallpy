@@ -80,7 +80,7 @@ class TestMatch(unittest.TestCase):
         expected_away_players = pd.DataFrame(
             {
                 "id": [184934, 450445],
-                "full_name": ["Pepijn Blok", "Test Speler"],
+                "full_name": ["Pepijn Blok", "TestSpeler"],
                 "shirt_num": [1, 2],
                 "start_frame": [100, 100],
                 "end_frame": [1200, 400],
@@ -162,4 +162,4 @@ class TestMatch(unittest.TestCase):
         assert res_name_home == "Piet Schrijvers"
 
         res_name_away = self.expected_match.player_column_id_to_full_name("away_2")
-        assert res_name_away == "Test Speler"
+        assert res_name_away == "TestSpeler"

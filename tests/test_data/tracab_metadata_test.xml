@@ -45,8 +45,8 @@
       </Player>
       <Player>
         <PlayerId>450445</PlayerId>
-        <FirstName>Test</FirstName>
-        <LastName>Speler</LastName>
+        <FirstName></FirstName>
+        <LastName>TestSpeler</LastName>
         <JerseyNo>2</JerseyNo>
         <StartFrameCount>100</StartFrameCount>
         <EndFrameCount>400</EndFrameCount>

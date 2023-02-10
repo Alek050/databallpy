@@ -61,7 +61,7 @@ class TestTracab(unittest.TestCase):
             away_players=pd.DataFrame(
                 {
                     "id": [184934, 450445],
-                    "full_name": ["Pepijn Blok", "Test Speler"],
+                    "full_name": ["Pepijn Blok", "TestSpeler"],
                     "shirt_num": [1, 2],
                     "start_frame": [100, 100],
                     "end_frame": [1200, 400],
