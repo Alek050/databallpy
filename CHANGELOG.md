@@ -13,3 +13,4 @@
 ## v0.1.1 (10/02/2023)
 
 - Hot fix to make documentation visisble.
+
