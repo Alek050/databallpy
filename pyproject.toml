@@ -1,19 +1,41 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.0.1"
+version = "0.1.0"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
-authors =  [
+authors = [
+    "Alexander Oonk <alexanderoonk26@gmail.com>",
+    "Daan Grob <daaniogrob@gmail.com>",
+]
+maintainers = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
     "Daan Grob <daaniogrob@gmail.com>",
 ]
 license = "MIT"
 readme = "README.md"
+homepage = "https://pypi.org/project/databallpy/"
+documentation = "https://github.com/Alek050/databallpy/tree/main/docs"
 repository = "https://github.com/Alek050/databallpy"
+keywords = ["soccer", "football", "tracking data", "event data"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: MIT",
+    "Topic :: Scientific/Engineering",
+]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1"
+python = ">=3.8.1,<4.0"
 pandas = "^1.5.3"
 numpy = "^1.24.1"
+beautifulsoup4 = "^4.11.1"
+lxml = "^4.9.2"
+tqdm = "^4.64.1"
+matplotlib = "^3.6.3"
 
 [tool.poetry.dev-dependencies]
 
@@ -23,6 +45,16 @@ pytest-cov = "^4.0.0"
 flake8 = "^6.0.0"
 black = "^22.12.0"
 isort = "^5.11.4"
+jupyter = "^1.0.0"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+myst-nb = "^0.17.1"
+sphinx-autoapi = "^2.0.1"
+sphinx-rtd-theme = "^1.1.1"
+
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
@@ -38,3 +70,13 @@ patch_without_tag = true                    # patch release by default
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line_length = 88
+
+[tool.isort]
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+src_paths=['databallpy', 'tests']
+known_third_party = 'pytest,mock'

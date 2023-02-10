@@ -1,5 +1,5 @@
 LINT_FILES = tests/ databallpy/
-TEST_PATH = tests
+TEST_PATH = tests/
 PYTEST = poetry run py.test $(TEST_PATH) --pythonwarnings=once
 PYTEST_ARGS_COV = --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
 
@@ -22,10 +22,11 @@ help:
 	$(call echotask,"lint","lints all code using flake8 isort and black")
 	$(call echotask,"formatlint","formats and lints code using flake8 isort and black")
 	$(call echotask,"test","runs all tests")
+	$(call echotask,"docs","runs sphinx code to create docs")
 	@echo
 
 deps:
-	poetry install
+	poetry install --with docs
 
 format:
 	poetry run isort --filter-files $(LINT_FILES)
@@ -44,3 +45,6 @@ formatlint: format flake8
 
 test:
 	$(PYTEST) $(PYTEST_ARGS_COV)
+
+documentation: 
+	poetry run make html --directory docs/
