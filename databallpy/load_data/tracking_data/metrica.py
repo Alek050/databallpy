@@ -116,10 +116,11 @@ def _get_tracking_data(
     for idx, line in enumerate(lines):
 
         timestamp, players_info, ball_info = line.split(":")
-        data["timestamp"][idx] = int(timestamp)
+        timestamp = int(timestamp)
+        data["timestamp"][idx] = timestamp
 
         channel = channels.loc[
-            (channels["start"] <= int(timestamp)) & (channels["end"] >= int(timestamp)),
+            (channels["start"] <= timestamp) & (channels["end"] >= timestamp),
             "ids",
         ].iloc[0]
 
@@ -131,10 +132,10 @@ def _get_tracking_data(
             data = _add_player_tracking_data_to_dict(team, shirt_num, x, y, data, idx)
 
         x, y = ball_info.split(",")
-        status = "alive" if not pd.isnull(float(x)) else "dead"
-        data = _add_ball_data_to_dict(x, y, np.nan, None, status, data, idx)
+        data = _add_ball_data_to_dict(x, y, np.nan, None, None, data, idx)
 
     df = pd.DataFrame(data)
+    df["ball_status"] = np.where(pd.isnull(df["ball_x"]), "dead", "alive")
 
     for col in [x for x in df.columns if "_x" in x]:
         df[col] = df[col] * pitch_dimensions[0] - (pitch_dimensions[0] / 2)

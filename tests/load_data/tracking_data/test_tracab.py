@@ -24,14 +24,14 @@ class TestTracab(unittest.TestCase):
                     "period": [1, 2, 3, 4, 5],
                     "start_frame": [100, 200, 300, 400, 0],
                     "end_frame": [400, 600, 900, 1200, 0],
-                    "start_time": [
+                    "start_time_td": [
                         np.datetime64("2023-01-14 00:00:04"),
                         np.datetime64("2023-01-14 00:00:08"),
                         np.datetime64("2023-01-14 00:00:12"),
                         np.datetime64("2023-01-14 00:00:16"),
                         np.nan,
                     ],
-                    "end_time": [
+                    "end_time_td": [
                         np.datetime64("2023-01-14 00:00:16"),
                         np.datetime64("2023-01-14 00:00:24"),
                         np.datetime64("2023-01-14 00:00:36"),
