@@ -261,11 +261,21 @@ def synchronise_event_and_tracking_data(match):
                 column_id_player = np.nan
             dist_mat[i_outer, i_inner] = _calculate_distance(tracking_row, event_row, column_id_player)
     
-
-    dist_mat = np.minimum(np.exp(-dist_mat/.1), np.ones(np.shape(dist_mat)))
+    import pdb;pdb.set_trace()
+    den = max(dist_mat.min(axis=0))*1.2
+    dist_mat = np.minimum(np.exp(-dist_mat/den), np.ones(np.shape(dist_mat)))
     event_frame_dict = nw(dist_mat)
+    tracking_data["event"] = np.nan
+    tracking_data["event_id"] = np.nan
+    for event, frame in event_frame_dict.items():
+        event_id = first_events.iloc[event]["event_id"]
+        event_type = first_events.iloc[event]["event"]
+        tracking_data["event"].iloc[frame] = event_type
+        tracking_data["event_id"].iloc[frame] = int(event_id)
 
-    import pdb; pdb.set_trace()
+    match.tracking_data = tracking_data
+    
+    return match
 
 def _calculate_distance(tracking_frame, event, column_id_player):
     time_diff = (tracking_frame["datetime"] - event["datetime"])/np.timedelta64(1, "s")
@@ -279,7 +289,7 @@ def _calculate_distance(tracking_frame, event, column_id_player):
     else:
         player_ball_diff = 0
     
-    return np.abs(time_diff)# + ball_loc_diff/5 + player_ball_diff
+    return np.abs(time_diff) + ball_loc_diff/5 + player_ball_diff
 
 def nw(dist_mat, gap_event = -1, gap_frame = 1):
     """Based on: https://gist.github.com/slowkow/06c6dba9180d013dfd82bec217d22eb5
@@ -346,8 +356,8 @@ def nw(dist_mat, gap_event = -1, gap_frame = 1):
     idx_events = [idx for idx,i in enumerate(events) if i > 0]
     event_frame_dict = {}
     for i in idx_events:
-        event_frame_dict[events[i]] = frames[i]
-    import pdb;pdb.set_trace()
+        event_frame_dict[events[i]-1] = frames[i]-1
     
+    import pdb;pdb.set_trace()
     return event_frame_dict
 

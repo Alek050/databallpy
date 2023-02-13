@@ -35,10 +35,7 @@ numpy = "^1.24.1"
 beautifulsoup4 = "^4.11.1"
 lxml = "^4.9.2"
 tqdm = "^4.64.1"
-<<<<<<< HEAD
-=======
 matplotlib = "^3.6.3"
->>>>>>> main
 
 [tool.poetry.dev-dependencies]
 
@@ -82,8 +79,4 @@ line_length = 88
 multi_line_output = 3
 include_trailing_comma = true
 src_paths=['databallpy', 'tests']
-<<<<<<< HEAD
 known_third_party = 'pytest,mock'
-=======
-known_third_party = 'pytest,mock'
->>>>>>> main
