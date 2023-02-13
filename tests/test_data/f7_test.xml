@@ -85,6 +85,7 @@
       <Player Position="Midfielder" uID="p19367">
         <PersonName>
           <First>Piet</First>
+          <Known>The Legend</Known>
           <Last>Schrijvers</Last>
         </PersonName>
       </Player>
@@ -113,8 +114,8 @@
       </Player>
       <Player Position="Substitute" uID="p450445">
         <PersonName>
-          <First>Test</First>
-          <Last>Speler</Last>
+          <First></First>
+          <Last>TestSpeler</Last>
         </PersonName>
       </Player>
       <TeamOfficial Type="Manager" uID="man59663">

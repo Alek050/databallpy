@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.0.1"
+version = "0.1.1"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
@@ -29,12 +29,16 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1"
+python = ">=3.8.1,<4.0"
 pandas = "^1.5.3"
 numpy = "^1.24.1"
 beautifulsoup4 = "^4.11.1"
 lxml = "^4.9.2"
 tqdm = "^4.64.1"
+<<<<<<< HEAD
+=======
+matplotlib = "^3.6.3"
+>>>>>>> main
 
 [tool.poetry.dev-dependencies]
 
@@ -44,6 +48,16 @@ pytest-cov = "^4.0.0"
 flake8 = "^6.0.0"
 black = "^22.12.0"
 isort = "^5.11.4"
+jupyter = "^1.0.0"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+myst-nb = "^0.17.1"
+sphinx-autoapi = "^2.0.1"
+sphinx-rtd-theme = "^1.1.1"
+
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
@@ -68,4 +82,8 @@ line_length = 88
 multi_line_output = 3
 include_trailing_comma = true
 src_paths=['databallpy', 'tests']
+<<<<<<< HEAD
 known_third_party = 'pytest,mock'
+=======
+known_third_party = 'pytest,mock'
+>>>>>>> main
