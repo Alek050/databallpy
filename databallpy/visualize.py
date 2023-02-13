@@ -342,8 +342,8 @@ def save_match_clip(
 
                     # Add event text
                     fig_obj = ax.text(
-                        15,
-                        match.pitch_dimensions[1] / 2.0 + 2.0,
+                        5,
+                        match.pitch_dimensions[1] / 2.0 + 1,
                         f"{player_name}: {event_name}",
                         fontsize=14,
                     )
