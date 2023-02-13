@@ -28,7 +28,8 @@ def load_metrica_tracking_data(
     Args:
         tracking_data_loc (str): location of the tracking data .txt file
         metadata_loc (str): location of the metadata .xml file
-        verbose (bool, optional): whether to print information about the progress in the terminall. Defaults to True.
+        verbose (bool, optional): whether to print information about the progress
+        in the terminall. Defaults to True.
 
     Raises:
         TypeError: if tracking_data_loc is not a string or io.StringIO
@@ -44,11 +45,13 @@ def load_metrica_tracking_data(
         pass
     else:
         raise TypeError(
-            f"tracking_data_loc must be either a str or a StringIO object, not a {type(tracking_data_loc)}"
+            "tracking_data_loc must be either a str or a StringIO object,"
+            f" not a {type(tracking_data_loc)}"
         )
 
     metadata = _get_metadata(metadata_loc)
     td_channels = _get_td_channels(metadata_loc, metadata)
+    metadata = _update_metadata(td_channels, metadata)
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )
@@ -63,8 +66,10 @@ def load_metrica_open_tracking_data() -> Tuple[pd.DataFrame, Metadata]:
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
-    td_data_link = "https://raw.githubusercontent.com/metrica-sports/sample-data/master/data/Sample_Game_3/Sample_Game_3_tracking.txt"
-    td_metadata_link = "https://raw.githubusercontent.com/metrica-sports/sample-data/master/data/Sample_Game_3/Sample_Game_3_metadata.xml"
+    td_data_link = "https://raw.githubusercontent.com/metrica-sports/sample-data"
+    "/master/data/Sample_Game_3/Sample_Game_3_tracking.txt"
+    td_metadata_link = "https://raw.githubusercontent.com/metrica-sports/sample-data"
+    "/master/data/Sample_Game_3/Sample_Game_3_metadata.xml"
 
     td_data = io.StringIO(requests.get(td_data_link).text)
     td_metadata = requests.get(td_metadata_link).text
@@ -82,10 +87,12 @@ def _get_tracking_data(
     """Function to load the tracking data of metrica.
 
     Args:
-        tracking_data_loc (Union[str, io.StringIO]): location of the tracking data .txt file
-        channels (dict): dictionary with for all timestamps the order of which players are referred to in the raw tracking data
+        tracking_data_loc (Union[str, io.StringIO]): location of the tracking data .txt
+        file channels (dict): dictionary with for all timestamps the order of which
+        players are referred to in the raw tracking data
         pitch_dimensions (list): x and y dimensions of the pitch in meters
-        verbose (bool, optional): whether to print information about the progress in the terminal. Defaults to True.
+        verbose (bool, optional): whether to print information about the progress in the
+        terminal. Defaults to True.
 
     Returns:
         pd.DataFrame: tracking data of the match in a pd dataframe
@@ -98,7 +105,6 @@ def _get_tracking_data(
     else:
         lines = tracking_data_loc.readlines()
 
-    channels = pd.DataFrame(channels)
     size_lines = len(lines)
     data = {
         "timestamp": [np.nan] * size_lines,
@@ -148,19 +154,22 @@ def _get_tracking_data(
     return df
 
 
-def _get_td_channels(metadata_loc: str, metadata: Metadata) -> dict:
-    """Function to get the channels for every timeperiod with what players are referred to in the raw tracking data
+def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
+    """Function to get the channels for every timeperiod with what players are r
+    eferred to in the raw tracking data
 
     Args:
         metadata_loc (str): locatin of the metadata
         metadata (Metadata): the Metadata of the match
 
     Returns:
-        dict: dict with for every timestamp what players are referred to in the raw tracking data
+        pd.DataFrame: df with for every timestamp what players are referred to in
+        the raw tracking data
     """
     if os.path.exists(metadata_loc):
         file = open(metadata_loc, "r")
         lines = file.read()
+        file.close()
         soup = BeautifulSoup(lines, "xml")
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
@@ -196,8 +205,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> dict:
                 team = "away"
                 shirt_num = metadata.away_players.loc[away_mask, "shirt_num"].iloc[0]
             res["ids"][idx].append(f"{team}_{shirt_num}")
-        res["ids"][idx].append("ball")
-    return res
+    return pd.DataFrame(res)
 
 
 def _get_metadata(metadata_loc: str) -> Metadata:
@@ -212,6 +220,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     if os.path.exists(metadata_loc):
         file = open(metadata_loc, "r")
         lines = file.read()
+        file.close()
         soup = BeautifulSoup(lines, "xml")
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
@@ -245,31 +254,34 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         "ProviderParameter"
     ):
         name = period_soup.find("Name").text
-        period = periods_map[period_soup.find("Name").text]
+        period = periods_map[name]
+
+        current_timestamp = _to_int(period_soup.find("Value").text)
 
         if "start" in name:
             periods_dict["period"].append(period)
-            current_timestamp = _to_int(period_soup.find("Value").text)
             periods_dict["start_frame"].append(current_timestamp)
             first_timestamp = periods_dict["start_frame"][0]
             seconds = (current_timestamp - first_timestamp) / frame_rate
-            if not pd.isnull(seconds):
-                periods_dict["start_time_td"].append(
-                    datetime + dt.timedelta(seconds=seconds)
-                )
-            else:
-                periods_dict["start_time_td"].append(np.nan)
+            periods_dict["start_time_td"].append(
+                datetime + dt.timedelta(seconds=seconds)
+            ) if not pd.isnull(seconds) else periods_dict["start_time_td"].append(
+                np.nan
+            )
         elif "end" in name:
-            current_timestamp = _to_int(period_soup.find("Value").text)
             periods_dict["end_frame"].append(current_timestamp)
             first_timestamp = periods_dict["start_frame"][0]
             seconds = (current_timestamp - first_timestamp) / frame_rate
-            if not pd.isnull(seconds):
-                periods_dict["end_time_td"].append(
-                    datetime + dt.timedelta(seconds=seconds)
-                )
-            else:
-                periods_dict["end_time_td"].append(np.nan)
+            periods_dict["end_time_td"].append(
+                datetime + dt.timedelta(seconds=seconds)
+            ) if not pd.isnull(seconds) else periods_dict["end_time_td"].append(np.nan)
+
+    # add fifth period
+    periods_dict["period"].append(5)
+    periods_dict["start_frame"].append(np.nan)
+    periods_dict["end_frame"].append(np.nan)
+    periods_dict["start_time_td"].append(np.nan)
+    periods_dict["end_time_td"].append(np.nan)
 
     teams_info = {}
     for team in soup.find_all("Team"):
@@ -288,37 +300,50 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         teams_info[team_info["side"]] = team_info
 
     players = soup.find_all("Player")
-    home_players = {
-        "id": [],
-        "full_name": [],
-        "formation_place": [],
-        "position": [],
-        "starter": [],
-        "shirt_num": [],
-    }
-    away_players = {
-        "id": [],
-        "full_name": [],
-        "formation_place": [],
-        "position": [],
-        "starter": [],
-        "shirt_num": [],
-    }
-    for player in players:
-        if player.attrs["teamId"] == teams_info["home"]["team_id"]:
-            res_dict = home_players
-        else:
-            res_dict = away_players
+    team_dicts = [
+        {
+            "team_id": teams_info["home"]["team_id"],
+            "player_dict": {
+                "id": [],
+                "full_name": [],
+                "formation_place": [],
+                "position": [],
+                "starter": [],
+                "shirt_num": [],
+            },
+        },
+        {
+            "team_id": teams_info["away"]["team_id"],
+            "player_dict": {
+                "id": [],
+                "full_name": [],
+                "formation_place": [],
+                "position": [],
+                "starter": [],
+                "shirt_num": [],
+            },
+        },
+    ]
 
-        res_dict["id"].append(_to_int(player.attrs["id"][1:]))
-        res_dict["full_name"].append(player.find("Name").text)
-        res_dict["shirt_num"].append(_to_int(player.find("ShirtNumber").text))
-        res_dict["starter"].append(np.nan)
-        for param in player.findChildren("ProviderParameter"):
-            if param.find("Name").text == "position_type":
-                res_dict["position"].append(param.find("Value").text)
-            elif param.find("Name").text == "position_index":
-                res_dict["formation_place"].append(_to_int(param.find("Value").text))
+    for player in players:
+        for team in team_dicts:
+            if player.attrs["teamId"] == team["team_id"]:
+                res_dict = team["player_dict"]
+
+                res_dict["id"].append(_to_int(player.attrs["id"][1:]))
+                res_dict["full_name"].append(player.find("Name").text)
+                res_dict["shirt_num"].append(_to_int(player.find("ShirtNumber").text))
+                res_dict["starter"].append(np.nan)
+                for param in player.findChildren("ProviderParameter"):
+                    if param.find("Name").text == "position_type":
+                        res_dict["position"].append(param.find("Value").text)
+                    elif param.find("Name").text == "position_index":
+                        res_dict["formation_place"].append(
+                            _to_int(param.find("Value").text)
+                        )
+
+    home_players = team_dicts[0]["player_dict"]
+    away_players = team_dicts[1]["player_dict"]
 
     metadata = Metadata(
         match_id=match_id,
@@ -336,6 +361,51 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         away_score=teams_info["away"]["score"],
         away_formation=teams_info["away"]["formation"],
     )
+    return metadata
+
+
+def _update_metadata(td_channels: pd.DataFrame, metadata: Metadata) -> Metadata:
+    """Function to add the starters and formation based on the metadata and tracking
+    data channels to the metadata
+
+    Args:
+        td_channels (pd.DataFrame): tracking data channels, what indexes in the
+        tracking data belong to which players, all players in the first line are
+        starters
+        metadata (Metadata): metadata of the match
+
+    Returns:
+        Metadata: updated metadata of the match
+    """
+    home_formation = [0, 0, 0, 0]
+    away_formation = [0, 0, 0, 0]
+    metadata.home_players["starter"] = False
+    metadata.away_players["starter"] = False
+    starting = td_channels.iloc[0]["ids"]
+
+    for starter in starting:
+        team, shirt_number = starter.split("_")
+        shirt_number = _to_int(shirt_number)
+        if team == "home":
+            metadata.home_players.loc[
+                metadata.home_players["shirt_num"] == shirt_number, "starter"
+            ] = True
+            formation_place = metadata.home_players.loc[
+                metadata.home_players["shirt_num"] == shirt_number, "formation_place"
+            ].iloc[0]
+            home_formation[formation_place] += 1
+        else:
+            metadata.away_players.loc[
+                metadata.away_players["shirt_num"] == shirt_number, "starter"
+            ] = True
+            formation_place = metadata.away_players.loc[
+                metadata.away_players["shirt_num"] == shirt_number, "formation_place"
+            ].iloc[0]
+            away_formation[formation_place] += 1
+
+    metadata.home_formation = "".join(str(i) for i in home_formation)
+    metadata.away_formation = "".join(str(i) for i in away_formation)
+
     return metadata
 
 
