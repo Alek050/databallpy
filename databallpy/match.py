@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import List
 
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 from databallpy.load_data.event_data.opta import load_opta_event_data
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
@@ -92,6 +94,24 @@ class Match:
                 self.away_players["shirt_num"] == shirt_num, "full_name"
             ].iloc[0]
 
+    def full_name_to_player_column_id(self, full_name: str) -> str:
+        """Simple function to get the column id based on full name
+
+        Args:
+            full_name (str): full name of the player
+
+        Returns:
+            str: column id of the player, for instance "home_1"
+        """
+        if (self.home_players["full_name"].eq(full_name)).any():
+            num = self.home_players[self.home_players["full_name"] == full_name]["shirt_num"].iloc[0]
+            return f"home_{num}"
+        elif (self.away_players["full_name"].eq(full_name)).any():
+            num = self.away_players[self.away_players["full_name"] == full_name]["shirt_num"].iloc[0]
+            return f"away_{num}"
+        else:
+            return ""
+
     def __eq__(self, other):
         if isinstance(other, Match):
             res = [
@@ -178,6 +198,26 @@ def get_match(
         on="id",
     )
 
+    home_players_td = tracking_metadata.home_players
+    home_players_ed = event_metadata.home_players
+    away_players_td = tracking_metadata.away_players
+    away_players_ed = event_metadata.away_players
+
+    full_names_dict = {}
+    for num in home_players_td["shirt_num"].unique():
+        name_td = home_players_td[home_players_td["shirt_num"] == num]["full_name"].iloc[0]
+        name_ed = home_players_ed[home_players_ed["shirt_num"] == num]["full_name"].iloc[0]
+        if name_ed != name_td:
+            full_names_dict[name_ed] = name_td
+
+    for num in away_players_td["shirt_num"].unique():
+        name_td = away_players_td[away_players_td["shirt_num"] == num]["full_name"].iloc[0]
+        name_ed = away_players_ed[away_players_ed["shirt_num"] == num]["full_name"].iloc[0]  
+        if name_ed != name_td:
+            full_names_dict[name_ed] = name_td
+
+    event_data["player_name"] = event_data["player_name"].map(full_names_dict).fillna(event_data["player_name"])
+
     match = Match(
         tracking_data=tracking_data,
         tracking_data_provider=tracking_data_provider,
@@ -204,6 +244,110 @@ def get_match(
 def synchronise_event_and_tracking_data(match):
     tracking_data = match.tracking_data
     event_data = match.event_data
+
+    date = np.datetime64(str(match.periods.iloc[1,3])[:10])
+    tracking_data["datetime"] = [date + np.timedelta64(int(x/25*1000), "ms") for x in tracking_data["timestamp"]]
+
+    first_events = event_data.iloc[4:10, :].reset_index(drop=False)
+    first_events = first_events[first_events["event"] == "pass"].reset_index()
+    first_tracking = tracking_data.iloc[:380, :].reset_index(drop=False)
+    dist_mat = np.zeros((len(first_tracking), len(first_events)))
+
+    for i_outer, tracking_row in first_tracking.iterrows():
+        for i_inner, event_row in first_events.iterrows():
+            if type(event_row["player_name"]) == str:
+                column_id_player = match.full_name_to_player_column_id(full_name=event_row["player_name"])
+            else:
+                column_id_player = np.nan
+            dist_mat[i_outer, i_inner] = _calculate_distance(tracking_row, event_row, column_id_player)
     
 
+    dist_mat = np.minimum(np.exp(-dist_mat/.1), np.ones(np.shape(dist_mat)))
+    event_frame_dict = nw(dist_mat)
+
     import pdb; pdb.set_trace()
+
+def _calculate_distance(tracking_frame, event, column_id_player):
+    time_diff = (tracking_frame["datetime"] - event["datetime"])/np.timedelta64(1, "s")
+    ball_loc_diff_x = tracking_frame["ball_x"] - event["start_x"]
+    ball_loc_diff_y = tracking_frame["ball_y"] - event["start_y"]
+    ball_loc_diff = np.hypot(ball_loc_diff_x, ball_loc_diff_y)
+    if type(column_id_player) == str:
+        player_ball_diff_x = tracking_frame["ball_x"] - tracking_frame[f"{column_id_player}_x"]
+        player_ball_diff_y = tracking_frame["ball_y"] - tracking_frame[f"{column_id_player}_y"]
+        player_ball_diff = np.hypot(player_ball_diff_x, player_ball_diff_y)
+    else:
+        player_ball_diff = 0
+    
+    return np.abs(time_diff)# + ball_loc_diff/5 + player_ball_diff
+
+def nw(dist_mat, gap_event = -1, gap_frame = 1):
+    """Based on: https://gist.github.com/slowkow/06c6dba9180d013dfd82bec217d22eb5
+
+    Args:
+        dist_mat (_type_): _description_
+        gap_event (int, optional): _description_. Defaults to -1.
+        gap_frame (int, optional): _description_. Defaults to 1.
+
+    Returns:
+        _type_: _description_
+    """
+    n_frames = np.shape(dist_mat)[0]
+    n_events = np.shape(dist_mat)[1]
+    
+    F = np.zeros((n_frames + 1, n_events + 1))
+    F[:,0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
+    F[0,:] = np.linspace(0, n_events * gap_event, n_events + 1)
+    
+    # Pointer matrix
+    P = np.zeros((n_frames + 1, n_events + 1))
+    P[:,0] = 3
+    P[0,:] = 4
+   
+    t = np.zeros(3)
+    for i in range(n_frames):
+        for j in range(n_events):
+            t[0] = F[i,j] + dist_mat[i,j]
+            t[1] = F[i,j+1] + gap_frame #top + gap frame
+            t[2] = F[i+1,j] + gap_event #left + gap event
+            tmax = np.max(t)
+            F[i+1,j+1] = tmax
+            
+            if t[0] == tmax: #match
+                P[i+1,j+1] += 2
+            if t[1] == tmax: #frame unassigned
+                P[i+1,j+1] += 3
+            if t[2] == tmax: #event unassigned
+                P[i+1,j+1] += 4
+
+    # Trace through an optimal alignment.
+    i = n_frames 
+    j = n_events 
+    frames = [] #frames
+    events = [] #event
+    while i > 0 or j > 0:
+        if P[i,j] in [2, 5, 6, 9]: #2 was added, match
+            frames.append(i)
+            events.append(j)
+            i -= 1
+            j -= 1
+        elif P[i,j] in [3, 5, 7, 9]: #3 was added, frame unassigned
+            frames.append(i)
+            events.append(0)
+            i -= 1
+        elif P[i,j] in [4, 6, 7, 9]: #4 was added, event unassigned
+            frames.append(0)
+            events.append(j)
+            j -= 1
+    
+    frames = frames[::-1]
+    events = events[::-1]
+    
+    idx_events = [idx for idx,i in enumerate(events) if i > 0]
+    event_frame_dict = {}
+    for i in idx_events:
+        event_frame_dict[events[i]] = frames[i]
+    import pdb;pdb.set_trace()
+    
+    return event_frame_dict
+
