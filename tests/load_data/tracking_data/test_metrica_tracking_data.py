@@ -5,11 +5,8 @@ import numpy as np
 import pandas as pd
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data.metrica import (
-    _get_metadata,
-    _get_td_channels,
+from databallpy.load_data.tracking_data.metrica_tracking_data import (
     _get_tracking_data,
-    _update_metadata,
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
 )
@@ -277,7 +274,7 @@ MD_RAW = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 
-class TestMetrica(unittest.TestCase):
+class TestMetricaTrackingData(unittest.TestCase):
     def setUp(self):
         self.md_loc = "tests/test_data/metrica_metadata_test.xml"
         self.td_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -364,34 +361,6 @@ class TestMetrica(unittest.TestCase):
                 "matchtime_td": ["00:00", "00:00", "00:01", "00:01", "45:00", "45:00"],
             }
         )
-
-    def test_get_metadata(self):
-        expected_metadata = self.expected_metadata.copy()
-        expected_metadata.home_formation = ""
-        expected_metadata.away_formation = ""
-        expected_metadata.home_players["starter"] = np.nan
-        expected_metadata.away_players["starter"] = np.nan
-        assert _get_metadata(self.md_loc) == expected_metadata
-
-    def test_get_td_channels(self):
-        input_metadata = self.expected_metadata.copy()
-        input_metadata.home_formation = ""
-        input_metadata.away_formation = ""
-        input_metadata.home_players["starter"] = np.nan
-        input_metadata.away_players["starter"] = np.nan
-        res = _get_td_channels(self.md_loc, input_metadata)
-        pd.testing.assert_frame_equal(res, self.expected_td_channels)
-
-    def test_update_metadata(self):
-        input_metadata = self.expected_metadata.copy()
-        input_metadata.home_formation = ""
-        input_metadata.away_formation = ""
-        input_metadata.home_players["starter"] = np.nan
-        input_metadata.away_players["starter"] = np.nan
-
-        res = _update_metadata(self.expected_td_channels, input_metadata)
-
-        assert res == self.expected_metadata
 
     def test_get_tracking_data(self):
         expected = self.expected_td.copy()
