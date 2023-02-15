@@ -1,4 +1,3 @@
-import datetime as dt
 import io
 import json
 import os
@@ -57,13 +56,9 @@ def load_metrica_event_data(
         metadata.periods_frames["period"] == 1, "start_time_td"
     ].iloc[0]
     frame_rate = metadata.frame_rate
-    event_data["datetime"] = pd.to_datetime("NaT")
-    for i, row in event_data.iterrows():
-        frame = row["td_frame"]
-        datetime = start_time + dt.timedelta(
-            seconds=((frame - first_frame) / frame_rate)
-        )
-        event_data.loc[i, "datetime"] = datetime
+    event_data["datetime"] = pd.to_datetime(start_time) + pd.to_timedelta(
+        (event_data["td_frame"] - first_frame) / frame_rate, unit="s"
+    )
 
     return event_data, metadata
 
