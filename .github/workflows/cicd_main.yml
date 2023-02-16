@@ -16,7 +16,14 @@ jobs:
 
       - name: setup
         uses: actions/checkout@v2
-        uses: FedericoCarboni/setup-ffmpeg@v2
+      
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install ffmpeg
+        run: npm install ffmpeg-static
 
       - name: Install poetry
         uses: snok/install-poetry@v1
