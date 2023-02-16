@@ -256,8 +256,8 @@ def save_match_clip(
     if len(events) > 0:
         assert (
             "event" in match.tracking_data.columns
-        ), "No event column found in match.tracking_data.columns, did you synchronize"
-        "event and tracking data?"
+        ), "No event column found in match.tracking_data.columns, did you synchronize\
+            event and tracking data?"
 
     animation_metadata = {
         "title": title,
