@@ -5,9 +5,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from functools import wraps
+import subprocess
 
 from databallpy.match import Match
 
+def requires_ffmpeg(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            subprocess.run(["ffmpeg", "-version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "It seems like ffmpeg is not added to your python path, please install\
+                     add ffmpeg to you python path to use this code."
+                )
+        
+        return func(*args, **kwargs)
+    
+    return wrapper
 
 def plot_soccer_pitch(
     field_dimen: tuple = (106.0, 68.0),
@@ -185,7 +202,7 @@ def plot_soccer_pitch(
 
     return fig, ax
 
-
+@requires_ffmpeg
 def save_match_clip(
     match: Match,
     start_idx: int,
@@ -374,3 +391,4 @@ def save_match_clip(
     # Close figure
     plt.clf()
     plt.close(fig)
+
