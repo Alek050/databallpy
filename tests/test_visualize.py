@@ -5,10 +5,20 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from databallpy.match import get_match
-from databallpy.visualize import plot_soccer_pitch, requires_ffmpeg, save_match_clip
+from databallpy.visualize import plot_soccer_pitch, requires_ffmpeg, save_match_clip, plot_events
 
 
 class TestVisualize(unittest.TestCase):
+    def setUp(self):
+        self.match = get_match(
+            tracking_data_loc="tests/test_data/tracab_td_test.dat",
+            tracking_metadata_loc="tests/test_data/tracab_metadata_test.xml",
+            tracking_data_provider="tracab",
+            event_data_loc="tests/test_data/f24_test.xml",
+            event_metadata_loc="tests/test_data/f7_test.xml",
+            event_data_provider="opta",
+        )
+
     def test_requires_ffmpeg_wrapper(self):
         @requires_ffmpeg
         def test_function():
@@ -29,15 +39,24 @@ class TestVisualize(unittest.TestCase):
         self.assertEqual(len(ax.lines), 27)
         self.assertEqual(len(ax.collections), 3)
 
+    def test_plot_events(self):
+
+        match = self.match
+
+        # Call plot_events function with different arguments
+        fig, ax = plot_events(match, events=["goal", "foul"], outcome=1, player_ids=[1, 3], team_id=1, pitch_color="green", color_by_col="team_id", team_colors=["blue", "red"], title="My Test Plot")
+        self.assertIsInstance(fig, plt.Figure)
+        self.assertIsInstance(ax, plt.Axes)
+
+        # Check plot elements
+        self.assertEqual(ax.get_title(), "My Test Plot")
+        self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "Home Team")
+        self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "Away Team")
+        self.assertEqual(ax.get_legend().get_lines()[0].get_color(), "blue")
+        self.assertEqual(ax.get_legend().get_lines()[1].get_color(), "red")
+
     def test_save_match_clip(self):
-        match = get_match(
-            tracking_data_loc="tests/test_data/tracab_td_test.dat",
-            tracking_metadata_loc="tests/test_data/tracab_metadata_test.xml",
-            tracking_data_provider="tracab",
-            event_data_loc="tests/test_data/f24_test.xml",
-            event_metadata_loc="tests/test_data/f7_test.xml",
-            event_data_provider="opta",
-        )
+        match = self.match
         series = pd.Series([22, 23, 25], index=[1, 2, 3])
         with self.assertRaises(AssertionError):
             save_match_clip(
