@@ -247,13 +247,13 @@ def plot_events(
     event_data = match.event_data
 
     if len(events) > 0:
-        assert all([x in event_data["event"].unique() for x in events])
+        assert all([x in match.event_data["event"].unique() for x in events])
         event_data = event_data.loc[event_data["event"].isin(events)]
     if outcome is not None:
         assert outcome in [0, 1]
         event_data = event_data.loc[event_data["outcome"] == outcome]
     if len(player_ids) > 0:
-        assert all(x in event_data["player_id"].unique() for x in player_ids)
+        assert all(x in match.event_data["player_id"].unique() for x in player_ids)
         event_data = event_data.loc[event_data["player_id"].isin(player_ids)]
     if team_id:
         assert team_id in [match.home_team_id, match.away_team_id]
@@ -262,9 +262,9 @@ def plot_events(
     if len(event_data) == 0:
         print(
             "No events could be found that match your\
-             requirements, please try again."
+            requirements, please try again."
         )
-        return
+        return None, None
     else:
         print(f"Found {len(event_data)} matching events")
 
@@ -272,7 +272,7 @@ def plot_events(
         field_dimen=match.pitch_dimensions, pitch_color=pitch_color
     )
     if title:
-        ax.title(title)
+        ax.set_title(title)
 
     # Set match name
     ax.text(

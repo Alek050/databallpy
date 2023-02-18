@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from databallpy.match import get_match
-from databallpy.visualize import plot_soccer_pitch, requires_ffmpeg, save_match_clip, plot_events
+from databallpy.visualize import (
+    plot_events,
+    plot_soccer_pitch,
+    requires_ffmpeg,
+    save_match_clip,
+)
 
 
 class TestVisualize(unittest.TestCase):
@@ -44,16 +49,73 @@ class TestVisualize(unittest.TestCase):
         match = self.match
 
         # Call plot_events function with different arguments
-        fig, ax = plot_events(match, events=["goal", "foul"], outcome=1, player_ids=[1, 3], team_id=1, pitch_color="green", color_by_col="team_id", team_colors=["blue", "red"], title="My Test Plot")
+        fig, ax = plot_events(
+            match,
+            events=["pass", "take on", "start"],
+            player_ids=[45849],
+            team_id=3,
+            pitch_color="green",
+            color_by_col="team_id",
+            team_colors=["blue", "red"],
+            title="My Test Plot",
+        )
         self.assertIsInstance(fig, plt.Figure)
         self.assertIsInstance(ax, plt.Axes)
 
         # Check plot elements
         self.assertEqual(ax.get_title(), "My Test Plot")
-        self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "Home Team")
-        self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "Away Team")
-        self.assertEqual(ax.get_legend().get_lines()[0].get_color(), "blue")
-        self.assertEqual(ax.get_legend().get_lines()[1].get_color(), "red")
+        self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "TeamOne")
+        self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "TeamTwo")
+        self.assertEqual(len(ax.collections), 5)
+
+        fig, ax = plot_events(
+            match,
+            events=["pass", "take on", "start"],
+            player_ids=[45849],
+            outcome=1,
+            team_id=3,
+            pitch_color="green",
+            color_by_col="team_id",
+            team_colors=["blue", "red"],
+            title="My Test Plot",
+        )
+        assert fig is None
+        assert ax is None
+
+        fig, ax = plot_events(
+            match,
+            events=["pass", "take on", "start"],
+            player_ids=[45849],
+            team_id=3,
+            pitch_color="green",
+            color_by_col="event",
+            team_colors=["blue", "red"],
+            title="My Test Plot2",
+        )
+        self.assertIsInstance(fig, plt.Figure)
+        self.assertIsInstance(ax, plt.Axes)
+
+        # Check plot elements
+        self.assertEqual(ax.get_title(), "My Test Plot2")
+        self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "pass")
+        self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "take on")
+        self.assertEqual(len(ax.collections), 5)
+
+        fig, ax = plot_events(
+            match,
+            events=["pass", "take on", "start"],
+            player_ids=[45849],
+            team_id=3,
+            pitch_color="green",
+            team_colors=["blue", "red"],
+            title="My Test Plot3",
+        )
+        self.assertIsInstance(fig, plt.Figure)
+        self.assertIsInstance(ax, plt.Axes)
+
+        # Check plot elements
+        self.assertEqual(ax.get_title(), "My Test Plot3")
+        self.assertEqual(len(ax.collections), 4)
 
     def test_save_match_clip(self):
         match = self.match
