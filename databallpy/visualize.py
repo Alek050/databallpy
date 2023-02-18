@@ -1,3 +1,5 @@
+import subprocess
+from functools import wraps
 from typing import Tuple
 
 import matplotlib.animation as animation
@@ -7,6 +9,27 @@ import pandas as pd
 from tqdm import tqdm
 
 from databallpy.match import Match
+
+
+def requires_ffmpeg(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            subprocess.run(
+                ["ffmpeg", "-version"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "It seems like ffmpeg is not added to your python path, please install\
+                     add ffmpeg to you python path to use this code."
+            )
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def plot_soccer_pitch(
@@ -186,6 +209,7 @@ def plot_soccer_pitch(
     return fig, ax
 
 
+@requires_ffmpeg
 def save_match_clip(
     match: Match,
     start_idx: int,
@@ -232,8 +256,8 @@ def save_match_clip(
     if len(events) > 0:
         assert (
             "event" in match.tracking_data.columns
-        ), "No event column found in match.tracking_data.columns, did you synchronize"
-        "event and tracking data?"
+        ), "No event column found in match.tracking_data.columns, did you synchronize\
+            event and tracking data?"
 
     animation_metadata = {
         "title": title,
