@@ -117,9 +117,14 @@ class Match:
     def synchronise_tracking_and_event_data(self):
         """Function that synchronises tracking and event data using Needleman-Wunsch algorithmn 
            Based on: https://kwiatkowski.io/sync.soccer 
-        
+           Currently works for the following events:
+            'pass', 'aerial', 'interception', 'ball recovery', 'dispossessed', 'tackle',
+            'take on', 'clearance', 'blocked pass', 'offside pass', 'attempt saved',
+            'save', 'foul', 'miss', 'challenge', 'goal'
+
         Returns:
             Match: The match class with synchronised tracking and event data
+
         """
         events_to_sync = [
             'pass',
@@ -165,48 +170,26 @@ class Match:
                 tracking_batch = tracking_data[(tracking_data["timestamp"] < end_frame) & (tracking_data["timestamp"] > start_frame)].reset_index(drop=False)
                 event_batch = event_data[(event_data["datetime"] > start_event) & (event_data["datetime"] < end_event)].reset_index()
 
-                sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
-                for i, event in event_batch.iterrows():
-                    time_diff = (tracking_batch["datetime"] - event["datetime"])/np.timedelta64(1, "s")
-                    ball_loc_diff = np.hypot(
-                        tracking_batch["ball_x"] - event["start_x"],
-                        tracking_batch["ball_y"] - event["start_y"]
-                    )
-
-                    if (type(event["player_name"]) == str):
-                        column_id_player = self.full_name_to_player_column_id(full_name=event["player_name"])
-                        player_ball_diff = np.hypot(
-                            tracking_batch["ball_x"] - tracking_batch[f"{column_id_player}_x"],
-                            tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"]
-                        )
-
-                    else:
-                        player_ball_diff = 0
-                        
-                    sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff/5 + player_ball_diff
-                
-                den = np.nanmax(sim_mat.min(axis=0)) #scale similarity scores
-                sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat) #remove nan values with highest value
-                sim_mat = np.exp(-sim_mat/den)
+                sim_mat = _create_sim_mat(tracking_batch, event_batch, self)                
                 event_frame_dict = _needleman_wunsch(sim_mat)
                
                 for event, frame in event_frame_dict.items():
                     event_id = int(event_batch.loc[event, "event_id"])
                     event_type = event_batch.loc[event, "event"]
                     event_frame = int(event_batch.loc[event, "index"])
-                    td_frame = int(tracking_batch.loc[frame, "index"]) 
+                    tracking_frame = int(tracking_batch.loc[frame, "index"]) 
                     # Make sure only one event per frame is allowed
                     event_assigned = False
                     while not event_assigned:
-                        if np.isnan(tracking_data.loc[td_frame, "event"]):
-                            tracking_data.loc[td_frame, "event"] = event_type
-                            tracking_data.loc[td_frame, "event_id"] = event_id
+                        if np.isnan(tracking_data.loc[tracking_frame, "event"]):
+                            tracking_data.loc[tracking_frame, "event"] = event_type
+                            tracking_data.loc[tracking_frame, "event_id"] = event_id
                             event_assigned = True
                         else:
-                            td_frame += 1
-                    event_data.loc[event_frame, "tracking_frame"] = td_frame
+                            tracking_frame += 1
+                    event_data.loc[event_frame, "tracking_frame"] = tracking_frame
 
-                start_frame = tracking_data.iloc[td_frame]["timestamp"]
+                start_frame = tracking_data.iloc[tracking_frame]["timestamp"]
                 start_event = event_batch[event_batch["event_id"] == event_id]["datetime"].iloc[0].to_numpy()
 
         self.tracking_data = tracking_data
@@ -333,7 +316,6 @@ def get_match(
         (tracking_data["timestamp"] > merged_periods.loc[3, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[4, "start_frame"]),
         (tracking_data["timestamp"] > merged_periods.loc[4, "start_frame"])   
     ]
-
     period_values = ["1", "Break after 1", "2", "Break after 2", "3", "Break after 3", "4", "Break after 4", "5"]
     tracking_data["period"] = np.select(period_conditions, period_values)
    
@@ -370,6 +352,44 @@ def get_match(
 
     return match
 
+def _create_sim_mat(tracking_batch:pd.DataFrame, event_batch:pd.DataFrame, match:Match)-> np.ndarray:
+    """Function that creates similarity matrix between every frame and event in batch
+
+    Args:
+        tracking_batch (pd.DataFrame): batch of tracking data
+        event_batch (pd.DataFrame): batch of event data
+        match (Match): Match class containing full_name_to_player_column_id function
+
+    Returns:
+        np.ndarray: array containing similarity scores between every frame and events,
+                    size is #frames, #events
+    """
+    sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
+    for i, event in event_batch.iterrows():
+        time_diff = (tracking_batch["datetime"] - event["datetime"])/np.timedelta64(1, "s")
+        ball_loc_diff = np.hypot(
+            tracking_batch["ball_x"] - event["start_x"],
+            tracking_batch["ball_y"] - event["start_y"]
+        )
+
+        if (type(event["player_name"]) == str):
+            column_id_player = match.full_name_to_player_column_id(full_name=event["player_name"])
+            player_ball_diff = np.hypot(
+                tracking_batch["ball_x"] - tracking_batch[f"{column_id_player}_x"],
+                tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"]
+            )
+
+        else:
+            player_ball_diff = 0
+            
+        sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff/5 + player_ball_diff
+    
+    den = np.nanmax(sim_mat.min(axis=0)) #scale similarity scores
+    sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat) #remove nan values with highest value
+    sim_mat = np.exp(-sim_mat/den)
+    
+    return sim_mat
+
 def _needleman_wunsch(sim_mat: np.ndarray)-> dict:
     """
     Function that calculates the optimal alignment between events and frames
@@ -377,7 +397,7 @@ def _needleman_wunsch(sim_mat: np.ndarray)-> dict:
     Based on: https://gist.github.com/slowkow/06c6dba9180d013dfd82bec217d22eb5
 
     Args:
-        sim_mat (np.ndarray): matrix with distance measure between every frame and event
+        sim_mat (np.ndarray): matrix with similarity between every frame and event
 
     Returns:
        event_frame_dict (dict): dictionary with events as keys and frames as values
