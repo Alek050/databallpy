@@ -109,15 +109,15 @@ class TestOpta(unittest.TestCase):
                 "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68],
                 "datetime": np.array(
                     [
-                        "2023-01-22T10:28:32.117",
-                        "2023-01-22T11:18:32.152",
-                        "2023-01-22T11:18:32.152",
-                        "2023-01-22T11:18:33.637",
-                        "2023-01-22T11:18:36.207",
-                        "2023-01-22T11:18:39.109",
-                        "2023-01-22T11:18:41.615",
-                        "2023-01-22T11:18:43.119",
-                        "2023-01-22T11:18:43.120",
+                        "2023-01-22T11:28:32.117",
+                        "2023-01-22T12:18:32.152",
+                        "2023-01-22T12:18:32.152",
+                        "2023-01-22T12:18:33.637",
+                        "2023-01-22T12:18:36.207",
+                        "2023-01-22T12:18:39.109",
+                        "2023-01-22T12:18:41.615",
+                        "2023-01-22T12:18:43.119",
+                        "2023-01-22T12:18:43.120",
                     ],
                     dtype="datetime64",
                 ),
@@ -197,5 +197,7 @@ class TestOpta(unittest.TestCase):
         expected_event_data.loc[:, ["start_x", "start_y"]] = (
             expected_event_data.loc[:, ["start_x", "start_y"]] + 5
         ) * 10
-
+        print(event_data)
+        print(expected_event_data)
+        print(event_data == expected_event_data)
         pd.testing.assert_frame_equal(event_data, expected_event_data)

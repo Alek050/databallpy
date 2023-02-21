@@ -96,25 +96,25 @@ class Match:
                 self.away_players["shirt_num"] == shirt_num, "full_name"
             ].iloc[0]
 
-    def full_name_to_player_column_id(self, full_name: str) -> str:
-        """Simple function to get the column id based on full name
+    def player_id_to_column_id(self, player_id: int) -> str:
+        """Simple function to get the column id based on player id
 
         Args:
-            full_name (str): full name of the player
+            player_id (int): id of the player
 
         Returns:
             str: column id of the player, for instance "home_1"
         """
-        if (self.home_players["full_name"].eq(full_name)).any():
-            num = self.home_players[self.home_players["full_name"] == full_name]["shirt_num"].iloc[0]
+        if (self.home_players["id"].eq(player_id)).any():
+            num = self.home_players[self.home_players["id"] == player_id]["shirt_num"].iloc[0]
             return f"home_{num}"
-        elif (self.away_players["full_name"].eq(full_name)).any():
-            num = self.away_players[self.away_players["full_name"] == full_name]["shirt_num"].iloc[0]
+        elif (self.away_players["id"].eq(player_id)).any():
+            num = self.away_players[self.away_players["id"] == player_id]["shirt_num"].iloc[0]
             return f"away_{num}"
         else:
-            return ""
+            raise ValueError(f"{player_id} is not in either one of the teams")
 
-    def synchronise_tracking_and_event_data(self):
+    def synchronise_tracking_and_event_data(self, n_batches_per_half=9):
         """Function that synchronises tracking and event data using Needleman-Wunsch algorithmn 
            Based on: https://kwiatkowski.io/sync.soccer 
            Currently works for the following events:
@@ -147,7 +147,7 @@ class Match:
 
         tracking_data = self.tracking_data
         event_data = self.event_data
-        date = np.datetime64(str(self.periods.iloc[1,3])[:10])
+        date = np.datetime64(str(self.periods.iloc[0,3])[:10])
         tracking_data["datetime"] = [date + np.timedelta64(int(x/self.frame_rate*1000), "ms") for x in tracking_data["timestamp"]]
         event_data = event_data[event_data["event"].isin(events_to_sync)]
 
@@ -161,7 +161,7 @@ class Match:
             start_frame = self.periods.iloc[p-1,1]
             start_event = date + np.timedelta64(int(start_frame/self.frame_rate*1000), "ms")
             delta = self.periods.iloc[p-1,2] - start_frame
-            n_splits = 9
+            n_splits = n_batches_per_half
             end_frames = np.floor(np.arange(delta/n_splits, delta + delta/n_splits, delta/n_splits) + start_frame)
             end_events = [date + np.timedelta64(int(x/self.frame_rate*1000), "ms") for x in end_frames]
             
@@ -169,29 +169,22 @@ class Match:
             for end_frame, end_event in tqdm(zip(end_frames, end_events), total=len(end_frames)):
                 tracking_batch = tracking_data[(tracking_data["timestamp"] < end_frame) & (tracking_data["timestamp"] > start_frame)].reset_index(drop=False)
                 event_batch = event_data[(event_data["datetime"] > start_event) & (event_data["datetime"] < end_event)].reset_index()
-
+                
                 sim_mat = _create_sim_mat(tracking_batch, event_batch, self)                
                 event_frame_dict = _needleman_wunsch(sim_mat)
-               
+
                 for event, frame in event_frame_dict.items():
                     event_id = int(event_batch.loc[event, "event_id"])
                     event_type = event_batch.loc[event, "event"]
                     event_frame = int(event_batch.loc[event, "index"])
                     tracking_frame = int(tracking_batch.loc[frame, "index"]) 
-                    # Make sure only one event per frame is allowed
-                    event_assigned = False
-                    while not event_assigned:
-                        if np.isnan(tracking_data.loc[tracking_frame, "event"]):
-                            tracking_data.loc[tracking_frame, "event"] = event_type
-                            tracking_data.loc[tracking_frame, "event_id"] = event_id
-                            event_assigned = True
-                        else:
-                            tracking_frame += 1
+                    tracking_data.loc[tracking_frame, "event"] = event_type
+                    tracking_data.loc[tracking_frame, "event_id"] = event_id
                     event_data.loc[event_frame, "tracking_frame"] = tracking_frame
 
                 start_frame = tracking_data.iloc[tracking_frame]["timestamp"]
                 start_event = event_batch[event_batch["event_id"] == event_id]["datetime"].iloc[0].to_numpy()
-
+        tracking_data.drop("datetime", axis=1, inplace=True)
         self.tracking_data = tracking_data
         self.event_data = event_data
         
@@ -283,27 +276,6 @@ def get_match(
         on="id",
     )
 
-    # Make sure player names in tracking and eventdata are equal, tracking data is leading
-    home_players_td = tracking_metadata.home_players
-    home_players_ed = event_metadata.home_players
-    away_players_td = tracking_metadata.away_players
-    away_players_ed = event_metadata.away_players
-
-    full_names_dict = {}
-    for num in home_players_td["shirt_num"].unique():
-        name_td = home_players_td[home_players_td["shirt_num"] == num]["full_name"].iloc[0]
-        name_ed = home_players_ed[home_players_ed["shirt_num"] == num]["full_name"].iloc[0]
-        if name_ed != name_td:
-            full_names_dict[name_ed] = name_td
-
-    for num in away_players_td["shirt_num"].unique():
-        name_td = away_players_td[away_players_td["shirt_num"] == num]["full_name"].iloc[0]
-        name_ed = away_players_ed[away_players_ed["shirt_num"] == num]["full_name"].iloc[0]  
-        if name_ed != name_td:
-            full_names_dict[name_ed] = name_td
-
-    event_data["player_name"] = event_data["player_name"].map(full_names_dict).fillna(event_data["player_name"])
-
     # Create period column based on periods df
     period_conditions = [
         (tracking_data["timestamp"] <= merged_periods.loc[0, "end_frame"]),
@@ -325,7 +297,7 @@ def get_match(
         if start_side_home_team < 0: # home team plays left to right in period 1 and 3
             periods_to_flip = ["2", "4"]
         else:
-            periods_to_flip = ["1", "3"]
+            periods_to_flip = ["1", "3", "5"]
         for period in periods_to_flip:
             if "_x" in col:
                 tracking_data.loc[tracking_data["period"] == period, col] *= -1
@@ -365,6 +337,7 @@ def _create_sim_mat(tracking_batch:pd.DataFrame, event_batch:pd.DataFrame, match
                     size is #frames, #events
     """
     sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
+    
     for i, event in event_batch.iterrows():
         time_diff = (tracking_batch["datetime"] - event["datetime"])/np.timedelta64(1, "s")
         ball_loc_diff = np.hypot(
@@ -372,8 +345,9 @@ def _create_sim_mat(tracking_batch:pd.DataFrame, event_batch:pd.DataFrame, match
             tracking_batch["ball_y"] - event["start_y"]
         )
 
-        if (type(event["player_name"]) == str):
-            column_id_player = match.full_name_to_player_column_id(full_name=event["player_name"])
+        if (type(event["player_id"]) == float):
+            print(type(event["player_id"]), event["player_id"])
+            column_id_player = match.player_id_to_column_id(player_id=event["player_id"])
             player_ball_diff = np.hypot(
                 tracking_batch["ball_x"] - tracking_batch[f"{column_id_player}_x"],
                 tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"]
@@ -384,13 +358,13 @@ def _create_sim_mat(tracking_batch:pd.DataFrame, event_batch:pd.DataFrame, match
             
         sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff/5 + player_ball_diff
     
-    den = np.nanmax(sim_mat.min(axis=0)) #scale similarity scores
+    den = np.nanmax(sim_mat.min(axis=1)) #scale similarity scores
     sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat) #remove nan values with highest value
     sim_mat = np.exp(-sim_mat/den)
-    
+   
     return sim_mat
 
-def _needleman_wunsch(sim_mat: np.ndarray)-> dict:
+def _needleman_wunsch(sim_mat: np.ndarray, gap_event: int =-1, gap_frame: int =1)-> dict:
     """
     Function that calculates the optimal alignment between events and frames
     given similarity scores between all frames and events
@@ -398,14 +372,16 @@ def _needleman_wunsch(sim_mat: np.ndarray)-> dict:
 
     Args:
         sim_mat (np.ndarray): matrix with similarity between every frame and event
+        gap_event (int): penalty for leaving an event unassigned to a frame (not allowed),
+                         defaults to -1
+        gap_frame (int): penalty for leaving a frame unassigned to a penalty (very common),
+                         defaults to 1
 
     Returns:
        event_frame_dict (dict): dictionary with events as keys and frames as values
     """
     n_frames, n_events = np.shape(sim_mat)
 
-    gap_event = -1 # penalty for leaving an event unassigned to a frame (not allowed)
-    gap_frame = 1 # penalty for leaving a frame unassigned to a penalty (very common)
     F = np.zeros((n_frames + 1, n_events + 1))
     F[:,0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
     F[0,:] = np.linspace(0, n_events * gap_event, n_events + 1)
@@ -447,9 +423,9 @@ def _needleman_wunsch(sim_mat: np.ndarray)-> dict:
             events.append(0)
             i -= 1
         elif P[i,j] in [4, 6, 7, 9]: # 4 was added, event unassigned
-            frames.append(0)
-            events.append(j)
-            j -= 1
+            raise ValueError(
+                "An event was left unassigned, check your gap penalty values"
+            )
     
     frames = frames[::-1]
     events = events[::-1]
