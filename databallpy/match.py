@@ -1,10 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-
+import pandas as pd
 from tqdm import tqdm
 
 from databallpy.load_data.event_data.opta import load_opta_event_data
@@ -106,17 +104,21 @@ class Match:
             str: column id of the player, for instance "home_1"
         """
         if (self.home_players["id"].eq(player_id)).any():
-            num = self.home_players[self.home_players["id"] == player_id]["shirt_num"].iloc[0]
+            num = self.home_players[self.home_players["id"] == player_id][
+                "shirt_num"
+            ].iloc[0]
             return f"home_{num}"
         elif (self.away_players["id"].eq(player_id)).any():
-            num = self.away_players[self.away_players["id"] == player_id]["shirt_num"].iloc[0]
+            num = self.away_players[self.away_players["id"] == player_id][
+                "shirt_num"
+            ].iloc[0]
             return f"away_{num}"
         else:
             raise ValueError(f"{player_id} is not in either one of the teams")
 
     def synchronise_tracking_and_event_data(self, n_batches_per_half=9):
-        """Function that synchronises tracking and event data using Needleman-Wunsch algorithmn 
-           Based on: https://kwiatkowski.io/sync.soccer 
+        """Function that synchronises tracking and event data using Needleman-Wunsch
+           algorithmn. Based on: https://kwiatkowski.io/sync.soccer
            Currently works for the following events:
             'pass', 'aerial', 'interception', 'ball recovery', 'dispossessed', 'tackle',
             'take on', 'clearance', 'blocked pass', 'offside pass', 'attempt saved',
@@ -127,67 +129,90 @@ class Match:
 
         """
         events_to_sync = [
-            'pass',
-            'aerial',
-            'interception',
-            'ball recovery',
-            'dispossessed',
-            'tackle',
-            'take on',
-            'clearance',
-            'blocked pass',
-            'offside pass',
-            'attempt saved',
-            'save',
-            'foul',
-            'miss', 
-            'challenge',
-            'goal'
+            "pass",
+            "aerial",
+            "interception",
+            "ball recovery",
+            "dispossessed",
+            "tackle",
+            "take on",
+            "clearance",
+            "blocked pass",
+            "offside pass",
+            "attempt saved",
+            "save",
+            "foul",
+            "miss",
+            "challenge",
+            "goal",
         ]
 
         tracking_data = self.tracking_data
         event_data = self.event_data
-        date = np.datetime64(str(self.periods.iloc[0,3])[:10])
-        tracking_data["datetime"] = [date + np.timedelta64(int(x/self.frame_rate*1000), "ms") for x in tracking_data["timestamp"]]
+        date = np.datetime64(str(self.periods.iloc[0, 3])[:10])
+        tracking_data["datetime"] = [
+            date + np.timedelta64(int(x / self.frame_rate * 1000), "ms")
+            for x in tracking_data["timestamp"]
+        ]
         event_data = event_data[event_data["event"].isin(events_to_sync)]
 
         tracking_data["event"] = np.nan
         tracking_data["event_id"] = np.nan
         event_data["tracking_frame"] = np.nan
 
-        periods_played = self.periods[self.periods["start_frame"]>0]["period"].values
+        periods_played = self.periods[self.periods["start_frame"] > 0]["period"].values
         for p in periods_played:
-            #create batches to loop over
-            start_frame = self.periods.iloc[p-1,1]
-            start_event = date + np.timedelta64(int(start_frame/self.frame_rate*1000), "ms")
-            delta = self.periods.iloc[p-1,2] - start_frame
+            # create batches to loop over
+            start_frame = self.periods.iloc[p - 1, 1]
+            start_event = date + np.timedelta64(
+                int(start_frame / self.frame_rate * 1000), "ms"
+            )
+            delta = self.periods.iloc[p - 1, 2] - start_frame
             n_splits = n_batches_per_half
-            end_frames = np.floor(np.arange(delta/n_splits, delta + delta/n_splits, delta/n_splits) + start_frame)
-            end_events = [date + np.timedelta64(int(x/self.frame_rate*1000), "ms") for x in end_frames]
-            
+            end_frames = np.floor(
+                np.arange(delta / n_splits, delta + delta / n_splits, delta / n_splits)
+                + start_frame
+            )
+            end_events = [
+                date + np.timedelta64(int(x / self.frame_rate * 1000), "ms")
+                for x in end_frames
+            ]
+
             print(f"Syncing period {p}...")
-            for end_frame, end_event in tqdm(zip(end_frames, end_events), total=len(end_frames)):
-                tracking_batch = tracking_data[(tracking_data["timestamp"] < end_frame) & (tracking_data["timestamp"] > start_frame)].reset_index(drop=False)
-                event_batch = event_data[(event_data["datetime"] > start_event) & (event_data["datetime"] < end_event)].reset_index()
-                
-                sim_mat = _create_sim_mat(tracking_batch, event_batch, self)                
+            for end_frame, end_event in tqdm(
+                zip(end_frames, end_events), total=len(end_frames)
+            ):
+                tracking_batch = tracking_data[
+                    (tracking_data["timestamp"] < end_frame)
+                    & (tracking_data["timestamp"] > start_frame)
+                ].reset_index(drop=False)
+                event_batch = event_data[
+                    (event_data["datetime"] > start_event)
+                    & (event_data["datetime"] < end_event)
+                ].reset_index()
+
+                sim_mat = _create_sim_mat(tracking_batch, event_batch, self)
                 event_frame_dict = _needleman_wunsch(sim_mat)
 
                 for event, frame in event_frame_dict.items():
                     event_id = int(event_batch.loc[event, "event_id"])
                     event_type = event_batch.loc[event, "event"]
                     event_frame = int(event_batch.loc[event, "index"])
-                    tracking_frame = int(tracking_batch.loc[frame, "index"]) 
+                    tracking_frame = int(tracking_batch.loc[frame, "index"])
                     tracking_data.loc[tracking_frame, "event"] = event_type
                     tracking_data.loc[tracking_frame, "event_id"] = event_id
                     event_data.loc[event_frame, "tracking_frame"] = tracking_frame
 
                 start_frame = tracking_data.iloc[tracking_frame]["timestamp"]
-                start_event = event_batch[event_batch["event_id"] == event_id]["datetime"].iloc[0].to_numpy()
+                start_event = (
+                    event_batch[event_batch["event_id"] == event_id]["datetime"]
+                    .iloc[0]
+                    .to_numpy()
+                )
         tracking_data.drop("datetime", axis=1, inplace=True)
         self.tracking_data = tracking_data
         self.event_data = event_data
-        
+
         return self
 
     def __eq__(self, other):
@@ -279,29 +304,52 @@ def get_match(
     # Create period column based on periods df
     period_conditions = [
         (tracking_data["timestamp"] <= merged_periods.loc[0, "end_frame"]),
-        (tracking_data["timestamp"] > merged_periods.loc[0, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[1, "start_frame"]),
-        (tracking_data["timestamp"] >= merged_periods.loc[1, "start_frame"]) & (tracking_data["timestamp"] <= merged_periods.loc[1, "end_frame"]),
-        (tracking_data["timestamp"] > merged_periods.loc[1, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[2, "start_frame"]),
-        (tracking_data["timestamp"] >= merged_periods.loc[2, "start_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[2, "end_frame"]),
-        (tracking_data["timestamp"] > merged_periods.loc[2, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[3, "start_frame"]),
-        (tracking_data["timestamp"] >= merged_periods.loc[3, "start_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[3, "end_frame"]),
-        (tracking_data["timestamp"] > merged_periods.loc[3, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[4, "start_frame"]),
-        (tracking_data["timestamp"] > merged_periods.loc[4, "start_frame"])   
+        (tracking_data["timestamp"] > merged_periods.loc[0, "end_frame"])
+        & (tracking_data["timestamp"] < merged_periods.loc[1, "start_frame"]),
+        (tracking_data["timestamp"] >= merged_periods.loc[1, "start_frame"])
+        & (tracking_data["timestamp"] <= merged_periods.loc[1, "end_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[1, "end_frame"])
+        & (tracking_data["timestamp"] < merged_periods.loc[2, "start_frame"]),
+        (tracking_data["timestamp"] >= merged_periods.loc[2, "start_frame"])
+        & (tracking_data["timestamp"] < merged_periods.loc[2, "end_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[2, "end_frame"])
+        & (tracking_data["timestamp"] < merged_periods.loc[3, "start_frame"]),
+        (tracking_data["timestamp"] >= merged_periods.loc[3, "start_frame"])
+        & (tracking_data["timestamp"] < merged_periods.loc[3, "end_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[3, "end_frame"])
+        & (tracking_data["timestamp"] < merged_periods.loc[4, "start_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[4, "start_frame"]),
     ]
-    period_values = ["1", "Break after 1", "2", "Break after 2", "3", "Break after 3", "4", "Break after 4", "5"]
+    period_values = [
+        "1",
+        "Break after 1",
+        "2",
+        "Break after 2",
+        "3",
+        "Break after 3",
+        "4",
+        "Break after 4",
+        "5",
+    ]
     tracking_data["period"] = np.select(period_conditions, period_values)
-   
-   # Make home team always play from left to right
-    start_side_home_team = tracking_data[[x for x in tracking_data.columns if ("home_" in x) and ("_x" in x)]].iloc[0].mean()
+
+    # Make home team always play from left to right
+    start_side_home_team = (
+        tracking_data[
+            [x for x in tracking_data.columns if ("home_" in x) and ("_x" in x)]
+        ]
+        .iloc[0]
+        .mean()
+    )
     for col in tracking_data.columns:
-        if start_side_home_team < 0: # home team plays left to right in period 1 and 3
+        if start_side_home_team < 0:  # home team plays left to right in period 1 and 3
             periods_to_flip = ["2", "4"]
         else:
             periods_to_flip = ["1", "3", "5"]
         for period in periods_to_flip:
             if "_x" in col:
                 tracking_data.loc[tracking_data["period"] == period, col] *= -1
-                
+
     match = Match(
         tracking_data=tracking_data,
         tracking_data_provider=tracking_data_provider,
@@ -324,7 +372,10 @@ def get_match(
 
     return match
 
-def _create_sim_mat(tracking_batch:pd.DataFrame, event_batch:pd.DataFrame, match:Match)-> np.ndarray:
+
+def _create_sim_mat(
+    tracking_batch: pd.DataFrame, event_batch: pd.DataFrame, match: Match
+) -> np.ndarray:
     """Function that creates similarity matrix between every frame and event in batch
 
     Args:
@@ -337,34 +388,43 @@ def _create_sim_mat(tracking_batch:pd.DataFrame, event_batch:pd.DataFrame, match
                     size is #frames, #events
     """
     sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
-    
+
     for i, event in event_batch.iterrows():
-        time_diff = (tracking_batch["datetime"] - event["datetime"])/np.timedelta64(1, "s")
+        time_diff = (tracking_batch["datetime"] - event["datetime"]) / np.timedelta64(
+            1, "s"
+        )
         ball_loc_diff = np.hypot(
             tracking_batch["ball_x"] - event["start_x"],
-            tracking_batch["ball_y"] - event["start_y"]
+            tracking_batch["ball_y"] - event["start_y"],
         )
 
-        if (type(event["player_id"]) == float):
+        if type(event["player_id"]) == float:
             print(type(event["player_id"]), event["player_id"])
-            column_id_player = match.player_id_to_column_id(player_id=event["player_id"])
+            column_id_player = match.player_id_to_column_id(
+                player_id=event["player_id"]
+            )
             player_ball_diff = np.hypot(
                 tracking_batch["ball_x"] - tracking_batch[f"{column_id_player}_x"],
-                tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"]
+                tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"],
             )
 
         else:
             player_ball_diff = 0
-            
-        sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff/5 + player_ball_diff
-    
-    den = np.nanmax(sim_mat.min(axis=1)) #scale similarity scores
-    sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat) #remove nan values with highest value
-    sim_mat = np.exp(-sim_mat/den)
-   
+
+        sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
+
+    den = np.nanmax(sim_mat.min(axis=1))  # scale similarity scores
+    sim_mat[np.isnan(sim_mat)] = np.nanmax(
+        sim_mat
+    )  # remove nan values with highest value
+    sim_mat = np.exp(-sim_mat / den)
+
     return sim_mat
 
-def _needleman_wunsch(sim_mat: np.ndarray, gap_event: int =-1, gap_frame: int =1)-> dict:
+
+def _needleman_wunsch(
+    sim_mat: np.ndarray, gap_event: int = -1, gap_frame: int = 1
+) -> dict:
     """
     Function that calculates the optimal alignment between events and frames
     given similarity scores between all frames and events
@@ -372,10 +432,10 @@ def _needleman_wunsch(sim_mat: np.ndarray, gap_event: int =-1, gap_frame: int =1
 
     Args:
         sim_mat (np.ndarray): matrix with similarity between every frame and event
-        gap_event (int): penalty for leaving an event unassigned to a frame (not allowed),
-                         defaults to -1
-        gap_frame (int): penalty for leaving a frame unassigned to a penalty (very common),
-                         defaults to 1
+        gap_event (int): penalty for leaving an event unassigned to a frame
+                         (not allowed), defaults to -1
+        gap_frame (int): penalty for leaving a frame unassigned to a penalty
+                         (very common), defaults to 1
 
     Returns:
        event_frame_dict (dict): dictionary with events as keys and frames as values
@@ -383,57 +443,56 @@ def _needleman_wunsch(sim_mat: np.ndarray, gap_event: int =-1, gap_frame: int =1
     n_frames, n_events = np.shape(sim_mat)
 
     F = np.zeros((n_frames + 1, n_events + 1))
-    F[:,0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
-    F[0,:] = np.linspace(0, n_events * gap_event, n_events + 1)
-    
+    F[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
+    F[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
+
     # Pointer matrix
     P = np.zeros((n_frames + 1, n_events + 1))
-    P[:,0] = 3
-    P[0,:] = 4
-   
+    P[:, 0] = 3
+    P[0, :] = 4
+
     t = np.zeros(3)
     for i in range(n_frames):
         for j in range(n_events):
-            t[0] = F[i,j] + sim_mat[i,j]
-            t[1] = F[i,j+1] + gap_frame #top + gap frame
-            t[2] = F[i+1,j] + gap_event #left + gap event
+            t[0] = F[i, j] + sim_mat[i, j]
+            t[1] = F[i, j + 1] + gap_frame  # top + gap frame
+            t[2] = F[i + 1, j] + gap_event  # left + gap event
             tmax = np.max(t)
-            F[i+1,j+1] = tmax
-            
-            if t[0] == tmax: #match
-                P[i+1,j+1] += 2
-            if t[1] == tmax: #frame unassigned
-                P[i+1,j+1] += 3
-            if t[2] == tmax: #event unassigned
-                P[i+1,j+1] += 4
+            F[i + 1, j + 1] = tmax
+
+            if t[0] == tmax:  # match
+                P[i + 1, j + 1] += 2
+            if t[1] == tmax:  # frame unassigned
+                P[i + 1, j + 1] += 3
+            if t[2] == tmax:  # event unassigned
+                P[i + 1, j + 1] += 4
 
     # Trace through an optimal alignment.
-    i = n_frames 
-    j = n_events 
+    i = n_frames
+    j = n_events
     frames = []
     events = []
     while i > 0 or j > 0:
-        if P[i,j] in [2, 5, 6, 9]: # 2 was added, match
+        if P[i, j] in [2, 5, 6, 9]:  # 2 was added, match
             frames.append(i)
             events.append(j)
             i -= 1
             j -= 1
-        elif P[i,j] in [3, 5, 7, 9]: # 3 was added, frame unassigned
+        elif P[i, j] in [3, 5, 7, 9]:  # 3 was added, frame unassigned
             frames.append(i)
             events.append(0)
             i -= 1
-        elif P[i,j] in [4, 6, 7, 9]: # 4 was added, event unassigned
+        elif P[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
             )
-    
+
     frames = frames[::-1]
     events = events[::-1]
-    
-    idx_events = [idx for idx,i in enumerate(events) if i > 0]
+
+    idx_events = [idx for idx, i in enumerate(events) if i > 0]
     event_frame_dict = {}
     for i in idx_events:
-        event_frame_dict[events[i]-1] = frames[i]-1
-    
-    return event_frame_dict
+        event_frame_dict[events[i] - 1] = frames[i] - 1
 
+    return event_frame_dict

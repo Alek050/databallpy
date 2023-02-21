@@ -5,8 +5,7 @@ import pandas as pd
 
 from databallpy.load_data.event_data.opta import load_opta_event_data
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
-from databallpy.match import Match, get_match, _needleman_wunsch, _create_sim_mat
-
+from databallpy.match import Match, _create_sim_mat, _needleman_wunsch, get_match
 
 
 class TestMatch(unittest.TestCase):
@@ -66,17 +65,34 @@ class TestMatch(unittest.TestCase):
         )
 
         period_conditions = [
-        (self.td["timestamp"] <= expected_periods.loc[0, "end_frame"]),
-        (self.td["timestamp"] > expected_periods.loc[0, "end_frame"]) & (self.td["timestamp"] < expected_periods.loc[1, "start_frame"]),
-        (self.td["timestamp"] >= expected_periods.loc[1, "start_frame"]) & (self.td["timestamp"] <= expected_periods.loc[1, "end_frame"]),
-        (self.td["timestamp"] > expected_periods.loc[1, "end_frame"]) & (self.td["timestamp"] < expected_periods.loc[2, "start_frame"]),
-        (self.td["timestamp"] >= expected_periods.loc[2, "start_frame"]) & (self.td["timestamp"] < expected_periods.loc[2, "end_frame"]),
-        (self.td["timestamp"] > expected_periods.loc[2, "end_frame"]) & (self.td["timestamp"] < expected_periods.loc[3, "start_frame"]),
-        (self.td["timestamp"] >= expected_periods.loc[3, "start_frame"]) & (self.td["timestamp"] < expected_periods.loc[3, "end_frame"]),
-        (self.td["timestamp"] > expected_periods.loc[3, "end_frame"]) & (self.td["timestamp"] < expected_periods.loc[4, "start_frame"]),
-        (self.td["timestamp"] > expected_periods.loc[4, "start_frame"])   
+            (self.td["timestamp"] <= expected_periods.loc[0, "end_frame"]),
+            (self.td["timestamp"] > expected_periods.loc[0, "end_frame"])
+            & (self.td["timestamp"] < expected_periods.loc[1, "start_frame"]),
+            (self.td["timestamp"] >= expected_periods.loc[1, "start_frame"])
+            & (self.td["timestamp"] <= expected_periods.loc[1, "end_frame"]),
+            (self.td["timestamp"] > expected_periods.loc[1, "end_frame"])
+            & (self.td["timestamp"] < expected_periods.loc[2, "start_frame"]),
+            (self.td["timestamp"] >= expected_periods.loc[2, "start_frame"])
+            & (self.td["timestamp"] < expected_periods.loc[2, "end_frame"]),
+            (self.td["timestamp"] > expected_periods.loc[2, "end_frame"])
+            & (self.td["timestamp"] < expected_periods.loc[3, "start_frame"]),
+            (self.td["timestamp"] >= expected_periods.loc[3, "start_frame"])
+            & (self.td["timestamp"] < expected_periods.loc[3, "end_frame"]),
+            (self.td["timestamp"] > expected_periods.loc[3, "end_frame"])
+            & (self.td["timestamp"] < expected_periods.loc[4, "start_frame"]),
+            (self.td["timestamp"] > expected_periods.loc[4, "start_frame"]),
         ]
-        period_values = ["1", "Break after 1", "2", "Break after 2", "3", "Break after 3", "4", "Break after 4", "5"]
+        period_values = [
+            "1",
+            "Break after 1",
+            "2",
+            "Break after 2",
+            "3",
+            "Break after 3",
+            "4",
+            "Break after 4",
+            "5",
+        ]
         self.td["period"] = np.select(period_conditions, period_values)
 
         expected_home_players = pd.DataFrame(
@@ -124,14 +140,14 @@ class TestMatch(unittest.TestCase):
             away_team_name=self.ed_md.away_team_name,
             away_players=expected_away_players,
         )
-        
+
         self.match_to_sync = get_match(
-            tracking_data_loc= r"tests\test_data\sync\tracab_td_sync_test.dat",
-            tracking_metadata_loc= r"tests\test_data\sync\tracab_metadata_sync_test.xml",
-            tracking_data_provider= "tracab",
-            event_data_loc= r"tests\test_data\sync\opta_events_sync_test.xml",
-            event_metadata_loc= r"tests\test_data\sync\opta_metadata_sync_test.xml",
-            event_data_provider= "opta"
+            tracking_data_loc=r"tests\test_data\sync\tracab_td_sync_test.dat",
+            tracking_metadata_loc=r"tests\test_data\sync\tracab_metadata_sync_test.xml",
+            tracking_data_provider="tracab",
+            event_data_loc=r"tests\test_data\sync\opta_events_sync_test.xml",
+            event_metadata_loc=r"tests\test_data\sync\opta_metadata_sync_test.xml",
+            event_data_provider="opta",
         )
 
     def test_get_match_wrong_provider(self):
@@ -166,12 +182,12 @@ class TestMatch(unittest.TestCase):
             tracking_data_provider=self.td_provider,
             event_data_provider=self.ed_provider,
         )
-       
+
         assert match == self.expected_match
 
     def test_get_match_rigth_to_left(self):
         flipped_match = get_match(
-            tracking_data_loc= r"tests\test_data\tracab_td_sync_test_flipped.dat",
+            tracking_data_loc=r"tests\test_data\tracab_td_sync_test_flipped.dat",
             tracking_metadata_loc=self.td_md_loc,
             event_data_loc=self.ed_loc,
             event_metadata_loc=self.ed_md_loc,
@@ -179,7 +195,7 @@ class TestMatch(unittest.TestCase):
             event_data_provider=self.ed_provider,
         )
         assert flipped_match == self.expected_match
-        
+
     def test_match__eq__(self):
         assert not self.expected_match == pd.DataFrame()
 
@@ -212,38 +228,85 @@ class TestMatch(unittest.TestCase):
     def test_synchronise_tracking_and_event_data(self):
         expected_event_data = self.match_to_sync.event_data
         expected_tracking_data = self.match_to_sync.tracking_data
-        expected_tracking_data["period"] = ["1"]*13
+        expected_tracking_data["period"] = ["1"] * 13
         expected_tracking_data["event"] = [
-            np.nan, "pass", np.nan, np.nan, np.nan, "pass", np.nan,
-            np.nan, np.nan, "take on", np.nan, "tackle", np.nan
+            np.nan,
+            "pass",
+            np.nan,
+            np.nan,
+            np.nan,
+            "pass",
+            np.nan,
+            np.nan,
+            np.nan,
+            "take on",
+            np.nan,
+            "tackle",
+            np.nan,
         ]
         expected_tracking_data["event_id"] = [
-            np.nan, 2499594225, np.nan, np.nan, np.nan, 2499594243, np.nan,
-            np.nan, np.nan, 2499594285, np.nan, 2499594291, np.nan
+            np.nan,
+            2499594225,
+            np.nan,
+            np.nan,
+            np.nan,
+            2499594243,
+            np.nan,
+            np.nan,
+            np.nan,
+            2499594285,
+            np.nan,
+            2499594291,
+            np.nan,
         ]
 
-        expected_event_data =expected_event_data[expected_event_data["type_id"].isin([1,3,7])]
+        expected_event_data = expected_event_data[
+            expected_event_data["type_id"].isin([1, 3, 7])
+        ]
         expected_event_data["tracking_frame"] = [1.0, 5.0, 9.0, 11.0]
 
-        synced_match = self.match_to_sync.synchronise_tracking_and_event_data(n_batches_per_half=1)
-        pd.testing.assert_frame_equal(synced_match.tracking_data, expected_tracking_data)
+        synced_match = self.match_to_sync.synchronise_tracking_and_event_data(
+            n_batches_per_half=1
+        )
+        pd.testing.assert_frame_equal(
+            synced_match.tracking_data, expected_tracking_data
+        )
         pd.testing.assert_frame_equal(synced_match.event_data, expected_event_data)
-
 
     def test_needleman_wunsch(self):
         sim_list = [
-            0, 0, 0, 
-            0.9, 0, 0, 
-            0, 0, 0, 
-            0, 0.9, 0, 
-            0, 0, 0, 
-            0, 0, 0, 
-            0, 0, 0, 
-            0, 0, 0.9,
-            0, 0, 0,
-            0, 0, 0
-        ]   
-        sim_mat = np.array(sim_list).reshape(10,3)
+            0,
+            0,
+            0,
+            0.9,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.9,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.9,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ]
+        sim_mat = np.array(sim_list).reshape(10, 3)
 
         res = _needleman_wunsch(sim_mat)
         expected_res = {0: 1, 1: 3, 2: 7}
@@ -252,73 +315,154 @@ class TestMatch(unittest.TestCase):
 
     def test_create_sim_mat(self):
         expected_res = np.array(
-            [0.36405464, 0.36405464, 0.36074384, 0.39021513,
-            0.35807246, 0.35807246, 0.35624062, 0.39082216,
-            0.35198235, 0.35198235, 0.35163648, 0.39121355,
-            0.33188426, 0.33188426, 0.33188426, 0.33188426,
-            0.33740283, 0.33740283, 0.34275047, 0.39173908,
-            0.36386003, 0.36386003, 0.36532987, 0.3936558,
-            0.3565997,  0.3565997,  0.36105897, 0.39214357,
-            0.34917505, 0.34917505, 0.35657184, 0.37802085,
-            0.33525554, 0.33525554, 0.34660111, 0.36787944,
-            0.36100615, 0.36100615, 0.36888422, 0.36578695,
-            0.35317347, 0.35317347, 0.36312554, 0.37869339,
-            0.34546462, 0.34546462, 0.35667513, 0.38356556,
-            0.33188426, 0.33188426, 0.34538215, 0.38410493]
+            [
+                0.36405464,
+                0.36405464,
+                0.36074384,
+                0.39021513,
+                0.35807246,
+                0.35807246,
+                0.35624062,
+                0.39082216,
+                0.35198235,
+                0.35198235,
+                0.35163648,
+                0.39121355,
+                0.33188426,
+                0.33188426,
+                0.33188426,
+                0.33188426,
+                0.33740283,
+                0.33740283,
+                0.34275047,
+                0.39173908,
+                0.36386003,
+                0.36386003,
+                0.36532987,
+                0.3936558,
+                0.3565997,
+                0.3565997,
+                0.36105897,
+                0.39214357,
+                0.34917505,
+                0.34917505,
+                0.35657184,
+                0.37802085,
+                0.33525554,
+                0.33525554,
+                0.34660111,
+                0.36787944,
+                0.36100615,
+                0.36100615,
+                0.36888422,
+                0.36578695,
+                0.35317347,
+                0.35317347,
+                0.36312554,
+                0.37869339,
+                0.34546462,
+                0.34546462,
+                0.35667513,
+                0.38356556,
+                0.33188426,
+                0.33188426,
+                0.34538215,
+                0.38410493,
+            ]
         )
-        expected_res = expected_res.reshape(13,4)
+        expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
-        date = np.datetime64(str(self.match_to_sync.periods.iloc[0,3])[:10])
-        tracking_data["datetime"] = [date + np.timedelta64(int(x/self.match_to_sync.frame_rate*1000), "ms") for x in tracking_data["timestamp"]]
+        date = np.datetime64(str(self.match_to_sync.periods.iloc[0, 3])[:10])
+        tracking_data["datetime"] = [
+            date + np.timedelta64(int(x / self.match_to_sync.frame_rate * 1000), "ms")
+            for x in tracking_data["timestamp"]
+        ]
         tracking_data.reset_index(inplace=True)
         event_data = self.match_to_sync.event_data
-        event_data = event_data[event_data["type_id"].isin([1,3,7])].reset_index()
+        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            match=self.match_to_sync
+            match=self.match_to_sync,
         )
 
         np.testing.assert_allclose(expected_res, res)
 
     def test_create_sim_mat_without_player(self):
         expected_res = np.array(
-            [0.00204535, 0.00204535, 0.36787944, 0.00312935,
-            0.00184787, 0.00184787, 0.37415304, 0.0031593,
-            0.00166347, 0.00166347, 0.38057966, 0.00317874,
-            0.00116021, 0.00116021, 0.00116021, 0.00116021,
-            0.0012836,  0.0012836,  0.39314713, 0.003205,  
-            0.00203865, 0.00203865, 0.39346724, 0.00330231,
-            0.00180178, 0.00180178, 0.40017719, 0.00322533,
-            0.00158381, 0.00158381, 0.40705082, 0.00257606,
-            0.00123435, 0.00123435, 0.41487527, 0.00218063,
-            0.00194262, 0.00194262, 0.41521307, 0.00210572,
-            0.00169827, 0.00169827, 0.41665267, 0.00260428,
-            0.00148345, 0.00148345, 0.41256202, 0.0028165, 
-            0.00116021, 0.00116021, 0.40933317, 0.00284086]
+            [
+                0.00204535,
+                0.00204535,
+                0.36787944,
+                0.00312935,
+                0.00184787,
+                0.00184787,
+                0.37415304,
+                0.0031593,
+                0.00166347,
+                0.00166347,
+                0.38057966,
+                0.00317874,
+                0.00116021,
+                0.00116021,
+                0.00116021,
+                0.00116021,
+                0.0012836,
+                0.0012836,
+                0.39314713,
+                0.003205,
+                0.00203865,
+                0.00203865,
+                0.39346724,
+                0.00330231,
+                0.00180178,
+                0.00180178,
+                0.40017719,
+                0.00322533,
+                0.00158381,
+                0.00158381,
+                0.40705082,
+                0.00257606,
+                0.00123435,
+                0.00123435,
+                0.41487527,
+                0.00218063,
+                0.00194262,
+                0.00194262,
+                0.41521307,
+                0.00210572,
+                0.00169827,
+                0.00169827,
+                0.41665267,
+                0.00260428,
+                0.00148345,
+                0.00148345,
+                0.41256202,
+                0.0028165,
+                0.00116021,
+                0.00116021,
+                0.40933317,
+                0.00284086,
+            ]
         )
-        expected_res = expected_res.reshape(13,4)
+        expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
-        date = np.datetime64(str(self.match_to_sync.periods.iloc[0,3])[:10])
-        tracking_data["datetime"] = [date + np.timedelta64(int(x/self.match_to_sync.frame_rate*1000), "ms") for x in tracking_data["timestamp"]]
+        date = np.datetime64(str(self.match_to_sync.periods.iloc[0, 3])[:10])
+        tracking_data["datetime"] = [
+            date + np.timedelta64(int(x / self.match_to_sync.frame_rate * 1000), "ms")
+            for x in tracking_data["timestamp"]
+        ]
         tracking_data.reset_index(inplace=True)
         event_data = self.match_to_sync.event_data
-        event_data = event_data[event_data["type_id"].isin([1,3,7])].reset_index()
-        event_data.iloc[2,7] = "not a float"
-        
+        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
+        event_data.iloc[2, 7] = "not a float"
+
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            match=self.match_to_sync
+            match=self.match_to_sync,
         )
 
         np.testing.assert_allclose(expected_res, res, rtol=1e-05)
-            
-            
-      
-
-
-
-
