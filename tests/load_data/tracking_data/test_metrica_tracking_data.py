@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 
-
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     _get_tracking_data,
     load_metrica_open_tracking_data,
