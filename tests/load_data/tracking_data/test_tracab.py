@@ -18,7 +18,7 @@ class TestTracab(unittest.TestCase):
         self.metadata_loc = "tests/test_data/tracab_metadata_test.xml"
         self.expected_metadata = Metadata(
             match_id=1908,
-            pitch_dimensions=[100, 50],
+            pitch_dimensions=[100.0, 50.0],
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],

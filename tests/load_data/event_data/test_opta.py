@@ -18,17 +18,23 @@ class TestOpta(unittest.TestCase):
         self.f24_loc = "tests/test_data/f24_test.xml"
         self.expected_metadata = Metadata(
             match_id=1908,
-            pitch_dimensions=[10, 10],
+            pitch_dimensions=[10.0, 10.0],
             periods_frames=pd.DataFrame(
                 {
-                    "period": [1, 2],
+                    "period": [1, 2, 3, 4, 5],
                     "start_datetime_opta": [
                         pd.to_datetime("20230122T121832+0000"),
                         pd.to_datetime("20230122T132113+0000"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
                     ],
                     "end_datetime_opta": [
                         pd.to_datetime("20230122T130432+0000"),
                         pd.to_datetime("20230122T140958+0000"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
                     ],
                 }
             ),
@@ -138,14 +144,14 @@ class TestOpta(unittest.TestCase):
     def test_load_opta_event_data(self):
 
         event_data, metadata = load_opta_event_data(
-            self.f7_loc, self.f24_loc, pitch_dimensions=[10, 10]
+            self.f7_loc, self.f24_loc, pitch_dimensions=[10.0, 10.0]
         )
         pd.testing.assert_frame_equal(event_data, self.expected_event_data)
         assert metadata.match_id == self.expected_metadata.match_id
 
     def test_load_metadata(self):
 
-        metadata = _load_metadata(self.f7_loc, [10, 10])
+        metadata = _load_metadata(self.f7_loc, [10.0, 10.0])
         assert metadata == self.expected_metadata
 
     def test_get_player_info(self):

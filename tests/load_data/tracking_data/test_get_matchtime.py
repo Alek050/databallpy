@@ -13,8 +13,8 @@ from databallpy.load_data.tracking_data._get_matchtime import (
 class TestGetMatchtime(unittest.TestCase):
     def setUp(self):
         self.metadata = Metadata(
-            match_id=np.nan,
-            pitch_dimensions=None,
+            match_id=123,
+            pitch_dimensions=[100.0, 50.0],
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],
@@ -25,16 +25,16 @@ class TestGetMatchtime(unittest.TestCase):
                 }
             ),
             frame_rate=25,
-            home_team_id=np.nan,
-            home_team_name=None,
-            home_formation=None,
+            home_team_id=1,
+            home_team_name="",
+            home_formation="",
             home_score=np.nan,
-            home_players=np.nan,
-            away_team_id=np.nan,
-            away_team_name=None,
-            away_formation=None,
+            home_players=pd.DataFrame({"id": [], "full_name": [], "shirt_num": []}),
+            away_team_id=2,
+            away_team_name="",
+            away_formation="",
             away_score=np.nan,
-            away_players=np.nan,
+            away_players=pd.DataFrame({"id": [], "full_name": [], "shirt_num": []}),
         )
 
     def test_get_matchtime(self):
