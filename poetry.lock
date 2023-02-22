@@ -176,8 +176,6 @@ tests = ["attrs[tests-no-zope]", "zope.interface"]
 tests-no-zope = ["cloudpickle", "cloudpickle", "hypothesis", "hypothesis", "mypy (>=0.971,<0.990)", "mypy (>=0.971,<0.990)", "pympler", "pympler", "pytest (>=4.3.0)", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-mypy-plugins", "pytest-xdist[psutil]", "pytest-xdist[psutil]"]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "babel"
 version = "2.11.0"
 description = "Internationalization utilities"
@@ -205,7 +203,6 @@ files = [
 ]
 
 [[package]]
->>>>>>> main
 name = "beautifulsoup4"
 version = "4.11.2"
 description = "Screen-scraping library"
@@ -1118,8 +1115,6 @@ plugins = ["setuptools"]
 requirements-deprecated-finder = ["pip-api", "pipreqs"]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "jedi"
 version = "0.18.2"
 description = "An autocompletion tool for Python that can be used for text editors."
@@ -1548,7 +1543,6 @@ files = [
 ]
 
 [[package]]
->>>>>>> main
 name = "lxml"
 version = "4.9.2"
 description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API."
@@ -1642,8 +1636,6 @@ htmlsoup = ["BeautifulSoup4"]
 source = ["Cython (>=0.29.7)"]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "markdown-it-py"
 version = "2.1.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -1806,7 +1798,6 @@ files = [
 traitlets = "*"
 
 [[package]]
->>>>>>> main
 name = "mccabe"
 version = "0.7.0"
 description = "McCabe checker, plugin for flake8"
@@ -2251,8 +2242,6 @@ python-versions = ">=3.7"
 files = [
     {file = "pathspec-0.11.0-py3-none-any.whl", hash = "sha256:3a66eb970cbac598f9e5ccb5b2cf58930cd8e3ed86d393d541eaf2d8b1705229"},
     {file = "pathspec-0.11.0.tar.gz", hash = "sha256:64d338d4e0914e91c1792321e6907b5a593f1ab1851de7fc269557a21b30ebbc"},
-<<<<<<< HEAD
-=======
 ]
 
 [[package]]
@@ -2383,7 +2372,6 @@ python-versions = ">=3.6"
 files = [
     {file = "pkgutil_resolve_name-1.3.10-py3-none-any.whl", hash = "sha256:ca27cc078d25c5ad71a9de0a7a330146c4e014c2462d9af19c6b828280649c5e"},
     {file = "pkgutil_resolve_name-1.3.10.tar.gz", hash = "sha256:357d6c9e6a755653cfd78893817c0853af365dd51ec97f3d358a819373bbd174"},
->>>>>>> main
 ]
 
 [[package]]
@@ -3007,8 +2995,6 @@ files = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "sniffio"
 version = "1.3.0"
 description = "Sniff out which async library your code is running under"
@@ -3033,7 +3019,6 @@ files = [
 ]
 
 [[package]]
->>>>>>> main
 name = "soupsieve"
 version = "2.3.2.post1"
 description = "A modern CSS selector implementation for Beautiful Soup."
@@ -3046,8 +3031,6 @@ files = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "sphinx"
 version = "5.3.0"
 description = "Python documentation generator"
@@ -3388,7 +3371,6 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
 
 [[package]]
->>>>>>> main
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -3401,8 +3383,6 @@ files = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "tornado"
 version = "6.2"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
@@ -3424,7 +3404,6 @@ files = [
 ]
 
 [[package]]
->>>>>>> main
 name = "tqdm"
 version = "4.64.1"
 description = "Fast, Extensible Progress Meter"
@@ -3446,8 +3425,6 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "traitlets"
 version = "5.9.0"
 description = "Traitlets Python configuration system"
@@ -3464,7 +3441,6 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=2.0)", "pre-commit", "pytest", "pytest-mock"]
 
 [[package]]
->>>>>>> main
 name = "typing-extensions"
 version = "4.4.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
@@ -3677,10 +3653,5 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 
 [metadata]
 lock-version = "2.0"
-<<<<<<< HEAD
-python-versions = ">=3.8.1"
-content-hash = "d1667796a692ad09b46b3368e85dc0a8acb1936f251441acd5bf311436fc498a"
-=======
 python-versions = ">=3.8.1,<4.0"
 content-hash = "02bbce9e2c021c68b2390f60f4525ad66f34c9519462a9894144ec81c358645f"
->>>>>>> main

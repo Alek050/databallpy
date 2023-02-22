@@ -187,7 +187,7 @@ class TestMatch(unittest.TestCase):
 
     def test_get_match_rigth_to_left(self):
         flipped_match = get_match(
-            tracking_data_loc=r"tests\test_data\tracab_td_sync_test_flipped.dat",
+            tracking_data_loc=r"tests\test_data\tracab_td_test_flipped.dat",
             tracking_metadata_loc=self.td_md_loc,
             event_data_loc=self.ed_loc,
             event_metadata_loc=self.ed_md_loc,
