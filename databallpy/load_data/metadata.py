@@ -83,9 +83,10 @@ class Metadata:
         for team, team_id in zip(
             ["home", "away"], [self.home_team_id, self.away_team_id]
         ):
-            if not isinstance(team_id, int):
+            if not isinstance(team_id, int) and not isinstance(team_id, str):
                 raise TypeError(
-                    f"{team} team id should be an integer, not a {type(team_id)}"
+                    f"{team} team id should be an integer or string, not a \
+                        {type(team_id)}"
                 )
 
         # team names
@@ -165,3 +166,21 @@ class Metadata:
             self.away_formation == other.away_formation,
         ]
         return all(result)
+
+    def copy(self):
+        return Metadata(
+            match_id=self.match_id,
+            pitch_dimensions=self.pitch_dimensions,
+            periods_frames=self.periods_frames,
+            frame_rate=self.frame_rate,
+            home_team_id=self.home_team_id,
+            home_team_name=self.home_team_name,
+            home_players=self.home_players,
+            home_score=self.home_score,
+            home_formation=self.home_formation,
+            away_team_id=self.away_team_id,
+            away_team_name=self.away_team_name,
+            away_players=self.away_players,
+            away_score=self.away_score,
+            away_formation=self.away_formation,
+        )

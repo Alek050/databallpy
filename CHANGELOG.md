@@ -14,3 +14,6 @@
 
 - Hot fix to make documentation visisble.
 
+## for the new version
+- Added parser for Metrica, including an open dataset
+
