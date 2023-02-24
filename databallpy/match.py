@@ -154,11 +154,13 @@ class Match:
             date + np.timedelta64(int(x / self.frame_rate * 1000), "ms")
             for x in tracking_data["timestamp"]
         ]
-        event_data = event_data[event_data["event"].isin(events_to_sync)]
 
         tracking_data["event"] = np.nan
         tracking_data["event_id"] = np.nan
         event_data["tracking_frame"] = np.nan
+
+        mask_events_to_sync = event_data["event"].isin(events_to_sync)
+        event_data = event_data[mask_events_to_sync]
 
         periods_played = self.periods[self.periods["start_frame"] > 0]["period"].values
         for p in periods_played:
@@ -197,11 +199,11 @@ class Match:
                 for event, frame in event_frame_dict.items():
                     event_id = int(event_batch.loc[event, "event_id"])
                     event_type = event_batch.loc[event, "event"]
-                    event_frame = int(event_batch.loc[event, "index"])
+                    event_index = int(event_batch.loc[event, "index"])
                     tracking_frame = int(tracking_batch.loc[frame, "index"])
                     tracking_data.loc[tracking_frame, "event"] = event_type
                     tracking_data.loc[tracking_frame, "event_id"] = event_id
-                    event_data.loc[event_frame, "tracking_frame"] = tracking_frame
+                    event_data.loc[event_index, "tracking_frame"] = tracking_frame
 
                 start_frame = tracking_data.iloc[tracking_frame]["timestamp"]
                 start_event = (

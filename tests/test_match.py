@@ -259,11 +259,22 @@ class TestMatch(unittest.TestCase):
             2499594291,
             np.nan,
         ]
-
+        
+        expected_event_data.loc[:, "tracking_frame"] = [
+                np.nan,
+                np.nan, 
+                np.nan,
+                1.0, 
+                5.0, 
+                np.nan,
+                np.nan,
+                9.0, 
+                11.0
+            ]
         expected_event_data = expected_event_data[
             expected_event_data["type_id"].isin([1, 3, 7])
         ]
-        expected_event_data["tracking_frame"] = [1.0, 5.0, 9.0, 11.0]
+        
 
         synced_match = self.match_to_sync.synchronise_tracking_and_event_data(
             n_batches_per_half=1
