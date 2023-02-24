@@ -10,8 +10,8 @@ from databallpy.utils import _to_int
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
-    """Function to get the channels for every timeperiod with what players are r
-    eferred to in the raw tracking data
+    """Function to get the channels for every timeperiod with what players are
+    referred to in the raw tracking data
 
     Args:
         metadata_loc (str): locatin of the metadata
