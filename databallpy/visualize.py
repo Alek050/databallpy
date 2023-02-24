@@ -1,3 +1,5 @@
+import subprocess
+from functools import wraps
 from typing import Tuple
 
 import matplotlib.animation as animation
@@ -7,6 +9,27 @@ import pandas as pd
 from tqdm import tqdm
 
 from databallpy.match import Match
+
+
+def requires_ffmpeg(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            subprocess.run(
+                ["ffmpeg", "-version"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "It seems like ffmpeg is not added to your python path, please install\
+                     add ffmpeg to you python path to use this code."
+            )
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def plot_soccer_pitch(
@@ -186,6 +209,133 @@ def plot_soccer_pitch(
     return fig, ax
 
 
+def plot_events(
+    match: Match,
+    events: list = [],
+    outcome: int = None,
+    player_ids: list = [],
+    team_id: int = None,
+    pitch_color: str = "mediumseagreen",
+    color_by_col: str = None,
+    team_colors: list = ["orange", "red"],
+    title: str = None,
+) -> Tuple[plt.figure, plt.axes]:
+    """Function to plot the locations of specific events
+
+    Args:
+        match (Match): All information about a match
+        events (list, optional): Filter of events you want to plot, if empty,
+        all events are plotted. Defaults to [].
+        outcome (int, optional): Filter if the event should have a succesfull
+        outcome (1) or not (0), if None, all outcomes are included. Defaults to None.
+        player_ids (list, optional): Filter for what players to include, if empty, all
+        players are included. Defaults to [].
+        team_id (int, optional): Filter for what team to include, if None, both teams
+        are included. Defaults to None.
+        pitch_color (str, optional): Prefered color of the pitch. Defaults to
+        "mediumseagreen".
+        color_by_col (str, optional): If specified, colors of scatter is specified by
+        this colom in match.event_data. Defaults to None.
+        team_colors (list, optional): Colors by which the teams should be represented.
+        Defaults to ["orange", "red"].
+        title (str, optional): Title of the plot. Defaults to None.
+
+    Returns:
+        Tuple[plt.figure, plt.axes]: figure and axes with the pitch and events depicted
+        on it.
+    """
+    event_data = match.event_data
+
+    if len(events) > 0:
+        assert all([x in match.event_data["event"].unique() for x in events])
+        event_data = event_data.loc[event_data["event"].isin(events)]
+    if outcome is not None:
+        assert outcome in [0, 1]
+        event_data = event_data.loc[event_data["outcome"] == outcome]
+    if len(player_ids) > 0:
+        assert all(x in match.event_data["player_id"].unique() for x in player_ids)
+        event_data = event_data.loc[event_data["player_id"].isin(player_ids)]
+    if team_id:
+        assert team_id in [match.home_team_id, match.away_team_id]
+        event_data = event_data.loc[event_data["team_id"] == team_id]
+
+    if len(event_data) == 0:
+        print(
+            "No events could be found that match your\
+            requirements, please try again."
+        )
+        return None, None
+    else:
+        print(f"Found {len(event_data)} matching events")
+
+    fig, ax = plot_soccer_pitch(
+        field_dimen=match.pitch_dimensions, pitch_color=pitch_color
+    )
+    if title:
+        ax.set_title(title)
+
+    # Set match name
+    ax.text(
+        match.pitch_dimensions[0] / -2.0 + 2,
+        match.pitch_dimensions[1] / 2.0 + 1.0,
+        match.home_team_name,
+        fontsize=14,
+        c=team_colors[0],
+        zorder=2.5,
+    )
+    ax.text(
+        match.pitch_dimensions[0] / 2.0 - 15,
+        match.pitch_dimensions[1] / 2.0 + 1.0,
+        match.away_team_name,
+        fontsize=14,
+        c=team_colors[1],
+        zorder=2.5,
+    )
+
+    # Check if color_by_col is specified and is a valid column name
+    if color_by_col:
+        assert color_by_col in match.event_data.columns
+
+        # Color events by team if the specified column is "team_id"
+        if color_by_col == "team_id":
+            for id, c, team_name in zip(
+                [match.home_team_id, match.away_team_id],
+                team_colors,
+                [match.home_team_name, match.away_team_name],
+            ):
+                temp_events = event_data[event_data[color_by_col] == id]
+                ax.scatter(
+                    temp_events["start_x"],
+                    temp_events["start_y"],
+                    marker="x",
+                    label=team_name,
+                    c=c,
+                    zorder=2.5,
+                )
+
+        # Color events by unique values in the specified column
+        else:
+            for value in event_data[color_by_col].unique():
+                temp_events = event_data[event_data[color_by_col] == value]
+                ax.scatter(
+                    temp_events["start_x"],
+                    temp_events["start_y"],
+                    marker="x",
+                    label=value,
+                    zorder=2.5,
+                )
+
+        # Add legend to the plot
+        plt.legend(loc="upper center")
+
+    # If color_by_col is not specified, color events using default settings
+    else:
+        ax.scatter(event_data["start_x"], event_data["start_y"], marker="x", zorder=2.5)
+
+    return fig, ax
+
+
+@requires_ffmpeg
 def save_match_clip(
     match: Match,
     start_idx: int,
@@ -232,8 +382,8 @@ def save_match_clip(
     if len(events) > 0:
         assert (
             "event" in match.tracking_data.columns
-        ), "No event column found in match.tracking_data.columns, did you synchronize"
-        "event and tracking data?"
+        ), "No event column found in match.tracking_data.columns, did you synchronize\
+            event and tracking data?"
 
     animation_metadata = {
         "title": title,
