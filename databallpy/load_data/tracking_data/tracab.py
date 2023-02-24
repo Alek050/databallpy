@@ -139,23 +139,24 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     }
     for i, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
-        start_frame = int(period["iStartFrame"])
-        end_frame = int(period["iEndFrame"])
 
+        if (int(period["iId"]) >= 2) and (int(period["iStartFrame"]) == 0):
+            start_frame = np.nan
+            end_frame = np.nan
+            start_time_td = np.datetime64("NaT")
+            end_time_td = np.datetime64("NaT")
+        else:
+            start_frame = int(period["iStartFrame"])
+            end_frame = int(period["iEndFrame"])
+            start_time_td = date + np.timedelta64(int(start_frame / frame_rate), "s")
+            end_time_td = date + np.timedelta64(int(end_frame / frame_rate), "s")
+        
         frames_dict["start_frame"].append(start_frame)
         frames_dict["end_frame"].append(end_frame)
-        if start_frame != 0:
-            frames_dict["start_time_td"].append(
-                date + np.timedelta64(int(start_frame / frame_rate), "s")
-            )
-            frames_dict["end_time_td"].append(
-                date + np.timedelta64(int(end_frame / frame_rate), "s")
-            )
-        else:
-            frames_dict["start_time_td"].append(np.nan)
-            frames_dict["end_time_td"].append(np.nan)
-    df_frames = pd.DataFrame(frames_dict)
+        frames_dict["start_time_td"].append(start_time_td)
+        frames_dict["end_time_td"].append(end_time_td)
 
+    df_frames = pd.DataFrame(frames_dict)
     home_team = soup.find("HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)

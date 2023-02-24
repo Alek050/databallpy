@@ -124,10 +124,17 @@ class Match:
         else:
             raise ValueError(f"{player_id} is not in either one of the teams")
 
-    def synchronise_tracking_and_event_data(self, n_batches_per_half=9):
+    def synchronise_tracking_and_event_data(self, n_batches_per_half: int = 9):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
-           Currently works for the following events:
+
+        Args:
+            n_batches_per_half (int): the number of batches that are created per half.
+            A higher number of batches reduces the time the code takes to load, but
+            reduces the accuracy for events close to the splits.
+            Default = 9
+
+        Currently works for the following events:
             'pass', 'aerial', 'interception', 'ball recovery', 'dispossessed', 'tackle',
             'take on', 'clearance', 'blocked pass', 'offside pass', 'attempt saved',
             'save', 'foul', 'miss', 'challenge', 'goal'
@@ -157,12 +164,21 @@ class Match:
 
         tracking_data = self.tracking_data
         event_data = self.event_data
-        date = np.datetime64(str(self.periods.iloc[0, 3])[:10])
-        tracking_data["datetime"] = [
-            date + np.timedelta64(int(x / self.frame_rate * 1000), "ms")
-            for x in tracking_data["timestamp"]
-        ]
+        date = np.datetime64(str(self.periods.loc[self.periods["period"]==1, "start_time_td"].iloc[0])[:10])
+        
+        start_datetime_period = {}
+        start_frame_period = {}
+        for _,row in self.periods.iterrows():
+            start_datetime_period[row["period"]] = row["start_time_td"].to_datetime64()
+            start_frame_period[row["period"]] = row["start_frame"]
 
+        tracking_data["datetime"] = [
+                start_datetime_period[int(p[-1])] + 
+                np.timedelta64(int((x-start_frame_period[int(p[-1])])/self.frame_rate *1000), "ms") 
+                for x,p in zip(tracking_data["timestamp"], tracking_data["period"])
+            ]
+
+        
         tracking_data["event"] = np.nan
         tracking_data["event_id"] = np.nan
         event_data["tracking_frame"] = np.nan
@@ -170,35 +186,40 @@ class Match:
         mask_events_to_sync = event_data["event"].isin(events_to_sync)
         event_data = event_data[mask_events_to_sync]
 
-        periods_played = self.periods[self.periods["start_frame"] > 0]["period"].values
+        periods_played = self.periods[self.periods["start_frame"] >= 0]["period"].values
         for p in periods_played:
             # create batches to loop over
-            start_frame = self.periods.iloc[p - 1, 1]
-            start_event = date + np.timedelta64(
-                int(start_frame / self.frame_rate * 1000), "ms"
+            start_batch_frame = self.periods.loc[self.periods["period"] == p, "start_frame"].iloc[0]
+            start_batch_datetime = date + np.timedelta64(
+                int(start_batch_frame / self.frame_rate * 1000), "ms"
             )
-            delta = self.periods.iloc[p - 1, 2] - start_frame
+            delta = self.periods.loc[self.periods["period"] == p, "end_frame"].iloc[0] - start_batch_frame
             n_splits = n_batches_per_half
-            end_frames = np.floor(
-                np.arange(delta / n_splits, delta + delta / n_splits, delta / n_splits)
-                + start_frame
+            end_batches_frames = np.floor(
+                np.arange(
+                    delta / n_batches_per_half,
+                    delta + delta / n_batches_per_half,
+                    delta / n_batches_per_half
+                )
+                + start_batch_frame
             )
-            end_events = [
-                date + np.timedelta64(int(x / self.frame_rate * 1000), "ms")
-                for x in end_frames
+            end_batches_datetime = [
+                start_datetime_period[int(p)] + 
+                np.timedelta64(int((x-start_frame_period[int(p)])/self.frame_rate *1000), "ms")
+                for x in end_batches_frames
             ]
 
             print(f"Syncing period {p}...")
-            for end_frame, end_event in tqdm(
-                zip(end_frames, end_events), total=len(end_frames)
+            for end_batch_frame, end_batch_datetime in tqdm(
+                zip(end_batches_frames, end_batches_datetime), total=len(end_batches_frames)
             ):
                 tracking_batch = tracking_data[
-                    (tracking_data["timestamp"] < end_frame)
-                    & (tracking_data["timestamp"] > start_frame)
+                    (tracking_data["timestamp"] <= end_batch_frame)
+                    & (tracking_data["timestamp"] >= start_batch_frame)
                 ].reset_index(drop=False)
                 event_batch = event_data[
-                    (event_data["datetime"] > start_event)
-                    & (event_data["datetime"] < end_event)
+                    (event_data["datetime"] >= start_batch_datetime)
+                    & (event_data["datetime"] <= end_batch_datetime)
                 ].reset_index()
 
                 sim_mat = _create_sim_mat(tracking_batch, event_batch, self)
@@ -213,11 +234,11 @@ class Match:
                     tracking_data.loc[tracking_frame, "event_id"] = event_id
                     event_data.loc[event_index, "tracking_frame"] = tracking_frame
 
-                start_frame = tracking_data.iloc[tracking_frame]["timestamp"]
-                start_event = (
+                start_batch_frame = tracking_data.iloc[tracking_frame]["timestamp"]
+                start_batch_datetime = (
                     event_batch[event_batch["event_id"] == event_id]["datetime"]
                     .iloc[0]
-                    .to_numpy()
+                    .to_datetime64()
                 )
         tracking_data.drop("datetime", axis=1, inplace=True)
         self.tracking_data = tracking_data
@@ -343,6 +364,21 @@ def get_match(
             on="id",
         )
 
+    # add period column to tracking_data
+    period_conditions = [
+        (tracking_data["timestamp"] <= merged_periods.loc[0, "end_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[0, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[1, "start_frame"]),
+        (tracking_data["timestamp"] >= merged_periods.loc[1, "start_frame"]) & (tracking_data["timestamp"] <= merged_periods.loc[1, "end_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[1, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[2, "start_frame"]),
+        (tracking_data["timestamp"] >= merged_periods.loc[2, "start_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[2, "end_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[2, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[3, "start_frame"]),
+        (tracking_data["timestamp"] >= merged_periods.loc[3, "start_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[3, "end_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[3, "end_frame"]) & (tracking_data["timestamp"] < merged_periods.loc[4, "start_frame"]),
+        (tracking_data["timestamp"] > merged_periods.loc[4, "start_frame"])   
+    ]
+    period_values = ["1", "Break after 1", "2", "Break after 2", "3", "Break after 3", "4", "Break after 4", "5"]
+    tracking_data["period"] = np.select(period_conditions, period_values)
+
     match = Match(
         tracking_data=tracking_data,
         tracking_data_provider=tracking_data_provider,
@@ -381,7 +417,7 @@ def _create_sim_mat(
                     size is #frames, #events
     """
     sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
-
+    
     for i, event in event_batch.iterrows():
         time_diff = (tracking_batch["datetime"] - event["datetime"]) / np.timedelta64(
             1, "s"
@@ -391,8 +427,7 @@ def _create_sim_mat(
             tracking_batch["ball_y"] - event["start_y"],
         )
 
-        if type(event["player_id"]) == float:
-            print(type(event["player_id"]), event["player_id"])
+        if not np.isnan(event["player_id"]):
             column_id_player = match.player_id_to_column_id(
                 player_id=event["player_id"]
             )
@@ -400,16 +435,15 @@ def _create_sim_mat(
                 tracking_batch["ball_x"] - tracking_batch[f"{column_id_player}_x"],
                 tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"],
             )
-
         else:
             player_ball_diff = 0
-
+        # similarity function from: https://kwiatkowski.io/sync.soccer
         sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
 
-    den = np.nanmax(sim_mat.min(axis=1))  # scale similarity scores
+    den = np.nanmax(np.nanmin(sim_mat, axis=1))  # scale similarity scores
     sim_mat[np.isnan(sim_mat)] = np.nanmax(
         sim_mat
-    )  # remove nan values with highest value
+    )  # replace nan values with highest value
     sim_mat = np.exp(-sim_mat / den)
 
     return sim_mat
@@ -489,6 +523,7 @@ def _needleman_wunsch(
         event_frame_dict[events[i] - 1] = frames[i] - 1
 
     return event_frame_dict
+
 def get_open_match(provider: str = "metrica") -> Match:
     """Function to load a match object from an open datasource
 
