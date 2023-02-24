@@ -17,7 +17,7 @@ $ pip install databallpy
 The package is centered around the `Match` object. A `Match` has tracking data, event data metadata about the match.
 
 ```console
-$ from databallpy.match import get_match
+$ from databallpy.match import get_match, get_open_match
 $
 $ match = get_match(
 $   tracking_data_loc="data/tracking_data.dat",
@@ -27,6 +27,10 @@ $   event_data_loc="data/event_data_f24.xml",
 $   event_metadata_loc="data/event_metadata_f7.xml",
 $   event_data_provider="opta",
 $ )
+$
+$ # or to load an open metrica dataset of tracking and event data
+$ match = get_open_match()
+$
 $ match.home_team_name # the team name of the home playing team
 $ match.away_players # pandas dataframe with the names, ids, shirt numbers and positions of the away team
 $ match.tracking_data # pandas dataframe with tracking data of the match
@@ -40,7 +44,7 @@ See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/data
 The packages also provides tools to visualise the data. Note that to save a match clip the package relies on the use of ffmpeg. Make sure to have installed it to your machine and added it to your python path, otherwise the `save_match_clip()` function will produce an error.
 
 ```console
-$ from databallpy.match import get_match
+$ from databallpy.match import get_match, get_open_match
 $ from databallpy.visualize import save_match_clip
 $
 $ match = get_match(
@@ -51,6 +55,9 @@ $   event_data_loc="data/event_data_f24.xml",
 $   event_metadata_loc="data/event_metadata_f7.xml",
 $   event_data_provider="opta",
 $ )
+$
+$ # or to load an open metrica dataset of tracking and event data
+$ match = get_open_match()
 $
 $ save_match_clip(match, start_idx=0, end_idx=100, folder_loc="data", title="example")
 ```
@@ -65,13 +72,15 @@ The official documentation can be found [here](https://databallpy.readthedocs.io
 
 ## Providers
 
-For now we only have one tracking data and one event data provider. We are planning on adding more providers later on.
+For now we limited providers. We are planning on adding more providers later on.
 
 Event data providers:
 - Opta
+- Metrica
 
 Tracking data providers:
 - Tracab
+- Metrica
 
 ## Contributing
 

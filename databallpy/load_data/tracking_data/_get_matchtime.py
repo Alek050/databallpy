@@ -4,7 +4,7 @@ import pandas as pd
 from databallpy.load_data.metadata import Metadata
 
 
-def _to_matchtime(s: int, max_m: int, start_m: int) -> str:
+def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:
     """Transforms the number of seconds into matchtime format
 
     Args:
@@ -15,11 +15,11 @@ def _to_matchtime(s: int, max_m: int, start_m: int) -> str:
     Returns:
         str: the time in matchtime format
     """
-    seconds = str(s % 60)
+    seconds = str(secs % 60)
     if len(seconds) == 1:
         seconds = "0" + str(seconds)
 
-    minutes = str(s // 60 + start_m)
+    minutes = str(secs // 60 + start_m)
     if len(minutes) == 1:
         minutes = "0" + str(minutes)
 
@@ -81,7 +81,7 @@ def _get_matchtime(timestamp_column: pd.Series, metadata: Metadata) -> pd.Series
         for seconds in df[df["period"] == p]["seconds"].unique():
             if seconds <= (max_seconds_period[p - 1]):
                 matchtime_list.extend(
-                    [_to_matchtime(seconds, max_m_dict[p], start_m_dict[p])]
+                    [_to_matchtime(int(seconds), max_m_dict[p], start_m_dict[p])]
                     * frame_rate
                 )
             else:

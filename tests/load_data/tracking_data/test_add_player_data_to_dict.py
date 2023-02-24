@@ -46,10 +46,22 @@ class TestAddPlayerDataToDict(unittest.TestCase):
 
         for player in self.input_t0:
             team_id, shirt_num, x, y = player
-            data = _add_player_data_to_dict(team_id, shirt_num, x, y, data, 0)
+            if team_id == "0":
+                team = "away"
+            elif team_id == "1":
+                team = "home"
+            else:
+                continue
+            data = _add_player_data_to_dict(team, shirt_num, x, y, data, 0)
 
         for player in self.input_t1:
             team_id, shirt_num, x, y = player
-            data = _add_player_data_to_dict(team_id, shirt_num, x, y, data, 1)
+            if team_id == "0":
+                team = "away"
+            elif team_id == "1":
+                team = "home"
+            else:
+                continue
+            data = _add_player_data_to_dict(team, shirt_num, x, y, data, 1)
 
         assert data == self.expected_output

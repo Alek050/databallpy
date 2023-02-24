@@ -10,9 +10,9 @@ from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
 class TestAddBallDataToDict(unittest.TestCase):
     def setUp(self):
         self.ball_info = [
-            ["150", "-46", "7", "A", "Alive"],
-            ["22", "17", "15", "H", "Dead"],
-            ["124", np.nan, "7", "A", "Dead"],
+            ["150", "-46", "7", "away", "Alive"],
+            ["22", "17", "15", "home", "Dead"],
+            ["124", np.nan, "7", "away", "Dead"],
         ]
 
         self.expected_dict = {

@@ -1,6 +1,5 @@
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from databallpy.load_data.event_data.opta import (
@@ -9,144 +8,26 @@ from databallpy.load_data.event_data.opta import (
     _load_metadata,
     load_opta_event_data,
 )
-from databallpy.load_data.metadata import Metadata
+from tests.expected_outcomes import ED_OPTA, MD_OPTA
 
 
 class TestOpta(unittest.TestCase):
     def setUp(self):
         self.f7_loc = "tests/test_data/f7_test.xml"
         self.f24_loc = "tests/test_data/f24_test.xml"
-        self.expected_metadata = Metadata(
-            match_id=1908,
-            pitch_dimensions=[10, 10],
-            periods_frames=pd.DataFrame(
-                {
-                    "period": [1, 2],
-                    "start_datetime_opta": [
-                        pd.to_datetime("20230122T121832+0000"),
-                        pd.to_datetime("20230122T132113+0000"),
-                    ],
-                    "end_datetime_opta": [
-                        pd.to_datetime("20230122T130432+0000"),
-                        pd.to_datetime("20230122T140958+0000"),
-                    ],
-                }
-            ),
-            frame_rate=np.nan,
-            home_team_id=3,
-            home_team_name="TeamOne",
-            home_formation="4231",
-            home_score=3,
-            home_players=pd.DataFrame(
-                {
-                    "id": [19367, 45849],
-                    "full_name": ["Piet Schrijvers", "Jan Boskamp"],
-                    "formation_place": [4, 0],
-                    "position": ["midfielder", "midfielder"],
-                    "starter": [True, False],
-                    "shirt_num": [1, 2],
-                }
-            ),
-            away_team_id=194,
-            away_team_name="TeamTwo",
-            away_formation="3412",
-            away_score=1,
-            away_players=pd.DataFrame(
-                {
-                    "id": [184934, 450445],
-                    "full_name": ["Pepijn Blok", "TestSpeler"],
-                    "formation_place": [8, 0],
-                    "position": ["midfielder", "midfielder"],
-                    "starter": [True, False],
-                    "shirt_num": [1, 2],
-                }
-            ),
-        )
-        self.expected_event_data = pd.DataFrame(
-            {
-                "event_id": [
-                    2499582269,
-                    2499594199,
-                    2499594195,
-                    2499594225,
-                    2499594243,
-                    2499594271,
-                    2499594279,
-                    2499594285,
-                    2499594291,
-                ],
-                "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7],
-                "event": [
-                    "team set up",
-                    "start",
-                    "start",
-                    "pass",
-                    "pass",
-                    None,
-                    "deleted event",
-                    "take on",
-                    "tackle",
-                ],
-                "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2],
-                "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31],
-                "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10],
-                "player_id": [
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    19367,
-                    45849,
-                    45849,
-                    184934,
-                    45849,
-                    184934,
-                ],
-                "team_id": [194, 3, 194, 3, 3, 3, 194, 3, 194],
-                "outcome": [1, 1, 1, 1, 0, 0, 1, 0, 1],
-                # field dimensions should be [10, 10] to scale down all values by
-                # a factor of 10
-                "start_x": [5.0, -5.0, 5.0, -0.03, -1.84, -1.9, 5.0, 1.57, 1.57],
-                "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68],
-                "datetime": np.array(
-                    [
-                        "2023-01-22T11:28:32.117",
-                        "2023-01-22T12:18:32.152",
-                        "2023-01-22T12:18:32.152",
-                        "2023-01-22T12:18:33.637",
-                        "2023-01-22T12:18:36.207",
-                        "2023-01-22T12:18:39.109",
-                        "2023-01-22T12:18:41.615",
-                        "2023-01-22T12:18:43.119",
-                        "2023-01-22T12:18:43.120",
-                    ],
-                    dtype="datetime64",
-                ),
-                "player_name": [
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    "Piet Schrijvers",
-                    "Jan Boskamp",
-                    "Jan Boskamp",
-                    "Pepijn Blok",
-                    "Jan Boskamp",
-                    "Pepijn Blok",
-                ],
-            }
-        )
 
     def test_load_opta_event_data(self):
 
         event_data, metadata = load_opta_event_data(
             self.f7_loc, self.f24_loc, pitch_dimensions=[10, 10]
         )
-        pd.testing.assert_frame_equal(event_data, self.expected_event_data)
-        assert metadata.match_id == self.expected_metadata.match_id
+        pd.testing.assert_frame_equal(event_data, ED_OPTA)
+        assert metadata == MD_OPTA
 
     def test_load_metadata(self):
 
         metadata = _load_metadata(self.f7_loc, [10, 10])
-        assert metadata == self.expected_metadata
+        assert metadata == MD_OPTA
 
     def test_get_player_info(self):
         player_data = [
@@ -186,9 +67,7 @@ class TestOpta(unittest.TestCase):
         event_data = _load_event_data(self.f24_loc)
 
         # player name is added in other function later in the pipeline
-        expected_event_data = self.expected_event_data.copy().drop(
-            "player_name", axis=1
-        )
+        expected_event_data = ED_OPTA.copy().drop("player_name", axis=1)
 
         # away team coordinates are changed later on in the pipeling
         expected_event_data.loc[[0, 2, 6, 8], ["start_x", "start_y"]] *= -1
@@ -197,7 +76,5 @@ class TestOpta(unittest.TestCase):
         expected_event_data.loc[:, ["start_x", "start_y"]] = (
             expected_event_data.loc[:, ["start_x", "start_y"]] + 5
         ) * 10
-        print(event_data)
-        print(expected_event_data)
-        print(event_data == expected_event_data)
+        
         pd.testing.assert_frame_equal(event_data, expected_event_data)
