@@ -17,12 +17,11 @@ def _add_ball_data_to_dict(
     Returns:
         dict: contains all tracking data
     """
-    home_away_map = {"H": "home", "A": "away"}
 
     data["ball_x"][idx] = float(ball_x)
     data["ball_y"][idx] = float(ball_y)
     data["ball_z"][idx] = float(ball_z)
-    data["ball_posession"][idx] = home_away_map[posession]
+    data["ball_posession"][idx] = posession
     data["ball_status"][idx] = status
 
     return data

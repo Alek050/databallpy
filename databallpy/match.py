@@ -3,7 +3,15 @@ from typing import List
 
 import pandas as pd
 
+from databallpy.load_data.event_data.metrica_event_data import (
+    load_metrica_event_data,
+    load_metrica_open_event_data,
+)
 from databallpy.load_data.event_data.opta import load_opta_event_data
+from databallpy.load_data.tracking_data.metrica_tracking_data import (
+    load_metrica_open_tracking_data,
+    load_metrica_tracking_data,
+)
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
 
 
@@ -125,14 +133,29 @@ def get_match(
     event_metadata_loc: str,
     tracking_data_provider: str,
     event_data_provider: str,
-):
+) -> Match:
+    """Function to get all information of a match given its datasources
+
+    Args:
+        tracking_data_loc (str): location of the tracking data
+        tracking_metadata_loc (str): location of the metadata of the tracking data
+        event_data_loc (str): location of the event data
+        event_metadata_loc (str): location of the metadata of the event data
+        tracking_data_provider (str): provider of the tracking data
+        event_data_provider (str): provider of the event data
+
+    Returns:
+        Match: All information about the match
+    """
 
     assert tracking_data_provider in [
-        "tracab"
+        "tracab",
+        "metrica",
     ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
     "please open an issue in our Github repository."
     assert event_data_provider in [
-        "opta"
+        "opta",
+        "metrica",
     ], f"We do not supper '{event_data_provider}' as event data provider yet, "
     "please open an issue in our Github repository."
 
@@ -141,11 +164,19 @@ def get_match(
         event_data, event_metadata = load_opta_event_data(
             f7_loc=event_metadata_loc, f24_loc=event_data_loc
         )
+    elif event_data_provider == "metrica":
+        event_data, event_metadata = load_metrica_event_data(
+            event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
+        )
 
     # Get tracking data and tracking metadata
     if tracking_data_provider == "tracab":
         tracking_data, tracking_metadata = load_tracab_tracking_data(
             tracking_data_loc, tracking_metadata_loc
+        )
+    elif tracking_data_provider == "metrica":
+        tracking_data, tracking_metadata = load_metrica_tracking_data(
+            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
         )
 
     # Check if the event data is scaled the right way
@@ -159,24 +190,33 @@ def get_match(
         event_data["start_x"] *= x_correction
         event_data["start_y"] *= y_correction
 
-    # Merge periods
-    merged_periods = pd.concat(
-        (
-            tracking_metadata.periods_frames,
-            event_metadata.periods_frames.drop("period", axis=1),
-        ),
-        axis=1,
-    )
+    if tracking_data_provider == event_data_provider == "metrica":
+        merged_periods = tracking_metadata.periods_frames
+        home_players = tracking_metadata.home_players
+        away_players = tracking_metadata.away_players
+    else:
+        # Merge periods
+        merged_periods = pd.concat(
+            (
+                tracking_metadata.periods_frames,
+                event_metadata.periods_frames.drop("period", axis=1),
+            ),
+            axis=1,
+        )
 
-    # Merged player info
-    home_players = tracking_metadata.home_players.merge(
-        event_metadata.home_players[["id", "formation_place", "position", "starter"]],
-        on="id",
-    )
-    away_players = tracking_metadata.away_players.merge(
-        event_metadata.away_players[["id", "formation_place", "position", "starter"]],
-        on="id",
-    )
+        # Merged player info
+        home_players = tracking_metadata.home_players.merge(
+            event_metadata.home_players[
+                ["id", "formation_place", "position", "starter"]
+            ],
+            on="id",
+        )
+        away_players = tracking_metadata.away_players.merge(
+            event_metadata.away_players[
+                ["id", "formation_place", "position", "starter"]
+            ],
+            on="id",
+        )
 
     match = Match(
         tracking_data=tracking_data,
@@ -198,4 +238,42 @@ def get_match(
         away_players=away_players,
     )
 
+    return match
+
+
+def get_open_match(provider: str = "metrica") -> Match:
+    """Function to load a match object from an open datasource
+
+    Args:
+        provider (str, optional): What provider to get the open data from.
+        Defaults to "metrica".
+
+    Returns:
+        Match: All information about the match
+    """
+    assert provider in ["metrica"]
+
+    if provider == "metrica":
+        tracking_data, metadata = load_metrica_open_tracking_data()
+        event_data, _ = load_metrica_open_event_data()
+
+    match = Match(
+        tracking_data=tracking_data,
+        tracking_data_provider=provider,
+        event_data=event_data,
+        event_data_provider=provider,
+        pitch_dimensions=metadata.pitch_dimensions,
+        periods=metadata.periods_frames,
+        frame_rate=metadata.frame_rate,
+        home_team_id=metadata.home_team_id,
+        home_formation=metadata.home_formation,
+        home_score=metadata.home_score,
+        home_team_name=metadata.home_team_name,
+        home_players=metadata.home_players,
+        away_team_id=metadata.away_team_id,
+        away_formation=metadata.away_formation,
+        away_score=metadata.away_score,
+        away_team_name=metadata.away_team_name,
+        away_players=metadata.away_players,
+    )
     return match

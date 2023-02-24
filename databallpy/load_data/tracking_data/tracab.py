@@ -82,13 +82,17 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         players = players_info.split(";")[:-1]
         for player in players:
             team_id, _, shirt_num, x, y, _ = player.split(",")
-            data = _add_player_tracking_data_to_dict(
-                team_id, shirt_num, x, y, data, idx
-            )
+            team_ids = {0: "away", 1: "home"}
+            team = team_ids.get(int(team_id))
+            if team is None:  # player is unknown or referee
+                continue
+            data = _add_player_tracking_data_to_dict(team, shirt_num, x, y, data, idx)
 
         ball_x, ball_y, ball_z, _, posession, status = ball_info.split(";")[0].split(
             ","
         )[:6]
+        home_away_map = {"H": "home", "A": "away"}
+        posession = home_away_map[posession]
         data = _add_ball_data_to_dict(
             ball_x, ball_y, ball_z, posession, status.lower(), data, idx
         )
@@ -130,8 +134,8 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         "period": [],
         "start_frame": [],
         "end_frame": [],
-        "start_time": [],
-        "end_time": [],
+        "start_time_td": [],
+        "end_time_td": [],
     }
     for i, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
@@ -141,15 +145,15 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         frames_dict["start_frame"].append(start_frame)
         frames_dict["end_frame"].append(end_frame)
         if start_frame != 0:
-            frames_dict["start_time"].append(
+            frames_dict["start_time_td"].append(
                 date + np.timedelta64(int(start_frame / frame_rate), "s")
             )
-            frames_dict["end_time"].append(
+            frames_dict["end_time_td"].append(
                 date + np.timedelta64(int(end_frame / frame_rate), "s")
             )
         else:
-            frames_dict["start_time"].append(np.nan)
-            frames_dict["end_time"].append(np.nan)
+            frames_dict["start_time_td"].append(np.nan)
+            frames_dict["end_time_td"].append(np.nan)
     df_frames = pd.DataFrame(frames_dict)
 
     home_team = soup.find("HomeTeam")
