@@ -77,9 +77,10 @@ class TestMetadata(unittest.TestCase):
         assert metadata1 == metadata1
         assert metadata1 != metadata2
 
-    def test_metadata_wrong_match_id(self):
+    def test_metadata_post_init(self):
+        # match id
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id="12",
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -96,9 +97,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
 
-    def test_metadata_wrong_pitch_dimensions(self):
+        # pitch dimension
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions="12",
                 periods_frames=self.periods_frames,
@@ -116,7 +117,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=[10.0],
                 periods_frames=self.periods_frames,
@@ -133,7 +134,7 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=[10, 10.0],
                 periods_frames=self.periods_frames,
@@ -150,9 +151,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
 
-    def test_metadata_wrong_periods_frames(self):
+        # periods frames
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=12,
@@ -170,7 +171,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=pd.DataFrame({"test": []}),
@@ -188,7 +189,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=pd.DataFrame({"period": [0, 1, 2, 3, 4]}),
@@ -206,7 +207,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=pd.DataFrame({"period": [1, 1, 2, 3, 4, 5]}),
@@ -223,9 +224,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
 
-    def test_metadata_wrong_frame_rate(self):
+        # frame rate
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -243,7 +244,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -260,9 +261,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
 
-    def test_metadata_wrong_team_id(self):
+        # team id
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -279,9 +280,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
 
-    def test_metadata_wrong_team_name(self):
+        # team name
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -298,9 +299,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
 
-    def test_metadata_wrong_team_score(self):
+        # team score
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -318,7 +319,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -335,9 +336,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation=self.away_formation,
             )
 
-    def test_metadata_wrong_team_formation(self):
+        # team formation
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -355,7 +356,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -372,9 +373,9 @@ class TestMetadata(unittest.TestCase):
                 away_formation="13232",
             )
 
-    def test_metadata_wrong_team_players(self):
+        # team players
         with self.assertRaises(TypeError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
@@ -392,7 +393,7 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            metadata = Metadata(
+            Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,

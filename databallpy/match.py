@@ -67,6 +67,158 @@ class Match:
     away_score: int
     away_formation: str
 
+    def __post_init__(self):
+        # tracking_data
+        if not isinstance(self.tracking_data, pd.DataFrame):
+            raise TypeError(
+                f"tracking data should be a pandas df, not a {type(self.tracking_data)}"
+            )
+        for col in ["timestamp", "ball_x", "ball_y"]:
+            if col not in self.tracking_data.columns.to_list():
+                raise ValueError(
+                    f"No {col} in tracking_data columns, this is manditory!"
+                )
+
+        # tracking_data_provider
+        if not isinstance(self.tracking_data_provider, str):
+            raise TypeError(
+                f"tracking data provider should be a string, not a \
+                    {type(self.tracking_data_provider)}"
+            )
+
+        # event_data
+        if not isinstance(self.event_data, pd.DataFrame):
+            raise TypeError(
+                f"event data should be a pandas df, not a {type(self.event_data)}"
+            )
+        for col in [
+            "event_id",
+            "event",
+            "period_id",
+            "team_id",
+            "player_id",
+            "start_x",
+            "start_y",
+            "datetime",
+        ]:
+            if col not in self.event_data.columns.to_list():
+                raise ValueError(f"{col} not in event data columns, this is manditory!")
+
+        # event_data_provider
+        if not isinstance(self.event_data_provider, str):
+            raise TypeError(
+                f"event data provider should be a string, not a \
+                    {type(self.event_data_provider)}"
+            )
+
+        # pitch_dimensions
+        if not isinstance(self.pitch_dimensions, list):
+            raise TypeError(
+                f"pitch_dimensions ({self.pitch_dimensions}) should be a \
+                    list, not a {type(self.pitch_dimensions)}"
+            )
+        if not len(self.pitch_dimensions) == 2:
+            raise ValueError(
+                f"pitch_dimensions should contain, two values: a length and a width \
+                    of the pitch, current input is {self.pitch_dimensions}"
+            )
+        if not all([isinstance(x, float) for x in self.pitch_dimensions]):
+            raise TypeError(
+                f"Both values in pitch dimensions should by floats, current inputs \
+                    {[type(x) for x in self.pitch_dimensions]}"
+            )
+
+        # periods
+        if not isinstance(self.periods, pd.DataFrame):
+            raise TypeError(
+                f"periods_frames should be a pandas dataframe, not a \
+                    {type(self.periods)}"
+            )
+        if "period" not in self.periods.columns:
+            raise ValueError("'period' should be one of the columns in period_frames")
+        if any(
+            [
+                x not in self.periods["period"].value_counts().index
+                for x in [1, 2, 3, 4, 5]
+            ]
+        ) or not all(self.periods["period"].value_counts() == 1):
+
+            res = self.periods["period"]
+            raise ValueError(
+                f"'period' column in period_frames should contain only the values \
+                    [1, 2, 3, 4, 5]. Now it's {res}"
+            )
+
+        # frame_rate
+        if not pd.isnull(self.frame_rate):
+            if not isinstance(self.frame_rate, int):
+                raise TypeError(
+                    f"frame_rate should be an integer, not a {type(self.frame_rate)}"
+                )
+            if self.frame_rate < 1:
+                raise ValueError(
+                    f"frame_rate should be a positive integer, not {self.frame_rate}"
+                )
+
+        # team id's
+        for team, team_id in zip(
+            ["home", "away"], [self.home_team_id, self.away_team_id]
+        ):
+            if not isinstance(team_id, int) and not isinstance(team_id, str):
+                raise TypeError(
+                    f"{team} team id should be an integer or string, not a \
+                        {type(team_id)}"
+                )
+
+        # team names
+        for team, name in zip(
+            ["home", "away"], [self.home_team_name, self.away_team_name]
+        ):
+            if not isinstance(name, str):
+                raise TypeError(
+                    f"{team} team name should be a string, not a {type(name)}"
+                )
+
+        # team scores
+        for team, score in zip(["home", "away"], [self.home_score, self.away_score]):
+            if not pd.isnull(score):
+                if not isinstance(score, int):
+                    raise TypeError(
+                        f"{team} team score should be an integer, not a {type(score)}"
+                    )
+                if score < 0:
+                    raise ValueError(f"{team} team score should positive, not {score}")
+
+        # team formations
+        for team, form in zip(
+            ["home", "away"], [self.home_formation, self.away_formation]
+        ):
+            if not isinstance(form, str):
+                raise TypeError(
+                    f"{team} team formation should be a string, not a {type(form)}"
+                )
+            if len(form) > 4:
+                raise ValueError(
+                    f"{team} team formation should be of length 4 or smaller \
+                        ('1433'), not {len(form)}"
+                )
+
+        # team players
+        for team, players in zip(
+            ["home", "away"], [self.home_players, self.away_players]
+        ):
+            if not isinstance(players, pd.DataFrame):
+                raise TypeError(
+                    f"{team} team players should be a pandas dataframe, not a \
+                        {type(players)}"
+                )
+            for col in ["id", "full_name", "shirt_num"]:
+                if col not in players.columns:
+                    raise ValueError(
+                        f"{team} team players should contain at least the column \
+                            ['id', 'full_name', 'shirt_num'], {col} is missing."
+                    )
+
     @property
     def name(self) -> str:
         home_text = f"{self.home_team_name} {self.home_score}"

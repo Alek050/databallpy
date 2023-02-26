@@ -30,13 +30,13 @@ class TestMatch(unittest.TestCase):
             f7_loc=self.md_opta_loc, f24_loc=self.ed_opta_loc
         )
 
-        corrected_ed = self.ed_opta.copy()
-        corrected_ed["start_x"] *= (
+        self.corrected_ed = self.ed_opta.copy()
+        self.corrected_ed["start_x"] *= (
             100.0 / 106.0
         )  # pitch dimensions of td and ed metadata
-        corrected_ed["start_y"] *= 50.0 / 68.0
+        self.corrected_ed["start_y"] *= 50.0 / 68.0
 
-        expected_periods = pd.DataFrame(
+        self.expected_periods = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
                 "start_frame": [100, 200, 300, 400, 0],
@@ -72,7 +72,7 @@ class TestMatch(unittest.TestCase):
             }
         )
 
-        expected_home_players = pd.DataFrame(
+        self.expected_home_players = pd.DataFrame(
             {
                 "id": [19367, 45849],
                 "full_name": ["Piet Schrijvers", "Jan Boskamp"],
@@ -85,7 +85,7 @@ class TestMatch(unittest.TestCase):
             }
         )
 
-        expected_away_players = pd.DataFrame(
+        self.expected_away_players = pd.DataFrame(
             {
                 "id": [184934, 450445],
                 "full_name": ["Pepijn Blok", "TestSpeler"],
@@ -101,21 +101,21 @@ class TestMatch(unittest.TestCase):
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
-            event_data=corrected_ed,
+            event_data=self.corrected_ed,
             event_data_provider=self.ed_provider,
             pitch_dimensions=self.md_tracab.pitch_dimensions,
-            periods=expected_periods,
+            periods=self.expected_periods,
             frame_rate=self.md_tracab.frame_rate,
             home_team_id=self.md_opta.home_team_id,
             home_formation=self.md_opta.home_formation,
             home_score=self.md_opta.home_score,
             home_team_name=self.md_opta.home_team_name,
-            home_players=expected_home_players,
+            home_players=self.expected_home_players,
             away_team_id=self.md_opta.away_team_id,
             away_formation=self.md_opta.away_formation,
             away_score=self.md_opta.away_score,
             away_team_name=self.md_opta.away_team_name,
-            away_players=expected_away_players,
+            away_players=self.expected_away_players,
         )
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
         self.md_metrica_loc = "tests/test_data/metrica_metadata_test.xml"
@@ -146,6 +146,515 @@ class TestMatch(unittest.TestCase):
             away_team_name=self.md_metrica.away_team_name,
             away_players=self.md_metrica.away_players,
         )
+
+    def test_match_eq(self):
+        assert self.expected_match_metrica == self.expected_match_metrica
+        assert self.expected_match_metrica != self.expected_match_tracab_opta
+
+    def test_match_post_init(self):
+
+        # tracking data
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data="tracking_data",
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=pd.DataFrame(
+                    {"timestamp": [], "ball_x": [], "ball_z": []}
+                ),
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # tracking data provider
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=14.3,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # event data
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data="event_data",
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=pd.DataFrame(
+                    {
+                        "event_id": [],
+                        "player": [],
+                        "event": [],
+                    }
+                ),
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # event data provider
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=["opta"],
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # pitch dimensions
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions={1: 22, 2: 11},
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=[10.0, 11.0, 12.0],
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=[10, 11.0],
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # periods
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=[1, 2, 3, 4, 5],
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=pd.DataFrame({"times": [1, 2, 3, 4, 5]}),
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=pd.DataFrame({"period": [0, 1, 2, 3, 4]}),
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=pd.DataFrame({"period": [1, 1, 2, 3, 4, 5]}),
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # frame rate
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=25.0,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=-25,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # team id
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=123.0,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # team name
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=["teamone"],
+                away_players=self.expected_away_players,
+            )
+
+        # team score
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=11.5,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=-3,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # team formation
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=[1, 4, 2, 2],
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation="one-four-three-three",
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # team players
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=["player1", "player2"],
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players.drop("shirt_num", axis=1),
+            )
 
     def test_get_match_wrong_provider(self):
         self.assertRaises(
