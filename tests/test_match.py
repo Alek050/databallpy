@@ -39,21 +39,21 @@ class TestMatch(unittest.TestCase):
         expected_periods = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_frame": [100, 200, 300, 400, 0],
-                "end_frame": [400, 600, 900, 1200, 0],
+                "start_frame": [100, 200, 300, 400, np.nan],
+                "end_frame": [400, 600, 900, 1200, np.nan],
                 "start_time_td": [
                     np.datetime64("2023-01-14 00:00:04"),
                     np.datetime64("2023-01-14 00:00:08"),
                     np.datetime64("2023-01-14 00:00:12"),
                     np.datetime64("2023-01-14 00:00:16"),
-                    np.nan,
+                    np.datetime64("NaT"),
                 ],
                 "end_time_td": [
                     np.datetime64("2023-01-14 00:00:16"),
                     np.datetime64("2023-01-14 00:00:24"),
                     np.datetime64("2023-01-14 00:00:36"),
                     np.datetime64("2023-01-14 00:00:48"),
-                    np.nan,
+                    np.datetime64("NaT"),
                 ],
                 "start_datetime_opta": [
                     pd.to_datetime("20230122T121832+0000"),
@@ -98,7 +98,7 @@ class TestMatch(unittest.TestCase):
                 "starter": [True, False],
             }
         )
-
+        self.td_tracab["period"] = ["0", "0", "0", "0", "0"]
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
@@ -124,10 +124,11 @@ class TestMatch(unittest.TestCase):
         self.td_metrica, self.md_metrica = load_metrica_tracking_data(
             self.td_metrica_loc, self.md_metrica_loc
         )
+        self.td_metrica["period"] = ["1", "1", "1", "2", "2", "2"]
         self.ed_metrica, _ = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
-
+       
         self.expected_match_metrica = Match(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",
@@ -271,21 +272,24 @@ class TestMatch(unittest.TestCase):
                 np.nan,
                 np.nan, 
                 np.nan,
+                0.0, 
                 1.0, 
+                np.nan,
+                np.nan,
                 5.0, 
-                np.nan,
-                np.nan,
-                9.0, 
-                11.0
+                6.0
             ]
         expected_event_data = expected_event_data[
             expected_event_data["type_id"].isin([1, 3, 7])
         ]
         
 
+        self.match_to_sync.event_data["datetime"] -= np.timedelta64(800, "ms")
         synced_match = self.match_to_sync.synchronise_tracking_and_event_data(
             n_batches_per_half=1
         )
+        self.match_to_sync.event_data["datetime"] += np.timedelta64(800, "ms")
+
         pd.testing.assert_frame_equal(
             synced_match.tracking_data, expected_tracking_data
         )
@@ -475,7 +479,7 @@ class TestMatch(unittest.TestCase):
         tracking_data.reset_index(inplace=True)
         event_data = self.match_to_sync.event_data
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
-        event_data.iloc[2, 7] = "not a float"
+        event_data.iloc[2, 7] = np.nan
 
         res = _create_sim_mat(
             tracking_batch=tracking_data,

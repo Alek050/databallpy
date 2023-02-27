@@ -125,17 +125,17 @@ def _get_metadata(metadata_loc: str) -> Metadata:
                 periods_dict["period"].append(period)
                 periods_dict["start_frame"].append(current_timestamp)
                 first_timestamp = periods_dict["start_frame"][0]
-                seconds = int((current_timestamp - first_timestamp) / frame_rate)
+                mseconds = int((current_timestamp - first_timestamp) / frame_rate * 1000)
                 periods_dict["start_time_td"].append(
-                    datetime + np.timedelta64(seconds, "s")
+                    datetime + np.timedelta64(mseconds, "ms")
                 )
             elif "end" in name:
                 periods_dict["end_frame"].append(current_timestamp)
                 first_timestamp = periods_dict["start_frame"][0]
+                mseconds = int((current_timestamp - first_timestamp) / frame_rate * 1000)
                 periods_dict["end_time_td"].append(
-                    datetime + np.timedelta64(seconds, "s")
+                    datetime + np.timedelta64(mseconds, "ms")
                 )
-
     # add fifth period
     periods_dict["period"].append(5)
     periods_dict["start_frame"].append(np.nan)

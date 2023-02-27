@@ -30,8 +30,8 @@ MD_TRACAB = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [100, 200, 300, 400, 0],
-            "end_frame": [400, 600, 900, 1200, 0],
+            "start_frame": [100, 200, 300, 400, np.nan],
+            "end_frame": [400, 600, 900, 1200, np.nan],
             "start_time_td": [
                 np.datetime64("2023-01-14 00:00:04"),
                 np.datetime64("2023-01-14 00:00:08"),
@@ -233,9 +233,9 @@ ED_METRICA = pd.DataFrame(
         "end_y": [np.nan, -15.0, 0.0],
         "td_frame": [1, 3, 5],
         "datetime": [
-            pd.to_datetime("2019-02-21T03:30:07.000Z"),
-            pd.to_datetime("2019-02-21T03:30:08.000Z"),
-            pd.to_datetime("2019-02-21T03:30:09.000Z"),
+            pd.to_datetime("2019-02-21T03:30:07"),
+            pd.to_datetime("2019-02-21T03:30:08"),
+            pd.to_datetime("2019-02-21T03:30:09"),
         ],
     }
 )

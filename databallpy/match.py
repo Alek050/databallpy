@@ -190,11 +190,8 @@ class Match:
         for p in periods_played:
             # create batches to loop over
             start_batch_frame = self.periods.loc[self.periods["period"] == p, "start_frame"].iloc[0]
-            start_batch_datetime = date + np.timedelta64(
-                int(start_batch_frame / self.frame_rate * 1000), "ms"
-            )
+            start_batch_datetime = start_datetime_period[p] +  np.timedelta64(int((start_batch_frame-start_frame_period[p])/self.frame_rate *1000), "ms")
             delta = self.periods.loc[self.periods["period"] == p, "end_frame"].iloc[0] - start_batch_frame
-            n_splits = n_batches_per_half
             end_batches_frames = np.floor(
                 np.arange(
                     delta / n_batches_per_half,
@@ -221,7 +218,7 @@ class Match:
                     (event_data["datetime"] >= start_batch_datetime)
                     & (event_data["datetime"] <= end_batch_datetime)
                 ].reset_index()
-
+                
                 sim_mat = _create_sim_mat(tracking_batch, event_batch, self)
                 event_frame_dict = _needleman_wunsch(sim_mat)
 
@@ -439,7 +436,7 @@ def _create_sim_mat(
             player_ball_diff = 0
         # similarity function from: https://kwiatkowski.io/sync.soccer
         sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
-
+    
     den = np.nanmax(np.nanmin(sim_mat, axis=1))  # scale similarity scores
     sim_mat[np.isnan(sim_mat)] = np.nanmax(
         sim_mat
@@ -539,6 +536,21 @@ def get_open_match(provider: str = "metrica") -> Match:
     if provider == "metrica":
         tracking_data, metadata = load_metrica_open_tracking_data()
         event_data, _ = load_metrica_open_event_data()
+
+    # add period column to tracking_data
+    period_conditions = [
+        (tracking_data["timestamp"] <= metadata.periods_frames.loc[0, "end_frame"]),
+        (tracking_data["timestamp"] > metadata.periods_frames.loc[0, "end_frame"]) & (tracking_data["timestamp"] < metadata.periods_frames.loc[1, "start_frame"]),
+        (tracking_data["timestamp"] >= metadata.periods_frames.loc[1, "start_frame"]) & (tracking_data["timestamp"] <= metadata.periods_frames.loc[1, "end_frame"]),
+        (tracking_data["timestamp"] > metadata.periods_frames.loc[1, "end_frame"]) & (tracking_data["timestamp"] < metadata.periods_frames.loc[2, "start_frame"]),
+        (tracking_data["timestamp"] >= metadata.periods_frames.loc[2, "start_frame"]) & (tracking_data["timestamp"] < metadata.periods_frames.loc[2, "end_frame"]),
+        (tracking_data["timestamp"] > metadata.periods_frames.loc[2, "end_frame"]) & (tracking_data["timestamp"] < metadata.periods_frames.loc[3, "start_frame"]),
+        (tracking_data["timestamp"] >= metadata.periods_frames.loc[3, "start_frame"]) & (tracking_data["timestamp"] < metadata.periods_frames.loc[3, "end_frame"]),
+        (tracking_data["timestamp"] > metadata.periods_frames.loc[3, "end_frame"]) & (tracking_data["timestamp"] < metadata.periods_frames.loc[4, "start_frame"]),
+        (tracking_data["timestamp"] > metadata.periods_frames.loc[4, "start_frame"])   
+    ]
+    period_values = ["1", "Break after 1", "2", "Break after 2", "3", "Break after 3", "4", "Break after 4", "5"]
+    tracking_data["period"] = np.select(period_conditions, period_values)
 
     match = Match(
         tracking_data=tracking_data,

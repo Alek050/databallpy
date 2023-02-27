@@ -47,7 +47,7 @@ class Metadata:
             else pd.isnull(other.away_score),
             self.away_formation == other.away_formation,
         ]
-        return all(result)
+        return result
 
     def copy(self):
         return Metadata(
