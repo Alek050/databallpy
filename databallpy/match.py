@@ -436,7 +436,7 @@ def _create_sim_mat(
             player_ball_diff = 0
         # similarity function from: https://kwiatkowski.io/sync.soccer
         sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
-    
+    #import pdb;pdb.set_trace()
     den = np.nanmax(np.nanmin(sim_mat, axis=1))  # scale similarity scores
     sim_mat[np.isnan(sim_mat)] = np.nanmax(
         sim_mat
