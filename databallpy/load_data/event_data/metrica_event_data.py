@@ -57,7 +57,7 @@ def load_metrica_event_data(
     ].iloc[0]
     frame_rate = metadata.frame_rate
     event_data["datetime"] = pd.to_datetime(start_time) + pd.to_timedelta(
-        (event_data["td_frame"] - first_frame) / frame_rate*1000, unit="ms"
+        (event_data["td_frame"] - first_frame) / frame_rate * 1000, unit="ms"
     )
 
     return event_data, metadata

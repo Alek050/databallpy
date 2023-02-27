@@ -2,8 +2,8 @@ import os
 import unittest
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from databallpy.match import get_match
 from databallpy.visualize import (
@@ -153,7 +153,6 @@ class TestVisualize(unittest.TestCase):
         assert os.path.exists("tests/test_data/test_clip.mp4")
         os.remove("tests/test_data/test_clip.mp4")
 
-
     def test_save_match_clip_with_events(self):
         synced_match = get_match(
             tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
@@ -164,7 +163,9 @@ class TestVisualize(unittest.TestCase):
             event_data_provider="opta",
         )
         synced_match.event_data["datetime"] -= np.timedelta64(800, "ms")
-        synced_match = synced_match.synchronise_tracking_and_event_data(n_batches_per_half=1)
+        synced_match = synced_match.synchronise_tracking_and_event_data(
+            n_batches_per_half=1
+        )
         events = [
             "pass",
             "aerial",

@@ -134,7 +134,7 @@ ED_OPTA = pd.DataFrame(
                 "2023-01-22T12:18:43.120",
             ],
             dtype="datetime64",
-        ), 
+        ),
         "player_name": [
             np.nan,
             np.nan,

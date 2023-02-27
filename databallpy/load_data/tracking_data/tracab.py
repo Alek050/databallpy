@@ -150,7 +150,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             end_frame = int(period["iEndFrame"])
             start_time_td = date + np.timedelta64(int(start_frame / frame_rate), "s")
             end_time_td = date + np.timedelta64(int(end_frame / frame_rate), "s")
-        
+
         frames_dict["start_frame"].append(start_frame)
         frames_dict["end_frame"].append(end_frame)
         frames_dict["start_time_td"].append(start_time_td)

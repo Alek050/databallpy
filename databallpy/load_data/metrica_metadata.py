@@ -1,4 +1,3 @@
-import datetime as dt
 import os
 
 import numpy as np
@@ -125,14 +124,18 @@ def _get_metadata(metadata_loc: str) -> Metadata:
                 periods_dict["period"].append(period)
                 periods_dict["start_frame"].append(current_timestamp)
                 first_timestamp = periods_dict["start_frame"][0]
-                mseconds = int((current_timestamp - first_timestamp) / frame_rate * 1000)
+                mseconds = int(
+                    (current_timestamp - first_timestamp) / frame_rate * 1000
+                )
                 periods_dict["start_time_td"].append(
                     datetime + np.timedelta64(mseconds, "ms")
                 )
             elif "end" in name:
                 periods_dict["end_frame"].append(current_timestamp)
                 first_timestamp = periods_dict["start_frame"][0]
-                mseconds = int((current_timestamp - first_timestamp) / frame_rate * 1000)
+                mseconds = int(
+                    (current_timestamp - first_timestamp) / frame_rate * 1000
+                )
                 periods_dict["end_time_td"].append(
                     datetime + np.timedelta64(mseconds, "ms")
                 )
@@ -142,7 +145,6 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     periods_dict["end_frame"].append(np.nan)
     periods_dict["start_time_td"].append(np.datetime64("NaT"))
     periods_dict["end_time_td"].append(np.datetime64("NaT"))
-
 
     teams_info = {}
     for team in soup.find_all("Team"):

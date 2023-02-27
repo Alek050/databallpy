@@ -76,5 +76,5 @@ class TestOpta(unittest.TestCase):
         expected_event_data.loc[:, ["start_x", "start_y"]] = (
             expected_event_data.loc[:, ["start_x", "start_y"]] + 5
         ) * 10
-        
+
         pd.testing.assert_frame_equal(event_data, expected_event_data)

@@ -10,7 +10,13 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
-from databallpy.match import Match, get_match, get_open_match, _create_sim_mat, _needleman_wunsch 
+from databallpy.match import (
+    Match,
+    _create_sim_mat,
+    _needleman_wunsch,
+    get_match,
+    get_open_match,
+)
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
@@ -72,7 +78,6 @@ class TestMatch(unittest.TestCase):
             }
         )
 
-
         expected_home_players = pd.DataFrame(
             {
                 "id": [19367, 45849],
@@ -128,7 +133,7 @@ class TestMatch(unittest.TestCase):
         self.ed_metrica, _ = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
-       
+
         self.expected_match_metrica = Match(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",
@@ -190,9 +195,8 @@ class TestMatch(unittest.TestCase):
             tracking_data_provider=self.td_provider,
             event_data_provider=self.ed_provider,
         )
-        
-        assert match == self.expected_match_tracab_opta
 
+        assert match == self.expected_match_tracab_opta
 
     def test_match__eq__(self):
         assert not self.expected_match_tracab_opta == pd.DataFrame()
@@ -224,10 +228,14 @@ class TestMatch(unittest.TestCase):
         assert res_name_away == "TestSpeler"
 
     def test_match_player_id_to_column_id(self):
-        res_column_id_home = self.expected_match_tracab_opta.player_id_to_column_id(19367)
+        res_column_id_home = self.expected_match_tracab_opta.player_id_to_column_id(
+            19367
+        )
         assert res_column_id_home == "home_1"
 
-        res_column_id_away = self.expected_match_tracab_opta.player_id_to_column_id(450445)
+        res_column_id_away = self.expected_match_tracab_opta.player_id_to_column_id(
+            450445
+        )
         assert res_column_id_away == "away_2"
 
         with self.assertRaises(ValueError):
@@ -267,22 +275,21 @@ class TestMatch(unittest.TestCase):
             2499594291,
             np.nan,
         ]
-        
+
         expected_event_data.loc[:, "tracking_frame"] = [
-                np.nan,
-                np.nan, 
-                np.nan,
-                0.0, 
-                1.0, 
-                np.nan,
-                np.nan,
-                5.0, 
-                6.0
-            ]
+            np.nan,
+            np.nan,
+            np.nan,
+            0.0,
+            1.0,
+            np.nan,
+            np.nan,
+            5.0,
+            6.0,
+        ]
         expected_event_data = expected_event_data[
             expected_event_data["type_id"].isin([1, 3, 7])
         ]
-        
 
         self.match_to_sync.event_data["datetime"] -= np.timedelta64(800, "ms")
         synced_match = self.match_to_sync.synchronise_tracking_and_event_data(
@@ -488,7 +495,7 @@ class TestMatch(unittest.TestCase):
         )
 
         np.testing.assert_allclose(expected_res, res, rtol=1e-05)
-    
+
     def test_match_metrica_data(self):
 
         res = get_match(
