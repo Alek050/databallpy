@@ -16,12 +16,14 @@ from databallpy.load_data.metrica_metadata import (
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
     _add_ball_data_to_dict,
 )
+from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
+    _add_periods_to_tracking_data,
+)
 from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
 )
 from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._add_periods_to_tracking_data import _add_periods_to_tracking_data
 
 
 def load_metrica_tracking_data(
@@ -60,7 +62,9 @@ def load_metrica_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )
     tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
-    tracking_data["period"] = _add_periods_to_tracking_data(tracking_data["timestamp"], metadata.periods_frames)
+    tracking_data["period"] = _add_periods_to_tracking_data(
+        tracking_data["timestamp"], metadata.periods_frames
+    )
 
     return tracking_data, metadata
 

@@ -214,7 +214,7 @@ TD_METRICA = pd.DataFrame(
         "away_35_x": [np.nan, np.nan, np.nan, np.nan, 10, 20],
         "away_35_y": [np.nan, np.nan, np.nan, np.nan, 5, 0],
         "matchtime_td": ["00:00", "00:00", "00:01", "00:01", "45:00", "45:00"],
-        "period": [1, 1, 1, 2, 2, 2]
+        "period": [1, 1, 1, 2, 2, 2],
     }
 )
 TD_METRICA["period"] = TD_METRICA["period"].astype("int32")

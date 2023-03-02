@@ -176,10 +176,11 @@ class Match:
             + np.timedelta64(
                 int((x - start_frame_period[p]) / self.frame_rate * 1000), "ms"
             )
-            if p > 0 else np.timedelta64("NaT")
+            if p > 0
+            else np.timedelta64("NaT")
             for x, p in zip(tracking_data["timestamp"], tracking_data["period"])
         ]
-        
+
         tracking_data["event"] = np.nan
         tracking_data["event_id"] = np.nan
         event_data["tracking_frame"] = np.nan
@@ -414,7 +415,7 @@ def _create_sim_mat(
     """
     sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
     tracking_batch["datetime"] = tracking_batch["datetime"].astype("datetime64[ns]")
-        
+
     for i, event in event_batch.iterrows():
         time_diff = (tracking_batch["datetime"] - event["datetime"]) / np.timedelta64(
             1, "s"
@@ -436,7 +437,7 @@ def _create_sim_mat(
             player_ball_diff = 0
         # similarity function from: https://kwiatkowski.io/sync.soccer
         sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
-    
+
     den = np.nanmax(np.nanmin(sim_mat, axis=1))  # scale similarity scores
     sim_mat[np.isnan(sim_mat)] = np.nanmax(
         sim_mat

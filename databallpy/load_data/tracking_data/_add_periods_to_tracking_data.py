@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
 
-def _add_periods_to_tracking_data(timestamps: pd.Series, periods_frames: pd.DataFrame) -> pd.Series:        
+
+def _add_periods_to_tracking_data(
+    timestamps: pd.Series, periods_frames: pd.DataFrame
+) -> pd.Series:
     """Function to add periods
 
     Args:
@@ -40,5 +43,5 @@ def _add_periods_to_tracking_data(timestamps: pd.Series, periods_frames: pd.Data
         -999,
         5,
     ]
-    
+
     return np.select(period_conditions, period_values)
