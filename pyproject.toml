@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.1.1"
+version = "0.2.0-alpha.1"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
@@ -56,7 +56,6 @@ optional = true
 myst-nb = "^0.17.1"
 sphinx-autoapi = "^2.0.1"
 sphinx-rtd-theme = "^1.1.1"
-
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
