@@ -22,8 +22,11 @@ TD_TRACAB = pd.DataFrame(
             "Break (4)",
             "Break (4)",
         ],
+        "period": [0, 0, 0, 0, 0],
     }
 )
+TD_TRACAB["period"] = TD_TRACAB["period"].astype("int32")
+
 MD_TRACAB = Metadata(
     match_id=1908,
     pitch_dimensions=[100, 50],
@@ -211,8 +214,11 @@ TD_METRICA = pd.DataFrame(
         "away_35_x": [np.nan, np.nan, np.nan, np.nan, 10, 20],
         "away_35_y": [np.nan, np.nan, np.nan, np.nan, 5, 0],
         "matchtime_td": ["00:00", "00:00", "00:01", "00:01", "45:00", "45:00"],
+        "period": [1, 1, 1, 2, 2, 2]
     }
 )
+TD_METRICA["period"] = TD_METRICA["period"].astype("int32")
+
 ED_METRICA = pd.DataFrame(
     {
         "event_id": [3, 4, 5],

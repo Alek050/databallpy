@@ -103,7 +103,8 @@ class TestMatch(unittest.TestCase):
                 "starter": [True, False],
             }
         )
-        self.td_tracab["period"] = ["0", "0", "0", "0", "0"]
+        self.td_tracab["period"] = [0, 0, 0, 0, 0]
+        self.td_tracab["period"] = self.td_tracab["period"].astype("int32")
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
@@ -129,11 +130,11 @@ class TestMatch(unittest.TestCase):
         self.td_metrica, self.md_metrica = load_metrica_tracking_data(
             self.td_metrica_loc, self.md_metrica_loc
         )
-        self.td_metrica["period"] = ["1", "1", "1", "2", "2", "2"]
+        self.td_metrica["period"] = [1, 1, 1, 2, 2, 2]
         self.ed_metrica, _ = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
-
+        self.td_metrica["period"] = self.td_metrica["period"].astype("int32")
         self.expected_match_metrica = Match(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",
@@ -244,7 +245,7 @@ class TestMatch(unittest.TestCase):
     def test_synchronise_tracking_and_event_data(self):
         expected_event_data = self.match_to_sync.event_data
         expected_tracking_data = self.match_to_sync.tracking_data
-        expected_tracking_data["period"] = ["1"] * 13
+        expected_tracking_data["period"] = [1] * 13
         expected_tracking_data["event"] = [
             np.nan,
             "pass",

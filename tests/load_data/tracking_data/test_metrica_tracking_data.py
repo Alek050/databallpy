@@ -19,7 +19,7 @@ class TestMetricaTrackingData(unittest.TestCase):
 
     def test_get_tracking_data(self):
         expected = TD_METRICA.copy()
-        expected.drop(["matchtime_td"], axis=1, inplace=True)
+        expected.drop(["matchtime_td", "period"], axis=1, inplace=True)
         res = _get_tracking_data(
             self.td_loc, TD_CHANNELS_METRICA, [100, 50], verbose=False
         )
