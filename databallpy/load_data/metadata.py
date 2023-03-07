@@ -165,22 +165,25 @@ class Metadata:
             else pd.isnull(other.away_score),
             self.away_formation == other.away_formation,
         ]
+        if not all(result):
+            pass
+            # import pdb; pdb.set_trace()
         return all(result)
 
     def copy(self):
         return Metadata(
             match_id=self.match_id,
-            pitch_dimensions=self.pitch_dimensions,
-            periods_frames=self.periods_frames,
+            pitch_dimensions=list(self.pitch_dimensions),
+            periods_frames=self.periods_frames.copy(),
             frame_rate=self.frame_rate,
             home_team_id=self.home_team_id,
             home_team_name=self.home_team_name,
-            home_players=self.home_players,
+            home_players=self.home_players.copy(),
             home_score=self.home_score,
             home_formation=self.home_formation,
             away_team_id=self.away_team_id,
             away_team_name=self.away_team_name,
-            away_players=self.away_players,
+            away_players=self.away_players.copy(),
             away_score=self.away_score,
             away_formation=self.away_formation,
         )

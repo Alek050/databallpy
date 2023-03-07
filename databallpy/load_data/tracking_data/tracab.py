@@ -9,6 +9,7 @@ from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
     _add_ball_data_to_dict,
 )
+from databallpy.load_data.tracking_data._normalize_playing_direction import _normalize_playing_direction
 from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
 )
@@ -35,6 +36,7 @@ def load_tracab_tracking_data(
     metadata = _get_metadata(metadata_loc)
 
     tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
+    tracking_data = _normalize_playing_direction(tracking_data, metadata.periods_frames)
 
     return tracking_data, metadata
 

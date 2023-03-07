@@ -20,21 +20,21 @@ class TestMetricaMetadata(unittest.TestCase):
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],
-                    "start_frame": [1, 4, np.nan, np.nan, np.nan],
-                    "end_frame": [3, 6, np.nan, np.nan, np.nan],
+                    "start_frame": [1, 4, -999, -999, -999],
+                    "end_frame": [3, 6, -999, -999, -999],
                     "start_time_td": [
                         pd.to_datetime("2019-02-21T03:30:07.000Z"),
                         pd.to_datetime("2019-02-21T03:30:08.500Z"),
-                        np.nan,
-                        np.nan,
-                        np.nan,
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
                     ],
                     "end_time_td": [
                         pd.to_datetime("2019-02-21T03:30:08.000Z"),
                         pd.to_datetime("2019-02-21T03:30:09.500Z"),
-                        np.nan,
-                        np.nan,
-                        np.nan,
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
                     ],
                 }
             ),

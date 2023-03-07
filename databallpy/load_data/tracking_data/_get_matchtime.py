@@ -48,9 +48,8 @@ def _get_matchtime(timestamp_column: pd.Series, metadata: Metadata) -> pd.Series
     """
     frame_rate = metadata.frame_rate
     periods_frames = metadata.periods_frames
-
     bins = list(periods_frames["start_frame"].values.flatten())
-    bins = [b for b in bins if b != 0]
+    bins = [b for b in bins if b not in [0, -999]]
     periods = np.digitize(timestamp_column, bins, right=True)
     periods[0] = periods[1]
 

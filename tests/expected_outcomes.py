@@ -13,7 +13,7 @@ TD_TRACAB = pd.DataFrame(
         "ball_posession": ["away", "away", "away", np.nan, "home"],
         "home_34_x": [-13.50, -13.50, -13.50, np.nan, -13.49],
         "home_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
-        "away_17_x": [1.22, 1.21, 1.21, np.nan, 1.21],
+        "away_17_x": [13.22, 13.21, 13.21, np.nan, 13.21],
         "away_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
         "matchtime_td": [
             "Break (4)",
@@ -37,14 +37,14 @@ MD_TRACAB = Metadata(
                 np.datetime64("2023-01-14 00:00:08"),
                 np.datetime64("2023-01-14 00:00:12"),
                 np.datetime64("2023-01-14 00:00:16"),
-                np.nan,
+                np.datetime64("NaT"),
             ],
             "end_time_td": [
                 np.datetime64("2023-01-14 00:00:16"),
                 np.datetime64("2023-01-14 00:00:24"),
                 np.datetime64("2023-01-14 00:00:36"),
                 np.datetime64("2023-01-14 00:00:48"),
-                np.nan,
+                np.datetime64("NaT"),
             ],
         }
     ),
@@ -136,9 +136,9 @@ ED_OPTA = pd.DataFrame(
             dtype="datetime64",
         ),
         "player_name": [
-            np.nan,
-            np.nan,
-            np.nan,
+            None,
+            None,
+            None,
             "Piet Schrijvers",
             "Jan Boskamp",
             "Jan Boskamp",
@@ -203,16 +203,16 @@ MD_OPTA = Metadata(
 TD_METRICA = pd.DataFrame(
     {
         "timestamp": [1, 2, 3, 4, 5, 6],
-        "ball_x": [np.nan, 0, 10, np.nan, np.nan, -30],
-        "ball_y": [np.nan, 0, 0, np.nan, np.nan, 20],
+        "ball_x": [np.nan, 0, 40, np.nan, np.nan, -40],
+        "ball_y": [np.nan, 0, -20, np.nan, np.nan, 20],
         "ball_z": [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
         "ball_status": ["dead", "alive", "alive", np.nan, "dead", "alive"],
         "ball_posession": [None, None, None, None, None, None],
-        "home_1_x": [40, 30, 20, np.nan, np.nan, np.nan],
+        "home_1_x": [0, 30, 20, np.nan, np.nan, np.nan],
         "home_1_y": [0, 0, -5, np.nan, np.nan, np.nan],
-        "home_11_x": [-40, -30, -20, np.nan, 10, 0],
+        "home_11_x": [-40, -30, -20, np.nan, -10, 0],
         "home_11_y": [5, 0, -5, np.nan, 0, -20],
-        "away_34_x": [-20, -10, 0, np.nan, 0, 20],
+        "away_34_x": [20, -10, 0, np.nan, 0, 20],
         "away_34_y": [-5, 20, 10, np.nan, 5, 0],
         "away_35_x": [np.nan, np.nan, np.nan, np.nan, 10, 20],
         "away_35_y": [np.nan, np.nan, np.nan, np.nan, 5, 0],
@@ -251,21 +251,21 @@ MD_METRICA = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [1, 4, np.nan, np.nan, np.nan],
-            "end_frame": [3, 6, np.nan, np.nan, np.nan],
+            "start_frame": [1, 4, -999, -999, -999],
+            "end_frame": [3, 6, -999, -999, -999],
             "start_time_td": [
                 pd.to_datetime("2019-02-21T03:30:07.000Z"),
                 pd.to_datetime("2019-02-21T03:30:08.500Z"),
-                np.nan,
-                np.nan,
-                np.nan,
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
             ],
             "end_time_td": [
                 pd.to_datetime("2019-02-21T03:30:08.000Z"),
                 pd.to_datetime("2019-02-21T03:30:09.500Z"),
-                np.nan,
-                np.nan,
-                np.nan,
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
             ],
         }
     ),
@@ -301,7 +301,7 @@ MD_METRICA = Metadata(
 )
 TD_CHANNELS_METRICA = pd.DataFrame(
     {
-        "start": [1, 4],
+        "start": [1, 5],
         "end": [3, 6],
         "ids": [
             ["home_1", "home_11", "away_34"],

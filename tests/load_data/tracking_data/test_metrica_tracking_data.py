@@ -21,7 +21,7 @@ class TestMetricaTrackingData(unittest.TestCase):
         expected = TD_METRICA.copy()
         expected.drop(["matchtime_td"], axis=1, inplace=True)
         res = _get_tracking_data(
-            self.td_loc, TD_CHANNELS_METRICA, [100, 50], verbose=False
+            self.td_loc, TD_CHANNELS_METRICA, [100., 50.], verbose=False
         )
         pd.testing.assert_frame_equal(res, expected)
 
