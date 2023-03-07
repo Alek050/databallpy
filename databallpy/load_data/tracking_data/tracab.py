@@ -14,8 +14,8 @@ from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import
 )
 from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._normalize_playing_direction import (
-    _normalize_playing_direction,
+from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _normalize_playing_direction_tracking,
 )
 
 
@@ -38,7 +38,9 @@ def load_tracab_tracking_data(
     metadata = _get_metadata(metadata_loc)
 
     tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
-    tracking_data = _normalize_playing_direction(tracking_data, metadata.periods_frames)
+    tracking_data = _normalize_playing_direction_tracking(
+        tracking_data, metadata.periods_frames
+    )
 
     return tracking_data, metadata
 

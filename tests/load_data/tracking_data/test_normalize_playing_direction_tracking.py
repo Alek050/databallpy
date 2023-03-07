@@ -2,8 +2,8 @@ import unittest
 
 import pandas as pd
 
-from databallpy.load_data.tracking_data._normalize_playing_direction import (
-    _normalize_playing_direction,
+from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _normalize_playing_direction_tracking,
 )
 
 
@@ -50,6 +50,6 @@ class TestNormalizePlayingDirection(unittest.TestCase):
             }
         )
 
-        res = _normalize_playing_direction(self.td, self.periods)
+        res = _normalize_playing_direction_tracking(self.td, self.periods)
 
         pd.testing.assert_frame_equal(res, expected)

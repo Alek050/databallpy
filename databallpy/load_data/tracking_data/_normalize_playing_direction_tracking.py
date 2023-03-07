@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def _normalize_playing_direction(
+def _normalize_playing_direction_tracking(
     td: pd.DataFrame, periods: pd.DataFrame
 ) -> pd.DataFrame:
     """Function to represent the home team as playing from left to right for the
