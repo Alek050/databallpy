@@ -6,7 +6,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils import _to_int, _to_float
+from databallpy.utils import _to_float, _to_int
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
@@ -120,7 +120,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             seconds = (current_timestamp - first_timestamp) / frame_rate
             periods_dict["start_time_td"].append(
                 datetime + dt.timedelta(seconds=seconds)
-            ) if not current_timestamp == -999 else periods_dict["start_time_td"].append(
+            ) if not current_timestamp == -999 else periods_dict[
+                "start_time_td"
+            ].append(
                 np.nan
             )
         elif "end" in name:
@@ -129,7 +131,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             seconds = (current_timestamp - first_timestamp) / frame_rate
             periods_dict["end_time_td"].append(
                 datetime + dt.timedelta(seconds=seconds)
-            ) if not current_timestamp == -999 else periods_dict["end_time_td"].append(np.nan)
+            ) if not current_timestamp == -999 else periods_dict["end_time_td"].append(
+                np.nan
+            )
 
     # add fifth period
     periods_dict["period"].append(5)

@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pandas as pd
 
+from databallpy import DataBallPyError
 from databallpy.load_data.event_data.metrica_event_data import load_metrica_event_data
 from databallpy.load_data.event_data.opta import load_opta_event_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
@@ -39,21 +40,25 @@ class TestMatch(unittest.TestCase):
         self.expected_periods = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_frame": [100, 200, 300, 400, 0],
-                "end_frame": [400, 600, 900, 1200, 0],
+                "start_frame": [1509993, 1509996, 0, 0, 0],
+                "end_frame": [1509994, 1509997, 0, 0, 0],
                 "start_time_td": [
-                    np.datetime64("2023-01-14 00:00:04"),
-                    np.datetime64("2023-01-14 00:00:08"),
-                    np.datetime64("2023-01-14 00:00:12"),
-                    np.datetime64("2023-01-14 00:00:16"),
-                    np.nan,
+                    np.datetime64("2023-01-14")
+                    + np.timedelta64(int(1509993 / 25), "s"),
+                    np.datetime64("2023-01-14")
+                    + np.timedelta64(int(1509996 / 25), "s"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
                 ],
                 "end_time_td": [
-                    np.datetime64("2023-01-14 00:00:16"),
-                    np.datetime64("2023-01-14 00:00:24"),
-                    np.datetime64("2023-01-14 00:00:36"),
-                    np.datetime64("2023-01-14 00:00:48"),
-                    np.nan,
+                    np.datetime64("2023-01-14")
+                    + np.timedelta64(int(1509994 / 25), "s"),
+                    np.datetime64("2023-01-14")
+                    + np.timedelta64(int(1509997 / 25), "s"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
                 ],
                 "start_datetime_opta": [
                     pd.to_datetime("20230122T121832+0000"),
@@ -77,8 +82,8 @@ class TestMatch(unittest.TestCase):
                 "id": [19367, 45849],
                 "full_name": ["Piet Schrijvers", "Jan Boskamp"],
                 "shirt_num": [1, 2],
-                "start_frame": [100, 100],
-                "end_frame": [1200, 400],
+                "start_frame": [1509993, 1509993],
+                "end_frame": [1509997, 1509995],
                 "formation_place": [4, 0],
                 "position": ["midfielder", "midfielder"],
                 "starter": [True, False],
@@ -90,8 +95,8 @@ class TestMatch(unittest.TestCase):
                 "id": [184934, 450445],
                 "full_name": ["Pepijn Blok", "TestSpeler"],
                 "shirt_num": [1, 2],
-                "start_frame": [100, 100],
-                "end_frame": [1200, 400],
+                "start_frame": [1509993, 1509993],
+                "end_frame": [1509997, 1509994],
                 "formation_place": [8, 0],
                 "position": ["midfielder", "midfielder"],
                 "starter": [True, False],
@@ -654,6 +659,99 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players.drop("shirt_num", axis=1),
+            )
+
+        # pitch axis
+        with self.assertRaises(DataBallPyError):
+            td_changed = self.td_tracab.copy()
+            td_changed["ball_x"] += 10.0
+            Match(
+                tracking_data=td_changed,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+        with self.assertRaises(DataBallPyError):
+            td_changed = self.td_tracab.copy()
+            td_changed["ball_y"] += 10.0
+            Match(
+                tracking_data=td_changed,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        # playing direction
+        with self.assertRaises(DataBallPyError):
+            td_changed = self.td_tracab.copy()
+            td_changed.loc[0, "home_34_x"] = 3.0
+            Match(
+                tracking_data=td_changed,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
+            )
+
+        with self.assertRaises(DataBallPyError):
+            td_changed = self.td_tracab.copy()
+            td_changed.loc[0, "away_17_x"] = -3.0
+            Match(
+                tracking_data=td_changed,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players,
             )
 
     def test_get_match_wrong_provider(self):

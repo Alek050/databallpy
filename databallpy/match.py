@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import List
-from databallpy import DataBallPyError
 
 import pandas as pd
 
+from databallpy import DataBallPyError
 from databallpy.load_data.event_data.metrica_event_data import (
     load_metrica_event_data,
     load_metrica_open_event_data,
@@ -219,28 +219,41 @@ class Match:
                         f"{team} team players should contain at least the column \
                             ['id', 'full_name', 'shirt_num'], {col} is missing."
                     )
-        
+
         # check for pitch axis
-        if not abs(
-            self.tracking_data["ball_x"].min() + self.tracking_data["ball_x"].max()
-        ) < 5.:
+        if (
+            not abs(
+                self.tracking_data["ball_x"].min() + self.tracking_data["ball_x"].max()
+            )
+            < 5.0
+        ):
             max_x = self.tracking_data["ball_x"].max()
             min_x = self.tracking_data["ball_x"].min()
-            raise DataBallPyError(f"The middle point of the pitch should be (0, 0),\
-                                now th min x = {min_x} and the max x = {max_x}")
+            raise DataBallPyError(
+                f"The middle point of the pitch should be (0, 0),\
+                                now th min x = {min_x} and the max x = {max_x}"
+            )
 
-        if not abs(
-            self.tracking_data["ball_y"].min() + self.tracking_data["ball_y"].max()
-        ) < 5.:
+        if (
+            not abs(
+                self.tracking_data["ball_y"].min() + self.tracking_data["ball_y"].max()
+            )
+            < 5.0
+        ):
             max_y = self.tracking_data["ball_y"].max()
             min_y = self.tracking_data["ball_y"].min()
-            raise DataBallPyError(f"The middle point of the pitch should be (0, 0),\
-                                now th min y = {min_y} and the max y = {max_y}")
-        
+            raise DataBallPyError(
+                f"The middle point of the pitch should be (0, 0),\
+                                now th min y = {min_y} and the max y = {max_y}"
+            )
+
         # check for direction of play
         for _, period_row in self.periods.iterrows():
             frame = period_row["start_frame"]
-            if len(self.tracking_data[self.tracking_data["timestamp"] == frame].index) == 0:
+            if (
+                len(self.tracking_data[self.tracking_data["timestamp"] == frame].index)
+                == 0
+            ):
                 continue
             idx = self.tracking_data[self.tracking_data["timestamp"] == frame].index[0]
             period = period_row["period"]
@@ -248,16 +261,19 @@ class Match:
             away_x = [x for x in self.away_players_column_ids if "_x" in x]
             if self.tracking_data.loc[idx, home_x].mean() > 0:
                 centroid_x = self.tracking_data.loc[idx, home_x].mean()
-                raise DataBallPyError(f"The home team should be represented as playing\
+                raise DataBallPyError(
+                    f"The home team should be represented as playing\
 from left to right the whole match. At the start of period {period} the x centroid of \
-the home team is {centroid_x}.")
-        
+the home team is {centroid_x}."
+                )
+
             if self.tracking_data.loc[idx, away_x].mean() < 0:
                 centroid_x = self.tracking_data.loc[idx, away_x].mean()
-                raise DataBallPyError(f"The away team should be represented as playing\
+                raise DataBallPyError(
+                    f"The away team should be represented as playing\
 from right to left the whole match. At the start  of period {period} the x centroid of \
-the away team is {centroid_x}.")
-
+the away team is {centroid_x}."
+                )
 
     @property
     def name(self) -> str:
@@ -312,6 +328,8 @@ the away team is {centroid_x}.")
                 self.away_players.equals(other.away_players),
                 self.away_score == other.away_score,
             ]
+            # if not all(res):
+            #     import pdb; pdb.set_trace()
             return all(res)
         else:
             return False

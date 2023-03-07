@@ -165,9 +165,7 @@ class Metadata:
             else pd.isnull(other.away_score),
             self.away_formation == other.away_formation,
         ]
-        if not all(result):
-            pass
-            # import pdb; pdb.set_trace()
+
         return all(result)
 
     def copy(self):

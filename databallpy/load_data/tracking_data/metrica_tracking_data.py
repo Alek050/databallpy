@@ -2,12 +2,11 @@ import io
 import os
 from typing import Tuple, Union
 
-from databallpy.utils import _to_int
 import numpy as np
 import pandas as pd
 import requests
 from tqdm import tqdm
-from databallpy.load_data.tracking_data._normalize_playing_direction import _normalize_playing_direction
+
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.metrica_metadata import (
     _get_metadata,
@@ -22,6 +21,10 @@ from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import
 )
 from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+from databallpy.load_data.tracking_data._normalize_playing_direction import (
+    _normalize_playing_direction,
+)
+from databallpy.utils import _to_int
 
 
 def load_metrica_tracking_data(
@@ -61,7 +64,6 @@ def load_metrica_tracking_data(
     )
     tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
     tracking_data = _normalize_playing_direction(tracking_data, metadata.periods_frames)
-    
 
     return tracking_data, metadata
 
@@ -128,7 +130,7 @@ def _get_tracking_data(
     for idx, line in enumerate(lines):
 
         timestamp, players_info, ball_info = line.split(":")
-        timestamp = int(timestamp)
+        timestamp = _to_int(timestamp)
         data["timestamp"][idx] = timestamp
 
         channel = channels.loc[
@@ -145,7 +147,7 @@ def _get_tracking_data(
 
         x, y = ball_info.split(",")
         data = _add_ball_data_to_dict(x, y, np.nan, None, None, data, idx)
-    
+
     df = pd.DataFrame(data)
     df["ball_status"] = np.where(pd.isnull(df["ball_x"]), "dead", "alive")
 

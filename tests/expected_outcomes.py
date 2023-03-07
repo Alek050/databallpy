@@ -16,11 +16,11 @@ TD_TRACAB = pd.DataFrame(
         "away_17_x": [13.22, 13.21, 13.21, np.nan, 13.21],
         "away_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
         "matchtime_td": [
-            "Break (4)",
-            "Break (4)",
-            "Break (4)",
-            "Break (4)",
-            "Break (4)",
+            "00:00",
+            "00:00",
+            "00:00",
+            "00:00",
+            "45:00",
         ],
     }
 )
@@ -30,21 +30,21 @@ MD_TRACAB = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [100, 200, 300, 400, 0],
-            "end_frame": [400, 600, 900, 1200, 0],
+            "start_frame": [1509993, 1509996, 0, 0, 0],
+            "end_frame": [1509994, 1509997, 0, 0, 0],
             "start_time_td": [
-                np.datetime64("2023-01-14 00:00:04"),
-                np.datetime64("2023-01-14 00:00:08"),
-                np.datetime64("2023-01-14 00:00:12"),
-                np.datetime64("2023-01-14 00:00:16"),
-                np.datetime64("NaT"),
+                np.datetime64("2023-01-14") + np.timedelta64(int(1509993 / 25), "s"),
+                np.datetime64("2023-01-14") + np.timedelta64(int(1509996 / 25), "s"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
             ],
             "end_time_td": [
-                np.datetime64("2023-01-14 00:00:16"),
-                np.datetime64("2023-01-14 00:00:24"),
-                np.datetime64("2023-01-14 00:00:36"),
-                np.datetime64("2023-01-14 00:00:48"),
-                np.datetime64("NaT"),
+                np.datetime64("2023-01-14") + np.timedelta64(int(1509994 / 25), "s"),
+                np.datetime64("2023-01-14") + np.timedelta64(int(1509997 / 25), "s"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
             ],
         }
     ),
@@ -58,8 +58,8 @@ MD_TRACAB = Metadata(
             "id": [19367, 45849],
             "full_name": ["Piet Schrijvers", "Jan Boskamp"],
             "shirt_num": [1, 2],
-            "start_frame": [100, 100],
-            "end_frame": [1200, 400],
+            "start_frame": [1509993, 1509993],
+            "end_frame": [1509997, 1509995],
         }
     ),
     away_team_id=194,
@@ -71,8 +71,8 @@ MD_TRACAB = Metadata(
             "id": [184934, 450445],
             "full_name": ["Pepijn Blok", "TestSpeler"],
             "shirt_num": [1, 2],
-            "start_frame": [100, 100],
-            "end_frame": [1200, 400],
+            "start_frame": [1509993, 1509993],
+            "end_frame": [1509997, 1509994],
         }
     ),
 )

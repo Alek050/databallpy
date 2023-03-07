@@ -9,12 +9,14 @@ from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
     _add_ball_data_to_dict,
 )
-from databallpy.load_data.tracking_data._normalize_playing_direction import _normalize_playing_direction
 from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
 )
 from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+from databallpy.load_data.tracking_data._normalize_playing_direction import (
+    _normalize_playing_direction,
+)
 
 
 def load_tracab_tracking_data(
@@ -139,7 +141,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         "start_time_td": [],
         "end_time_td": [],
     }
-    for i, period in enumerate(soup.find_all("period")):
+    for _, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
         start_frame = int(period["iStartFrame"])
         end_frame = int(period["iEndFrame"])
@@ -154,8 +156,8 @@ def _get_metadata(metadata_loc: str) -> Metadata:
                 date + np.timedelta64(int(end_frame / frame_rate), "s")
             )
         else:
-            frames_dict["start_time_td"].append(np.nan)
-            frames_dict["end_time_td"].append(np.nan)
+            frames_dict["start_time_td"].append(pd.to_datetime("NaT"))
+            frames_dict["end_time_td"].append(pd.to_datetime("NaT"))
     df_frames = pd.DataFrame(frames_dict)
 
     home_team = soup.find("HomeTeam")
