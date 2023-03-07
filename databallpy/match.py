@@ -328,8 +328,7 @@ the away team is {centroid_x}."
                 self.away_players.equals(other.away_players),
                 self.away_score == other.away_score,
             ]
-            # if not all(res):
-            #     import pdb; pdb.set_trace()
+
             return all(res)
         else:
             return False
