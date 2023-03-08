@@ -41,7 +41,6 @@ def load_tracab_tracking_data(
     tracking_data["period"] = _add_periods_to_tracking_data(
         tracking_data["timestamp"], metadata.periods_frames
     )
-
     return tracking_data, metadata
 
 

@@ -104,7 +104,6 @@ class TestMatch(unittest.TestCase):
             }
         )
         self.td_tracab["period"] = [0, 0, 0, 0, 0]
-        self.td_tracab["period"] = self.td_tracab["period"].astype("int32")
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
@@ -134,7 +133,6 @@ class TestMatch(unittest.TestCase):
         self.ed_metrica, _ = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
-        self.td_metrica["period"] = self.td_metrica["period"].astype("int32")
         self.expected_match_metrica = Match(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",

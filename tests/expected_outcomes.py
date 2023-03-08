@@ -25,7 +25,7 @@ TD_TRACAB = pd.DataFrame(
         "period": [0, 0, 0, 0, 0],
     }
 )
-TD_TRACAB["period"] = TD_TRACAB["period"].astype("int32")
+
 
 MD_TRACAB = Metadata(
     match_id=1908,
@@ -217,7 +217,6 @@ TD_METRICA = pd.DataFrame(
         "period": [1, 1, 1, 2, 2, 2],
     }
 )
-TD_METRICA["period"] = TD_METRICA["period"].astype("int32")
 
 ED_METRICA = pd.DataFrame(
     {

@@ -44,4 +44,4 @@ def _add_periods_to_tracking_data(
         5,
     ]
 
-    return np.select(period_conditions, period_values)
+    return np.select(period_conditions, period_values).astype("int64")
