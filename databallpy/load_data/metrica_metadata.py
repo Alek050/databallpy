@@ -84,7 +84,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     pitch_size_x = _to_float(soup.find("FieldSize").find("Width").text)
     pitch_size_y = _to_float(soup.find("FieldSize").find("Height").text)
     frame_rate = _to_int(soup.find("FrameRate").text)
-    datetime = pd.to_datetime(soup.find("Start").text)
+    datetime = pd.to_datetime(soup.find("Start").text).tz_localize(None)
 
     periods_dict = {
         "period": [],
@@ -117,20 +117,21 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             periods_dict["period"].append(period)
             periods_dict["start_frame"].append(current_timestamp)
             first_timestamp = periods_dict["start_frame"][0]
-            seconds = (current_timestamp - first_timestamp) / frame_rate
+            seconds = (current_timestamp - first_timestamp) / frame_rate 
             periods_dict["start_time_td"].append(
-                datetime + dt.timedelta(seconds=seconds)
+                datetime + dt.timedelta(milliseconds=seconds*1000)   
             ) if not current_timestamp == -999 else periods_dict[
                 "start_time_td"
             ].append(
                 np.nan
             )
+            
         elif "end" in name:
             periods_dict["end_frame"].append(current_timestamp)
             first_timestamp = periods_dict["start_frame"][0]
             seconds = (current_timestamp - first_timestamp) / frame_rate
             periods_dict["end_time_td"].append(
-                datetime + dt.timedelta(seconds=seconds)
+                datetime + dt.timedelta(milliseconds=seconds*1000)
             ) if not current_timestamp == -999 else periods_dict["end_time_td"].append(
                 np.nan
             )

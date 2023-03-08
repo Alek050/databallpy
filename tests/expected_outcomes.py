@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import datetime as dt
 
 from databallpy.load_data.metadata import Metadata
 
@@ -22,8 +23,11 @@ TD_TRACAB = pd.DataFrame(
             "00:00",
             "45:00",
         ],
+        "period": [1, 1, -999, 2, 2],
     }
 )
+
+
 MD_TRACAB = Metadata(
     match_id=1908,
     pitch_dimensions=[100.0, 50.0],
@@ -33,15 +37,15 @@ MD_TRACAB = Metadata(
             "start_frame": [1509993, 1509996, 0, 0, 0],
             "end_frame": [1509994, 1509997, 0, 0, 0],
             "start_time_td": [
-                np.datetime64("2023-01-14") + np.timedelta64(int(1509993 / 25), "s"),
-                np.datetime64("2023-01-14") + np.timedelta64(int(1509996 / 25), "s"),
+                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509993/25)*1000)),
+                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509996/25)*1000)),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_time_td": [
-                np.datetime64("2023-01-14") + np.timedelta64(int(1509994 / 25), "s"),
-                np.datetime64("2023-01-14") + np.timedelta64(int(1509997 / 25), "s"),
+                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509994 / 25)*1000)),
+                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509997 / 25)*1000)),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -123,15 +127,15 @@ ED_OPTA = pd.DataFrame(
         "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68],
         "datetime": np.array(
             [
-                "2023-01-22T10:28:32.117",
-                "2023-01-22T11:18:32.152",
-                "2023-01-22T11:18:32.152",
-                "2023-01-22T11:18:33.637",
-                "2023-01-22T11:18:36.207",
-                "2023-01-22T11:18:39.109",
-                "2023-01-22T11:18:41.615",
-                "2023-01-22T11:18:43.119",
-                "2023-01-22T11:18:43.120",
+                "2023-01-22T11:28:32.117",
+                "2023-01-22T12:18:32.152",
+                "2023-01-22T12:18:32.152",
+                "2023-01-22T12:18:33.637",
+                "2023-01-22T12:18:36.207",
+                "2023-01-22T12:18:39.109",
+                "2023-01-22T12:18:41.615",
+                "2023-01-22T12:18:43.119",
+                "2023-01-22T12:18:43.120",
             ],
             dtype="datetime64",
         ),
@@ -217,8 +221,10 @@ TD_METRICA = pd.DataFrame(
         "away_35_x": [np.nan, np.nan, np.nan, np.nan, 10, 20],
         "away_35_y": [np.nan, np.nan, np.nan, np.nan, 5, 0],
         "matchtime_td": ["00:00", "00:00", "00:01", "00:01", "45:00", "45:00"],
+        "period": [1, 1, 1, 2, 2, 2],
     }
 )
+
 ED_METRICA = pd.DataFrame(
     {
         "event_id": [3, 4, 5],
@@ -239,9 +245,9 @@ ED_METRICA = pd.DataFrame(
         "end_y": [np.nan, -15.0, 0.0],
         "td_frame": [1, 3, 5],
         "datetime": [
-            pd.to_datetime("2019-02-21T03:30:07.000Z"),
-            pd.to_datetime("2019-02-21T03:30:08.000Z"),
-            pd.to_datetime("2019-02-21T03:30:09.000Z"),
+            pd.to_datetime("2019-02-21T03:30:07"),
+            pd.to_datetime("2019-02-21T03:30:08"),
+            pd.to_datetime("2019-02-21T03:30:09"),
         ],
     }
 )
@@ -254,15 +260,15 @@ MD_METRICA = Metadata(
             "start_frame": [1, 4, -999, -999, -999],
             "end_frame": [3, 6, -999, -999, -999],
             "start_time_td": [
-                pd.to_datetime("2019-02-21T03:30:07.000Z"),
-                pd.to_datetime("2019-02-21T03:30:08.500Z"),
+                pd.to_datetime("2019-02-21T03:30:07.000"),
+                pd.to_datetime("2019-02-21T03:30:08.500"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_time_td": [
-                pd.to_datetime("2019-02-21T03:30:08.000Z"),
-                pd.to_datetime("2019-02-21T03:30:09.500Z"),
+                pd.to_datetime("2019-02-21T03:30:08.000"),
+                pd.to_datetime("2019-02-21T03:30:09.500"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),

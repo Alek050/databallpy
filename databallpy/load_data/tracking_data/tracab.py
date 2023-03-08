@@ -2,12 +2,16 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+import datetime as dt
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
     _add_ball_data_to_dict,
+)
+from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
+    _add_periods_to_tracking_data,
 )
 from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
@@ -42,6 +46,9 @@ def load_tracab_tracking_data(
         tracking_data, metadata.periods_frames
     )
 
+    tracking_data["period"] = _add_periods_to_tracking_data(
+        tracking_data["timestamp"], metadata.periods_frames
+    )
     return tracking_data, metadata
 
 
@@ -134,7 +141,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
     frame_rate = int(soup.find("match")["iFrameRateFps"])
     datetime_string = soup.find("match")["dtDate"]
-    date = np.datetime64(datetime_string[:10])
+    date = pd.to_datetime(datetime_string[:10])
 
     frames_dict = {
         "period": [],
@@ -152,10 +159,10 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         frames_dict["end_frame"].append(end_frame)
         if start_frame != 0:
             frames_dict["start_time_td"].append(
-                date + np.timedelta64(int(start_frame / frame_rate), "s")
+                date + dt.timedelta(milliseconds=int((start_frame / frame_rate)*1000))
             )
             frames_dict["end_time_td"].append(
-                date + np.timedelta64(int(end_frame / frame_rate), "s")
+                date + dt.timedelta(milliseconds=int((end_frame / frame_rate)*1000))
             )
         else:
             frames_dict["start_time_td"].append(pd.to_datetime("NaT"))
@@ -165,7 +172,6 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     home_team = soup.find("HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)
-
     home_players_info = []
     for player in home_team.find_all("Player"):
         player_dict = {}
