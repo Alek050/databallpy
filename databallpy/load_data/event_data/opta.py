@@ -346,7 +346,9 @@ def _load_event_data(f24_loc: str) -> pd.DataFrame:
         result_dict["outcome"].append(int(event.attrs["outcome"]))
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
-        result_dict["datetime"].append(np.datetime64(event.attrs["timestamp"]))
+        result_dict["datetime"].append(
+            np.datetime64(event.attrs["timestamp"]) + np.timedelta64(1, "h")
+        )
 
     file.close()
     return pd.DataFrame(result_dict)

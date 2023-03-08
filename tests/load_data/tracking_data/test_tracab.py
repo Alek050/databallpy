@@ -23,14 +23,13 @@ class TestTracab(unittest.TestCase):
 
     def test_get_tracking_data(self):
         tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=False)
-        expected_td = TD_TRACAB.iloc[:, :-1]
+        expected_td = TD_TRACAB.drop(["matchtime_td", "period"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     def test_load_tracking_data(self):
         tracking_data, metadata = load_tracab_tracking_data(
             self.tracking_data_loc, self.metadata_loc, verbose=False
         )
-
         assert metadata == MD_TRACAB
         pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
 
