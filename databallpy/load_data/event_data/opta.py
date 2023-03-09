@@ -186,10 +186,10 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     ):
         # Add one hour to go from utc to Dutch time
         periods["start_datetime_opta"].append(
-            pd.to_datetime(start.contents[0]) + dt.timedelta(hours=1)
+            pd.to_datetime(start.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
         )
         periods["end_datetime_opta"].append(
-            pd.to_datetime(end.contents[0]) + dt.timedelta(hours=1)
+            pd.to_datetime(end.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
         )
     for _ in range(3):
         periods["start_datetime_opta"].append(pd.to_datetime("NaT"))
@@ -350,7 +350,7 @@ def _load_event_data(f24_loc: str) -> pd.DataFrame:
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
         result_dict["datetime"].append(
-            np.datetime64(event.attrs["timestamp"]) + np.timedelta64(1, "h")
+            pd.to_datetime(event.attrs["timestamp"]) + dt.timedelta(hours=1)
         )
 
     file.close()

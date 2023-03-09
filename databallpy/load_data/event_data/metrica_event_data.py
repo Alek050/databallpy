@@ -78,7 +78,7 @@ def load_metrica_event_data(
         dt.timedelta(milliseconds = (x-first_frame) / frame_rate * 1000)
         for x in event_data["td_frame"]
     ]
-    event_data["datetime"] = [x + pd.to_datetime(start_time) for x in rel_timedelta]
+    event_data["datetime"] = [pd.to_datetime(start_time) + x for x in rel_timedelta]
     
     event_data = _normalize_playing_direction_events(
         event_data, metadata.home_team_id, metadata.away_team_id

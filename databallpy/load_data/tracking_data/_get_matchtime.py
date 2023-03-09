@@ -73,10 +73,9 @@ def _get_matchtime(timestamp_column: pd.Series, period_column: pd.Series, metada
             "period": period_column.values,
         }
     )
-    #import pdb;pdb.set_trace()
     start_m_dict = {1: 0, 2: 45, 3: 90, 4: 105}
     max_m_dict = {1: 45, 2: 90, 3: 105, 4: 120}
-    #import pdb;pdb.set_trace()
+    
     matchtime_list = []
     for p in [1, 2, 3, 4]:
         frame_end_current_p = periods_frames.loc[periods_frames["period"] == p, "end_frame"].iloc[0]
@@ -93,14 +92,11 @@ def _get_matchtime(timestamp_column: pd.Series, period_column: pd.Series, metada
             )
         matchtime_list_period = matchtime_list_period[:n_frames_period[p]+1]
         matchtime_list_period.extend(["Break"]*n_frames_break)
-        #import pdb;pdb.set_trace()
         matchtime_list.extend(matchtime_list_period)
 
-        #import pdb;pdb.set_trace()
     for _ in df[df["period"] == 5]["seconds"].unique():
         matchtime_list.extend(["Penalty Shootout"] * frame_rate)
 
     matchtime_list = matchtime_list[: len(df)]
-    df["matchtime"] = matchtime_list
-    #import pdb;pdb.set_trace()
-    return df["matchtime"]
+    
+    return matchtime_list

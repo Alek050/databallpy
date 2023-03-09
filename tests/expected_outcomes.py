@@ -160,15 +160,15 @@ MD_OPTA = Metadata(
         {
             "period": [1, 2, 3, 4, 5],
             "start_datetime_opta": [
-                pd.to_datetime("20230122T121832+0000"),
-                pd.to_datetime("20230122T132113+0000"),
+                pd.to_datetime("2023-01-22T12:18:32.000"),
+                pd.to_datetime("2023-01-22T13:21:13.000"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_datetime_opta": [
-                pd.to_datetime("20230122T130432+0000"),
-                pd.to_datetime("20230122T140958+0000"),
+                pd.to_datetime("2023-01-22T13:04:32.000"),
+                pd.to_datetime("2023-01-22T14:09:58.000"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -246,9 +246,9 @@ ED_METRICA = pd.DataFrame(
         "end_y": [np.nan, -15.0, 0.0],
         "td_frame": [1, 3, 5],
         "datetime": [
-            pd.to_datetime("2019-02-21T03:30:07"),
-            pd.to_datetime("2019-02-21T03:30:08"),
-            pd.to_datetime("2019-02-21T03:30:09"),
+            pd.to_datetime("2019-02-21T03:30:07.000"),
+            pd.to_datetime("2019-02-21T03:30:08.000"),
+            pd.to_datetime("2019-02-21T03:30:09.000"),
         ],
     }
 )

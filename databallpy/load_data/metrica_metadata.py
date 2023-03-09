@@ -123,7 +123,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             ) if not current_timestamp == -999 else periods_dict[
                 "start_time_td"
             ].append(
-                np.nan
+                pd.to_datetime("NaT")
             )
             
         elif "end" in name:
@@ -133,15 +133,15 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             periods_dict["end_time_td"].append(
                 datetime + dt.timedelta(milliseconds=seconds*1000)
             ) if not current_timestamp == -999 else periods_dict["end_time_td"].append(
-                np.nan
+                pd.to_datetime("NaT")
             )
 
     # add fifth period
     periods_dict["period"].append(5)
     periods_dict["start_frame"].append(-999)
     periods_dict["end_frame"].append(-999)
-    periods_dict["start_time_td"].append(np.datetime64("NaT"))
-    periods_dict["end_time_td"].append(np.datetime64("NaT"))
+    periods_dict["start_time_td"].append(pd.to_datetime("NaT"))
+    periods_dict["end_time_td"].append(pd.to_datetime("NaT"))
 
     teams_info = {}
     for team in soup.find_all("Team"):

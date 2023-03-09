@@ -13,15 +13,15 @@ class TestMetadata(unittest.TestCase):
             {
                 "period": [1, 2, 3, 4, 5],
                 "start_datetime_opta": [
-                    pd.to_datetime("20230122T121832+0000"),
-                    pd.to_datetime("20230122T132113+0000"),
+                    pd.to_datetime("2023-01-22T12:18:32.000"),
+                    pd.to_datetime("2023-01-22T13:21:13.000"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_opta": [
-                    pd.to_datetime("20230122T130432+0000"),
-                    pd.to_datetime("20230122T140958+0000"),
+                    pd.to_datetime("2023-01-22T13:04:32.000"),
+                    pd.to_datetime("2023-01-22T14:09:58.000"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),

@@ -4,6 +4,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import datetime as dt
 
 from databallpy import DataBallPyError
 from databallpy.load_data.event_data.metrica_event_data import (
@@ -376,16 +377,16 @@ the away team is {centroid_x}."
         start_datetime_period = {}
         start_frame_period = {}
         for _, row in self.periods.iterrows():
-            start_datetime_period[row["period"]] = row["start_time_td"].to_datetime64()
+            start_datetime_period[row["period"]] = row["start_time_td"]
             start_frame_period[row["period"]] = row["start_frame"]
 
         tracking_data["datetime"] = [
             start_datetime_period[int(p)]
-            + np.timedelta64(
-                int((x - start_frame_period[p]) / self.frame_rate * 1000), "ms"
+            + dt.timedelta(
+                milliseconds=int((x - start_frame_period[p]) / self.frame_rate * 1000)
             )
             if p > 0
-            else np.timedelta64("NaT")
+            else pd.to_datetime("NaT")
             for x, p in zip(tracking_data["timestamp"], tracking_data["period"])
         ]
 
@@ -403,11 +404,10 @@ the away team is {centroid_x}."
             start_batch_frame = self.periods.loc[
                 self.periods["period"] == p, "start_frame"
             ].iloc[0]
-            start_batch_datetime = start_datetime_period[p] + np.timedelta64(
-                int(
+            start_batch_datetime = start_datetime_period[p] + dt.timedelta(
+                milliseconds = int(
                     (start_batch_frame - start_frame_period[p]) / self.frame_rate * 1000
-                ),
-                "ms",
+                )
             )
             delta = (
                 self.periods.loc[self.periods["period"] == p, "end_frame"].iloc[0]
@@ -423,8 +423,8 @@ the away team is {centroid_x}."
             )
             end_batches_datetime = [
                 start_datetime_period[int(p)]
-                + np.timedelta64(
-                    int((x - start_frame_period[int(p)]) / self.frame_rate * 1000), "ms"
+                + dt.timedelta(
+                    milliseconds = int((x - start_frame_period[int(p)]) / self.frame_rate * 1000)
                 )
                 for x in end_batches_frames
             ]
@@ -459,7 +459,6 @@ the away team is {centroid_x}."
                 start_batch_datetime = (
                     event_batch[event_batch["event_id"] == event_id]["datetime"]
                     .iloc[0]
-                    .to_datetime64()
                 )
         tracking_data.drop("datetime", axis=1, inplace=True)
         self.tracking_data = tracking_data
@@ -624,11 +623,11 @@ def _create_sim_mat(
                     size is #frames, #events
     """
     sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
-    tracking_batch["datetime"] = tracking_batch["datetime"].astype("datetime64[ns]")
+    tracking_batch["datetime"] = tracking_batch["datetime"]
 
     for i, event in event_batch.iterrows():
-        time_diff = (tracking_batch["datetime"] - event["datetime"]) / np.timedelta64(
-            1, "s"
+        time_diff = (tracking_batch["datetime"] - event["datetime"]) / dt.timedelta(
+            seconds=1
         )
         ball_loc_diff = np.hypot(
             tracking_batch["ball_x"] - event["start_x"],

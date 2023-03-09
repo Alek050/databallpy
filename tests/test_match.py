@@ -68,15 +68,15 @@ class TestMatch(unittest.TestCase):
                     pd.to_datetime("NaT"),
                 ],
                 "start_datetime_opta": [
-                    pd.to_datetime("20230122T121832+0000"),
-                    pd.to_datetime("20230122T132113+0000"),
+                    pd.to_datetime("2023-01-22T12:18:32.000"),
+                    pd.to_datetime("2023-01-22T13:21:13.000"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_opta": [
-                    pd.to_datetime("20230122T130432+0000"),
-                    pd.to_datetime("20230122T140958+0000"),
+                    pd.to_datetime("2023-01-22T13:04:32.000"),
+                    pd.to_datetime("2023-01-22T14:09:58.000"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
@@ -1016,9 +1016,9 @@ class TestMatch(unittest.TestCase):
         expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
-        date = np.datetime64(str(self.match_to_sync.periods.iloc[0, 3])[:10])
+        date = pd.to_datetime(str(self.match_to_sync.periods.iloc[0, 3])[:10])
         tracking_data["datetime"] = [
-            date + np.timedelta64(int(x / self.match_to_sync.frame_rate * 1000), "ms")
+            date + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
             for x in tracking_data["timestamp"]
         ]
         tracking_data.reset_index(inplace=True)
@@ -1092,9 +1092,9 @@ class TestMatch(unittest.TestCase):
         expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
-        date = np.datetime64(str(self.match_to_sync.periods.iloc[0, 3])[:10])
+        date = pd.to_datetime(str(self.match_to_sync.periods.iloc[0, 3])[:10])
         tracking_data["datetime"] = [
-            date + np.timedelta64(int(x / self.match_to_sync.frame_rate * 1000), "ms")
+            date + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
             for x in tracking_data["timestamp"]
         ]
         tracking_data.reset_index(inplace=True)

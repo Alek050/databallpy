@@ -76,8 +76,11 @@ class TestGetMatchtime(unittest.TestCase):
         expected_result = pd.Series(expected_result)
         expected_result = expected_result.rename("matchtime")
 
+        result_list = _get_matchtime(input, period_column, self.metadata)
+        result = pd.Series(result_list)
+        result = result.rename("matchtime")
         pd.testing.assert_series_equal(
-            expected_result, _get_matchtime(input, period_column, self.metadata)
+            expected_result, result
         )
 
     def test_to_matchtime(self):
