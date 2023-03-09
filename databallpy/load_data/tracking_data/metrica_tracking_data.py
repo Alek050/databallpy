@@ -65,12 +65,15 @@ def load_metrica_tracking_data(
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )
-    tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
+    
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
     tracking_data["period"] = _add_periods_to_tracking_data(
         tracking_data["timestamp"], metadata.periods_frames
+    )
+    tracking_data["matchtime_td"] = _get_matchtime(
+        tracking_data["timestamp"], tracking_data["period"], metadata
     )
 
     return tracking_data, metadata

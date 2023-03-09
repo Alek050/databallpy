@@ -16,14 +16,15 @@ TD_TRACAB = pd.DataFrame(
         "home_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
         "away_17_x": [13.22, 13.21, 13.21, np.nan, 13.21],
         "away_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
+        "period": [1, 1, -999, 2, 2],
         "matchtime_td": [
             "00:00",
             "00:00",
-            "00:00",
-            "00:00",
+            "Break",
+            "45:00",
             "45:00",
         ],
-        "period": [1, 1, -999, 2, 2],
+        
     }
 )
 
@@ -34,8 +35,8 @@ MD_TRACAB = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [1509993, 1509996, 0, 0, 0],
-            "end_frame": [1509994, 1509997, 0, 0, 0],
+            "start_frame": [1509993, 1509996, -999, -999, -999],
+            "end_frame": [1509994, 1509997, -999, -999, -999],
             "start_time_td": [
                 pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509993/25)*1000)),
                 pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509996/25)*1000)),
@@ -220,8 +221,8 @@ TD_METRICA = pd.DataFrame(
         "away_34_y": [-5, 20, 10, np.nan, 5, 0],
         "away_35_x": [np.nan, np.nan, np.nan, np.nan, 10, 20],
         "away_35_y": [np.nan, np.nan, np.nan, np.nan, 5, 0],
-        "matchtime_td": ["00:00", "00:00", "00:01", "00:01", "45:00", "45:00"],
         "period": [1, 1, 1, 2, 2, 2],
+        "matchtime_td": ["00:00", "00:00", "00:01", "45:00", "45:00", "45:01"],
     }
 )
 

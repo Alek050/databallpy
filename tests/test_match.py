@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
+import datetime as dt
 
 from databallpy import DataBallPyError
 from databallpy.load_data.event_data.metrica_event_data import load_metrica_event_data
@@ -46,22 +47,22 @@ class TestMatch(unittest.TestCase):
         self.expected_periods = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_frame": [1509993, 1509996, 0, 0, 0],
-                "end_frame": [1509994, 1509997, 0, 0, 0],
+                "start_frame": [1509993, 1509996, -999, -999, -999],
+                "end_frame": [1509994, 1509997, -999, -999, -999],
                 "start_time_td": [
-                    np.datetime64("2023-01-14")
-                    + np.timedelta64(int(1509993 / 25), "s"),
-                    np.datetime64("2023-01-14")
-                    + np.timedelta64(int(1509996 / 25), "s"),
+                    pd.to_datetime("2023-01-14")
+                    + dt.timedelta(milliseconds=int((1509993 / 25)*1000)),
+                    pd.to_datetime("2023-01-14")
+                    + dt.timedelta(milliseconds=int((1509996 / 25)*1000)),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_time_td": [
-                    np.datetime64("2023-01-14")
-                    + np.timedelta64(int(1509994 / 25), "s"),
-                    np.datetime64("2023-01-14")
-                    + np.timedelta64(int(1509997 / 25), "s"),
+                    pd.to_datetime("2023-01-14")
+                    + dt.timedelta(milliseconds=int((1509994 / 25)*1000)),
+                    pd.to_datetime("2023-01-14")
+                    + dt.timedelta(milliseconds=int((1509997 / 25)*1000)),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
@@ -108,7 +109,7 @@ class TestMatch(unittest.TestCase):
                 "starter": [True, False],
             }
         )
-        self.td_tracab["period"] = [0, 0, 0, 0, 0]
+        self.td_tracab["period"] = [1, 1, -999, 2, 2]
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
@@ -768,6 +769,7 @@ class TestMatch(unittest.TestCase):
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players,
             )
+
         self.match_to_sync = get_match(
             tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
             tracking_metadata_loc="tests/test_data/sync/tracab_metadata_sync_test.xml",
@@ -895,21 +897,19 @@ class TestMatch(unittest.TestCase):
             np.nan,
             np.nan,
             0.0,
-            1.0,
-            np.nan,
-            np.nan,
             5.0,
-            6.0,
+            np.nan,
+            np.nan,
+            9.0,
+            12.0,
         ]
         expected_event_data = expected_event_data[
             expected_event_data["type_id"].isin([1, 3, 7])
         ]
 
-        self.match_to_sync.event_data["datetime"] -= np.timedelta64(800, "ms")
         synced_match = self.match_to_sync.synchronise_tracking_and_event_data(
             n_batches_per_half=1
         )
-        self.match_to_sync.event_data["datetime"] += np.timedelta64(800, "ms")
 
         pd.testing.assert_frame_equal(
             synced_match.tracking_data, expected_tracking_data

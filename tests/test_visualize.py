@@ -162,7 +162,7 @@ class TestVisualize(unittest.TestCase):
             event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
             event_data_provider="opta",
         )
-        synced_match.event_data["datetime"] -= np.timedelta64(800, "ms")
+        
         synced_match = synced_match.synchronise_tracking_and_event_data(
             n_batches_per_half=1
         )

@@ -396,7 +396,8 @@ the away team is {centroid_x}."
         mask_events_to_sync = event_data["event"].isin(events_to_sync)
         event_data = event_data[mask_events_to_sync]
 
-        periods_played = self.periods[self.periods["start_frame"] >= 0]["period"].values
+        periods_played = self.periods[self.periods["start_frame"] > 0]["period"].values
+        
         for p in periods_played:
             # create batches to loop over
             start_batch_frame = self.periods.loc[

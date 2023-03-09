@@ -41,14 +41,17 @@ def load_tracab_tracking_data(
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     metadata = _get_metadata(metadata_loc)
 
-    tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
+    tracking_data["period"] = _add_periods_to_tracking_data(
+        tracking_data["timestamp"], metadata.periods_frames
+    )
+    tracking_data["matchtime_td"] = _get_matchtime(
+        tracking_data["timestamp"], tracking_data["period"], metadata
+    )
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
 
-    tracking_data["period"] = _add_periods_to_tracking_data(
-        tracking_data["timestamp"], metadata.periods_frames
-    )
+    
     return tracking_data, metadata
 
 
@@ -155,9 +158,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         start_frame = int(period["iStartFrame"])
         end_frame = int(period["iEndFrame"])
 
-        frames_dict["start_frame"].append(start_frame)
-        frames_dict["end_frame"].append(end_frame)
         if start_frame != 0:
+            frames_dict["start_frame"].append(start_frame)
+            frames_dict["end_frame"].append(end_frame)
             frames_dict["start_time_td"].append(
                 date + dt.timedelta(milliseconds=int((start_frame / frame_rate)*1000))
             )
@@ -165,6 +168,8 @@ def _get_metadata(metadata_loc: str) -> Metadata:
                 date + dt.timedelta(milliseconds=int((end_frame / frame_rate)*1000))
             )
         else:
+            frames_dict["start_frame"].append(-999)
+            frames_dict["end_frame"].append(-999)
             frames_dict["start_time_td"].append(pd.to_datetime("NaT"))
             frames_dict["end_time_td"].append(pd.to_datetime("NaT"))
     df_frames = pd.DataFrame(frames_dict)

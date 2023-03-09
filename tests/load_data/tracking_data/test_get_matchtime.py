@@ -18,8 +18,8 @@ class TestGetMatchtime(unittest.TestCase):
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],
-                    "start_frame": [1509993, 1602134, 1684000, 1709800, 1737000],
-                    "end_frame": [1577667, 1675726, 1709500, 1735000, 1738000],
+                    "start_frame": [1509993, 1509997, 1510001, 1510005, 1510009],
+                    "end_frame": [1509995, 1509999, 1510003, 1510007, 1510011],
                     "start_time": [np.nan, np.nan, np.nan, np.nan, np.nan],
                     "end_time": [np.nan, np.nan, np.nan, np.nan, np.nan],
                 }
@@ -39,34 +39,45 @@ class TestGetMatchtime(unittest.TestCase):
 
     def test_get_matchtime(self):
         input = []
-        input.extend([1522023] * 25)
-        input.extend([1577093] * 25)
-        input.extend([1577593] * 20)
-        input.extend([1654511] * 25)
-        input.extend([1675700] * 2)
-        input.extend([1703500] * 25)
-        input.extend([1706800] * 18)
-        input.extend([1729300] * 25)
-        input.extend([1732600] * 1)
-        input.extend([1737500] * 25)
+        input.extend([1509993,1509994, 1509995])
+        input.extend([1509996])
+        input.extend([1509997,1509998, 1509999])
+        input.extend([1501000])
+        input.extend([1510001, 1510002, 1510003])
+        input.extend([1510004])
+        input.extend([1510005, 1510006, 1510007])
+        input.extend([1510008])
+        input.extend([1510009, 1510010, 1510011])
         input = pd.Series(input)
 
+        period_column = []
+        period_column.extend([1]*3)
+        period_column.extend([-999])
+        period_column.extend([2]*3)
+        period_column.extend([-999])
+        period_column.extend([3]*3)
+        period_column.extend([-999])
+        period_column.extend([4]*3)
+        period_column.extend([-999])
+        period_column.extend([5]*3)
+        period_column = pd.Series(period_column)
+
+
         expected_result = []
-        expected_result.extend(["08:01"] * 25)
-        expected_result.extend(["44:44"] * 25)
-        expected_result.extend(["45:00+0:04"] * 20)
-        expected_result.extend(["79:55"] * 25)
-        expected_result.extend(["90:00+4:02"] * 2)
-        expected_result.extend(["103:00"] * 25)
-        expected_result.extend(["105:00+0:12"] * 18)
-        expected_result.extend(["118:00"] * 25)
-        expected_result.extend(["120:00+0:12"])
-        expected_result.extend(["Penalty Shootout"] * 25)
+        expected_result.extend(["00:00"]*3)
+        expected_result.extend(["Break"])
+        expected_result.extend(["45:00"]*3)
+        expected_result.extend(["Break"])
+        expected_result.extend(["90:00"]*3)
+        expected_result.extend(["Break"])
+        expected_result.extend(["105:00"]*3)
+        expected_result.extend(["Break"])
+        expected_result.extend(["Penalty Shootout"]*3)
         expected_result = pd.Series(expected_result)
         expected_result = expected_result.rename("matchtime")
 
         pd.testing.assert_series_equal(
-            expected_result, _get_matchtime(input, self.metadata)
+            expected_result, _get_matchtime(input, period_column, self.metadata)
         )
 
     def test_to_matchtime(self):
