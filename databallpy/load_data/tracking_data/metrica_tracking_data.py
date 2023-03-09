@@ -24,6 +24,10 @@ from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import
 )
 from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _normalize_playing_direction_tracking,
+)
+from databallpy.utils import _to_int
 
 
 def load_metrica_tracking_data(
@@ -61,9 +65,15 @@ def load_metrica_tracking_data(
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )
-    tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
+
+    tracking_data = _normalize_playing_direction_tracking(
+        tracking_data, metadata.periods_frames
+    )
     tracking_data["period"] = _add_periods_to_tracking_data(
         tracking_data["timestamp"], metadata.periods_frames
+    )
+    tracking_data["matchtime_td"] = _get_matchtime(
+        tracking_data["timestamp"], tracking_data["period"], metadata
     )
 
     return tracking_data, metadata
@@ -131,7 +141,7 @@ def _get_tracking_data(
     for idx, line in enumerate(lines):
 
         timestamp, players_info, ball_info = line.split(":")
-        timestamp = int(timestamp)
+        timestamp = _to_int(timestamp)
         data["timestamp"][idx] = timestamp
 
         channel = channels.loc[

@@ -33,66 +33,77 @@ def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:
     return time_string
 
 
-def _get_matchtime(timestamp_column: pd.Series, metadata: Metadata) -> pd.Series:
-    """Gives a series with time in the matchtime format based
+def _get_matchtime(
+    timestamp_column: pd.Series, period_column: pd.Series, metadata: Metadata
+) -> list:
+    """Gives a list with time in the matchtime format based
     on the original timestamps and framerate
 
     Args:
-        timestamp_column (pd.Series): containing the timestamps
-        from tracking data dataframe
+        timestamp_column (pd.Series): containing the timestamps from tracking data
+        dataframe
+        period_column (pd.Series): containing the period for every frame
         metadata (Metadata): metadata including framerate and
         information on start and end of periods
 
     Returns:
-        pd.Series: contains the time of the match in matchtime format
+        list: for every frame the match time.
     """
     frame_rate = metadata.frame_rate
     periods_frames = metadata.periods_frames
-
-    bins = list(periods_frames["start_frame"].values.flatten())
-    bins = [b for b in bins if b != 0]
-    periods = np.digitize(timestamp_column, bins, right=True)
-    periods[0] = periods[1]
 
     period_start_dict = dict(
         zip(periods_frames["period"], periods_frames["start_frame"])
     )
 
-    max_seconds_period = (
-        periods_frames["end_frame"] - periods_frames["start_frame"]
-    ) // frame_rate
+    n_frames_period = dict(
+        zip(
+            periods_frames["period"],
+            periods_frames["end_frame"] - periods_frames["start_frame"],
+        )
+    )
+
     rel_timestamp = np.array(
-        [x - period_start_dict[p] for x, p in zip(timestamp_column.values, periods)]
+        [
+            x - period_start_dict[p] if p > 0 else -999 * frame_rate
+            for x, p in zip(timestamp_column.values, period_column.values)
+        ]
     )
     seconds = rel_timestamp // frame_rate
     df = pd.DataFrame(
         {
             "seconds": seconds,
-            "period": periods,
+            "period": period_column.values,
         }
     )
-
     start_m_dict = {1: 0, 2: 45, 3: 90, 4: 105}
-
     max_m_dict = {1: 45, 2: 90, 3: 105, 4: 120}
 
     matchtime_list = []
     for p in [1, 2, 3, 4]:
+        frame_end_current_p = periods_frames.loc[
+            periods_frames["period"] == p, "end_frame"
+        ].iloc[0]
+        frame_start_next_p = periods_frames.loc[
+            periods_frames["period"] == p + 1, "start_frame"
+        ].iloc[0]
+        if frame_start_next_p > 0 and frame_end_current_p > 0:
+            n_frames_break = frame_start_next_p - frame_end_current_p - 1
+        else:
+            n_frames_break = 0
+        matchtime_list_period = []
         for seconds in df[df["period"] == p]["seconds"].unique():
-            if seconds <= (max_seconds_period[p - 1]):
-                matchtime_list.extend(
-                    [_to_matchtime(int(seconds), max_m_dict[p], start_m_dict[p])]
-                    * frame_rate
-                )
-            else:
-                matchtime_list.extend([f"Break ({p})"] * frame_rate)
-
-        matchtime_list = matchtime_list[: len(df[df["period"] <= p])]
+            matchtime_list_period.extend(
+                [_to_matchtime(int(seconds), max_m_dict[p], start_m_dict[p])]
+                * frame_rate
+            )
+        matchtime_list_period = matchtime_list_period[: n_frames_period[p] + 1]
+        matchtime_list_period.extend(["Break"] * n_frames_break)
+        matchtime_list.extend(matchtime_list_period)
 
     for _ in df[df["period"] == 5]["seconds"].unique():
         matchtime_list.extend(["Penalty Shootout"] * frame_rate)
 
     matchtime_list = matchtime_list[: len(df)]
-    df["matchtime"] = matchtime_list
 
-    return df["matchtime"]
+    return matchtime_list

@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Tuple
 
 import numpy as np
@@ -17,6 +18,9 @@ from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import
 )
 from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _normalize_playing_direction_tracking,
+)
 
 
 def load_tracab_tracking_data(
@@ -37,10 +41,16 @@ def load_tracab_tracking_data(
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     metadata = _get_metadata(metadata_loc)
 
-    tracking_data["matchtime_td"] = _get_matchtime(tracking_data["timestamp"], metadata)
     tracking_data["period"] = _add_periods_to_tracking_data(
         tracking_data["timestamp"], metadata.periods_frames
     )
+    tracking_data["matchtime_td"] = _get_matchtime(
+        tracking_data["timestamp"], tracking_data["period"], metadata
+    )
+    tracking_data = _normalize_playing_direction_tracking(
+        tracking_data, metadata.periods_frames
+    )
+
     return tracking_data, metadata
 
 
@@ -133,7 +143,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
     frame_rate = int(soup.find("match")["iFrameRateFps"])
     datetime_string = soup.find("match")["dtDate"]
-    date = np.datetime64(datetime_string[:10])
+    date = pd.to_datetime(datetime_string[:10])
 
     frames_dict = {
         "period": [],
@@ -142,30 +152,30 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         "start_time_td": [],
         "end_time_td": [],
     }
-    for i, period in enumerate(soup.find_all("period")):
+    for _, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
+        start_frame = int(period["iStartFrame"])
+        end_frame = int(period["iEndFrame"])
 
-        if (int(period["iId"]) >= 2) and (int(period["iStartFrame"]) == 0):
-            start_frame = np.nan
-            end_frame = np.nan
-            start_time_td = np.datetime64("NaT")
-            end_time_td = np.datetime64("NaT")
+        if start_frame != 0:
+            frames_dict["start_frame"].append(start_frame)
+            frames_dict["end_frame"].append(end_frame)
+            frames_dict["start_time_td"].append(
+                date + dt.timedelta(milliseconds=int((start_frame / frame_rate) * 1000))
+            )
+            frames_dict["end_time_td"].append(
+                date + dt.timedelta(milliseconds=int((end_frame / frame_rate) * 1000))
+            )
         else:
-            start_frame = int(period["iStartFrame"])
-            end_frame = int(period["iEndFrame"])
-            start_time_td = date + np.timedelta64(int(start_frame / frame_rate), "s")
-            end_time_td = date + np.timedelta64(int(end_frame / frame_rate), "s")
-
-        frames_dict["start_frame"].append(start_frame)
-        frames_dict["end_frame"].append(end_frame)
-        frames_dict["start_time_td"].append(start_time_td)
-        frames_dict["end_time_td"].append(end_time_td)
-
+            frames_dict["start_frame"].append(-999)
+            frames_dict["end_frame"].append(-999)
+            frames_dict["start_time_td"].append(pd.to_datetime("NaT"))
+            frames_dict["end_time_td"].append(pd.to_datetime("NaT"))
     df_frames = pd.DataFrame(frames_dict)
+
     home_team = soup.find("HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)
-
     home_players_info = []
     for player in home_team.find_all("Player"):
         player_dict = {}

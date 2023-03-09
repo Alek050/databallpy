@@ -173,7 +173,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
 
     # Obtain match start and end of period datetime
     periods = {
-        "period": [1, 2],
+        "period": [1, 2, 3, 4, 5],
         "start_datetime_opta": [],
         "end_datetime_opta": [],
     }
@@ -186,11 +186,14 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     ):
         # Add one hour to go from utc to Dutch time
         periods["start_datetime_opta"].append(
-            pd.to_datetime(start.contents[0]) + dt.timedelta(hours=1)
+            pd.to_datetime(start.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
         )
         periods["end_datetime_opta"].append(
-            pd.to_datetime(end.contents[0]) + dt.timedelta(hours=1)
+            pd.to_datetime(end.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
         )
+    for _ in range(3):
+        periods["start_datetime_opta"].append(pd.to_datetime("NaT"))
+        periods["end_datetime_opta"].append(pd.to_datetime("NaT"))
 
     # Opta has a TeamData and Team attribute in the f7 file
     team_datas = soup.find_all("TeamData")
@@ -239,12 +242,12 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         periods_frames=pd.DataFrame(periods),
         frame_rate=np.nan,
         home_team_id=teams_info["home"]["team_id"],
-        home_team_name=teams_info["home"]["team_name"],
+        home_team_name=str(teams_info["home"]["team_name"]),
         home_players=teams_player_info["home"],
         home_score=teams_info["home"]["score"],
         home_formation=teams_info["home"]["formation"],
         away_team_id=teams_info["away"]["team_id"],
-        away_team_name=teams_info["away"]["team_name"],
+        away_team_name=str(teams_info["away"]["team_name"]),
         away_players=teams_player_info["away"],
         away_score=teams_info["away"]["score"],
         away_formation=teams_info["away"]["formation"],
@@ -347,7 +350,7 @@ def _load_event_data(f24_loc: str) -> pd.DataFrame:
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
         result_dict["datetime"].append(
-            np.datetime64(event.attrs["timestamp"]) + np.timedelta64(1, "h")
+            pd.to_datetime(event.attrs["timestamp"]) + dt.timedelta(hours=1)
         )
 
     file.close()

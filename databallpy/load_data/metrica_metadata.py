@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 
 import numpy as np
@@ -5,7 +6,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils import _to_int
+from databallpy.utils import _to_float, _to_int
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
@@ -80,10 +81,10 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
 
     match_id = _to_int(soup.find("Session").attrs["id"])
-    pitch_size_x = _to_int(soup.find("FieldSize").find("Width").text)
-    pitch_size_y = _to_int(soup.find("FieldSize").find("Height").text)
+    pitch_size_x = _to_float(soup.find("FieldSize").find("Width").text)
+    pitch_size_y = _to_float(soup.find("FieldSize").find("Height").text)
     frame_rate = _to_int(soup.find("FrameRate").text)
-    datetime = np.datetime64(soup.find("Start").text)
+    datetime = pd.to_datetime(soup.find("Start").text).tz_localize(None)
 
     periods_dict = {
         "period": [],
@@ -111,40 +112,36 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         period = periods_map[name]
 
         current_timestamp = _to_int(period_soup.find("Value").text)
-        if ((period >= 2) and (current_timestamp == 0)) or np.isnan(current_timestamp):
-            if "start" in name:
-                periods_dict["period"].append(period)
-                periods_dict["start_frame"].append(np.nan)
-                periods_dict["start_time_td"].append(np.datetime64("NaT"))
-            elif "end" in name:
-                periods_dict["end_frame"].append(np.nan)
-                periods_dict["end_time_td"].append(np.datetime64("NaT"))
-        else:
-            if "start" in name:
-                periods_dict["period"].append(period)
-                periods_dict["start_frame"].append(current_timestamp)
-                first_timestamp = periods_dict["start_frame"][0]
-                mseconds = int(
-                    (current_timestamp - first_timestamp) / frame_rate * 1000
-                )
-                periods_dict["start_time_td"].append(
-                    datetime + np.timedelta64(mseconds, "ms")
-                )
-            elif "end" in name:
-                periods_dict["end_frame"].append(current_timestamp)
-                first_timestamp = periods_dict["start_frame"][0]
-                mseconds = int(
-                    (current_timestamp - first_timestamp) / frame_rate * 1000
-                )
-                periods_dict["end_time_td"].append(
-                    datetime + np.timedelta64(mseconds, "ms")
-                )
+
+        if "start" in name:
+            periods_dict["period"].append(period)
+            periods_dict["start_frame"].append(current_timestamp)
+            first_timestamp = periods_dict["start_frame"][0]
+            seconds = (current_timestamp - first_timestamp) / frame_rate
+            periods_dict["start_time_td"].append(
+                datetime + dt.timedelta(milliseconds=seconds * 1000)
+            ) if not current_timestamp == -999 else periods_dict[
+                "start_time_td"
+            ].append(
+                pd.to_datetime("NaT")
+            )
+
+        elif "end" in name:
+            periods_dict["end_frame"].append(current_timestamp)
+            first_timestamp = periods_dict["start_frame"][0]
+            seconds = (current_timestamp - first_timestamp) / frame_rate
+            periods_dict["end_time_td"].append(
+                datetime + dt.timedelta(milliseconds=seconds * 1000)
+            ) if not current_timestamp == -999 else periods_dict["end_time_td"].append(
+                pd.to_datetime("NaT")
+            )
+
     # add fifth period
     periods_dict["period"].append(5)
-    periods_dict["start_frame"].append(np.nan)
-    periods_dict["end_frame"].append(np.nan)
-    periods_dict["start_time_td"].append(np.datetime64("NaT"))
-    periods_dict["end_time_td"].append(np.datetime64("NaT"))
+    periods_dict["start_frame"].append(-999)
+    periods_dict["end_frame"].append(-999)
+    periods_dict["start_time_td"].append(pd.to_datetime("NaT"))
+    periods_dict["end_time_td"].append(pd.to_datetime("NaT"))
 
     teams_info = {}
     for team in soup.find_all("Team"):
@@ -209,10 +206,10 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     away_players = team_dicts[1]["player_dict"]
 
     metadata = Metadata(
-        match_id=match_id,
-        pitch_dimensions=[pitch_size_x, pitch_size_y],
+        match_id=_to_int(match_id),
+        pitch_dimensions=[float(pitch_size_x), float(pitch_size_y)],
         periods_frames=pd.DataFrame(periods_dict),
-        frame_rate=frame_rate,
+        frame_rate=_to_int(frame_rate),
         home_team_id=teams_info["home"]["team_id"],
         home_team_name=teams_info["home"]["team_name"],
         home_players=pd.DataFrame(home_players),

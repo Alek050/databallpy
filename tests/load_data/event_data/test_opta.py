@@ -19,14 +19,14 @@ class TestOpta(unittest.TestCase):
     def test_load_opta_event_data(self):
 
         event_data, metadata = load_opta_event_data(
-            self.f7_loc, self.f24_loc, pitch_dimensions=[10, 10]
+            self.f7_loc, self.f24_loc, pitch_dimensions=[10.0, 10.0]
         )
         pd.testing.assert_frame_equal(event_data, ED_OPTA)
         assert metadata == MD_OPTA
 
     def test_load_metadata(self):
 
-        metadata = _load_metadata(self.f7_loc, [10, 10])
+        metadata = _load_metadata(self.f7_loc, [10.0, 10.0])
         assert metadata == MD_OPTA
 
     def test_get_player_info(self):
