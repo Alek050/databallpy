@@ -35,18 +35,19 @@ def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:
 
 def _get_matchtime(
     timestamp_column: pd.Series, period_column: pd.Series, metadata: Metadata
-) -> pd.Series:
-    """Gives a series with time in the matchtime format based
+) -> list:
+    """Gives a list with time in the matchtime format based
     on the original timestamps and framerate
 
     Args:
-        timestamp_column (pd.Series): containing the timestamps
-        from tracking data dataframe
+        timestamp_column (pd.Series): containing the timestamps from tracking data
+        dataframe
+        period_column (pd.Series): containing the period for every frame
         metadata (Metadata): metadata including framerate and
         information on start and end of periods
 
     Returns:
-        pd.Series: contains the time of the match in matchtime format
+        list: for every frame the match time.
     """
     frame_rate = metadata.frame_rate
     periods_frames = metadata.periods_frames
