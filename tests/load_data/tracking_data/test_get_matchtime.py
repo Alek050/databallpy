@@ -39,9 +39,9 @@ class TestGetMatchtime(unittest.TestCase):
 
     def test_get_matchtime(self):
         input = []
-        input.extend([1509993,1509994, 1509995])
+        input.extend([1509993, 1509994, 1509995])
         input.extend([1509996])
-        input.extend([1509997,1509998, 1509999])
+        input.extend([1509997, 1509998, 1509999])
         input.extend([1501000])
         input.extend([1510001, 1510002, 1510003])
         input.extend([1510004])
@@ -51,37 +51,34 @@ class TestGetMatchtime(unittest.TestCase):
         input = pd.Series(input)
 
         period_column = []
-        period_column.extend([1]*3)
+        period_column.extend([1] * 3)
         period_column.extend([-999])
-        period_column.extend([2]*3)
+        period_column.extend([2] * 3)
         period_column.extend([-999])
-        period_column.extend([3]*3)
+        period_column.extend([3] * 3)
         period_column.extend([-999])
-        period_column.extend([4]*3)
+        period_column.extend([4] * 3)
         period_column.extend([-999])
-        period_column.extend([5]*3)
+        period_column.extend([5] * 3)
         period_column = pd.Series(period_column)
 
-
         expected_result = []
-        expected_result.extend(["00:00"]*3)
+        expected_result.extend(["00:00"] * 3)
         expected_result.extend(["Break"])
-        expected_result.extend(["45:00"]*3)
+        expected_result.extend(["45:00"] * 3)
         expected_result.extend(["Break"])
-        expected_result.extend(["90:00"]*3)
+        expected_result.extend(["90:00"] * 3)
         expected_result.extend(["Break"])
-        expected_result.extend(["105:00"]*3)
+        expected_result.extend(["105:00"] * 3)
         expected_result.extend(["Break"])
-        expected_result.extend(["Penalty Shootout"]*3)
+        expected_result.extend(["Penalty Shootout"] * 3)
         expected_result = pd.Series(expected_result)
         expected_result = expected_result.rename("matchtime")
 
         result_list = _get_matchtime(input, period_column, self.metadata)
         result = pd.Series(result_list)
         result = result.rename("matchtime")
-        pd.testing.assert_series_equal(
-            expected_result, result
-        )
+        pd.testing.assert_series_equal(expected_result, result)
 
     def test_to_matchtime(self):
         test_frames = [12030, 67100, 67600, 52377, 73566, 19500, 22800, 19500, 22800]

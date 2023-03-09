@@ -2,7 +2,6 @@ import os
 import unittest
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from databallpy.match import get_match
@@ -162,7 +161,7 @@ class TestVisualize(unittest.TestCase):
             event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
             event_data_provider="opta",
         )
-        
+
         synced_match = synced_match.synchronise_tracking_and_event_data(
             n_batches_per_half=1
         )

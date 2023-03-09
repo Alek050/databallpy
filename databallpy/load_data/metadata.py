@@ -106,7 +106,9 @@ class Metadata:
                         f"{team} team score should be an integer, not a {type(score)}"
                     )
                 if score < 0:
-                    raise ValueError(f"{team} team score should be positive, not {score}")
+                    raise ValueError(
+                        f"{team} team score should be positive, not {score}"
+                    )
 
         # team formations
         for team, form in zip(

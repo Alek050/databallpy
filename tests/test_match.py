@@ -1,9 +1,9 @@
+import datetime as dt
 import unittest
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
-import datetime as dt
 
 from databallpy import DataBallPyError
 from databallpy.load_data.event_data.metrica_event_data import load_metrica_event_data
@@ -51,18 +51,18 @@ class TestMatch(unittest.TestCase):
                 "end_frame": [1509994, 1509997, -999, -999, -999],
                 "start_time_td": [
                     pd.to_datetime("2023-01-14")
-                    + dt.timedelta(milliseconds=int((1509993 / 25)*1000)),
+                    + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
                     pd.to_datetime("2023-01-14")
-                    + dt.timedelta(milliseconds=int((1509996 / 25)*1000)),
+                    + dt.timedelta(milliseconds=int((1509996 / 25) * 1000)),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_time_td": [
                     pd.to_datetime("2023-01-14")
-                    + dt.timedelta(milliseconds=int((1509994 / 25)*1000)),
+                    + dt.timedelta(milliseconds=int((1509994 / 25) * 1000)),
                     pd.to_datetime("2023-01-14")
-                    + dt.timedelta(milliseconds=int((1509997 / 25)*1000)),
+                    + dt.timedelta(milliseconds=int((1509997 / 25) * 1000)),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
@@ -1018,7 +1018,8 @@ class TestMatch(unittest.TestCase):
         tracking_data = self.match_to_sync.tracking_data
         date = pd.to_datetime(str(self.match_to_sync.periods.iloc[0, 3])[:10])
         tracking_data["datetime"] = [
-            date + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
+            date
+            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
             for x in tracking_data["timestamp"]
         ]
         tracking_data.reset_index(inplace=True)
@@ -1094,7 +1095,8 @@ class TestMatch(unittest.TestCase):
         tracking_data = self.match_to_sync.tracking_data
         date = pd.to_datetime(str(self.match_to_sync.periods.iloc[0, 3])[:10])
         tracking_data["datetime"] = [
-            date + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
+            date
+            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
             for x in tracking_data["timestamp"]
         ]
         tracking_data.reset_index(inplace=True)

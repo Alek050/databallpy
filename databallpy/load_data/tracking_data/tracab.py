@@ -1,8 +1,8 @@
+import datetime as dt
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
-import datetime as dt
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
@@ -51,7 +51,6 @@ def load_tracab_tracking_data(
         tracking_data, metadata.periods_frames
     )
 
-    
     return tracking_data, metadata
 
 
@@ -162,10 +161,10 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             frames_dict["start_frame"].append(start_frame)
             frames_dict["end_frame"].append(end_frame)
             frames_dict["start_time_td"].append(
-                date + dt.timedelta(milliseconds=int((start_frame / frame_rate)*1000))
+                date + dt.timedelta(milliseconds=int((start_frame / frame_rate) * 1000))
             )
             frames_dict["end_time_td"].append(
-                date + dt.timedelta(milliseconds=int((end_frame / frame_rate)*1000))
+                date + dt.timedelta(milliseconds=int((end_frame / frame_rate) * 1000))
             )
         else:
             frames_dict["start_frame"].append(-999)

@@ -1,10 +1,10 @@
+import datetime as dt
 from dataclasses import dataclass
 from typing import List
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import datetime as dt
 
 from databallpy import DataBallPyError
 from databallpy.load_data.event_data.metrica_event_data import (
@@ -398,14 +398,14 @@ the away team is {centroid_x}."
         event_data = event_data[mask_events_to_sync]
 
         periods_played = self.periods[self.periods["start_frame"] > 0]["period"].values
-        
+
         for p in periods_played:
             # create batches to loop over
             start_batch_frame = self.periods.loc[
                 self.periods["period"] == p, "start_frame"
             ].iloc[0]
             start_batch_datetime = start_datetime_period[p] + dt.timedelta(
-                milliseconds = int(
+                milliseconds=int(
                     (start_batch_frame - start_frame_period[p]) / self.frame_rate * 1000
                 )
             )
@@ -424,7 +424,9 @@ the away team is {centroid_x}."
             end_batches_datetime = [
                 start_datetime_period[int(p)]
                 + dt.timedelta(
-                    milliseconds = int((x - start_frame_period[int(p)]) / self.frame_rate * 1000)
+                    milliseconds=int(
+                        (x - start_frame_period[int(p)]) / self.frame_rate * 1000
+                    )
                 )
                 for x in end_batches_frames
             ]
@@ -456,10 +458,9 @@ the away team is {centroid_x}."
                     event_data.loc[event_index, "tracking_frame"] = tracking_frame
 
                 start_batch_frame = tracking_data.iloc[tracking_frame]["timestamp"]
-                start_batch_datetime = (
-                    event_batch[event_batch["event_id"] == event_id]["datetime"]
-                    .iloc[0]
-                )
+                start_batch_datetime = event_batch[event_batch["event_id"] == event_id][
+                    "datetime"
+                ].iloc[0]
         tracking_data.drop("datetime", axis=1, inplace=True)
         self.tracking_data = tracking_data
         self.event_data = event_data

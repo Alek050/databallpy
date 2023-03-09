@@ -1,3 +1,4 @@
+import datetime as dt
 import io
 import json
 import os
@@ -6,7 +7,6 @@ from typing import Tuple, Union
 import numpy as np
 import pandas as pd
 import requests
-import datetime as dt
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.event_data._normalize_playing_direction_events import (
@@ -75,11 +75,11 @@ def load_metrica_event_data(
     ].iloc[0]
     frame_rate = metadata.frame_rate
     rel_timedelta = [
-        dt.timedelta(milliseconds = (x-first_frame) / frame_rate * 1000)
+        dt.timedelta(milliseconds=(x - first_frame) / frame_rate * 1000)
         for x in event_data["td_frame"]
     ]
     event_data["datetime"] = [pd.to_datetime(start_time) + x for x in rel_timedelta]
-    
+
     event_data = _normalize_playing_direction_events(
         event_data, metadata.home_team_id, metadata.away_team_id
     )

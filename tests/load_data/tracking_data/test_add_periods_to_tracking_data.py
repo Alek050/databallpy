@@ -16,11 +16,25 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
             input["timestamp"], MD_METRICA.periods_frames
         )
 
-        res = res.reindex(columns=[
-            'timestamp', 'ball_x', 'ball_y', 'ball_z', 'ball_status',
-            'ball_posession', 'home_1_x', 'home_1_y', 'home_11_x', 'home_11_y',
-            'away_34_x', 'away_34_y', 'away_35_x', 'away_35_y', 'period',
-            'matchtime_td'
-        ])
+        res = res.reindex(
+            columns=[
+                "timestamp",
+                "ball_x",
+                "ball_y",
+                "ball_z",
+                "ball_status",
+                "ball_posession",
+                "home_1_x",
+                "home_1_y",
+                "home_11_x",
+                "home_11_y",
+                "away_34_x",
+                "away_34_y",
+                "away_35_x",
+                "away_35_y",
+                "period",
+                "matchtime_td",
+            ]
+        )
 
         pd.testing.assert_frame_equal(res, TD_METRICA)

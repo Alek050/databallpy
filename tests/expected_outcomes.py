@@ -1,6 +1,7 @@
+import datetime as dt
+
 import numpy as np
 import pandas as pd
-import datetime as dt
 
 from databallpy.load_data.metadata import Metadata
 
@@ -24,7 +25,6 @@ TD_TRACAB = pd.DataFrame(
             "45:00",
             "45:00",
         ],
-        
     }
 )
 
@@ -38,15 +38,19 @@ MD_TRACAB = Metadata(
             "start_frame": [1509993, 1509996, -999, -999, -999],
             "end_frame": [1509994, 1509997, -999, -999, -999],
             "start_time_td": [
-                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509993/25)*1000)),
-                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509996/25)*1000)),
+                pd.to_datetime("2023-01-14")
+                + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
+                pd.to_datetime("2023-01-14")
+                + dt.timedelta(milliseconds=int((1509996 / 25) * 1000)),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_time_td": [
-                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509994 / 25)*1000)),
-                pd.to_datetime("2023-01-14") + dt.timedelta(milliseconds=int((1509997 / 25)*1000)),
+                pd.to_datetime("2023-01-14")
+                + dt.timedelta(milliseconds=int((1509994 / 25) * 1000)),
+                pd.to_datetime("2023-01-14")
+                + dt.timedelta(milliseconds=int((1509997 / 25) * 1000)),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
