@@ -4,13 +4,13 @@ import numpy as np
 
 
 def _to_int(value) -> int:
-    """Function to make a integer of the value if possible, else np.nan
+    """Function to make a integer of the value if possible, else -999
 
     Args:
         value (): a variable value
 
     Returns:
-       int: integer if value can be changed to integer, -999
+       int: integer if value can be changed to integer, else -999
     """
     try:
         value = _to_float(value)

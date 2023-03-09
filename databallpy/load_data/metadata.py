@@ -76,7 +76,7 @@ class Metadata:
                 )
             if self.frame_rate < 1:
                 raise ValueError(
-                    f"frame_rate should be a positive integer, not {self.frame_rate}"
+                    f"frame_rate should be positive, not {self.frame_rate}"
                 )
 
         # team id's
@@ -106,7 +106,7 @@ class Metadata:
                         f"{team} team score should be an integer, not a {type(score)}"
                     )
                 if score < 0:
-                    raise ValueError(f"{team} team score should positive, not {score}")
+                    raise ValueError(f"{team} team score should be positive, not {score}")
 
         # team formations
         for team, form in zip(
