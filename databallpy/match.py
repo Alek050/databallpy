@@ -742,12 +742,14 @@ def _needleman_wunsch(
     return event_frame_dict
 
 
-def get_open_match(provider: str = "metrica") -> Match:
+def get_open_match(provider: str = "metrica", verbose:bool=True) -> Match:
     """Function to load a match object from an open datasource
 
     Args:
         provider (str, optional): What provider to get the open data from.
         Defaults to "metrica".
+        verbose (bool, optional): Whether or not to print info about progress
+        in the terminal, Defaults to True.
 
     Returns:
         Match: All information about the match
@@ -755,7 +757,7 @@ def get_open_match(provider: str = "metrica") -> Match:
     assert provider in ["metrica"]
 
     if provider == "metrica":
-        tracking_data, metadata = load_metrica_open_tracking_data()
+        tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
         event_data, _ = load_metrica_open_event_data()
 
     match = Match(

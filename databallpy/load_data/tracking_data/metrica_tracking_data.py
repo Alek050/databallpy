@@ -79,9 +79,11 @@ def load_metrica_tracking_data(
     return tracking_data, metadata
 
 
-def load_metrica_open_tracking_data() -> Tuple[pd.DataFrame, Metadata]:
+def load_metrica_open_tracking_data(verbose:bool = True) -> Tuple[pd.DataFrame, Metadata]:
     """Function to load open dataset of metrica
 
+    Args:
+        verbose (bool): Whether or not to print info in the terminal. Defaults to True.
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
@@ -95,7 +97,7 @@ def load_metrica_open_tracking_data() -> Tuple[pd.DataFrame, Metadata]:
     td_metadata = requests.get(td_metadata_link).text
     print(" Done!")
     return load_metrica_tracking_data(
-        tracking_data_loc=td_data, metadata_loc=td_metadata
+        tracking_data_loc=td_data, metadata_loc=td_metadata, verbose=verbose
     )
 
 
