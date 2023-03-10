@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.1.1"
+version = "0.2.2"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "License :: MIT",
+    "License :: OSI Approved :: MIT License",
     "Topic :: Scientific/Engineering",
 ]
 
@@ -36,6 +36,7 @@ beautifulsoup4 = "^4.11.1"
 lxml = "^4.9.2"
 tqdm = "^4.64.1"
 matplotlib = "^3.6.3"
+requests = "^2.28.2"
 
 [tool.poetry.dev-dependencies]
 
@@ -46,6 +47,7 @@ flake8 = "^6.0.0"
 black = "^22.12.0"
 isort = "^5.11.4"
 jupyter = "^1.0.0"
+line-profiler = "^4.0.2"
 
 [tool.poetry.group.docs]
 optional = true
@@ -54,7 +56,6 @@ optional = true
 myst-nb = "^0.17.1"
 sphinx-autoapi = "^2.0.1"
 sphinx-rtd-theme = "^1.1.1"
-
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
