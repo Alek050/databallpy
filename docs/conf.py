@@ -23,6 +23,9 @@ extensions = [
 ]
 autoapi_dirs = ["../databallpy"]
 
+read_the_docs_build_config = {
+    'timeout': 120,  # 2 minutes
+}
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
