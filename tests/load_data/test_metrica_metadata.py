@@ -16,25 +16,25 @@ class TestMetricaMetadata(unittest.TestCase):
         self.md_loc = "tests/test_data/metrica_metadata_test.xml"
         self.expected_metadata = Metadata(
             match_id=9999,
-            pitch_dimensions=[100, 50],
+            pitch_dimensions=[100.0, 50.0],
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],
-                    "start_frame": [1, 4, np.nan, np.nan, np.nan],
-                    "end_frame": [3, 6, np.nan, np.nan, np.nan],
+                    "start_frame": [1, 4, -999, -999, -999],
+                    "end_frame": [3, 6, -999, -999, -999],
                     "start_time_td": [
-                        pd.to_datetime("2019-02-21T03:30:07.000Z"),
-                        pd.to_datetime("2019-02-21T03:30:08.500Z"),
-                        np.nan,
-                        np.nan,
-                        np.nan,
+                        pd.to_datetime("2019-02-21T03:30:07.000"),
+                        pd.to_datetime("2019-02-21T03:30:08.500"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
                     ],
                     "end_time_td": [
-                        pd.to_datetime("2019-02-21T03:30:08.000Z"),
-                        pd.to_datetime("2019-02-21T03:30:09.500Z"),
-                        np.nan,
-                        np.nan,
-                        np.nan,
+                        pd.to_datetime("2019-02-21T03:30:08.000"),
+                        pd.to_datetime("2019-02-21T03:30:09.500"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
+                        pd.to_datetime("NaT"),
                     ],
                 }
             ),

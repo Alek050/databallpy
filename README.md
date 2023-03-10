@@ -2,7 +2,7 @@
 
 A package for loading, preprocessing, vizualising and synchronizing soccere event and tracking data.
 
-This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodligth](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
+This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
 
 We are currently working on adding more data sources and on creating a `Match.synchronise_tracking_and_event_data()` function to efficiently align all events with a timeframe in the tracking data. This would make it possible to get contextual information from the tracking data at the exact moment that the event is taking place.
 

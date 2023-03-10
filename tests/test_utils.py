@@ -13,7 +13,7 @@ class TestUtils(unittest.TestCase):
         assert 3.3 == _to_float("3.3")
 
     def test_to_int(self):
-        assert pd.isnull(_to_int("s2.3"))
-        assert pd.isnull(_to_int(None))
+        assert -999 == _to_int("s2.3")
+        assert -999 == _to_int(None)
         assert 2 == _to_int("2")
         assert 3 == _to_int("3.3")

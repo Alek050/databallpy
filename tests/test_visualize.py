@@ -151,3 +151,49 @@ class TestVisualize(unittest.TestCase):
 
         assert os.path.exists("tests/test_data/test_clip.mp4")
         os.remove("tests/test_data/test_clip.mp4")
+
+    def test_save_match_clip_with_events(self):
+        synced_match = get_match(
+            tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
+            tracking_metadata_loc="tests/test_data/sync/tracab_metadata_sync_test.xml",
+            tracking_data_provider="tracab",
+            event_data_loc="tests/test_data/sync/opta_events_sync_test.xml",
+            event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
+            event_data_provider="opta",
+        )
+
+        synced_match = synced_match.synchronise_tracking_and_event_data(
+            n_batches_per_half=1
+        )
+        events = [
+            "pass",
+            "aerial",
+            "interception",
+            "ball recovery",
+            "dispossessed",
+            "tackle",
+            "take on",
+            "clearance",
+            "blocked pass",
+            "offside pass",
+            "attempt saved",
+            "save",
+            "foul",
+            "miss",
+            "challenge",
+            "goal",
+        ]
+
+        assert not os.path.exists("tests/test_data/test_match_with_events.mp4")
+
+        save_match_clip(
+            synced_match,
+            1,
+            10,
+            save_folder="tests/test_data",
+            title="test_match_with_events",
+            events=events,
+        )
+
+        assert os.path.exists("tests/test_data/test_match_with_events.mp4")
+        os.remove("tests/test_data/test_match_with_events.mp4")

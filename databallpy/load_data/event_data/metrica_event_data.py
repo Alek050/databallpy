@@ -1,3 +1,4 @@
+import datetime as dt
 import io
 import json
 import os
@@ -8,6 +9,9 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from databallpy.load_data.event_data._normalize_playing_direction_events import (
+    _normalize_playing_direction_events,
+)
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.metrica_metadata import (
     _get_metadata,
@@ -20,6 +24,20 @@ from databallpy.utils import _to_float, _to_int
 def load_metrica_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> Tuple[pd.DataFrame, Metadata]:
+    """Function to load the metrica event data.
+
+    Args:
+        event_data_loc (str): location of the event data .json file
+        metadata_loc (str): location of the metadata .xml file
+
+    Raises:
+        TypeError: type error if event_data_loc, or metadata_loc is not a valid input
+        type (str)
+
+    Returns:
+        Tuple[pd.DataFrame, Metadata]: The event data and the metadata
+    """
+
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
         assert os.path.exists(event_data_loc)
         assert os.path.exists(metadata_loc)
@@ -56,8 +74,14 @@ def load_metrica_event_data(
         metadata.periods_frames["period"] == 1, "start_time_td"
     ].iloc[0]
     frame_rate = metadata.frame_rate
-    event_data["datetime"] = pd.to_datetime(start_time) + pd.to_timedelta(
-        (event_data["td_frame"] - first_frame) / frame_rate, unit="s"
+    rel_timedelta = [
+        dt.timedelta(milliseconds=(x - first_frame) / frame_rate * 1000)
+        for x in event_data["td_frame"]
+    ]
+    event_data["datetime"] = [pd.to_datetime(start_time) + x for x in rel_timedelta]
+
+    event_data = _normalize_playing_direction_events(
+        event_data, metadata.home_team_id, metadata.away_team_id
     )
 
     return event_data, metadata
