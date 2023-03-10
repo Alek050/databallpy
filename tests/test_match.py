@@ -858,37 +858,37 @@ class TestMatch(unittest.TestCase):
             self.expected_match_tracab_opta.player_id_to_column_id(4)
 
     def test_synchronise_tracking_and_event_data(self):
-        expected_event_data = self.match_to_sync.event_data
-        expected_tracking_data = self.match_to_sync.tracking_data
+        expected_event_data = self.match_to_sync.event_data.copy()
+        expected_tracking_data = self.match_to_sync.tracking_data.copy()
         expected_tracking_data["period"] = [1] * 13
         expected_tracking_data["event"] = [
-            np.nan,
             "pass",
-            np.nan,
-            np.nan,
-            np.nan,
             "pass",
             np.nan,
             np.nan,
             np.nan,
             "take on",
-            np.nan,
             "tackle",
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
             np.nan,
         ]
         expected_tracking_data["event_id"] = [
-            np.nan,
             2499594225,
-            np.nan,
-            np.nan,
-            np.nan,
             2499594243,
             np.nan,
             np.nan,
             np.nan,
             2499594285,
-            np.nan,
             2499594291,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
             np.nan,
         ]
 
@@ -897,24 +897,24 @@ class TestMatch(unittest.TestCase):
             np.nan,
             np.nan,
             0.0,
+            1.0,
+            np.nan,
+            np.nan,
             5.0,
-            np.nan,
-            np.nan,
-            9.0,
-            12.0,
+            6.0,
         ]
         expected_event_data = expected_event_data[
             expected_event_data["type_id"].isin([1, 3, 7])
         ]
 
-        synced_match = self.match_to_sync.synchronise_tracking_and_event_data(
-            n_batches_per_half=1
-        )
+        self.match_to_sync.synchronise_tracking_and_event_data(n_batches_per_half=1)
 
         pd.testing.assert_frame_equal(
-            synced_match.tracking_data, expected_tracking_data
+            self.match_to_sync.tracking_data, expected_tracking_data
         )
-        pd.testing.assert_frame_equal(synced_match.event_data, expected_event_data)
+        pd.testing.assert_frame_equal(
+            self.match_to_sync.event_data, expected_event_data
+        )
 
     def test_needleman_wunsch(self):
         sim_list = [
