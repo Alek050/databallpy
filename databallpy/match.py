@@ -742,7 +742,7 @@ def _needleman_wunsch(
     return event_frame_dict
 
 
-def get_open_match(provider: str = "metrica", verbose:bool=True) -> Match:
+def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
     """Function to load a match object from an open datasource
 
     Args:

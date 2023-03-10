@@ -79,7 +79,9 @@ def load_metrica_tracking_data(
     return tracking_data, metadata
 
 
-def load_metrica_open_tracking_data(verbose:bool = True) -> Tuple[pd.DataFrame, Metadata]:
+def load_metrica_open_tracking_data(
+    verbose: bool = True,
+) -> Tuple[pd.DataFrame, Metadata]:
     """Function to load open dataset of metrica
 
     Args:
