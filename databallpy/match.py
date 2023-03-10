@@ -348,9 +348,6 @@ the away team is {centroid_x}."
             'take on', 'clearance', 'blocked pass', 'offside pass', 'attempt saved',
             'save', 'foul', 'miss', 'challenge', 'goal'
 
-        Returns:
-            Match: The match class with synchronised tracking and event data
-
         """
         events_to_sync = [
             "pass",
@@ -432,7 +429,7 @@ the away team is {centroid_x}."
             ]
 
             tracking_data_period = tracking_data[tracking_data["period"] == p]
-            event_data_period = event_data[event_data["period_id"] == p]
+            event_data_period = event_data[event_data["period_id"] == p].copy()
             start_events = ["pass", "miss", "goal"]
             datetime_first_event = event_data_period[
                 event_data_period["event"].isin(start_events)
@@ -440,6 +437,7 @@ the away team is {centroid_x}."
             datetime_first_tracking_frame = tracking_data_period.iloc[0]["datetime"]
             diff_datetime = datetime_first_event - datetime_first_tracking_frame
             event_data_period["datetime"] -= diff_datetime
+
 
             print(f"Syncing period {p}...")
             for end_batch_frame, end_batch_datetime in tqdm(
@@ -524,9 +522,8 @@ def get_match(
         event_metadata_loc (str): location of the metadata of the event data
         tracking_data_provider (str): provider of the tracking data
         event_data_provider (str): provider of the event data
-
     Returns:
-        Match: All information about the match
+        (Match): a Match object with all information of the match.
     """
 
     assert tracking_data_provider in [
