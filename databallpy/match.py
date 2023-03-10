@@ -438,7 +438,6 @@ the away team is {centroid_x}."
             diff_datetime = datetime_first_event - datetime_first_tracking_frame
             event_data_period["datetime"] -= diff_datetime
 
-
             print(f"Syncing period {p}...")
             for end_batch_frame, end_batch_datetime in tqdm(
                 zip(end_batches_frames, end_batches_datetime),
