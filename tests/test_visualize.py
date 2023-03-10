@@ -162,9 +162,7 @@ class TestVisualize(unittest.TestCase):
             event_data_provider="opta",
         )
 
-        synced_match = synced_match.synchronise_tracking_and_event_data(
-            n_batches_per_half=1
-        )
+        synced_match.synchronise_tracking_and_event_data(n_batches_per_half=1)
         events = [
             "pass",
             "aerial",

@@ -431,19 +431,30 @@ the away team is {centroid_x}."
                 for x in end_batches_frames
             ]
 
+            tracking_data_period = tracking_data[tracking_data["period"] == p]
+            event_data_period = event_data[event_data["period_id"] == p]
+            start_events = ["pass", "miss", "goal"]
+            datetime_first_event = event_data_period[
+                event_data_period["event"].isin(start_events)
+            ].iloc[0]["datetime"]
+            datetime_first_tracking_frame = tracking_data_period.iloc[0]["datetime"]
+            diff_datetime = datetime_first_event - datetime_first_tracking_frame
+            event_data_period["datetime"] -= diff_datetime
+
             print(f"Syncing period {p}...")
             for end_batch_frame, end_batch_datetime in tqdm(
                 zip(end_batches_frames, end_batches_datetime),
                 total=len(end_batches_frames),
             ):
-                tracking_batch = tracking_data[
-                    (tracking_data["timestamp"] <= end_batch_frame)
-                    & (tracking_data["timestamp"] >= start_batch_frame)
+
+                tracking_batch = tracking_data_period[
+                    (tracking_data_period["timestamp"] <= end_batch_frame)
+                    & (tracking_data_period["timestamp"] >= start_batch_frame)
                 ].reset_index(drop=False)
-                event_batch = event_data[
-                    (event_data["datetime"] >= start_batch_datetime)
-                    & (event_data["datetime"] <= end_batch_datetime)
-                ].reset_index()
+                event_batch = event_data_period[
+                    (event_data_period["datetime"] >= start_batch_datetime)
+                    & (event_data_period["datetime"] <= end_batch_datetime)
+                ].reset_index(drop=False)
 
                 sim_mat = _create_sim_mat(tracking_batch, event_batch, self)
                 event_frame_dict = _needleman_wunsch(sim_mat)
@@ -457,15 +468,17 @@ the away team is {centroid_x}."
                     tracking_data.loc[tracking_frame, "event_id"] = event_id
                     event_data.loc[event_index, "tracking_frame"] = tracking_frame
 
-                start_batch_frame = tracking_data.iloc[tracking_frame]["timestamp"]
-                start_batch_datetime = event_batch[event_batch["event_id"] == event_id][
-                    "datetime"
-                ].iloc[0]
+                start_batch_frame = tracking_data_period.loc[
+                    tracking_frame, "timestamp"
+                ]
+                start_batch_datetime = event_data_period[
+                    event_data_period["event_id"] == event_id
+                ]["datetime"].iloc[0]
         tracking_data.drop("datetime", axis=1, inplace=True)
         self.tracking_data = tracking_data
         self.event_data = event_data
 
-        return self
+        return
 
     def __eq__(self, other):
         if isinstance(other, Match):
