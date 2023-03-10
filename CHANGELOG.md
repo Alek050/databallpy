@@ -12,8 +12,15 @@
 
 ## v0.1.1 (10/02/2023)
 
-- Hot fix to make documentation visisble.
+- Hot fix to make documentation visible.
 
-## for the new version
+## v0.2.0 (10/03/2023)
+
 - Added parser for Metrica, including an open dataset
+- Added functionality to synchronize tracking and event data
+- Added functionality to plot events
+- Fixed bug, now both tracking and event data are normalized in direction
+- Fixed unexpected behaviour, all date related objects are now datetime objects
+
+
 

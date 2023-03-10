@@ -473,10 +473,9 @@ def save_match_clip(
                 )
                 variable_fig_objs.append(fig_obj)
 
-            # This code will only work after match has a synchronise() function
-            # # Add events
-            # # Note: this should be last in this function since it assumes that all
-            # # other info is already plotted in the axes
+            # Add events
+            # Note: this should be last in this function since it assumes that all
+            # other info is already plotted in the axes
             if len(events) > 0:
                 if td.loc[idx, "event"] in events:
                     event = (
@@ -505,7 +504,7 @@ def save_match_clip(
                         event["start_y"],
                         color="red",
                         marker="x",
-                        s=14,
+                        s=50,
                     )
                     variable_fig_objs.append(fig_obj)
 
