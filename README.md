@@ -58,6 +58,9 @@ See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/data
 Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, and take the timing of the events to synchronize tracking and event data we get something like this:
 
 
+https://user-images.githubusercontent.com/49450063/224354460-6dc45ecb-4774-43b5-aba5-d7b9f32c908f.mp4
+
+
 As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations. Using the methodology of [this](https://kwiatkowski.io/sync.soccer) article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
 
 After running the following command, the events are better synchronized to the tracking data:
@@ -66,7 +69,7 @@ After running the following command, the events are better synchronized to the t
 $ match.synchronise_tracking_and_event_data()
 ```
 
-
+https://user-images.githubusercontent.com/49450063/224354505-d9feece7-2ab4-4f97-a6d9-73461e6789a8.mp4
 
 
 ## Documentation
