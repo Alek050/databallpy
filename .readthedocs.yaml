@@ -28,9 +28,5 @@ python:
   install:
     - requirements: docs/requirements.txt
 
-env:
-  DOCKER_LIMITS: |
-    {"cpu": "2", "memory": "2g", "time": "600"}
-
   
 
