@@ -16,16 +16,13 @@ author = u"Alexander Oonk & Daan Grob"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "myst_nb",
+    "nbsphinx",
     "autoapi.extension",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
 ]
 autoapi_dirs = ["../databallpy"]
 
-read_the_docs_build_config = {
-    'timeout': 600,  # 10 minutes
-}
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
