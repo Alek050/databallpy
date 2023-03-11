@@ -14,7 +14,6 @@ build:
     # nodejs: "19"
     # rust: "1.64"
     # golang: "1.19"
-  max_execution_time: 600 # 10 minutes
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -28,6 +27,9 @@ sphinx:
 python:
   install:
     - requirements: docs/requirements.txt
+
+readthedocs_build:
+  timeout: 600
 
   
 
