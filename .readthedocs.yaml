@@ -28,8 +28,9 @@ python:
   install:
     - requirements: docs/requirements.txt
 
-readthedocs_build:
-  timeout: 600
+env:
+  DOCKER_LIMITS: |
+    {"cpu": "2", "memory": "2g", "time": "600"}
 
   
 
