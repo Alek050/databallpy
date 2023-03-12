@@ -51,17 +51,18 @@ $ match.tracking_data # pandas dataframe with tracking data of the match
 $ match.event_data # pandas dataframe with event data of the match
 ```
 
-See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/match/index.html) of the `Match` object for more options. Note that this package is developed to combine event and tracking data, therefore both datastreams are necessary to create a `Match` object.
+See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/match/index.html) of the `Match` object and the [example usage](https://databallpy.readthedocs.io/en/latest/example.html) for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Match` object.
 
 ## Synchronization of tracking and event data
 
-Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, and take the timing of the events to synchronize tracking and event data we get something like this:
+Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, you can sync the fist frame with the kick-off pass. Now you can sync the other events with the tracking data based on the time difference between the event and the kick off pass. If you do this, how get something like this:
 
+<video width="640" height="480" controls>
+  <source src="https://raw.githubusercontent.com/Alek050/databallpy/develop/docs/example_data/not_synced.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
-https://user-images.githubusercontent.com/49450063/224354460-6dc45ecb-4774-43b5-aba5-d7b9f32c908f.mp4
-
-
-As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations. Using the methodology of [this](https://kwiatkowski.io/sync.soccer) article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
+As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations, especially when events follow up quickly or around shots. Using the methodology of [this](https://kwiatkowski.io/sync.soccer) article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
 
 After running the following command, the events are better synchronized to the tracking data:
 
@@ -69,8 +70,10 @@ After running the following command, the events are better synchronized to the t
 $ match.synchronise_tracking_and_event_data()
 ```
 
-https://user-images.githubusercontent.com/49450063/224354505-d9feece7-2ab4-4f97-a6d9-73461e6789a8.mp4
-
+<video width="640" height="480" controls>
+  <source src="https://raw.githubusercontent.com/Alek050/databallpy/develop/docs/example_data/synced.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
 ## Documentation
 
