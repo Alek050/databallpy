@@ -16,6 +16,7 @@ build:
     # golang: "1.19"
   jobs:
     pre_create_environment:
+      - echo "sudo apt update && sudo apt upgrade"
       - echo "sudo apt install ffmpeg"
 
 # Build documentation in the docs/ directory with Sphinx
