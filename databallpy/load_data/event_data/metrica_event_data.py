@@ -88,7 +88,11 @@ def load_metrica_event_data(
 
 
 def load_metrica_open_event_data() -> Tuple[pd.DataFrame, Metadata]:
+    """Function to load the open event data of metrica
 
+    Returns:
+        Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
+    """
     metadata_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_metadata.xml"
     ed_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\

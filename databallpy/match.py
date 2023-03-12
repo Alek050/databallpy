@@ -333,7 +333,9 @@ the away team is {centroid_x}."
         else:
             raise ValueError(f"{player_id} is not in either one of the teams")
 
-    def synchronise_tracking_and_event_data(self, n_batches_per_half: int = 9):
+    def synchronise_tracking_and_event_data(
+        self, n_batches_per_half: int = 100, verbose: bool = True
+    ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
 
@@ -341,7 +343,9 @@ the away team is {centroid_x}."
             n_batches_per_half (int): the number of batches that are created per half.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits.
-            Default = 9
+            Default = 100
+            verbose (bool, optional): Wheter or not to print info about the progress
+            in the terminal. Defaults to True.
 
         Currently works for the following events:
             'pass', 'aerial', 'interception', 'ball recovery', 'dispossessed', 'tackle',
@@ -438,11 +442,15 @@ the away team is {centroid_x}."
             diff_datetime = datetime_first_event - datetime_first_tracking_frame
             event_data_period["datetime"] -= diff_datetime
 
-            print(f"Syncing period {p}...")
-            for end_batch_frame, end_batch_datetime in tqdm(
-                zip(end_batches_frames, end_batches_datetime),
-                total=len(end_batches_frames),
-            ):
+            if verbose:
+                print(f"Syncing period {p}...")
+                zip_batches = tqdm(
+                    zip(end_batches_frames, end_batches_datetime),
+                    total=len(end_batches_frames),
+                )
+            else:
+                zip_batches = zip(end_batches_frames, end_batches_datetime)
+            for end_batch_frame, end_batch_datetime in zip_batches:
 
                 tracking_batch = tracking_data_period[
                     (tracking_data_period["timestamp"] <= end_batch_frame)
@@ -742,12 +750,14 @@ def _needleman_wunsch(
     return event_frame_dict
 
 
-def get_open_match(provider: str = "metrica") -> Match:
+def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
     """Function to load a match object from an open datasource
 
     Args:
         provider (str, optional): What provider to get the open data from.
         Defaults to "metrica".
+        verbose (bool, optional): Whether or not to print info about progress
+        in the terminal, Defaults to True.
 
     Returns:
         Match: All information about the match
@@ -755,7 +765,7 @@ def get_open_match(provider: str = "metrica") -> Match:
     assert provider in ["metrica"]
 
     if provider == "metrica":
-        tracking_data, metadata = load_metrica_open_tracking_data()
+        tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
         event_data, _ = load_metrica_open_event_data()
 
     match = Match(
