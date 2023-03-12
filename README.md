@@ -58,7 +58,7 @@ See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/data
 Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, you can sync the fist frame with the kick-off pass. Now you can sync the other events with the tracking data based on the time difference between the event and the kick off pass. If you do this, how get something like this:
 
 <video width="640" height="480" controls>
-  <source src="https://raw.githubusercontent.com/Alek050/databallpy/develop/docs/example_data/not_synced.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/not_synced.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
@@ -71,7 +71,7 @@ $ match.synchronise_tracking_and_event_data()
 ```
 
 <video width="640" height="480" controls>
-  <source src="https://raw.githubusercontent.com/Alek050/databallpy/develop/docs/example_data/synced.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/synced.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
