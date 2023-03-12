@@ -14,9 +14,9 @@ build:
     # nodejs: "19"
     # rust: "1.64"
     # golang: "1.19"
-  steps:
-      - name: setup ffmpeg
-      uses: FedericoCarboni/setup-ffmpeg@v2
+  jobs:
+    pre_create_environment:
+      - FedericoCarboni/setup-ffmpeg@v2
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
