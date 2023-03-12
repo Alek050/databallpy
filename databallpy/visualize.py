@@ -347,7 +347,7 @@ def save_match_clip(
     pitch_color: str = "mediumseagreen",
     events: list = [],
     variable_of_interest: pd.Series = None,
-    verbose: bool = True,
+    verbose: bool = True
 ):
     """Function to save a subset of a match clip of the tracking data.
 
@@ -367,7 +367,7 @@ def save_match_clip(
         variable_of_interest (pd.Series, optional): Variable you want to have plotted
         in the clip, this is a pd.Series that should have the same index
         (start_idx:end_idx) as the tracking data that will be plotted. Defaults to None.
-        verbose (bool, optional): Whether or not to print info in the terminal on the
+        verbose (bool, optional): Whether or not to print info in the terminal on the 
         progress
     """
 

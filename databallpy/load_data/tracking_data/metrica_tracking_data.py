@@ -96,6 +96,7 @@ def load_metrica_open_tracking_data(
 
     print("Downloading Metrica open tracking data...", end="")
     td_data = io.StringIO(requests.get(td_data_link).text)
+    
     td_metadata = requests.get(td_metadata_link).text
     print(" Done!")
     return load_metrica_tracking_data(

@@ -348,14 +348,15 @@ the away team is {centroid_x}."
             in the terminal. Defaults to True.
 
         Currently works for the following events:
-            'pass', 'aerial', 'interception', 'ball recovery', 'dispossessed', 'tackle',
-            'take on', 'clearance', 'blocked pass', 'offside pass', 'attempt saved',
-            'save', 'foul', 'miss', 'challenge', 'goal'
+            'pass', 'aerial', 'carry' 'interception', 'ball recovery', 'dispossessed',
+            'tackle', 'take on', 'clearance', 'blocked pass', 'offside pass', 
+            'attempt saved', 'save', 'foul', 'miss', 'challenge', 'goal', 'shot'
 
         """
         events_to_sync = [
             "pass",
             "aerial",
+            "carry",
             "interception",
             "ball recovery",
             "dispossessed",
@@ -370,6 +371,7 @@ the away team is {centroid_x}."
             "miss",
             "challenge",
             "goal",
+            "shot",
         ]
 
         tracking_data = self.tracking_data
