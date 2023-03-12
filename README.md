@@ -58,8 +58,10 @@ See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/data
 Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, and take the timing of the events to synchronize tracking and event data we get something like this:
 git
 
-[![Not synced tracking and events](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://user-images.githubusercontent.com/49450063/224354460-6dc45ecb-4774-43b5-aba5-d7b9f32c908f.mp4)
-
+<video width="320" height="240" controls>
+  <source src="https://user-images.githubusercontent.com/49450063/224354460-6dc45ecb-4774-43b5-aba5-d7b9f32c908f.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
 As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations. Using the methodology of [this](https://kwiatkowski.io/sync.soccer) article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
 
