@@ -442,7 +442,6 @@ the away team is {centroid_x}."
             diff_datetime = datetime_first_event - datetime_first_tracking_frame
             event_data_period["datetime"] -= diff_datetime
 
-<<<<<<< HEAD
             if verbose:
                 print(f"Syncing period {p}...")
                 zip_batches = tqdm(
@@ -452,13 +451,6 @@ the away team is {centroid_x}."
             else:
                 zip_batches = zip(end_batches_frames, end_batches_datetime)
             for end_batch_frame, end_batch_datetime in zip_batches:
-=======
-            print(f"Syncing period {p}...")
-            for end_batch_frame, end_batch_datetime in tqdm(
-                zip(end_batches_frames, end_batches_datetime),
-                total=len(end_batches_frames),
-            ):
->>>>>>> main
 
                 tracking_batch = tracking_data_period[
                     (tracking_data_period["timestamp"] <= end_batch_frame)
@@ -758,21 +750,14 @@ def _needleman_wunsch(
     return event_frame_dict
 
 
-<<<<<<< HEAD
 def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
-=======
-def get_open_match(provider: str = "metrica") -> Match:
->>>>>>> main
     """Function to load a match object from an open datasource
 
     Args:
         provider (str, optional): What provider to get the open data from.
         Defaults to "metrica".
-<<<<<<< HEAD
         verbose (bool, optional): Whether or not to print info about progress
         in the terminal, Defaults to True.
-=======
->>>>>>> main
 
     Returns:
         Match: All information about the match
@@ -780,11 +765,7 @@ def get_open_match(provider: str = "metrica") -> Match:
     assert provider in ["metrica"]
 
     if provider == "metrica":
-<<<<<<< HEAD
         tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
-=======
-        tracking_data, metadata = load_metrica_open_tracking_data()
->>>>>>> main
         event_data, _ = load_metrica_open_event_data()
 
     match = Match(
