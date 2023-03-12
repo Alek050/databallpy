@@ -55,15 +55,14 @@ See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/data
 
 ## Synchronization of tracking and event data
 
-Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, and take the timing of the events to synchronize tracking and event data we get something like this:
-git
+Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, you can sync the fist frame with the kick-off pass. Now you can sync the other events with the tracking data based on the time difference between the event and the kick off pass. If you do this, how get something like this:
 
 <video width="640" height="480" controls>
   <source src="https://user-images.githubusercontent.com/49450063/224354460-6dc45ecb-4774-43b5-aba5-d7b9f32c908f.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
-As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations. Using the methodology of [this](https://kwiatkowski.io/sync.soccer) article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
+As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations, especially when events follow up quickly or around shots. Using the methodology of [this](https://kwiatkowski.io/sync.soccer) article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
 
 After running the following command, the events are better synchronized to the tracking data:
 
