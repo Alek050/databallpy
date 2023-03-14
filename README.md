@@ -62,6 +62,9 @@ Tracking and event data is often poorly synchronized. For instance, when taking 
   Your browser does not support the video tag.
 </video>
 
+https://user-images.githubusercontent.com/49450063/224564808-fa71735f-5510-464d-8499-9044227a02e8.mp4
+
+
 As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations, especially when events follow up quickly or around shots. Using the methodology of [this](https://kwiatkowski.io/sync.soccer) article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
 
 After running the following command, the events are better synchronized to the tracking data:
@@ -74,6 +77,10 @@ $ match.synchronise_tracking_and_event_data()
   <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/synced.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
+
+
+https://user-images.githubusercontent.com/49450063/224564913-4091faf7-f6ef-4429-b132-7f93ce5e1d91.mp4
+
 
 ## Documentation
 
