@@ -29,6 +29,14 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
 
+    channelIdToPlayerIdDict = {}
+    for player in soup.find_all("PlayerChannel"):
+        channel_id = player.attrs["id"].split("_")[0]
+        value = player.attrs["id"].split("_")[1]
+        if "y" in value:
+            continue
+        channelIdToPlayerIdDict[channel_id] = int(player.attrs["playerId"][1:])
+
     res = {"start": [], "end": [], "ids": []}
     for idx, data_format_specification in enumerate(
         soup.find_all("DataFormatSpecification")
@@ -37,28 +45,19 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
         res["start"].append(int(data_format_specification.attrs["startFrame"]))
         res["end"].append(int(data_format_specification.attrs["endFrame"]))
         for channel in data_format_specification.findChildren("PlayerChannelRef"):
-            full_name = channel.attrs["playerChannelId"].split("_")[0]
+            channelId = channel.attrs["playerChannelId"].split("_")[0]
             value = channel.attrs["playerChannelId"].split("_")[1]
             if "y" in value:
                 continue
-            home_mask = (
-                metadata.home_players["full_name"]
-                .str.lower()
-                .str.replace(" ", "")
-                .isin([full_name])
-            )
-            away_mask = (
-                metadata.away_players["full_name"]
-                .str.lower()
-                .str.replace(" ", "")
-                .isin([full_name])
-            )
+            playerId = channelIdToPlayerIdDict[channelId]
+            home_mask = metadata.home_players["id"] == playerId
+            away_mask = metadata.away_players["id"] == playerId
             if home_mask.any():
                 team = "home"
-                shirt_num = metadata.home_players.loc[home_mask, "shirt_num"].iloc[0]
+                shirt_num = metadata.home_players.loc[home_mask, "shirt_num"].values[0]
             else:
                 team = "away"
-                shirt_num = metadata.away_players.loc[away_mask, "shirt_num"].iloc[0]
+                shirt_num = metadata.away_players.loc[away_mask, "shirt_num"].values[0]
             res["ids"][idx].append(f"{team}_{shirt_num}")
     return pd.DataFrame(res)
 

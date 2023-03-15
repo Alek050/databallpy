@@ -217,10 +217,10 @@ TD_METRICA = pd.DataFrame(
         "ball_z": [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
         "ball_status": ["dead", "alive", "alive", np.nan, "dead", "alive"],
         "ball_posession": [None, None, None, None, None, None],
-        "home_1_x": [0, 30, 20, np.nan, np.nan, np.nan],
-        "home_1_y": [0, 0, -5, np.nan, np.nan, np.nan],
-        "home_11_x": [-40, -30, -20, np.nan, -10, 0],
-        "home_11_y": [5, 0, -5, np.nan, 0, -20],
+        "home_11_x": [0, 30, 20, np.nan, np.nan, np.nan],
+        "home_11_y": [0, 0, -5, np.nan, np.nan, np.nan],
+        "home_1_x": [-40, -30, -20, np.nan, -10, 0],
+        "home_1_y": [5, 0, -5, np.nan, 0, -20],
         "away_34_x": [20, -10, 0, np.nan, 0, 20],
         "away_34_y": [-5, 20, 10, np.nan, 5, 0],
         "away_35_x": [np.nan, np.nan, np.nan, np.nan, 10, 20],
@@ -315,8 +315,8 @@ TD_CHANNELS_METRICA = pd.DataFrame(
         "start": [1, 5],
         "end": [3, 6],
         "ids": [
-            ["home_1", "home_11", "away_34"],
-            ["home_11", "away_34", "away_35"],
+            ["home_11", "home_1", "away_34"],
+            ["home_1", "away_34", "away_35"],
         ],
     }
 )

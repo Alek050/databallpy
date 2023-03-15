@@ -198,8 +198,8 @@
     <PlayerChannels>
       <PlayerChannel channelId="x" id="player1_x" playerId="P3578"/>
       <PlayerChannel channelId="y" id="player1_y" playerId="P3578"/>
-      <PlayerChannel channelId="x" id="player11_x" playerId="P3577"/>
-      <PlayerChannel channelId="y" id="player11_y" playerId="P3577"/>
+      <PlayerChannel channelId="x" id="player11_x" playerId="P3568"/>
+      <PlayerChannel channelId="y" id="player11_y" playerId="P3568"/>
       <PlayerChannel channelId="x" id="player34_x" playerId="P3699"/>
       <PlayerChannel channelId="y" id="player34_y" playerId="P3699"/>
       <PlayerChannel channelId="x" id="player35_x" playerId="P3700"/>
