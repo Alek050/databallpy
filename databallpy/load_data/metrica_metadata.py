@@ -29,13 +29,13 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
 
-    channelIdToPlayerIdDict = {}
+    channel_id_to_player_id_dict = {}
     for player in soup.find_all("PlayerChannel"):
         channel_id = player.attrs["id"].split("_")[0]
         value = player.attrs["id"].split("_")[1]
         if "y" in value:
             continue
-        channelIdToPlayerIdDict[channel_id] = int(player.attrs["playerId"][1:])
+        channel_id_to_player_id_dict[channel_id] = int(player.attrs["playerId"][1:])
 
     res = {"start": [], "end": [], "ids": []}
     for idx, data_format_specification in enumerate(
@@ -49,7 +49,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
             value = channel.attrs["playerChannelId"].split("_")[1]
             if "y" in value:
                 continue
-            playerId = channelIdToPlayerIdDict[channelId]
+            playerId = channel_id_to_player_id_dict[channelId]
             home_mask = metadata.home_players["id"] == playerId
             away_mask = metadata.away_players["id"] == playerId
             if home_mask.any():

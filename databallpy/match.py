@@ -334,7 +334,7 @@ the away team is {centroid_x}."
             raise ValueError(f"{player_id} is not in either one of the teams")
 
     def synchronise_tracking_and_event_data(
-        self, n_batches_per_half: int = 9, verbose: bool = True
+        self, n_batches_per_half: int = 100, verbose: bool = True
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
