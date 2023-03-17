@@ -45,13 +45,13 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
         res["start"].append(int(data_format_specification.attrs["startFrame"]))
         res["end"].append(int(data_format_specification.attrs["endFrame"]))
         for channel in data_format_specification.findChildren("PlayerChannelRef"):
-            channelId = channel.attrs["playerChannelId"].split("_")[0]
+            channel_id = channel.attrs["playerChannelId"].split("_")[0]
             value = channel.attrs["playerChannelId"].split("_")[1]
             if "y" in value:
                 continue
-            playerId = channel_id_to_player_id_dict[channelId]
-            home_mask = metadata.home_players["id"] == playerId
-            away_mask = metadata.away_players["id"] == playerId
+            player_id = channel_id_to_player_id_dict[channel_id]
+            home_mask = metadata.home_players["id"] == player_id
+            away_mask = metadata.away_players["id"] == player_id
             if home_mask.any():
                 team = "home"
                 shirt_num = metadata.home_players.loc[home_mask, "shirt_num"].values[0]
