@@ -172,6 +172,19 @@ class TestMatch(unittest.TestCase):
         assert self.expected_match_metrica == self.expected_match_metrica
         assert self.expected_match_metrica != self.expected_match_tracab_opta
 
+    def test_match_copy(self):
+        copied = self.expected_match_tracab_opta.copy()
+        assert self.expected_match_tracab_opta == copied
+
+        copied.pitch_dimensions[0] = 22.0
+        assert self.expected_match_tracab_opta != copied
+
+        copied.pitch_dimensions[0] = self.expected_match_tracab_opta.pitch_dimensions[0]
+        assert self.expected_match_tracab_opta == copied
+
+        copied.tracking_data.iloc[0, 0] = "wrong input"
+        assert self.expected_match_tracab_opta != copied
+
     def test_match_post_init(self):
 
         # tracking data

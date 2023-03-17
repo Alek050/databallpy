@@ -513,6 +513,28 @@ the away team is {centroid_x}."
         else:
             return False
 
+    def copy(self):
+        """Function to return a copy of the current match object"""
+        return Match(
+            tracking_data=self.tracking_data.copy(),
+            tracking_data_provider=self.tracking_data_provider,
+            event_data=self.event_data.copy(),
+            event_data_provider=self.event_data_provider,
+            pitch_dimensions=list(self.pitch_dimensions),
+            periods=self.periods.copy(),
+            frame_rate=self.frame_rate,
+            home_team_id=self.home_team_id,
+            home_formation=self.home_formation,
+            home_score=self.home_score,
+            home_team_name=self.home_team_name,
+            home_players=self.home_players.copy(),
+            away_team_id=self.away_team_id,
+            away_formation=self.away_formation,
+            away_score=self.away_score,
+            away_team_name=self.away_team_name,
+            away_players=self.away_players.copy(),
+        )
+
 
 def get_match(
     *,
