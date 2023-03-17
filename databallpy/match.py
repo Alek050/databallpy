@@ -438,7 +438,9 @@ the away team is {centroid_x}."
             datetime_first_event = event_data_period[
                 event_data_period["event"].isin(start_events)
             ].iloc[0]["datetime"]
-            datetime_first_tracking_frame = tracking_data_period.iloc[0]["datetime"]
+            datetime_first_tracking_frame = tracking_data_period[
+                tracking_data_period["ball_status"] == "alive"
+            ].iloc[0]["datetime"]
             diff_datetime = datetime_first_event - datetime_first_tracking_frame
             event_data_period["datetime"] -= diff_datetime
 
@@ -479,6 +481,7 @@ the away team is {centroid_x}."
                 start_batch_datetime = event_data_period[
                     event_data_period["event_id"] == event_id
                 ]["datetime"].iloc[0]
+
         tracking_data.drop("datetime", axis=1, inplace=True)
         self.tracking_data = tracking_data
         self.event_data = event_data

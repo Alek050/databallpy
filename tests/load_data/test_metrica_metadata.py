@@ -73,8 +73,8 @@ class TestMetricaMetadata(unittest.TestCase):
                 "start": [1, 4],
                 "end": [3, 6],
                 "ids": [
-                    ["home_1", "home_11", "away_34"],
-                    ["home_11", "away_34", "away_35"],
+                    ["home_11", "home_1", "away_34"],
+                    ["home_1", "away_34", "away_35"],
                 ],
             }
         )
