@@ -12,14 +12,14 @@ class TestMetadata(unittest.TestCase):
         self.periods_frames = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_datetime_opta": [
+                "start_datetime_ed": [
                     pd.to_datetime("2023-01-22T12:18:32.000"),
                     pd.to_datetime("2023-01-22T13:21:13.000"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
-                "end_datetime_opta": [
+                "end_datetime_ed": [
                     pd.to_datetime("2023-01-22T13:04:32.000"),
                     pd.to_datetime("2023-01-22T14:09:58.000"),
                     pd.to_datetime("NaT"),
@@ -76,6 +76,7 @@ class TestMetadata(unittest.TestCase):
         )
         assert metadata1 == metadata1
         assert metadata1 != metadata2
+        assert metadata1 != "metadata"
 
     def test_metadata_post_init(self):
         # match id

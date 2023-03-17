@@ -7,7 +7,7 @@ from databallpy.load_data.metadata import Metadata
 
 TD_TRACAB = pd.DataFrame(
     {
-        "timestamp": [1509993, 1509994, 1509995, 1509996, 1509997],
+        "frame": [1509993, 1509994, 1509995, 1509996, 1509997],
         "ball_x": [1.50, 1.81, 2.13, np.nan, 2.76],
         "ball_y": [-0.43, -0.49, -0.56, np.nan, -0.70],
         "ball_z": [0.07, 0.09, 0.11, np.nan, 0.15],
@@ -37,7 +37,7 @@ MD_TRACAB = Metadata(
             "period": [1, 2, 3, 4, 5],
             "start_frame": [1509993, 1509996, -999, -999, -999],
             "end_frame": [1509994, 1509997, -999, -999, -999],
-            "start_time_td": [
+            "start_datetime_td": [
                 pd.to_datetime("2023-01-14")
                 + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
                 pd.to_datetime("2023-01-14")
@@ -46,7 +46,7 @@ MD_TRACAB = Metadata(
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
-            "end_time_td": [
+            "end_datetime_td": [
                 pd.to_datetime("2023-01-14")
                 + dt.timedelta(milliseconds=int((1509994 / 25) * 1000)),
                 pd.to_datetime("2023-01-14")
@@ -163,14 +163,14 @@ MD_OPTA = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_datetime_opta": [
+            "start_datetime_ed": [
                 pd.to_datetime("2023-01-22T12:18:32.000"),
                 pd.to_datetime("2023-01-22T13:21:13.000"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
-            "end_datetime_opta": [
+            "end_datetime_ed": [
                 pd.to_datetime("2023-01-22T13:04:32.000"),
                 pd.to_datetime("2023-01-22T14:09:58.000"),
                 pd.to_datetime("NaT"),
@@ -211,7 +211,7 @@ MD_OPTA = Metadata(
 )
 TD_METRICA = pd.DataFrame(
     {
-        "timestamp": [1, 2, 3, 4, 5, 6],
+        "frame": [1, 2, 3, 4, 5, 6],
         "ball_x": [np.nan, 0, 40, np.nan, np.nan, -40],
         "ball_y": [np.nan, 0, -20, np.nan, np.nan, 20],
         "ball_z": [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
@@ -256,7 +256,7 @@ ED_METRICA = pd.DataFrame(
         ],
     }
 )
-MD_METRICA = Metadata(
+MD_METRICA_TD = Metadata(
     match_id=9999,
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
@@ -264,14 +264,14 @@ MD_METRICA = Metadata(
             "period": [1, 2, 3, 4, 5],
             "start_frame": [1, 4, -999, -999, -999],
             "end_frame": [3, 6, -999, -999, -999],
-            "start_time_td": [
+            "start_datetime_td": [
                 pd.to_datetime("2019-02-21T03:30:07.000"),
                 pd.to_datetime("2019-02-21T03:30:08.500"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
-            "end_time_td": [
+            "end_datetime_td": [
                 pd.to_datetime("2019-02-21T03:30:08.000"),
                 pd.to_datetime("2019-02-21T03:30:09.500"),
                 pd.to_datetime("NaT"),
@@ -310,6 +310,63 @@ MD_METRICA = Metadata(
     away_formation="0001",
     away_score=2,
 )
+
+
+MD_METRICA_ED = Metadata(
+    match_id=9999,
+    pitch_dimensions=[100.0, 50.0],
+    periods_frames=pd.DataFrame(
+        {
+            "period": [1, 2, 3, 4, 5],
+            "start_frame": [1, 4, -999, -999, -999],
+            "end_frame": [3, 6, -999, -999, -999],
+            "start_datetime_ed": [
+                pd.to_datetime("2019-02-21T03:30:07.000"),
+                pd.to_datetime("2019-02-21T03:30:08.500"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+            "end_datetime_ed": [
+                pd.to_datetime("2019-02-21T03:30:08.000"),
+                pd.to_datetime("2019-02-21T03:30:09.500"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+        }
+    ),
+    frame_rate=2,
+    home_team_id="FIFATMA",
+    home_team_name="Team A",
+    home_players=pd.DataFrame(
+        {
+            "id": [3578, 3568],
+            "full_name": ["Player 11", "Player 1"],
+            "formation_place": [0, 1],
+            "position": ["Goalkeeper", "Right Back"],
+            "starter": [True, True],
+            "shirt_num": [11, 1],
+        }
+    ),
+    home_formation="1100",
+    home_score=0,
+    away_team_id="FIFATMB",
+    away_team_name="Team B",
+    away_players=pd.DataFrame(
+        {
+            "id": [3699, 3700],
+            "full_name": ["Player 34", "Player 35"],
+            "formation_place": [3, 1],
+            "position": ["Left Forward (2)", "Left Back"],
+            "starter": [True, False],
+            "shirt_num": [34, 35],
+        }
+    ),
+    away_formation="0001",
+    away_score=2,
+)
+
 TD_CHANNELS_METRICA = pd.DataFrame(
     {
         "start": [1, 5],

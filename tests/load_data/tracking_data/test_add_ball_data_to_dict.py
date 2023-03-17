@@ -16,7 +16,7 @@ class TestAddBallDataToDict(unittest.TestCase):
         ]
 
         self.expected_dict = {
-            "timestamp": [0, 1, 2],
+            "frame": [0, 1, 2],
             "ball_x": [150.0, 22.0, 124.0],
             "ball_y": [-46.0, 17.0, np.nan],
             "ball_z": [7.0, 15.0, 7.0],
@@ -26,7 +26,7 @@ class TestAddBallDataToDict(unittest.TestCase):
 
     def test_add_ball_data_to_dict(self):
         data = {
-            "timestamp": [np.nan] * 3,
+            "frame": [np.nan] * 3,
             "ball_x": [np.nan] * 3,
             "ball_y": [np.nan] * 3,
             "ball_z": [np.nan] * 3,
@@ -35,7 +35,7 @@ class TestAddBallDataToDict(unittest.TestCase):
         }
 
         for i, input in enumerate(self.ball_info):
-            data["timestamp"][i] = int(i)
+            data["frame"][i] = int(i)
             ball_x, ball_y, ball_z, ball_posession, ball_status = input
             data = _add_ball_data_to_dict(
                 ball_x, ball_y, ball_z, ball_posession, ball_status.lower(), data, i

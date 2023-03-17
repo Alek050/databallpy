@@ -77,7 +77,7 @@ class Match:
             raise TypeError(
                 f"tracking data should be a pandas df, not a {type(self.tracking_data)}"
             )
-        for col in ["timestamp", "ball_x", "ball_y"]:
+        for col in ["frame", "ball_x", "ball_y"]:
             if col not in self.tracking_data.columns.to_list():
                 raise ValueError(
                     f"No {col} in tracking_data columns, this is manditory!"
@@ -253,12 +253,9 @@ class Match:
         # check for direction of play
         for _, period_row in self.periods.iterrows():
             frame = period_row["start_frame"]
-            if (
-                len(self.tracking_data[self.tracking_data["timestamp"] == frame].index)
-                == 0
-            ):
+            if len(self.tracking_data[self.tracking_data["frame"] == frame].index) == 0:
                 continue
-            idx = self.tracking_data[self.tracking_data["timestamp"] == frame].index[0]
+            idx = self.tracking_data[self.tracking_data["frame"] == frame].index[0]
             period = period_row["period"]
             home_x = [x for x in self.home_players_column_ids if "_x" in x]
             away_x = [x for x in self.away_players_column_ids if "_x" in x]
@@ -282,7 +279,19 @@ the away team is {centroid_x}."
     def name(self) -> str:
         home_text = f"{self.home_team_name} {self.home_score}"
         away_text = f"{self.away_score} {self.away_team_name}"
-        return f"{home_text} - {away_text}"
+        if "start_datetime_td" in self.periods.columns:
+            date = str(
+                self.periods.loc[self.periods["period"] == 1, "start_datetime_td"].iloc[
+                    0
+                ]
+            )[:19]
+        else:
+            date = str(
+                self.periods.loc[self.periods["period"] == 1, "start_datetime_ed"].iloc[
+                    0
+                ]
+            )[:19]
+        return f"{home_text} - {away_text} {date}"
 
     @property
     def home_players_column_ids(self) -> List[str]:
@@ -378,7 +387,7 @@ the away team is {centroid_x}."
         start_datetime_period = {}
         start_frame_period = {}
         for _, row in self.periods.iterrows():
-            start_datetime_period[row["period"]] = row["start_time_td"]
+            start_datetime_period[row["period"]] = row["start_datetime_td"]
             start_frame_period[row["period"]] = row["start_frame"]
 
         tracking_data["datetime"] = [
@@ -388,7 +397,7 @@ the away team is {centroid_x}."
             )
             if p > 0
             else pd.to_datetime("NaT")
-            for x, p in zip(tracking_data["timestamp"], tracking_data["period"])
+            for x, p in zip(tracking_data["frame"], tracking_data["period"])
         ]
 
         tracking_data["event"] = np.nan
@@ -455,8 +464,8 @@ the away team is {centroid_x}."
             for end_batch_frame, end_batch_datetime in zip_batches:
 
                 tracking_batch = tracking_data_period[
-                    (tracking_data_period["timestamp"] <= end_batch_frame)
-                    & (tracking_data_period["timestamp"] >= start_batch_frame)
+                    (tracking_data_period["frame"] <= end_batch_frame)
+                    & (tracking_data_period["frame"] >= start_batch_frame)
                 ].reset_index(drop=False)
                 event_batch = event_data_period[
                     (event_data_period["datetime"] >= start_batch_datetime)
@@ -475,9 +484,7 @@ the away team is {centroid_x}."
                     tracking_data.loc[tracking_frame, "event_id"] = event_id
                     event_data.loc[event_index, "tracking_frame"] = tracking_frame
 
-                start_batch_frame = tracking_data_period.loc[
-                    tracking_frame, "timestamp"
-                ]
+                start_batch_frame = tracking_data_period.loc[tracking_frame, "frame"]
                 start_batch_datetime = event_data_period[
                     event_data_period["event_id"] == event_id
                 ]["datetime"].iloc[0]
@@ -508,7 +515,8 @@ the away team is {centroid_x}."
                 self.away_players.equals(other.away_players),
                 self.away_score == other.away_score,
             ]
-
+            # if not all(res):
+            #     import pdb; pdb.set_trace()
             return all(res)
         else:
             return False
@@ -600,33 +608,30 @@ def get_match(
         event_data["start_x"] *= x_correction
         event_data["start_y"] *= y_correction
 
-    if tracking_data_provider == event_data_provider == "metrica":
-        merged_periods = tracking_metadata.periods_frames
-        home_players = tracking_metadata.home_players
-        away_players = tracking_metadata.away_players
-    else:
-        # Merge periods
-        merged_periods = pd.concat(
-            (
-                tracking_metadata.periods_frames,
-                event_metadata.periods_frames.drop("period", axis=1),
-            ),
-            axis=1,
-        )
+    # Merge periods
+    periods_cols = event_metadata.periods_frames.columns.difference(
+        tracking_metadata.periods_frames.columns
+    ).to_list()
+    periods_cols.sort(reverse=True)
+    merged_periods = pd.concat(
+        (
+            tracking_metadata.periods_frames,
+            event_metadata.periods_frames[periods_cols],
+        ),
+        axis=1,
+    )
 
-        # Merged player info
-        home_players = tracking_metadata.home_players.merge(
-            event_metadata.home_players[
-                ["id", "formation_place", "position", "starter"]
-            ],
-            on="id",
-        )
-        away_players = tracking_metadata.away_players.merge(
-            event_metadata.away_players[
-                ["id", "formation_place", "position", "starter"]
-            ],
-            on="id",
-        )
+    # Merged player info
+    player_cols = event_metadata.home_players.columns.difference(
+        tracking_metadata.home_players.columns
+    ).to_list()
+    player_cols.append("id")
+    home_players = tracking_metadata.home_players.merge(
+        event_metadata.home_players[player_cols], on="id"
+    )
+    away_players = tracking_metadata.away_players.merge(
+        event_metadata.away_players[player_cols], on="id"
+    )
 
     match = Match(
         tracking_data=tracking_data,
@@ -791,7 +796,19 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
 
     if provider == "metrica":
         tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
-        event_data, _ = load_metrica_open_event_data()
+        event_data, ed_metadata = load_metrica_open_event_data()
+
+    periods_cols = ed_metadata.periods_frames.columns.difference(
+        metadata.periods_frames.columns
+    ).to_list()
+    periods_cols.sort(reverse=True)
+    merged_periods = pd.concat(
+        (
+            metadata.periods_frames,
+            ed_metadata.periods_frames[periods_cols],
+        ),
+        axis=1,
+    )
 
     match = Match(
         tracking_data=tracking_data,
@@ -799,7 +816,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         event_data=event_data,
         event_data_provider=provider,
         pitch_dimensions=metadata.pitch_dimensions,
-        periods=metadata.periods_frames,
+        periods=merged_periods,
         frame_rate=metadata.frame_rate,
         home_team_id=metadata.home_team_id,
         home_formation=metadata.home_formation,
