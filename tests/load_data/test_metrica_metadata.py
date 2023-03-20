@@ -22,14 +22,14 @@ class TestMetricaMetadata(unittest.TestCase):
                     "period": [1, 2, 3, 4, 5],
                     "start_frame": [1, 4, -999, -999, -999],
                     "end_frame": [3, 6, -999, -999, -999],
-                    "start_time_td": [
+                    "start_datetime_td": [
                         pd.to_datetime("2019-02-21T03:30:07.000"),
                         pd.to_datetime("2019-02-21T03:30:08.500"),
                         pd.to_datetime("NaT"),
                         pd.to_datetime("NaT"),
                         pd.to_datetime("NaT"),
                     ],
-                    "end_time_td": [
+                    "end_datetime_td": [
                         pd.to_datetime("2019-02-21T03:30:08.000"),
                         pd.to_datetime("2019-02-21T03:30:09.500"),
                         pd.to_datetime("NaT"),

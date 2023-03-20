@@ -42,10 +42,10 @@ def load_tracab_tracking_data(
     metadata = _get_metadata(metadata_loc)
 
     tracking_data["period"] = _add_periods_to_tracking_data(
-        tracking_data["timestamp"], metadata.periods_frames
+        tracking_data["frame"], metadata.periods_frames
     )
     tracking_data["matchtime_td"] = _get_matchtime(
-        tracking_data["timestamp"], tracking_data["period"], metadata
+        tracking_data["frame"], tracking_data["period"], metadata
     )
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
@@ -77,7 +77,7 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     size_lines = len(lines)
 
     data = {
-        "timestamp": [np.nan] * size_lines,
+        "frame": [np.nan] * size_lines,
         "ball_x": [np.nan] * size_lines,
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
@@ -91,8 +91,8 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
 
     for idx, line in enumerate(lines):
 
-        timestamp, players_info, ball_info, _ = line.split(":")
-        data["timestamp"][idx] = int(timestamp)
+        frame, players_info, ball_info, _ = line.split(":")
+        data["frame"][idx] = int(frame)
 
         players = players_info.split(";")[:-1]
         for player in players:
@@ -118,7 +118,7 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         if "_x" in col or "_y" in col or "_z" in col:
             df[col] = np.round(df[col] / 100, 3)  # change cm to m
 
-    df = _insert_missing_rows(df, "timestamp")
+    df = _insert_missing_rows(df, "frame")
 
     return df
 
@@ -149,8 +149,8 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         "period": [],
         "start_frame": [],
         "end_frame": [],
-        "start_time_td": [],
-        "end_time_td": [],
+        "start_datetime_td": [],
+        "end_datetime_td": [],
     }
     for _, period in enumerate(soup.find_all("period")):
         frames_dict["period"].append(int(period["iId"]))
@@ -160,17 +160,17 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         if start_frame != 0:
             frames_dict["start_frame"].append(start_frame)
             frames_dict["end_frame"].append(end_frame)
-            frames_dict["start_time_td"].append(
+            frames_dict["start_datetime_td"].append(
                 date + dt.timedelta(milliseconds=int((start_frame / frame_rate) * 1000))
             )
-            frames_dict["end_time_td"].append(
+            frames_dict["end_datetime_td"].append(
                 date + dt.timedelta(milliseconds=int((end_frame / frame_rate) * 1000))
             )
         else:
             frames_dict["start_frame"].append(-999)
             frames_dict["end_frame"].append(-999)
-            frames_dict["start_time_td"].append(pd.to_datetime("NaT"))
-            frames_dict["end_time_td"].append(pd.to_datetime("NaT"))
+            frames_dict["start_datetime_td"].append(pd.to_datetime("NaT"))
+            frames_dict["end_datetime_td"].append(pd.to_datetime("NaT"))
     df_frames = pd.DataFrame(frames_dict)
 
     home_team = soup.find("HomeTeam")

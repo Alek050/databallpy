@@ -8,7 +8,7 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
 )
-from tests.expected_outcomes import MD_METRICA, TD_CHANNELS_METRICA, TD_METRICA
+from tests.expected_outcomes import MD_METRICA_TD, TD_CHANNELS_METRICA, TD_METRICA
 from tests.mocks import MD_METRICA_RAW, TD_METRICA_RAW
 
 
@@ -30,7 +30,10 @@ class TestMetricaTrackingData(unittest.TestCase):
             self.td_loc, self.md_loc, verbose=False
         )
         pd.testing.assert_frame_equal(res_td, TD_METRICA)
-        assert res_md == MD_METRICA
+        pd.testing.assert_frame_equal(
+            res_md.periods_frames, MD_METRICA_TD.periods_frames
+        )
+        assert res_md == MD_METRICA_TD
 
         with self.assertRaises(TypeError):
             load_metrica_tracking_data(22, self.md_loc, verbose=False)
@@ -45,5 +48,5 @@ class TestMetricaTrackingData(unittest.TestCase):
     )
     def test_load_metrica_open_tracking_data(self, _):
         td, md = load_metrica_open_tracking_data()
-        assert md == MD_METRICA
+        assert md == MD_METRICA_TD
         pd.testing.assert_frame_equal(td, TD_METRICA)

@@ -11,7 +11,7 @@ class TestNormalizePlayingDirection(unittest.TestCase):
     def setUp(self) -> None:
         self.td = pd.DataFrame(
             {
-                "timestamp": [10, 11, 12, 13, 14, 15],
+                "frame": [10, 11, 12, 13, 14, 15],
                 "ball_x": [0, 1, 2, 3, 4, 5],
                 "ball_y": [0, -1, 2, 33, -13, 12],
                 "home_1_x": [-5, -4, 22, 21, -6, 7],
@@ -36,7 +36,7 @@ class TestNormalizePlayingDirection(unittest.TestCase):
     def test_normalize_playing_direction(self):
         expected = pd.DataFrame(
             {
-                "timestamp": [10, 11, 12, 13, 14, 15],
+                "frame": [10, 11, 12, 13, 14, 15],
                 "ball_x": [0, 1, -2, -3, 4, 5],
                 "ball_y": [0, -1, -2, -33, -13, 12],
                 "home_1_x": [-5, -4, -22, -21, -6, 7],

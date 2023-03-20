@@ -20,10 +20,10 @@ def _normalize_playing_direction_tracking(
     home_x = [x for x in td.columns if "_x" in x and "home" in x]
     all_x_y = [x for x in td.columns if "_x" in x or "_y" in x]
     for _, period_row in periods.iterrows():
-        if len(td[td["timestamp"] == period_row["start_frame"]].index) > 0:
+        if len(td[td["frame"] == period_row["start_frame"]].index) > 0:
 
-            idx_start = td[td["timestamp"] == period_row["start_frame"]].index[0]
-            idx_end = td[td["timestamp"] == period_row["end_frame"]].index[0]
+            idx_start = td[td["frame"] == period_row["start_frame"]].index[0]
+            idx_end = td[td["frame"] == period_row["end_frame"]].index[0]
 
             if td.loc[idx_start, home_x].mean() > 0:
                 td.loc[idx_start:idx_end, all_x_y] *= -1

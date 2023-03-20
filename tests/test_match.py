@@ -49,7 +49,7 @@ class TestMatch(unittest.TestCase):
                 "period": [1, 2, 3, 4, 5],
                 "start_frame": [1509993, 1509996, -999, -999, -999],
                 "end_frame": [1509994, 1509997, -999, -999, -999],
-                "start_time_td": [
+                "start_datetime_td": [
                     pd.to_datetime("2023-01-14")
                     + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
                     pd.to_datetime("2023-01-14")
@@ -58,7 +58,7 @@ class TestMatch(unittest.TestCase):
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
-                "end_time_td": [
+                "end_datetime_td": [
                     pd.to_datetime("2023-01-14")
                     + dt.timedelta(milliseconds=int((1509994 / 25) * 1000)),
                     pd.to_datetime("2023-01-14")
@@ -67,14 +67,14 @@ class TestMatch(unittest.TestCase):
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
-                "start_datetime_opta": [
+                "start_datetime_ed": [
                     pd.to_datetime("2023-01-22T12:18:32.000"),
                     pd.to_datetime("2023-01-22T13:21:13.000"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
-                "end_datetime_opta": [
+                "end_datetime_ed": [
                     pd.to_datetime("2023-01-22T13:04:32.000"),
                     pd.to_datetime("2023-01-22T14:09:58.000"),
                     pd.to_datetime("NaT"),
@@ -136,9 +136,17 @@ class TestMatch(unittest.TestCase):
             self.td_metrica_loc, self.md_metrica_loc
         )
         self.td_metrica["period"] = [1, 1, 1, 2, 2, 2]
-        self.ed_metrica, _ = load_metrica_event_data(
+        self.ed_metrica, md_metrica_ed = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
+
+        self.md_metrica.periods_frames[
+            "start_datetime_ed"
+        ] = md_metrica_ed.periods_frames["start_datetime_ed"].values
+        self.md_metrica.periods_frames[
+            "end_datetime_ed"
+        ] = md_metrica_ed.periods_frames["end_datetime_ed"].values
+
         self.expected_match_metrica = Match(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",
@@ -211,9 +219,7 @@ class TestMatch(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Match(
-                tracking_data=pd.DataFrame(
-                    {"timestamp": [], "ball_x": [], "ball_z": []}
-                ),
+                tracking_data=pd.DataFrame({"frame": [], "ball_x": [], "ball_z": []}),
                 tracking_data_provider=self.td_provider,
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
@@ -783,15 +789,6 @@ class TestMatch(unittest.TestCase):
                 away_players=self.expected_away_players,
             )
 
-        self.match_to_sync = get_match(
-            tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
-            tracking_metadata_loc="tests/test_data/sync/tracab_metadata_sync_test.xml",
-            tracking_data_provider="tracab",
-            event_data_loc="tests/test_data/sync/opta_events_sync_test.xml",
-            event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
-            event_data_provider="opta",
-        )
-
     def test_get_match_wrong_provider(self):
         self.assertRaises(
             AssertionError,
@@ -831,7 +828,10 @@ class TestMatch(unittest.TestCase):
         assert not self.expected_match_tracab_opta == pd.DataFrame()
 
     def test_match_name(self):
-        assert self.expected_match_tracab_opta.name == "TeamOne 3 - 1 TeamTwo"
+        assert (
+            self.expected_match_tracab_opta.name
+            == "TeamOne 3 - 1 TeamTwo 2023-01-14 16:46:39"
+        )
 
     def test_match_home_players_column_ids(self):
         assert self.expected_match_tracab_opta.home_players_column_ids == [
@@ -1033,7 +1033,7 @@ class TestMatch(unittest.TestCase):
         tracking_data["datetime"] = [
             date
             + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
-            for x in tracking_data["timestamp"]
+            for x in tracking_data["frame"]
         ]
         tracking_data.reset_index(inplace=True)
         event_data = self.match_to_sync.event_data
@@ -1110,7 +1110,7 @@ class TestMatch(unittest.TestCase):
         tracking_data["datetime"] = [
             date
             + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
-            for x in tracking_data["timestamp"]
+            for x in tracking_data["frame"]
         ]
         tracking_data.reset_index(inplace=True)
         event_data = self.match_to_sync.event_data
@@ -1151,4 +1151,7 @@ class TestMatch(unittest.TestCase):
     )
     def test_get_open_match(self, _):
         match = get_open_match()
+        pd.testing.assert_frame_equal(
+            match.periods, self.expected_match_metrica.periods
+        )
         assert match == self.expected_match_metrica

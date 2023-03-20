@@ -174,8 +174,8 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     # Obtain match start and end of period datetime
     periods = {
         "period": [1, 2, 3, 4, 5],
-        "start_datetime_opta": [],
-        "end_datetime_opta": [],
+        "start_datetime_ed": [],
+        "end_datetime_ed": [],
     }
     start_period_1 = soup.find("Stat", attrs={"Type": "first_half_start"})
     end_period_1 = soup.find("Stat", attrs={"Type": "first_half_stop"})
@@ -185,15 +185,15 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         [start_period_1, start_period_2], [end_period_1, end_period_2]
     ):
         # Add one hour to go from utc to Dutch time
-        periods["start_datetime_opta"].append(
+        periods["start_datetime_ed"].append(
             pd.to_datetime(start.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
         )
-        periods["end_datetime_opta"].append(
+        periods["end_datetime_ed"].append(
             pd.to_datetime(end.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
         )
     for _ in range(3):
-        periods["start_datetime_opta"].append(pd.to_datetime("NaT"))
-        periods["end_datetime_opta"].append(pd.to_datetime("NaT"))
+        periods["start_datetime_ed"].append(pd.to_datetime("NaT"))
+        periods["end_datetime_ed"].append(pd.to_datetime("NaT"))
 
     # Opta has a TeamData and Team attribute in the f7 file
     team_datas = soup.find_all("TeamData")

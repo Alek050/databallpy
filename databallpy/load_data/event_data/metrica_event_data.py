@@ -49,7 +49,7 @@ def load_metrica_event_data(
             f" not a {type(event_data_loc)}"
         )
 
-    metadata = _get_metadata(metadata_loc)
+    metadata = _get_metadata(metadata_loc, is_tracking_data=False, is_event_data=True)
     td_channels = _get_td_channels(metadata_loc, metadata)
     metadata = _update_metadata(td_channels, metadata)
     event_data = _get_event_data(event_data_loc)
@@ -71,7 +71,7 @@ def load_metrica_event_data(
         metadata.periods_frames["period"] == 1, "start_frame"
     ].iloc[0]
     start_time = metadata.periods_frames.loc[
-        metadata.periods_frames["period"] == 1, "start_time_td"
+        metadata.periods_frames["period"] == 1, "start_datetime_ed"
     ].iloc[0]
     frame_rate = metadata.frame_rate
     rel_timedelta = [

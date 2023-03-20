@@ -5,7 +5,7 @@ import pandas as pd
 from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
     _add_periods_to_tracking_data,
 )
-from tests.expected_outcomes import MD_METRICA, TD_METRICA
+from tests.expected_outcomes import MD_METRICA_TD, TD_METRICA
 
 
 class TestAddPeriodsToTrackingData(unittest.TestCase):
@@ -13,12 +13,12 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
         input = TD_METRICA.drop(["period"], axis=1)
         res = input
         res["period"] = _add_periods_to_tracking_data(
-            input["timestamp"], MD_METRICA.periods_frames
+            input["frame"], MD_METRICA_TD.periods_frames
         )
 
         res = res.reindex(
             columns=[
-                "timestamp",
+                "frame",
                 "ball_x",
                 "ball_y",
                 "ball_z",

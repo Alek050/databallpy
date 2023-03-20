@@ -19,8 +19,8 @@ def _add_player_tracking_data_to_dict(
     """
 
     if f"{team}_{shirt_num}_x" not in data.keys():  # create keys for new player
-        data[f"{team}_{shirt_num}_x"] = [np.nan] * len(data["timestamp"])
-        data[f"{team}_{shirt_num}_y"] = [np.nan] * len(data["timestamp"])
+        data[f"{team}_{shirt_num}_x"] = [np.nan] * len(data["frame"])
+        data[f"{team}_{shirt_num}_y"] = [np.nan] * len(data["frame"])
 
     data[f"{team}_{shirt_num}_x"][idx] = float(x)
     data[f"{team}_{shirt_num}_y"][idx] = float(y)
