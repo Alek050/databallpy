@@ -1,5 +1,6 @@
 from databallpy.utils import _to_float
 
+
 def _add_ball_data_to_dict(
     ball_x: str,
     ball_y: str,

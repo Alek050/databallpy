@@ -1,45 +1,67 @@
+import os
+from typing import Tuple
+
+import bs4
+import numpy as np
+import pandas as pd
+from bs4 import BeautifulSoup
+from tqdm import tqdm
+
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils import _to_int
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
-    _add_player_tracking_data_to_dict,
-)
 from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
     _add_ball_data_to_dict,
-)
-from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
-    _normalize_playing_direction_tracking,
 )
 from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
     _add_periods_to_tracking_data,
 )
+from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
+    _add_player_tracking_data_to_dict,
+)
+from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
+from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _normalize_playing_direction_tracking,
+)
+from databallpy.utils import _to_int
 
-from typing import Tuple
-from bs4 import BeautifulSoup
-from tqdm import tqdm
 
-import numpy as np
-import pandas as pd
-import bs4
-
-def load_fifa_format_data(fifa_loc:str, metadata_loc, verbose:bool=True) -> Tuple[pd.DataFrame, Metadata]:
-    """
+def load_fifa_format_data(
+    tracking_data_loc: str, metadata_loc: str, verbose: bool = True
+) -> Tuple[pd.DataFrame, Metadata]:
+    """Function to load fifa tracking data.
 
     Args:
-        fifa_loc (str): _description_
-        verbose (bool): _description_
+        tracking_data_loc (str): location of the tracking data .txt file
+        metadata_loc (str): location of the metadata .xml file
+        verbose (bool, optional): whether to print information about the progress
+        in the terminall. Defaults to True.
+
+    Raises:
+        TypeError: if tracking_data_loc is not a string
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: _description_
+        Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
+    if isinstance(tracking_data_loc, str):
+        assert os.path.exists(tracking_data_loc)
+        assert os.path.exists(metadata_loc)
+    else:
+        raise TypeError(
+            "tracking_data_loc must be  a str," f" not a {type(tracking_data_loc)}"
+        )
 
     metadata = _get_metadata(metadata_loc, verbose)
     td_channels = _get_td_channels(metadata_loc, metadata)
-    tracking_data = _get_tracking_data(fifa_loc, td_channels, metadata.pitch_dimensions, verbose)
-    first_frame = metadata.periods_frames[metadata.periods_frames["start_frame"]>0]["start_frame"].min()
+    tracking_data = _get_tracking_data(
+        tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose
+    )
+    first_frame = metadata.periods_frames[metadata.periods_frames["start_frame"] > 0][
+        "start_frame"
+    ].min()
     last_frame = metadata.periods_frames["end_frame"].max()
-    tracking_data = tracking_data[(tracking_data["frame"] >= first_frame) & (tracking_data["frame"] <= last_frame)]
+    tracking_data = tracking_data[
+        (tracking_data["frame"] >= first_frame) & (tracking_data["frame"] <= last_frame)
+    ]
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
@@ -52,24 +74,34 @@ def load_fifa_format_data(fifa_loc:str, metadata_loc, verbose:bool=True) -> Tupl
 
     return tracking_data, metadata
 
-def _get_tracking_data(fifa_loc:str, td_channels:list, pitch_dimensions:list, verbose:bool) -> pd.DataFrame:
-    """_summary_
+
+def _get_tracking_data(
+    tracking_data_loc: str,
+    td_channels: list,
+    pitch_dimensions: list,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """Function to load in fifa format tracking_data
 
     Args:
-        fifa_loc (str): _description_
-        verbose (bool): _description_
+        tracking_data_loc (str): location of the tracking .txt file
+        td_channels (list): the order of which players are referred
+        to in the raw tracking data
+        pitch_dimensions (list): x and y dimensions of the pitch in meters
+        verbose (bool, optional): whether to print information about the progress in the
+        terminal. Defaults to True.
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: tracking data of the match in a pd dataframe
     """
     if verbose:
-        print(f"Reading in {fifa_loc}", end="")
-    file = open(fifa_loc, "r")
+        print(f"Reading in {tracking_data_loc}", end="")
+    file = open(tracking_data_loc, "r")
     lines = file.readlines()
     if verbose:
         print(" - Completed")
     file.close()
-    
+
     size_lines = len(lines)
     data = {
         "frame": [np.nan] * size_lines,
@@ -89,7 +121,7 @@ def _get_tracking_data(fifa_loc:str, td_channels:list, pitch_dimensions:list, ve
         frame, players_home, players_away, ball_info = line.split(":")
         frame = _to_int(frame)
         data["frame"][idx] = frame
-        players_info= players_home + ";" + players_away
+        players_info = players_home + ";" + players_away
         players = players_info.split(";")
         for i, player in enumerate(players):
             if player != ",":
@@ -99,7 +131,7 @@ def _get_tracking_data(fifa_loc:str, td_channels:list, pitch_dimensions:list, ve
             team = td_channels[i].split("_")[0]
             shirt_num = td_channels[i].split("_")[1]
             data = _add_player_tracking_data_to_dict(team, shirt_num, x, y, data, idx)
-        
+
         y, x, z, _, ball_status = ball_info.split(",")
         data = _add_ball_data_to_dict(x, y, z, None, ball_status, data, idx)
 
@@ -116,11 +148,20 @@ def _get_tracking_data(fifa_loc:str, td_channels:list, pitch_dimensions:list, ve
     return df
 
 
-def _get_td_channels(metadata_loc:str, metadata:Metadata)->list: 
-    
+def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
+    """Function to get the channels the order of which players
+    are referred to in the raw tracking data
+
+    Args:
+        metadata_loc (str): location of the metadata
+        metadata (Metadata): the Metadata of the match
+
+    Returns:
+        list: List with the order of which players are referred to
+        in the raw tracking data
+    """
     file = open(metadata_loc, "r", encoding="UTF-8").read()
     soup = BeautifulSoup(file, "xml")
-    
 
     res = []
     for channel in soup.find_all("PlayerChannel"):
@@ -139,37 +180,39 @@ def _get_td_channels(metadata_loc:str, metadata:Metadata)->list:
         res.append(f"{team}_{shirt_num}")
 
     return res
-        
 
-def _get_metadata(metadata_loc:str, verbose:bool) -> Metadata:
-    """_summary_
+
+def _get_metadata(metadata_loc: str) -> Metadata:
+    """Function to get the metadata of the match
 
     Args:
-        meta_data_loc (str): _description_
-        verbose (bool): _description_
+        metadata_loc (str): Location of the metadata .xml file
 
     Returns:
-        Metadata: _description_
+        Metadata: all information of the match
     """
-    
+
     file = open(metadata_loc, "r", encoding="UTF-8").read()
     soup = BeautifulSoup(file, "xml")
-    
-    periods_dict = {"period": [1,2,3,4,5],
-                    "start_frame": [-999]*5,
-                    "end_frame": [-999]*5,
-                    "start_datetime_td": [pd.to_datetime("NaT")]*5,
-                    "end_datetime_td": [pd.to_datetime("NaT")]*5
-                    }
+
+    periods_dict = {
+        "period": [1, 2, 3, 4, 5],
+        "start_frame": [-999] * 5,
+        "end_frame": [-999] * 5,
+        "start_datetime_td": [pd.to_datetime("NaT")] * 5,
+        "end_datetime_td": [pd.to_datetime("NaT")] * 5,
+    }
     periods = soup.find_all("Session")
-    
-    i=0
+
+    i = 0
     for period in periods:
         if period.SessionType.text == "Period":
             values = [int(x.text) for x in period.find_all("Value")]
             periods_dict["start_frame"][i] = _to_int(values[0])
             periods_dict["end_frame"][i] = _to_int(values[1])
-            periods_dict["start_datetime_td"][i] = pd.to_datetime(period.find("Start").text)
+            periods_dict["start_datetime_td"][i] = pd.to_datetime(
+                period.find("Start").text
+            )
             periods_dict["end_datetime_td"][i] = pd.to_datetime(period.find("End").text)
             i += 1
     periods_frames = pd.DataFrame(periods_dict)
@@ -187,28 +230,28 @@ def _get_metadata(metadata_loc:str, verbose:bool) -> Metadata:
     away_team_player_data = soup.find_all("Player", {"teamId": away_team_id})
     away_players = _get_player_data(away_team_player_data)
     away_score = int(soup.VisitingTeamScore.text)
-    
+
     metadata = Metadata(
-        match_id = int(soup.Session.attrs["id"]),
-        pitch_dimensions = [float(soup.MatchParameters.FieldSize.Length.text),
-                            float(soup.MatchParameters.FieldSize.Width.text)],
-        periods_frames = periods_frames,
-
-        frame_rate = int(soup.FrameRate.text),
-
-        home_team_id = home_team_id,
-        home_team_name = home_team_name,
-        home_players = home_players,
-        home_score = home_score, 
-        home_formation = None,
-
-        away_team_id = away_team_id,
-        away_team_name = away_team_name,
-        away_players = away_players,
-        away_score = away_score,
-        away_formation = None,
+        match_id=int(soup.Session.attrs["id"]),
+        pitch_dimensions=[
+            float(soup.MatchParameters.FieldSize.Length.text),
+            float(soup.MatchParameters.FieldSize.Width.text),
+        ],
+        periods_frames=periods_frames,
+        frame_rate=int(soup.FrameRate.text),
+        home_team_id=home_team_id,
+        home_team_name=home_team_name,
+        home_players=home_players,
+        home_score=home_score,
+        home_formation=None,
+        away_team_id=away_team_id,
+        away_team_name=away_team_name,
+        away_players=away_players,
+        away_score=away_score,
+        away_formation=None,
     )
     return metadata
+
 
 def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
@@ -224,7 +267,7 @@ def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
         "shirt_num": [],
         "player_type": [],
         "start_frame": [],
-        "end_frame": []
+        "end_frame": [],
     }
     for player in team:
         player_dict["id"].append(player["id"])
@@ -237,5 +280,3 @@ def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
     df = pd.DataFrame(player_dict)
 
     return df
-
-    
