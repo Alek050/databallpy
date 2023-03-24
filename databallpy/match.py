@@ -12,11 +12,14 @@ from databallpy.load_data.event_data.metrica_event_data import (
     load_metrica_open_event_data,
 )
 from databallpy.load_data.event_data.opta import load_opta_event_data
+from databallpy.load_data.event_data.instat import load_instat_event_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
+from databallpy.load_data.tracking_data.fifa import load_fifa_tracking_data
+from databallpy.utils import _to_int
 
 
 @dataclass
@@ -223,32 +226,32 @@ class Match:
                             ['id', 'full_name', 'shirt_num'], {col} is missing."
                     )
 
-        # check for pitch axis
-        if (
-            not abs(
-                self.tracking_data["ball_x"].min() + self.tracking_data["ball_x"].max()
-            )
-            < 5.0
-        ):
-            max_x = self.tracking_data["ball_x"].max()
-            min_x = self.tracking_data["ball_x"].min()
-            raise DataBallPyError(
-                f"The middle point of the pitch should be (0, 0),\
-                                now the min x = {min_x} and the max x = {max_x}"
-            )
+        # # check for pitch axis
+        # if (
+        #     not abs(
+        #         self.tracking_data["ball_x"].min() + self.tracking_data["ball_x"].max()
+        #     )
+        #     < 5.0
+        # ):
+        #     max_x = self.tracking_data["ball_x"].max()
+        #     min_x = self.tracking_data["ball_x"].min()
+        #     raise DataBallPyError(
+        #         f"The middle point of the pitch should be (0, 0),\
+        #                         now the min x = {min_x} and the max x = {max_x}"
+        #     )
 
-        if (
-            not abs(
-                self.tracking_data["ball_y"].min() + self.tracking_data["ball_y"].max()
-            )
-            < 5.0
-        ):
-            max_y = self.tracking_data["ball_y"].max()
-            min_y = self.tracking_data["ball_y"].min()
-            raise DataBallPyError(
-                f"The middle point of the pitch should be (0, 0),\
-                                now th min y = {min_y} and the max y = {max_y}"
-            )
+        # if (
+        #     not abs(
+        #         self.tracking_data["ball_y"].min() + self.tracking_data["ball_y"].max()
+        #     )
+        #     < 5.0
+        # ):
+        #     max_y = self.tracking_data["ball_y"].max()
+        #     min_y = self.tracking_data["ball_y"].min()
+        #     raise DataBallPyError(
+        #         f"The middle point of the pitch should be (0, 0),\
+        #                         now th min y = {min_y} and the max y = {max_y}"
+        #     )
 
         # check for direction of play
         for _, period_row in self.periods.iterrows():
@@ -379,6 +382,7 @@ the away team is {centroid_x}."
             "miss",
             "challenge",
             "goal",
+            "shot"
         ]
 
         tracking_data = self.tracking_data
@@ -474,7 +478,6 @@ the away team is {centroid_x}."
 
                 sim_mat = _create_sim_mat(tracking_batch, event_batch, self)
                 event_frame_dict = _needleman_wunsch(sim_mat)
-
                 for event, frame in event_frame_dict.items():
                     event_id = int(event_batch.loc[event, "event_id"])
                     event_type = event_batch.loc[event, "event"]
@@ -569,11 +572,13 @@ def get_match(
     assert tracking_data_provider in [
         "tracab",
         "metrica",
+        "fifa"
     ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
     "please open an issue in our Github repository."
     assert event_data_provider in [
         "opta",
         "metrica",
+        "instat"
     ], f"We do not supper '{event_data_provider}' as event data provider yet, "
     "please open an issue in our Github repository."
 
@@ -586,6 +591,10 @@ def get_match(
         event_data, event_metadata = load_metrica_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
+    elif event_data_provider == "instat":
+        event_data, event_metadata = load_instat_event_data(
+            event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
+        )
 
     # Get tracking data and tracking metadata
     if tracking_data_provider == "tracab":
@@ -596,6 +605,10 @@ def get_match(
         tracking_data, tracking_metadata = load_metrica_tracking_data(
             tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
         )
+    elif tracking_data_provider == "fifa":
+        tracking_data, tracking_metadata = load_fifa_tracking_data(
+            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
+        ) 
 
     # Check if the event data is scaled the right way
     if not tracking_metadata.pitch_dimensions == event_metadata.pitch_dimensions:
@@ -620,6 +633,21 @@ def get_match(
         ),
         axis=1,
     )
+
+    if (not set(event_metadata.home_players["id"]) == set(tracking_metadata.home_players["id"])) or (not set(event_metadata.away_players["id"]) == set(tracking_metadata.away_players["id"])):
+        full_name_id_map = {}
+        for idx, row in event_metadata.home_players.iterrows():
+            full_name_tracking_metadata = get_matching_full_name(row["full_name"], tracking_metadata.home_players["full_name"])
+            id_tracking_data = tracking_metadata.home_players.loc[tracking_metadata.home_players["full_name"] == full_name_tracking_metadata, "id"].values[0]
+            event_metadata.home_players.loc[idx, "id"] = id_tracking_data
+            full_name_id_map[row["full_name"]] = id_tracking_data
+
+        for idx, row in event_metadata.away_players.iterrows():
+            full_name_tracking_metadata = get_matching_full_name(row["full_name"], tracking_metadata.away_players["full_name"])
+            id_tracking_data = tracking_metadata.away_players.loc[tracking_metadata.away_players["full_name"] == full_name_tracking_metadata, "id"].values[0]
+            event_metadata.away_players.loc[idx, "id"] = id_tracking_data
+            full_name_id_map[row["full_name"]] = id_tracking_data
+        event_data["player_id"] = event_data["player_name"].map(full_name_id_map)
 
     # Merged player info
     player_cols = event_metadata.home_players.columns.difference(
@@ -830,3 +858,14 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         away_players=metadata.away_players,
     )
     return match
+
+def get_matching_full_name(full_name:str, options:list)->str:
+    list_result = []
+    for option in options:
+        perfect_matches = 0
+        for part_name in full_name.split(" "):
+            for part_options in option.split(" "):
+                if part_name.lower() == part_options.lower():
+                    perfect_matches += 1
+        list_result.append(perfect_matches/min(len(full_name.split(" ")), len(option.split(" "))))
+    return options[list_result.index(max(list_result))]

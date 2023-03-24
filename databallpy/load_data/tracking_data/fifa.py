@@ -25,7 +25,7 @@ from databallpy.load_data.tracking_data._normalize_playing_direction_tracking im
 from databallpy.utils import _to_int
 
 
-def load_fifa_format_data(
+def load_fifa_tracking_data(
     tracking_data_loc: str, metadata_loc: str, verbose: bool = True
 ) -> Tuple[pd.DataFrame, Metadata]:
     """Function to load fifa tracking data.
@@ -50,7 +50,7 @@ def load_fifa_format_data(
             "tracking_data_loc must be  a str," f" not a {type(tracking_data_loc)}"
         )
 
-    metadata = _get_metadata(metadata_loc, verbose)
+    metadata = _get_metadata(metadata_loc)
     td_channels = _get_td_channels(metadata_loc, metadata)
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose
@@ -61,7 +61,7 @@ def load_fifa_format_data(
     last_frame = metadata.periods_frames["end_frame"].max()
     tracking_data = tracking_data[
         (tracking_data["frame"] >= first_frame) & (tracking_data["frame"] <= last_frame)
-    ]
+    ].reset_index(drop=True)
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
@@ -132,18 +132,20 @@ def _get_tracking_data(
             shirt_num = td_channels[i].split("_")[1]
             data = _add_player_tracking_data_to_dict(team, shirt_num, x, y, data, idx)
 
-        y, x, z, _, ball_status = ball_info.split(",")
+        y, x, z, _, ball_status = ball_info.replace("\n", "").split(",")
         data = _add_ball_data_to_dict(x, y, z, None, ball_status, data, idx)
 
     df = pd.DataFrame(data)
-    df["ball_status"] = np.where(df["ball_status"], "dead", "alive")
+    df["ball_status"] = ["alive" if x == "1" else "dead" for x in df["ball_status"]]
     for col in [x for x in df.columns if "_x" in x]:
         df[col] = df[col] - (pitch_dimensions[0] / 2)
+        df[col] *= -1
 
     for col in [x for x in df.columns if "_y" in x]:
         df[col] = df[col] - (pitch_dimensions[1] / 2)
 
     df = _insert_missing_rows(df, "frame")
+    
 
     return df
 
@@ -165,7 +167,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
 
     res = []
     for channel in soup.find_all("PlayerChannel"):
-        player_id = channel.attrs["id"].split("_")[0]
+        player_id = int(channel.attrs["id"].split("_")[0][2:])
         value = channel.attrs["id"].split("_")[1]
         if "y" in value:
             continue
@@ -270,7 +272,7 @@ def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
         "end_frame": [],
     }
     for player in team:
-        player_dict["id"].append(player["id"])
+        player_dict["id"].append(int(player["id"][2:]))
         player_dict["full_name"].append(player.Name.text)
         player_dict["shirt_num"].append(int(player.ShirtNumber.text))
         values = [x.text for x in player.find_all("Value")]
