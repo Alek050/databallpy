@@ -159,8 +159,10 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
         list: List with the order of which players are referred to
         in the raw tracking data
     """
-    file = open(metadata_loc, "r", encoding="UTF-8").read()
-    soup = BeautifulSoup(file, "xml")
+    file = open(metadata_loc, "r", encoding="UTF-8")
+    lines = file.read()
+    soup = BeautifulSoup(lines, "xml")
+    file.close()
 
     res = []
     for channel in soup.find_all("PlayerChannel"):
@@ -191,8 +193,10 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         Metadata: all information of the match
     """
 
-    file = open(metadata_loc, "r", encoding="UTF-8").read()
-    soup = BeautifulSoup(file, "xml")
+    file = open(metadata_loc, "r", encoding="UTF-8")
+    lines = file.read()
+    soup = BeautifulSoup(lines, "xml")
+    file.close()
 
     periods_dict = {
         "period": [1, 2, 3, 4, 5],
