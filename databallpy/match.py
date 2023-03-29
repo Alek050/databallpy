@@ -226,32 +226,32 @@ class Match:
                             ['id', 'full_name', 'shirt_num'], {col} is missing."
                     )
 
-        # # check for pitch axis
-        # if (
-        #     not abs(
-        #         self.tracking_data["ball_x"].min() + self.tracking_data["ball_x"].max()
-        #     )
-        #     < 5.0
-        # ):
-        #     max_x = self.tracking_data["ball_x"].max()
-        #     min_x = self.tracking_data["ball_x"].min()
-        #     raise DataBallPyError(
-        #         f"The middle point of the pitch should be (0, 0),\
-        #                         now the min x = {min_x} and the max x = {max_x}"
-        #     )
+        # check for pitch axis
+        if (
+            not abs(
+                self.tracking_data["ball_x"].mean()
+            )
+            < 5.0
+        ):
+            max_x = self.tracking_data["ball_x"].max()
+            min_x = self.tracking_data["ball_x"].min()
+            raise DataBallPyError(
+                f"The middle point of the pitch should be (0, 0),\
+                                now the min x = {min_x} and the max x = {max_x}"
+            )
 
-        # if (
-        #     not abs(
-        #         self.tracking_data["ball_y"].min() + self.tracking_data["ball_y"].max()
-        #     )
-        #     < 5.0
-        # ):
-        #     max_y = self.tracking_data["ball_y"].max()
-        #     min_y = self.tracking_data["ball_y"].min()
-        #     raise DataBallPyError(
-        #         f"The middle point of the pitch should be (0, 0),\
-        #                         now th min y = {min_y} and the max y = {max_y}"
-        #     )
+        if (
+            not abs(
+                self.tracking_data["ball_y"].mean()
+            )
+            < 5.0
+        ):
+            max_y = self.tracking_data["ball_y"].max()
+            min_y = self.tracking_data["ball_y"].min()
+            raise DataBallPyError(
+                f"The middle point of the pitch should be (0, 0),\
+                                now th min y = {min_y} and the max y = {max_y}"
+            )
 
         # check for direction of play
         for _, period_row in self.periods.iterrows():
