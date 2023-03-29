@@ -23,7 +23,9 @@ def load_instat_event_data(event_data_loc:str, metadata_loc:str) -> pd.DataFrame
 
     metadata = _load_metadata(metadata_loc=metadata_loc)
     metadata = _update_metadata(metadata=metadata, event_data_loc=event_data_loc)
-    event_data, metadata = _load_event_data(event_data_loc=event_data_loc, metadata=metadata)
+    event_data, pitch_dimensions = _load_event_data(event_data_loc=event_data_loc, metadata=metadata)
+    metadata.pitch_dimensions = pitch_dimensions
+    import pdb;pdb.set_trace()
 
     return event_data, metadata
 
@@ -210,7 +212,7 @@ def _load_event_data(event_data_loc:str, metadata:Metadata)->pd.DataFrame:
             if "team_id" in event.keys():
                 result_dict["team_id"].append(int(event["team_id"]))
             else:
-                result_dict["team_id"].append(np.nan)
+                result_dict["team_id"].append(-999)
             if "pos_x" in event.keys():
                 result_dict["start_x"].append(float(event["pos_x"]))
                 result_dict["start_y"].append(float(event["pos_y"]))
@@ -229,7 +231,7 @@ def _load_event_data(event_data_loc:str, metadata:Metadata)->pd.DataFrame:
     x_start, y_start = event_data[event_data["event"].isin(start_events)].reset_index().loc[0, ["start_x", "start_y"]]
     event_data["start_x"] -= x_start
     event_data["start_y"] -= y_start
-    metadata.pitch_dimensions = [x_start*2, y_start*2]
+    pitch_dimensions = [2*x_start, 2*y_start]
 
     id_full_name_dict = dict(zip(metadata.home_players["id"], metadata.home_players["full_name"]))
     id_full_name_dict_away = dict(zip(metadata.away_players["id"], metadata.away_players["full_name"]))
@@ -237,4 +239,5 @@ def _load_event_data(event_data_loc:str, metadata:Metadata)->pd.DataFrame:
     event_data["player_name"] = event_data["player_id"].map(id_full_name_dict)
     away_mask = event_data["team_id"] == metadata.away_team_id
     event_data.loc[away_mask, ["start_x", "start_y"]] *= -1
-    return event_data, metadata
+
+    return event_data, pitch_dimensions

@@ -377,3 +377,79 @@ TD_CHANNELS_METRICA = pd.DataFrame(
         ],
     }
 )
+
+TD_FIFA = pd.DataFrame(
+    {
+        "frame": [1, 2, 3, 4, 5, 6],
+        "ball_x": [0.0, 0.0, -1.0, np.nan, 0.0, 0.0],
+        "ball_y": [0.0, 0.0, 1.0, np.nan, 0.0, 0.0],
+        "ball_z": [0.0, 0.0, 0.0, np.nan, 0.0, 0.0],
+        "ball_status": ["dead", "alive", "alive", np.nan, "alive", "alive"],
+        "ball_posession": [None, None, None, None, None, None],
+        "home_1_x": [-46.9, -45.9, -44.9, np.nan, 39.0, 39.0],
+        "home_1_y": [0.8, -0.2, -1.2, np.nan, 1.5, 2.5],
+        "home_2_x": [-19.0, -20.0, -21.0, np.nan, 23.3, 23.3],
+        "home_2_y": [-6.0, -5.0, -6.0, np.nan, 6.9, 6.9],
+        "away_1_x": [40.0, 39.0, 38.0, np.nan, -45.9, -44.9],
+        "away_1_y": [0.5, 1.5, 2.5, np.nan, -0.2, -1.2],
+        "away_2_x": [23.3, 23.3, 25.3, np.nan, -20.0, np.nan],
+        "away_2_y": [5.9, 6.9, 5.9, np.nan, -5.0, np.nan],
+        "period": [-999, 1, 1, -999, 2, 2],
+        "matchtime_td": ["", "00:00", "00:00", "Break", "45:00", "45:00"],
+    }
+)
+
+MD_FIFA = Metadata(
+    match_id=9999,
+    pitch_dimensions=[100.0, 50.0],
+    periods_frames=pd.DataFrame(
+        {
+            "period": [1, 2, 3, 4, 5],
+            "start_frame": [2, 5, -999, -999, -999],
+            "end_frame": [3, 6, -999, -999, -999],
+            "start_datetime_td": [
+                pd.to_datetime("2023-01-01T19:00:00.000"),
+                pd.to_datetime("2023-01-01T20:00:00.000"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+            "end_datetime_td": [
+                pd.to_datetime("2023-01-01T19:45:00.000"),
+                pd.to_datetime("2023-01-01T20:45:00.0000"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+        }
+    ),
+    frame_rate=25,
+    home_team_id="T-0001",
+    home_team_name="Team A",
+    home_players=pd.DataFrame(
+        {
+            "id": [1, 2],
+            "full_name": ["Player 1", "Player 2"],
+            "shirt_num": [1, 2],
+            "player_type": ["Goalkeeper", "Field player"],
+            "start_frame": [2, 2],
+            "end_frame": [6, 6],
+        }
+    ),
+    home_formation=None,
+    home_score=1,
+    away_team_id="T-0002",
+    away_team_name="Team B",
+    away_players=pd.DataFrame(
+        {
+            "id": [3, 4],
+            "full_name": ["Player 11", "Player 12"],
+            "shirt_num": [1, 2],
+            "player_type": ["Goalkeeper", "Field player"],
+            "start_frame": [2, 2],
+            "end_frame": [6, 6],
+        }
+    ),
+    away_formation=None,
+    away_score=1,
+)
