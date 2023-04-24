@@ -51,3 +51,7 @@ class TestFifa(unittest.TestCase):
         file.close()
         df_players = _get_player_data(input)
         pd.testing.assert_frame_equal(df_players, MD_FIFA.home_players)
+
+    def test_not_string_error(self):
+        with self.assertRaises(TypeError):
+            load_fifa_tracking_data(tracking_data_loc=1, metadata_loc=self.metadata_loc)

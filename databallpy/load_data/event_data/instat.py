@@ -25,7 +25,6 @@ def load_instat_event_data(event_data_loc:str, metadata_loc:str) -> pd.DataFrame
     metadata = _update_metadata(metadata=metadata, event_data_loc=event_data_loc)
     event_data, pitch_dimensions = _load_event_data(event_data_loc=event_data_loc, metadata=metadata)
     metadata.pitch_dimensions = pitch_dimensions
-    import pdb;pdb.set_trace()
 
     return event_data, metadata
 
@@ -88,7 +87,7 @@ def _update_metadata(metadata:Metadata, event_data_loc:str) -> pd.DataFrame:
     players_dict = {
         "id": [],
         "full_name": [],
-        "formation_place": [],
+        "position": [],
         "starter": [],
         "shirt_num": [],
         "team_id": [],
@@ -102,12 +101,12 @@ def _update_metadata(metadata:Metadata, event_data_loc:str) -> pd.DataFrame:
             if int(event["player_id"]) not in players_dict["id"]:
                 players_dict["id"].append(int(event["player_id"]))
                 players_dict["full_name"].append(str(event["player_name"]))
-                players_dict["formation_place"].append(str(event["position_name"]))
+                players_dict["position"].append(str(event["position_name"]))
                 if str(event["position_name"]) == "Substitute player":
                     players_dict["starter"].append(False)
                 else:
                     players_dict["starter"].append(True)
-                players_dict["shirt_num"].append(str(event["number"]))
+                players_dict["shirt_num"].append(int(event["number"]))
                 players_dict["team_id"].append(int(event["team_id"]))
         if event["action_id"].startswith("15"):
             if int(event["team_id"]) == metadata.home_team_id and home_formation == "":
@@ -126,7 +125,7 @@ def _update_metadata(metadata:Metadata, event_data_loc:str) -> pd.DataFrame:
     metadata.away_formation = away_formation
     metadata.home_players = home_players
     metadata.away_players = away_players
-    
+    #import pdb;pdb.set_trace()  
     return metadata
 
 
@@ -192,6 +191,7 @@ def _load_event_data(event_data_loc:str, metadata:Metadata)->pd.DataFrame:
     }
 
     for event in events:
+        #import pdb;pdb.set_trace()
         if not event["action_id"].startswith(("16", "15")):
             result_dict["event_id"].append(int(event["id"]))
             result_dict["type_id"].append(int(event["action_id"]))

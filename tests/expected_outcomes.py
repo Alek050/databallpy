@@ -453,3 +453,76 @@ MD_FIFA = Metadata(
     away_formation=None,
     away_score=1,
 )
+
+MD_INSTAT = Metadata(
+    match_id=9999,
+    pitch_dimensions=[np.nan, np.nan],
+    periods_frames=pd.DataFrame(
+        {
+            "period": [1, 2, 3, 4, 5],
+            "start_datetime_ed": [
+                pd.to_datetime("2023-01-20 20:00:00"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+            "end_datetime_ed": [
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+        }
+    ),
+    frame_rate=np.nan,
+    home_team_id=1,
+    home_team_name="Team A",
+    home_players=pd.DataFrame(
+        {
+            "id": [1, 2],
+            "full_name": ["Player 1", "Player 2"],
+            "position": ["Goalkeeper", "Defender"],
+            "starter": [True, True],
+            "shirt_num": [1, 2],
+        }
+    ),
+    home_formation="352",
+    home_score=0,
+    away_team_id=2,
+    away_team_name="Team B",
+    away_players=pd.DataFrame(
+        {
+            "id": [3, 4],
+            "full_name": ["Player 3", "Player 4"],
+            "position": ["Goalkeeper", "Substitute player"],
+            "starter": [True, False],
+            "shirt_num": [1, 3],
+        }
+    ),
+    away_formation="442",
+    away_score=2,
+)
+
+ED_INSTAT = pd.DataFrame(
+    {
+        "event_id": [10107, 10110, 10111, 10112],
+        "type_id": [1012, 1011, 2010, 2011],
+        "event": ["pass", "pass", "Challenge", "Challenge"],
+        "period_id": [1, 1, 1, 1],
+        "minutes": [0.0, 0.0, 0.0, 0.0],
+        "seconds": [5.37, 20.93, 23.64, 28.64],
+        "player_id": [2, 1, 3, -999],
+        "team_id": [1, 1, 2, -999],
+        "outcome": [0, 1, np.nan, np.nan],
+        "start_x": [0, 60.4, 10.5, np.nan],
+        "start_y": [0, -43.0, -15.5, np.nan],
+        "datetime": [pd.to_datetime("2023-01-20 20:00:05.370"),
+                     pd.to_datetime("2023-01-20 20:00:20.930"),
+                     pd.to_datetime("2023-01-20 20:00:23.640"),
+                     pd.to_datetime("2023-01-20 20:00:28.640")],
+        "instat_event": ["Attacking pass inaccurate", "Attacking pass accurate", "Challenge", "Challenge"],
+        "player_name": ["Player 2", "Player 1", "Player 3", np.nan]
+    }
+)

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import pandas as pd
+import numpy as np
 
 
 @dataclass
@@ -149,7 +150,10 @@ class Metadata:
                 all(
                     [
                         s == o
+                        if not np.isnan(s)
+                        else np.isnan(o)
                         for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
+                        
                     ]
                 ),
                 self.periods_frames.equals(other.periods_frames),

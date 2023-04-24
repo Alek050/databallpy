@@ -12,12 +12,15 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
+from databallpy.load_data.tracking_data.fifa import load_fifa_tracking_data
+from databallpy.load_data.event_data.instat import load_instat_event_data
 from databallpy.match import (
     Match,
     _create_sim_mat,
     _needleman_wunsch,
     get_match,
     get_open_match,
+    get_matching_full_name,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
@@ -165,6 +168,71 @@ class TestMatch(unittest.TestCase):
             away_score=self.md_metrica.away_score,
             away_team_name=self.md_metrica.away_team_name,
             away_players=self.md_metrica.away_players,
+        )
+
+        self.td_fifa_loc = "tests/test_data/fifa_td_test.txt"
+        self.md_fifa_loc = "tests/test_data/fifa_metadata_test.xml"
+        self.td_fifa, self.md_fifa = load_fifa_tracking_data(
+            self.td_fifa_loc, self.md_fifa_loc, verbose=False
+        )
+
+        self.ed_instat_loc = "tests/test_data/instat_ed_test.json"
+        self.md_instat_loc = "tests/test_data/instat_md_test.json"
+        self.ed_instat, self.md_instat = load_instat_event_data(
+            self.ed_instat_loc, self.md_instat_loc
+        )
+
+        player_cols_fifa_instat = self.md_instat.home_players.columns.difference(
+            self.md_fifa.home_players.columns
+        ).to_list()
+        player_cols_fifa_instat.append("id")
+        home_players = self.md_fifa.home_players.merge(
+            self.md_instat.home_players[player_cols_fifa_instat], on="id"
+        )
+        away_players = self.md_fifa.away_players.merge(
+            self.md_instat.away_players[player_cols_fifa_instat], on="id"
+        )
+
+        if not self.md_fifa.pitch_dimensions == self.md_instat.pitch_dimensions:
+            x_correction = (
+                self.md_fifa.pitch_dimensions[0] / self.md_instat.pitch_dimensions[0]
+            )
+            y_correction = (
+                self.md_fifa.pitch_dimensions[1] / self.md_instat.pitch_dimensions[1]
+            )
+            self.ed_instat["start_x"] *= x_correction
+            self.ed_instat["start_y"] *= y_correction
+        
+        periods_cols = self.md_instat.periods_frames.columns.difference(
+                self.md_fifa.periods_frames.columns
+            ).to_list()
+        periods_cols.sort(reverse=True)
+        merged_periods = pd.concat(
+                (
+                    self.md_fifa.periods_frames,
+                    self.md_instat.periods_frames[periods_cols],
+                ),
+                axis=1,
+            )
+
+        self.expected_match_fifa_instat = Match(
+            tracking_data=self.td_fifa,
+            tracking_data_provider="fifa",
+            event_data=self.ed_instat,
+            event_data_provider="instat",
+            pitch_dimensions=self.md_fifa.pitch_dimensions,
+            periods=merged_periods,
+            frame_rate=self.md_fifa.frame_rate,
+            home_team_id=self.md_instat.home_team_id,
+            home_formation=self.md_instat.home_formation,
+            home_score=self.md_instat.home_score,
+            home_team_name=self.md_instat.home_team_name,
+            home_players=home_players,
+            away_team_id=self.md_instat.away_team_id,
+            away_formation=self.md_instat.away_formation,
+            away_score=self.md_instat.away_score,
+            away_team_name=self.md_instat.away_team_name,
+            away_players=away_players,
         )
 
         self.match_to_sync = get_match(
@@ -1155,3 +1223,21 @@ class TestMatch(unittest.TestCase):
             match.periods, self.expected_match_metrica.periods
         )
         assert match == self.expected_match_metrica
+    
+    def test_get_matching_full_name(self):
+        input = "Bart Christaan Albert van den Boom"
+        options = ["Bart Chris", "Bart van den Boom", "Piet Pieters"]
+        output = get_matching_full_name(input, options)
+        assert output == "Bart van den Boom"
+
+    def test_match_fifa_instat(self):
+        match_instat_fifa = get_match(
+            tracking_data_loc=self.td_fifa_loc,
+            tracking_metadata_loc=self.md_fifa_loc,
+            tracking_data_provider="fifa",
+            event_data_loc=self.ed_instat_loc,
+            event_metadata_loc=self.md_instat_loc,
+            event_data_provider="instat"
+        )
+
+        assert match_instat_fifa == self.expected_match_fifa_instat
