@@ -378,7 +378,7 @@ TD_CHANNELS_METRICA = pd.DataFrame(
     }
 )
 
-TD_FIFA = pd.DataFrame(
+TD_INMOTIO = pd.DataFrame(
     {
         "frame": [1, 2, 3, 4, 5, 6],
         "ball_x": [0.0, 0.0, -1.0, np.nan, 0.0, 0.0],
@@ -399,7 +399,7 @@ TD_FIFA = pd.DataFrame(
     }
 )
 
-MD_FIFA = Metadata(
+MD_INMOTIO = Metadata(
     match_id=9999,
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(

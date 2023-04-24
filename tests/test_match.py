@@ -12,7 +12,7 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
-from databallpy.load_data.tracking_data.fifa import load_fifa_tracking_data
+from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.event_data.instat import load_instat_event_data
 from databallpy.match import (
     Match,
@@ -170,10 +170,10 @@ class TestMatch(unittest.TestCase):
             away_players=self.md_metrica.away_players,
         )
 
-        self.td_fifa_loc = "tests/test_data/fifa_td_test.txt"
-        self.md_fifa_loc = "tests/test_data/fifa_metadata_test.xml"
-        self.td_fifa, self.md_fifa = load_fifa_tracking_data(
-            self.td_fifa_loc, self.md_fifa_loc, verbose=False
+        self.td_inmotio_loc = "tests/test_data/inmotio_td_test.txt"
+        self.md_inmotio_loc = "tests/test_data/inmotio_metadata_test.xml"
+        self.td_inmotio, self.md_inmotio = load_inmotio_tracking_data(
+            self.td_inmotio_loc, self.md_inmotio_loc, verbose=False
         )
 
         self.ed_instat_loc = "tests/test_data/instat_ed_test.json"
@@ -182,47 +182,47 @@ class TestMatch(unittest.TestCase):
             self.ed_instat_loc, self.md_instat_loc
         )
 
-        player_cols_fifa_instat = self.md_instat.home_players.columns.difference(
-            self.md_fifa.home_players.columns
+        player_cols_inmotio_instat = self.md_instat.home_players.columns.difference(
+            self.md_inmotio.home_players.columns
         ).to_list()
-        player_cols_fifa_instat.append("id")
-        home_players = self.md_fifa.home_players.merge(
-            self.md_instat.home_players[player_cols_fifa_instat], on="id"
+        player_cols_inmotio_instat.append("id")
+        home_players = self.md_inmotio.home_players.merge(
+            self.md_instat.home_players[player_cols_inmotio_instat], on="id"
         )
-        away_players = self.md_fifa.away_players.merge(
-            self.md_instat.away_players[player_cols_fifa_instat], on="id"
+        away_players = self.md_inmotio.away_players.merge(
+            self.md_instat.away_players[player_cols_inmotio_instat], on="id"
         )
 
-        if not self.md_fifa.pitch_dimensions == self.md_instat.pitch_dimensions:
+        if not self.md_inmotio.pitch_dimensions == self.md_instat.pitch_dimensions:
             x_correction = (
-                self.md_fifa.pitch_dimensions[0] / self.md_instat.pitch_dimensions[0]
+                self.md_inmotio.pitch_dimensions[0] / self.md_instat.pitch_dimensions[0]
             )
             y_correction = (
-                self.md_fifa.pitch_dimensions[1] / self.md_instat.pitch_dimensions[1]
+                self.md_inmotio.pitch_dimensions[1] / self.md_instat.pitch_dimensions[1]
             )
             self.ed_instat["start_x"] *= x_correction
             self.ed_instat["start_y"] *= y_correction
         
         periods_cols = self.md_instat.periods_frames.columns.difference(
-                self.md_fifa.periods_frames.columns
+                self.md_inmotio.periods_frames.columns
             ).to_list()
         periods_cols.sort(reverse=True)
         merged_periods = pd.concat(
                 (
-                    self.md_fifa.periods_frames,
+                    self.md_inmotio.periods_frames,
                     self.md_instat.periods_frames[periods_cols],
                 ),
                 axis=1,
             )
 
-        self.expected_match_fifa_instat = Match(
-            tracking_data=self.td_fifa,
-            tracking_data_provider="fifa",
+        self.expected_match_inmotio_instat = Match(
+            tracking_data=self.td_inmotio,
+            tracking_data_provider="inmotio",
             event_data=self.ed_instat,
             event_data_provider="instat",
-            pitch_dimensions=self.md_fifa.pitch_dimensions,
+            pitch_dimensions=self.md_inmotio.pitch_dimensions,
             periods=merged_periods,
-            frame_rate=self.md_fifa.frame_rate,
+            frame_rate=self.md_inmotio.frame_rate,
             home_team_id=self.md_instat.home_team_id,
             home_formation=self.md_instat.home_formation,
             home_score=self.md_instat.home_score,
@@ -1230,14 +1230,14 @@ class TestMatch(unittest.TestCase):
         output = get_matching_full_name(input, options)
         assert output == "Bart van den Boom"
 
-    def test_match_fifa_instat(self):
-        match_instat_fifa = get_match(
-            tracking_data_loc=self.td_fifa_loc,
-            tracking_metadata_loc=self.md_fifa_loc,
-            tracking_data_provider="fifa",
+    def test_match_inmotio_instat(self):
+        match_instat_inmotio = get_match(
+            tracking_data_loc=self.td_inmotio_loc,
+            tracking_metadata_loc=self.md_inmotio_loc,
+            tracking_data_provider="inmotio",
             event_data_loc=self.ed_instat_loc,
             event_metadata_loc=self.md_instat_loc,
             event_data_provider="instat"
         )
 
-        assert match_instat_fifa == self.expected_match_fifa_instat
+        assert match_instat_inmotio == self.expected_match_inmotio_instat

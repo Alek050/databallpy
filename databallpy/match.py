@@ -18,7 +18,7 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
-from databallpy.load_data.tracking_data.fifa import load_fifa_tracking_data
+from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.utils import _to_int
 
 
@@ -572,7 +572,7 @@ def get_match(
     assert tracking_data_provider in [
         "tracab",
         "metrica",
-        "fifa"
+        "inmotio"
     ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
     "please open an issue in our Github repository."
     assert event_data_provider in [
@@ -605,8 +605,8 @@ def get_match(
         tracking_data, tracking_metadata = load_metrica_tracking_data(
             tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
         )
-    elif tracking_data_provider == "fifa":
-        tracking_data, tracking_metadata = load_fifa_tracking_data(
+    elif tracking_data_provider == "inmotio":
+        tracking_data, tracking_metadata = load_inmotio_tracking_data(
             tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
         ) 
 

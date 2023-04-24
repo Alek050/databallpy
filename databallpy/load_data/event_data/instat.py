@@ -1,18 +1,24 @@
 import json
 import pandas as pd
 import numpy as np
-from databallpy.load_data.metadata import Metadata
 import datetime as dt
+from typing import Tuple
+from databallpy.load_data.metadata import Metadata
 
-def load_instat_event_data(event_data_loc:str, metadata_loc:str) -> pd.DataFrame:
-    """_summary_
+
+def load_instat_event_data(event_data_loc:str, metadata_loc:str) -> Tuple[pd.DataFrame, Metadata]:
+    """This function retrieves the metadata and event data of a specific match. The x
+    and y coordinates provided have been scaled to the dimensions of the pitch, with
+    (0, 0) being the center. Additionally, the coordinates have been standardized so
+    that the home team is represented as playing from left to right for the entire
+    match, and the away team is represented as playing from right to left.
 
     Args:
-        event_data_loc (str): _description_
-        event_data_metadata_loc (str): _description_
+        event_data_loc (str): location of the event_data.json file
+        event_data_metadata_loc (str): location of the metadata.json file
 
     Returns:
-        pd.DataFrame: _description_
+        Tuple[pd.DataFrame, Metadata]: the event data of the match and the  metadata
     """
     assert isinstance(event_data_loc, str), f"event_data_loc should be a string, not a {type(event_data_loc)}"
     assert isinstance(
@@ -29,13 +35,13 @@ def load_instat_event_data(event_data_loc:str, metadata_loc:str) -> pd.DataFrame
     return event_data, metadata
 
 def _load_metadata(metadata_loc:str)->pd.DataFrame:
-    """_summary_
+    """Function to load the data from the metadata.json file
 
     Args:
-        metdata_loc (str): _description_
+        metdata_loc (str): location of the metadata.json file
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: metadata of the match
     """
     with open(metadata_loc, 'r') as f:
         data=f.read()
@@ -69,14 +75,15 @@ def _load_metadata(metadata_loc:str)->pd.DataFrame:
     return metadata
 
 def _update_metadata(metadata:Metadata, event_data_loc:str) -> pd.DataFrame:
-    """
+    """This function updates the metadata with the information in the 
+    event_data.json file
 
     Args:
-        metadata (Metadata): _description_
-        event_data_loc (str): _description_
+        metadata (Metadata): metadata loaded from the metadata.json file
+        event_data_loc (str): location of the event_data.json file
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: updated metadata of the match
     """
 
     with open(event_data_loc, 'r') as f:
@@ -130,14 +137,16 @@ def _update_metadata(metadata:Metadata, event_data_loc:str) -> pd.DataFrame:
 
 
 def _load_event_data(event_data_loc:str, metadata:Metadata)->pd.DataFrame:
-    """_summary_
+    """Function to load the event_data.json file, the events of the match.
+    Note: this function does ignore qualifiers for now
+
 
     Args:
-        event_data_loc (str): _description_
-        metadata(Metadata)
+        event_data_loc (str): location of the event_data.json file
+        metadata(Metadata): metadata of the match
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: event data of the match
     """
     EVENT_AND_OUTCOME_INSTAT_EVENTS = {
         "Attacking pass accurate": ["pass", 1],
