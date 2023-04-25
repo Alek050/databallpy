@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 @dataclass
@@ -149,11 +149,8 @@ class Metadata:
                 self.match_id == other.match_id,
                 all(
                     [
-                        s == o
-                        if not np.isnan(s)
-                        else np.isnan(o)
+                        s == o if not np.isnan(s) else np.isnan(o)
                         for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
-                        
                     ]
                 ),
                 self.periods_frames.equals(other.periods_frames),

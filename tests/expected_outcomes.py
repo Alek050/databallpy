@@ -518,11 +518,18 @@ ED_INSTAT = pd.DataFrame(
         "outcome": [0, 1, np.nan, np.nan],
         "start_x": [0, 60.4, 10.5, np.nan],
         "start_y": [0, -43.0, -15.5, np.nan],
-        "datetime": [pd.to_datetime("2023-01-20 20:00:05.370"),
-                     pd.to_datetime("2023-01-20 20:00:20.930"),
-                     pd.to_datetime("2023-01-20 20:00:23.640"),
-                     pd.to_datetime("2023-01-20 20:00:28.640")],
-        "instat_event": ["Attacking pass inaccurate", "Attacking pass accurate", "Challenge", "Challenge"],
-        "player_name": ["Player 2", "Player 1", "Player 3", np.nan]
+        "datetime": [
+            pd.to_datetime("2023-01-20 20:00:05.370"),
+            pd.to_datetime("2023-01-20 20:00:20.930"),
+            pd.to_datetime("2023-01-20 20:00:23.640"),
+            pd.to_datetime("2023-01-20 20:00:28.640"),
+        ],
+        "instat_event": [
+            "Attacking pass inaccurate",
+            "Attacking pass accurate",
+            "Challenge",
+            "Challenge",
+        ],
+        "player_name": ["Player 2", "Player 1", "Player 3", np.nan],
     }
 )

@@ -3,14 +3,16 @@ import unittest
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _normalize_playing_direction_tracking,
+)
 from databallpy.load_data.tracking_data.inmotio import (
     _get_metadata,
-    _get_td_channels,
     _get_player_data,
+    _get_td_channels,
     _get_tracking_data,
     load_inmotio_tracking_data,
 )
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import _normalize_playing_direction_tracking
 from tests.expected_outcomes import MD_INMOTIO, TD_INMOTIO
 
 
@@ -29,7 +31,9 @@ class TestInmotio(unittest.TestCase):
         assert channels == self.expected_channels
 
     def test_get_tracking_data(self):
-        tracking_data = _get_tracking_data(self.tracking_data_loc, self.expected_channels, [100.0, 50.0])
+        tracking_data = _get_tracking_data(
+            self.tracking_data_loc, self.expected_channels, [100.0, 50.0]
+        )
         expected_td = TD_INMOTIO.drop(["matchtime_td", "period"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
@@ -37,7 +41,7 @@ class TestInmotio(unittest.TestCase):
         tracking_data, metadata = load_inmotio_tracking_data(
             self.tracking_data_loc, self.metadata_loc, verbose=False
         )
-        expected_tracking_data = TD_INMOTIO.iloc[1:,:].reset_index(drop=True)
+        expected_tracking_data = TD_INMOTIO.iloc[1:, :].reset_index(drop=True)
         expected_tracking_data = _normalize_playing_direction_tracking(
             expected_tracking_data, MD_INMOTIO.periods_frames
         )
@@ -54,4 +58,6 @@ class TestInmotio(unittest.TestCase):
 
     def test_not_string_error(self):
         with self.assertRaises(TypeError):
-            load_inmotio_tracking_data(tracking_data_loc=1, metadata_loc=self.metadata_loc)
+            load_inmotio_tracking_data(
+                tracking_data_loc=1, metadata_loc=self.metadata_loc
+            )

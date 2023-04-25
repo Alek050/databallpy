@@ -6,21 +6,21 @@ import numpy as np
 import pandas as pd
 
 from databallpy import DataBallPyError
+from databallpy.load_data.event_data.instat import load_instat_event_data
 from databallpy.load_data.event_data.metrica_event_data import load_metrica_event_data
 from databallpy.load_data.event_data.opta import load_opta_event_data
+from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
-from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
-from databallpy.load_data.event_data.instat import load_instat_event_data
 from databallpy.match import (
     Match,
     _create_sim_mat,
     _needleman_wunsch,
     get_match,
-    get_open_match,
     get_matching_full_name,
+    get_open_match,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
@@ -202,18 +202,18 @@ class TestMatch(unittest.TestCase):
             )
             self.ed_instat["start_x"] *= x_correction
             self.ed_instat["start_y"] *= y_correction
-        
+
         periods_cols = self.md_instat.periods_frames.columns.difference(
-                self.md_inmotio.periods_frames.columns
-            ).to_list()
+            self.md_inmotio.periods_frames.columns
+        ).to_list()
         periods_cols.sort(reverse=True)
         merged_periods = pd.concat(
-                (
-                    self.md_inmotio.periods_frames,
-                    self.md_instat.periods_frames[periods_cols],
-                ),
-                axis=1,
-            )
+            (
+                self.md_inmotio.periods_frames,
+                self.md_instat.periods_frames[periods_cols],
+            ),
+            axis=1,
+        )
 
         self.expected_match_inmotio_instat = Match(
             tracking_data=self.td_inmotio,
@@ -1223,7 +1223,7 @@ class TestMatch(unittest.TestCase):
             match.periods, self.expected_match_metrica.periods
         )
         assert match == self.expected_match_metrica
-    
+
     def test_get_matching_full_name(self):
         input = "Bart Christaan Albert van den Boom"
         options = ["Bart Chris", "Bart van den Boom", "Piet Pieters"]
@@ -1237,7 +1237,7 @@ class TestMatch(unittest.TestCase):
             tracking_data_provider="inmotio",
             event_data_loc=self.ed_instat_loc,
             event_metadata_loc=self.md_instat_loc,
-            event_data_provider="instat"
+            event_data_provider="instat",
         )
 
         assert match_instat_inmotio == self.expected_match_inmotio_instat

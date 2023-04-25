@@ -7,19 +7,18 @@ import pandas as pd
 from tqdm import tqdm
 
 from databallpy import DataBallPyError
+from databallpy.load_data.event_data.instat import load_instat_event_data
 from databallpy.load_data.event_data.metrica_event_data import (
     load_metrica_event_data,
     load_metrica_open_event_data,
 )
 from databallpy.load_data.event_data.opta import load_opta_event_data
-from databallpy.load_data.event_data.instat import load_instat_event_data
+from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
-from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
-from databallpy.utils import _to_int
 
 
 @dataclass
@@ -227,12 +226,7 @@ class Match:
                     )
 
         # check for pitch axis
-        if (
-            not abs(
-                self.tracking_data["ball_x"].mean()
-            )
-            < 5.0
-        ):
+        if not abs(self.tracking_data["ball_x"].mean()) < 5.0:
             max_x = self.tracking_data["ball_x"].max()
             min_x = self.tracking_data["ball_x"].min()
             raise DataBallPyError(
@@ -240,12 +234,7 @@ class Match:
                                 now the min x = {min_x} and the max x = {max_x}"
             )
 
-        if (
-            not abs(
-                self.tracking_data["ball_y"].mean()
-            )
-            < 5.0
-        ):
+        if not abs(self.tracking_data["ball_y"].mean()) < 5.0:
             max_y = self.tracking_data["ball_y"].max()
             min_y = self.tracking_data["ball_y"].min()
             raise DataBallPyError(
@@ -382,7 +371,7 @@ the away team is {centroid_x}."
             "miss",
             "challenge",
             "goal",
-            "shot"
+            "shot",
         ]
 
         tracking_data = self.tracking_data
@@ -572,13 +561,13 @@ def get_match(
     assert tracking_data_provider in [
         "tracab",
         "metrica",
-        "inmotio"
+        "inmotio",
     ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
     "please open an issue in our Github repository."
     assert event_data_provider in [
         "opta",
         "metrica",
-        "instat"
+        "instat",
     ], f"We do not supper '{event_data_provider}' as event data provider yet, "
     "please open an issue in our Github repository."
 
@@ -608,7 +597,7 @@ def get_match(
     elif tracking_data_provider == "inmotio":
         tracking_data, tracking_metadata = load_inmotio_tracking_data(
             tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
-        ) 
+        )
 
     # Check if the event data is scaled the right way
     if not tracking_metadata.pitch_dimensions == event_metadata.pitch_dimensions:
@@ -634,17 +623,35 @@ def get_match(
         axis=1,
     )
 
-    if (not set(event_metadata.home_players["id"]) == set(tracking_metadata.home_players["id"])) or (not set(event_metadata.away_players["id"]) == set(tracking_metadata.away_players["id"])):
+    if (
+        not set(event_metadata.home_players["id"])
+        == set(tracking_metadata.home_players["id"])
+    ) or (
+        not set(event_metadata.away_players["id"])
+        == set(tracking_metadata.away_players["id"])
+    ):
         full_name_id_map = {}
         for idx, row in event_metadata.home_players.iterrows():
-            full_name_tracking_metadata = get_matching_full_name(row["full_name"], tracking_metadata.home_players["full_name"])
-            id_tracking_data = tracking_metadata.home_players.loc[tracking_metadata.home_players["full_name"] == full_name_tracking_metadata, "id"].values[0]
+            full_name_tracking_metadata = get_matching_full_name(
+                row["full_name"], tracking_metadata.home_players["full_name"]
+            )
+            id_tracking_data = tracking_metadata.home_players.loc[
+                tracking_metadata.home_players["full_name"]
+                == full_name_tracking_metadata,
+                "id",
+            ].values[0]
             event_metadata.home_players.loc[idx, "id"] = id_tracking_data
             full_name_id_map[row["full_name"]] = id_tracking_data
 
         for idx, row in event_metadata.away_players.iterrows():
-            full_name_tracking_metadata = get_matching_full_name(row["full_name"], tracking_metadata.away_players["full_name"])
-            id_tracking_data = tracking_metadata.away_players.loc[tracking_metadata.away_players["full_name"] == full_name_tracking_metadata, "id"].values[0]
+            full_name_tracking_metadata = get_matching_full_name(
+                row["full_name"], tracking_metadata.away_players["full_name"]
+            )
+            id_tracking_data = tracking_metadata.away_players.loc[
+                tracking_metadata.away_players["full_name"]
+                == full_name_tracking_metadata,
+                "id",
+            ].values[0]
             event_metadata.away_players.loc[idx, "id"] = id_tracking_data
             full_name_id_map[row["full_name"]] = id_tracking_data
         event_data["player_id"] = event_data["player_name"].map(full_name_id_map)
@@ -859,7 +866,8 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
     )
     return match
 
-def get_matching_full_name(full_name:str, options:list)->str:
+
+def get_matching_full_name(full_name: str, options: list) -> str:
     list_result = []
     for option in options:
         perfect_matches = 0
@@ -867,5 +875,7 @@ def get_matching_full_name(full_name:str, options:list)->str:
             for part_options in option.split(" "):
                 if part_name.lower() == part_options.lower():
                     perfect_matches += 1
-        list_result.append(perfect_matches/min(len(full_name.split(" ")), len(option.split(" "))))
+        list_result.append(
+            perfect_matches / min(len(full_name.split(" ")), len(option.split(" ")))
+        )
     return options[list_result.index(max(list_result))]

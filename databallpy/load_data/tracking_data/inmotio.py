@@ -22,7 +22,7 @@ from databallpy.load_data.tracking_data._insert_missing_rows import _insert_miss
 from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
     _normalize_playing_direction_tracking,
 )
-from databallpy.utils import _to_int, _to_float
+from databallpy.utils import _to_float, _to_int
 
 
 def load_inmotio_tracking_data(
@@ -127,10 +127,14 @@ def _get_tracking_data(
             y, x = player.split(",")
             team = td_channels[i].split("_")[0]
             shirt_num = td_channels[i].split("_")[1]
-            data = _add_player_tracking_data_to_dict(team, shirt_num, _to_float(x), _to_float(y), data, idx)
+            data = _add_player_tracking_data_to_dict(
+                team, shirt_num, _to_float(x), _to_float(y), data, idx
+            )
 
         y, x, z, _, ball_status = ball_info.replace("\n", "").split(",")
-        data = _add_ball_data_to_dict(_to_float(x), _to_float(y), _to_float(z), None, ball_status, data, idx)
+        data = _add_ball_data_to_dict(
+            _to_float(x), _to_float(y), _to_float(z), None, ball_status, data, idx
+        )
 
     df = pd.DataFrame(data)
     df["ball_status"] = ["alive" if x == "1" else "dead" for x in df["ball_status"]]
@@ -142,7 +146,6 @@ def _get_tracking_data(
         df[col] = df[col] - (pitch_dimensions[1] / 2)
 
     df = _insert_missing_rows(df, "frame")
-    
 
     return df
 
