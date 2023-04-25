@@ -1,4 +1,6 @@
 import datetime as dt
+import os
+import pickle
 from dataclasses import dataclass
 from typing import List
 
@@ -42,7 +44,7 @@ class Match:
         away_players (pd.DataFrame): Information about the away players.
         away_score (int): Number of goals scored over the match by the away team.
         away_formation (str): Indication of the formation of the away team.
-        name (str): The home and away team name and score (e.g "nameH 3 - 1 nameA").
+        name (str): The home and away team name and score: "nameH 3 - 1 nameA {date}".
         home_players_column_ids (list): All column ids of the tracking data that refer
                                         to information about the home team players.
         away_players_column_ids (list): All column ids of the tracking data that refer
@@ -51,6 +53,8 @@ class Match:
     Funcs
         player_column_id_to_full_name: Simple function to get the full name of a player
                                        from the column id
+        synchronise_tracking_and_event_data: Synchronises the tracking and event data
+        save_match: Saves the match to a pickle file.
     """
 
     tracking_data: pd.DataFrame
@@ -70,6 +74,12 @@ class Match:
     away_players: pd.DataFrame
     away_score: int
     away_formation: str
+
+    # to save the preprocessing status
+    is_synchronised: bool = False
+
+    def __repr__(self):
+        return "databallpy.match.Match object: " + self.name
 
     def __post_init__(self):
         # tracking_data
@@ -320,6 +330,10 @@ the away team is {centroid_x}."
                 self.away_players["shirt_num"] == shirt_num, "full_name"
             ].iloc[0]
 
+    @property
+    def preprocessing_status(self):
+        return f"Preprocessing status:\n\tis_synchronised = {self.is_synchronised}"
+
     def player_id_to_column_id(self, player_id: int) -> str:
         """Simple function to get the column id based on player id
 
@@ -493,7 +507,7 @@ the away team is {centroid_x}."
         self.tracking_data = tracking_data
         self.event_data = event_data
 
-        return
+        self.is_synchronised = True
 
     def __eq__(self, other):
         if isinstance(other, Match):
@@ -542,6 +556,27 @@ the away team is {centroid_x}."
             away_team_name=self.away_team_name,
             away_players=self.away_players.copy(),
         )
+
+    def save_match(
+        self, name: str = None, path: str = None, verbose: bool = True
+    ) -> None:
+        """Function to save the current match object to a pickle file
+
+        Args:
+            name (str): name of the pickle file, if not provided or not a string,
+            the name will be the name of the match
+            path (str): path to the directory where the pickle file will be saved, if
+            not provided, the current working directory will be used
+            verbose (bool): if True, saved name will be printed
+        """
+        if name is None or not isinstance(name, str):
+            name = self.name
+        if path is None:
+            path = os.getcwd()
+        with open(os.path.join(path, name + ".pickle"), "wb") as f:
+            pickle.dump(self, f)
+        if verbose:
+            print(f"Match saved to {os.path.join(path, name)}.pickle")
 
 
 def get_match(
@@ -829,4 +864,20 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         away_team_name=metadata.away_team_name,
         away_players=metadata.away_players,
     )
+    return match
+
+
+def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
+    """Function to load a saved match object
+
+    Args:
+        name (str): the name with the to be loaded match, should be a pickle file
+        path (str, optional): path of directory where Match is saved. Defaults
+        to current working directory.
+
+    Returns:
+        Match: All information about the match
+    """
+    with open(os.path.join(path, name + ".pickle"), "rb") as f:
+        match = pickle.load(f)
     return match
