@@ -22,5 +22,7 @@
 - Fixed bug, now both tracking and event data are normalized in direction
 - Fixed unexpected behaviour, all date related objects are now datetime objects
 
+## v0.3.0 (date)
 
+- Fixed bug in opta event data, own goals are now parsed as seperate event type
 
