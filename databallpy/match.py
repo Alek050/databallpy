@@ -13,6 +13,7 @@ from databallpy.load_data.event_data.metrica_event_data import (
     load_metrica_open_event_data,
 )
 from databallpy.load_data.event_data.opta import load_opta_event_data
+from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
@@ -226,20 +227,21 @@ class Match:
                     )
 
         # check for pitch axis
-        if not abs(self.tracking_data["ball_x"].mean()) < 5.0:
-            max_x = self.tracking_data["ball_x"].max()
-            min_x = self.tracking_data["ball_x"].min()
+        first_frame = self.tracking_data["ball_x"].first_valid_index()
+        if not abs(self.tracking_data.loc[first_frame, "ball_x"]) < 5.0:
+            x_start = self.tracking_data.loc[first_frame, "ball_x"]
+            y_start = self.tracking_data.loc[first_frame, "ball_y"]
             raise DataBallPyError(
                 f"The middle point of the pitch should be (0, 0),\
-                                now the min x = {min_x} and the max x = {max_x}"
+                                now the kick-off is at ({x_start}, {y_start})"
             )
 
-        if not abs(self.tracking_data["ball_y"].mean()) < 5.0:
-            max_y = self.tracking_data["ball_y"].max()
-            min_y = self.tracking_data["ball_y"].min()
+        if not abs(self.tracking_data.loc[first_frame, "ball_y"]) < 5.0:
+            x_start = self.tracking_data.loc[first_frame, "ball_x"]
+            y_start = self.tracking_data.loc[first_frame, "ball_y"]
             raise DataBallPyError(
                 f"The middle point of the pitch should be (0, 0),\
-                                now th min y = {min_y} and the max y = {max_y}"
+                                now the kick-off is at ({x_start}, {y_start})"
             )
 
         # check for direction of play
@@ -507,8 +509,6 @@ the away team is {centroid_x}."
                 self.away_players.equals(other.away_players),
                 self.away_score == other.away_score,
             ]
-            # if not all(res):
-            #     import pdb; pdb.set_trace()
             return all(res)
         else:
             return False
@@ -630,30 +630,21 @@ def get_match(
         not set(event_metadata.away_players["id"])
         == set(tracking_metadata.away_players["id"])
     ):
-        full_name_id_map = {}
-        for idx, row in event_metadata.home_players.iterrows():
-            full_name_tracking_metadata = get_matching_full_name(
-                row["full_name"], tracking_metadata.home_players["full_name"]
+        event_metadata = align_player_ids(event_metadata, tracking_metadata)
+        full_name_id_map = dict(
+            zip(
+                event_metadata.home_players["full_name"],
+                event_metadata.home_players["id"],
             )
-            id_tracking_data = tracking_metadata.home_players.loc[
-                tracking_metadata.home_players["full_name"]
-                == full_name_tracking_metadata,
-                "id",
-            ].values[0]
-            event_metadata.home_players.loc[idx, "id"] = id_tracking_data
-            full_name_id_map[row["full_name"]] = id_tracking_data
-
-        for idx, row in event_metadata.away_players.iterrows():
-            full_name_tracking_metadata = get_matching_full_name(
-                row["full_name"], tracking_metadata.away_players["full_name"]
+        )
+        full_name_id_map.update(
+            dict(
+                zip(
+                    event_metadata.away_players["full_name"],
+                    event_metadata.away_players["id"],
+                )
             )
-            id_tracking_data = tracking_metadata.away_players.loc[
-                tracking_metadata.away_players["full_name"]
-                == full_name_tracking_metadata,
-                "id",
-            ].values[0]
-            event_metadata.away_players.loc[idx, "id"] = id_tracking_data
-            full_name_id_map[row["full_name"]] = id_tracking_data
+        )
         event_data["player_id"] = event_data["player_name"].map(full_name_id_map)
 
     # Merged player info
@@ -868,6 +859,16 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
 
 
 def get_matching_full_name(full_name: str, options: list) -> str:
+    """Function that finds the best match between a name and a list of names,
+    based on the fraction of words that is a perfect match.
+
+    Args:
+        full_name (str): name that has to be matched
+        options (list): list of possible names
+
+    Returns:
+        str: the name from the option list that is the best match
+    """
     list_result = []
     for option in options:
         perfect_matches = 0
@@ -879,3 +880,37 @@ def get_matching_full_name(full_name: str, options: list) -> str:
             perfect_matches / min(len(full_name.split(" ")), len(option.split(" ")))
         )
     return options[list_result.index(max(list_result))]
+
+
+def align_player_ids(event_metadata: Metadata, tracking_metadata: Metadata) -> Metadata:
+    """Function to align player ids when the player ids between tracking and event
+    data are different. The player ids in the metadata of the tracking data is leading.
+
+    Args:
+        event_metadata (Metadata): metadata of the event data
+        tracking_metadata (Metadata): metadata of the tracking data
+
+    Returns:
+        Metadata: metadata of the event date with alignes player ids
+    """
+    for idx, row in event_metadata.home_players.iterrows():
+        full_name_tracking_metadata = get_matching_full_name(
+            row["full_name"], tracking_metadata.home_players["full_name"]
+        )
+        id_tracking_data = tracking_metadata.home_players.loc[
+            tracking_metadata.home_players["full_name"] == full_name_tracking_metadata,
+            "id",
+        ].values[0]
+        event_metadata.home_players.loc[idx, "id"] = id_tracking_data
+
+    for idx, row in event_metadata.away_players.iterrows():
+        full_name_tracking_metadata = get_matching_full_name(
+            row["full_name"], tracking_metadata.away_players["full_name"]
+        )
+        id_tracking_data = tracking_metadata.away_players.loc[
+            tracking_metadata.away_players["full_name"] == full_name_tracking_metadata,
+            "id",
+        ].values[0]
+        event_metadata.away_players.loc[idx, "id"] = id_tracking_data
+
+    return event_metadata

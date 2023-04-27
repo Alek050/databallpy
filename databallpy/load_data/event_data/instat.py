@@ -118,7 +118,9 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
     away_formation = ""
 
     for event in events:
-        if event["action_id"].startswith("16"):
+        if event["action_id"].startswith(
+            "16"
+        ):  # events starting with 16 contain player metadata
             if int(event["player_id"]) not in players_dict["id"]:
                 players_dict["id"].append(int(event["player_id"]))
                 players_dict["full_name"].append(str(event["player_name"]))
@@ -129,7 +131,9 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
                     players_dict["starter"].append(True)
                 players_dict["shirt_num"].append(int(event["number"]))
                 players_dict["team_id"].append(int(event["team_id"]))
-        if event["action_id"].startswith("15"):
+        if event["action_id"].startswith(
+            "15"
+        ):  # events starting with 15 contain formations
             if int(event["team_id"]) == metadata.home_team_id and home_formation == "":
                 home_formation = str(event["action_name"]).replace("-", "")
             if int(event["team_id"]) == metadata.away_team_id and away_formation == "":
@@ -153,7 +157,6 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
     metadata.away_formation = away_formation
     metadata.home_players = home_players
     metadata.away_players = away_players
-    # import pdb;pdb.set_trace()
     return metadata
 
 
@@ -177,7 +180,7 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
         "Pass into offside": ["pass", 0],
         "Successful dribbling": ["dribbling", 1],
         "Unsuccessful dribbling": ["dribbling", 0],
-        "Dribbling": ["dribbling", np.nan],
+        "Dribbling": ["dribbling", -999],
         "Crosses accurate": ["cross", 1],
         "Accurate crossing from set piece with a shot": ["cross", 1],
         "Accurate crossing from set piece": ["cross", 1],
@@ -208,6 +211,8 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
         "outcome": [],
         "start_x": [],
         "start_y": [],
+        "end_x": [],
+        "end_y": [],
         "datetime": [],
         "instat_event": [],
     }
@@ -225,7 +230,6 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     }
 
     for event in events:
-        # import pdb;pdb.set_trace()
         if not event["action_id"].startswith(("16", "15")):
             result_dict["event_id"].append(int(event["id"]))
             result_dict["type_id"].append(int(event["action_id"]))
@@ -255,6 +259,12 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
             else:
                 result_dict["start_x"].append(np.nan)
                 result_dict["start_y"].append(np.nan)
+            if "pos_dest_x" in event.keys():
+                result_dict["end_x"].append(float(event["pos_dest_x"]))
+                result_dict["end_y"].append(float(event["pos_dest_y"]))
+            else:
+                result_dict["end_x"].append(np.nan)
+                result_dict["end_y"].append(np.nan)
             result_dict["datetime"].append(
                 start_time_period[int(event["half"])]
                 + dt.timedelta(milliseconds=float(event["second"]) * 1000)
@@ -270,6 +280,9 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     )
     event_data["start_x"] -= x_start
     event_data["start_y"] -= y_start
+    event_data["end_x"] -= x_start
+    event_data["end_y"] -= y_start
+
     pitch_dimensions = [2 * x_start, 2 * y_start]
 
     id_full_name_dict = dict(
@@ -281,6 +294,6 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     id_full_name_dict.update(id_full_name_dict_away)
     event_data["player_name"] = event_data["player_id"].map(id_full_name_dict)
     away_mask = event_data["team_id"] == metadata.away_team_id
-    event_data.loc[away_mask, ["start_x", "start_y"]] *= -1
+    event_data.loc[away_mask, ["start_x", "start_y", "end_x", "end_y"]] *= -1
 
     return event_data, pitch_dimensions

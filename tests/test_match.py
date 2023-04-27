@@ -18,10 +18,12 @@ from databallpy.match import (
     Match,
     _create_sim_mat,
     _needleman_wunsch,
+    align_player_ids,
     get_match,
     get_matching_full_name,
     get_open_match,
 )
+from expected_outcomes import MD_INMOTIO, MD_INSTAT, RES_SIM_MAT, RES_SIM_MAT_NO_PLAYER
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
@@ -1038,62 +1040,7 @@ class TestMatch(unittest.TestCase):
         assert res == expected_res
 
     def test_create_sim_mat(self):
-        expected_res = np.array(
-            [
-                0.40006852,
-                0.40006852,
-                0.39676846,
-                0.42604787,
-                0.39410369,
-                0.39410369,
-                0.3922753,
-                0.42664872,
-                0.38802166,
-                0.38802166,
-                0.38767596,
-                0.42703609,
-                0.36787944,
-                0.36787944,
-                0.36787944,
-                0.36787944,
-                0.37342119,
-                0.37342119,
-                0.37878323,
-                0.42755615,
-                0.39987463,
-                0.39987463,
-                0.40133888,
-                0.42945239,
-                0.39263378,
-                0.39263378,
-                0.39708269,
-                0.42795639,
-                0.38521479,
-                0.38521479,
-                0.39260596,
-                0.41395895,
-                0.37126589,
-                0.37126589,
-                0.38263939,
-                0.40387744,
-                0.39703003,
-                0.39703003,
-                0.40487744,
-                0.4017941,
-                0.38921197,
-                0.38921197,
-                0.39914273,
-                0.41462662,
-                0.38150169,
-                0.38150169,
-                0.39270907,
-                0.4194602,
-                0.36787944,
-                0.36787944,
-                0.38141911,
-                0.41999494,
-            ]
-        )
+        expected_res = RES_SIM_MAT
         expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
@@ -1115,62 +1062,7 @@ class TestMatch(unittest.TestCase):
         np.testing.assert_allclose(expected_res, res)
 
     def test_create_sim_mat_without_player(self):
-        expected_res = np.array(
-            [
-                0.40006852,
-                0.40006852,
-                0.86247631,
-                0.42604787,
-                0.39410369,
-                0.39410369,
-                0.8646367,
-                0.42664872,
-                0.38802166,
-                0.38802166,
-                0.86681802,
-                0.42703609,
-                0.36787944,
-                0.36787944,
-                0.36787944,
-                0.36787944,
-                0.37342119,
-                0.37342119,
-                0.87099448,
-                0.42755615,
-                0.39987463,
-                0.39987463,
-                0.87109937,
-                0.42945239,
-                0.39263378,
-                0.39263378,
-                0.87328136,
-                0.42795639,
-                0.38521479,
-                0.38521479,
-                0.87548448,
-                0.41395895,
-                0.37126589,
-                0.37126589,
-                0.87795412,
-                0.40387744,
-                0.39703003,
-                0.39703003,
-                0.87805984,
-                0.4017941,
-                0.38921197,
-                0.38921197,
-                0.87850958,
-                0.41462662,
-                0.38150169,
-                0.38150169,
-                0.87722815,
-                0.4194602,
-                0.36787944,
-                0.36787944,
-                0.87620901,
-                0.41999494,
-            ]
-        )
+        expected_res = RES_SIM_MAT_NO_PLAYER
         expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
@@ -1241,3 +1133,23 @@ class TestMatch(unittest.TestCase):
         )
 
         assert match_instat_inmotio == self.expected_match_inmotio_instat
+
+    def test_match_inmotio_instat_unaligned_player_ids(self):
+        match_instat_inmotio_unaligned_input = get_match(
+            tracking_data_loc=self.td_inmotio_loc,
+            tracking_metadata_loc=self.md_inmotio_loc,
+            tracking_data_provider="inmotio",
+            event_data_loc="tests/test_data/instat_ed_test_unaligned_player_ids.json",
+            event_metadata_loc=self.md_instat_loc,
+            event_data_provider="instat",
+        )
+
+        assert (
+            match_instat_inmotio_unaligned_input == self.expected_match_inmotio_instat
+        )
+
+    def test_align_player_ids(self):
+        unaligned_metadata = MD_INSTAT.copy()
+        unaligned_metadata.away_players.loc[0, "id"] = 9
+        aligned_metadata = align_player_ids(unaligned_metadata, MD_INMOTIO)
+        assert aligned_metadata == MD_INSTAT

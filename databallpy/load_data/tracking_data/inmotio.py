@@ -47,7 +47,7 @@ def load_inmotio_tracking_data(
         assert os.path.exists(metadata_loc)
     else:
         raise TypeError(
-            "tracking_data_loc must be  a str," f" not a {type(tracking_data_loc)}"
+            f"tracking_data_loc must be  a str, not a {type(tracking_data_loc)}"
         )
 
     metadata = _get_metadata(metadata_loc)
@@ -249,12 +249,12 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         home_team_name=home_team_name,
         home_players=home_players,
         home_score=home_score,
-        home_formation=None,
+        home_formation="",
         away_team_id=away_team_id,
         away_team_name=away_team_name,
         away_players=away_players,
         away_score=away_score,
-        away_formation=None,
+        away_formation="",
     )
     return metadata
 
