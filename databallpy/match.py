@@ -2,12 +2,12 @@ import datetime as dt
 import os
 import pickle
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 from typing import List
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from difflib import SequenceMatcher
 
 from databallpy import DataBallPyError
 from databallpy.load_data.event_data.instat import load_instat_event_data
