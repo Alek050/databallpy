@@ -645,7 +645,9 @@ def get_match(
                 )
             )
         )
-        event_data["player_id"] = event_data["player_name"].map(full_name_id_map).fillna(-999).astype("int64")
+        event_data["player_id"] = (
+            event_data["player_name"].map(full_name_id_map).fillna(-999).astype("int64")
+        )
 
     # Merged player info
     player_cols = event_metadata.home_players.columns.difference(

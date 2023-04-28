@@ -211,7 +211,6 @@ class TestMatch(unittest.TestCase):
             }
         )
 
-        
         self.expected_periods_inmotio_instat = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
@@ -794,7 +793,9 @@ class TestMatch(unittest.TestCase):
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players_tracab_opta.drop("shirt_num", axis=1),
+                away_players=self.expected_away_players_tracab_opta.drop(
+                    "shirt_num", axis=1
+                ),
             )
 
         # pitch axis
