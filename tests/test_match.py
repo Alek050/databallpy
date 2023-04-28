@@ -1,4 +1,5 @@
 import datetime as dt
+import os
 import unittest
 from unittest.mock import Mock, patch
 
@@ -18,6 +19,7 @@ from databallpy.match import (
     _needleman_wunsch,
     get_match,
     get_open_match,
+    get_saved_match,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
@@ -812,6 +814,39 @@ class TestMatch(unittest.TestCase):
             event_data_provider=self.ed_provider,
         )
 
+    def test_preprosessing_status(self):
+        match = self.match_to_sync.copy()
+        assert match.is_synchronised is False
+        assert (
+            match.preprocessing_status
+            == "Preprocessing status:\n\tis_synchronised = False"
+        )
+        match.synchronise_tracking_and_event_data(n_batches_per_half=1)
+        assert match.is_synchronised is True
+        assert (
+            match.preprocessing_status
+            == "Preprocessing status:\n\tis_synchronised = True"
+        )
+
+    def test__repr__and_name(self):
+        assert (
+            self.match_to_sync.__repr__()
+            == "databallpy.match.Match object: TeamOne 3 - 1 \
+TeamTwo 2023-01-22 16:46:39"
+        )
+        assert self.match_to_sync.name == "TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39"
+
+    def test_save_match(self):
+        assert not os.path.exists(
+            "tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
+        )
+        match = self.match_to_sync.copy()
+        match.save_match(path="tests/test_data")
+        assert os.path.exists(
+            "tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
+        )
+        os.remove("tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle")
+
     def test_get_match(self):
         match = get_match(
             tracking_data_loc=self.td_tracab_loc,
@@ -1155,3 +1190,10 @@ class TestMatch(unittest.TestCase):
             match.periods, self.expected_match_metrica.periods
         )
         assert match == self.expected_match_metrica
+
+    def test_get_saved_match(self):
+        expected_match = self.expected_match_metrica
+        expected_match.save_match(name="test_match", path="tests/test_data")
+        saved_match = get_saved_match(name="test_match", path="tests/test_data")
+        assert expected_match == saved_match
+        assert saved_match != self.expected_match_tracab_opta
