@@ -18,7 +18,7 @@ class TestInstat(unittest.TestCase):
 
     def test_load_instat_event_data(self):
         expected_metadata = MD_INSTAT.copy()
-        expected_metadata.pitch_dimensions = [50.0, 100.0]
+        expected_metadata.pitch_dimensions = [100.0, 50.0]
         event_data, metadata = load_instat_event_data(
             self.instat_event_data_loc, self.instat_metadata_loc
         )
@@ -60,4 +60,4 @@ class TestInstat(unittest.TestCase):
         )
         expected_event_data = ED_INSTAT
         pd.testing.assert_frame_equal(event_data, expected_event_data)
-        assert pitch_dimensions == [50.0, 100.0]
+        assert pitch_dimensions == [100.0, 50.0]

@@ -49,7 +49,7 @@ class TestMatch(unittest.TestCase):
         )  # pitch dimensions of td and ed metadata
         self.corrected_ed["start_y"] *= 50.0 / 68.0
 
-        self.expected_periods = pd.DataFrame(
+        self.expected_periods_tracab_opta = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
                 "start_frame": [1509993, 1509996, -999, -999, -999],
@@ -89,7 +89,7 @@ class TestMatch(unittest.TestCase):
             }
         )
 
-        self.expected_home_players = pd.DataFrame(
+        self.expected_home_players_tracab_opta = pd.DataFrame(
             {
                 "id": [19367, 45849],
                 "full_name": ["Piet Schrijvers", "Jan Boskamp"],
@@ -102,7 +102,7 @@ class TestMatch(unittest.TestCase):
             }
         )
 
-        self.expected_away_players = pd.DataFrame(
+        self.expected_away_players_tracab_opta = pd.DataFrame(
             {
                 "id": [184934, 450445],
                 "full_name": ["Pepijn Blok", "TestSpeler"],
@@ -114,6 +114,7 @@ class TestMatch(unittest.TestCase):
                 "starter": [True, False],
             }
         )
+
         self.td_tracab["period"] = [1, 1, -999, 2, 2]
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
@@ -121,18 +122,18 @@ class TestMatch(unittest.TestCase):
             event_data=self.corrected_ed,
             event_data_provider=self.ed_provider,
             pitch_dimensions=self.md_tracab.pitch_dimensions,
-            periods=self.expected_periods,
+            periods=self.expected_periods_tracab_opta,
             frame_rate=self.md_tracab.frame_rate,
             home_team_id=self.md_opta.home_team_id,
             home_formation=self.md_opta.home_formation,
             home_score=self.md_opta.home_score,
             home_team_name=self.md_opta.home_team_name,
-            home_players=self.expected_home_players,
+            home_players=self.expected_home_players_tracab_opta,
             away_team_id=self.md_opta.away_team_id,
             away_formation=self.md_opta.away_formation,
             away_score=self.md_opta.away_score,
             away_team_name=self.md_opta.away_team_name,
-            away_players=self.expected_away_players,
+            away_players=self.expected_away_players_tracab_opta,
         )
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
         self.md_metrica_loc = "tests/test_data/metrica_metadata_test.xml"
@@ -184,37 +185,67 @@ class TestMatch(unittest.TestCase):
             self.ed_instat_loc, self.md_instat_loc
         )
 
-        player_cols_inmotio_instat = self.md_instat.home_players.columns.difference(
-            self.md_inmotio.home_players.columns
-        ).to_list()
-        player_cols_inmotio_instat.append("id")
-        home_players = self.md_inmotio.home_players.merge(
-            self.md_instat.home_players[player_cols_inmotio_instat], on="id"
-        )
-        away_players = self.md_inmotio.away_players.merge(
-            self.md_instat.away_players[player_cols_inmotio_instat], on="id"
+        self.expected_home_players_inmotio_instat = pd.DataFrame(
+            {
+                "id": [1, 2],
+                "full_name": ["Player 1", "Player 2"],
+                "shirt_num": [1, 2],
+                "player_type": ["Goalkeeper", "Field player"],
+                "start_frame": [2, 2],
+                "end_frame": [6, 6],
+                "position": ["Goalkeeper", "Defender"],
+                "starter": [True, True],
+            }
         )
 
-        if not self.md_inmotio.pitch_dimensions == self.md_instat.pitch_dimensions:
-            x_correction = (
-                self.md_inmotio.pitch_dimensions[0] / self.md_instat.pitch_dimensions[0]
-            )
-            y_correction = (
-                self.md_inmotio.pitch_dimensions[1] / self.md_instat.pitch_dimensions[1]
-            )
-            self.ed_instat["start_x"] *= x_correction
-            self.ed_instat["start_y"] *= y_correction
+        self.expected_away_players_inmotio_instat = pd.DataFrame(
+            {
+                "id": [3, 4],
+                "full_name": ["Player 11", "Player 12"],
+                "shirt_num": [1, 2],
+                "player_type": ["Goalkeeper", "Field player"],
+                "start_frame": [2, 2],
+                "end_frame": [6, 6],
+                "position": ["Goalkeeper", "Substitute player"],
+                "starter": [True, False],
+            }
+        )
 
-        periods_cols = self.md_instat.periods_frames.columns.difference(
-            self.md_inmotio.periods_frames.columns
-        ).to_list()
-        periods_cols.sort(reverse=True)
-        merged_periods = pd.concat(
-            (
-                self.md_inmotio.periods_frames,
-                self.md_instat.periods_frames[periods_cols],
-            ),
-            axis=1,
+        
+        self.expected_periods_inmotio_instat = pd.DataFrame(
+            {
+                "period": [1, 2, 3, 4, 5],
+                "start_frame": [2, 5, -999, -999, -999],
+                "end_frame": [3, 6, -999, -999, -999],
+                "start_datetime_td": [
+                    pd.to_datetime("2023-01-01 19:00:00"),
+                    pd.to_datetime("2023-01-01 20:00:00"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                ],
+                "end_datetime_td": [
+                    pd.to_datetime("2023-01-01 19:45:00"),
+                    pd.to_datetime("2023-01-01 20:45:00"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                ],
+                "start_datetime_ed": [
+                    pd.to_datetime("2023-01-01 20:00:00"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                ],
+                "end_datetime_ed": [
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                ],
+            }
         )
 
         self.expected_match_inmotio_instat = Match(
@@ -223,18 +254,18 @@ class TestMatch(unittest.TestCase):
             event_data=self.ed_instat,
             event_data_provider="instat",
             pitch_dimensions=self.md_inmotio.pitch_dimensions,
-            periods=merged_periods,
+            periods=self.expected_periods_inmotio_instat,
             frame_rate=self.md_inmotio.frame_rate,
             home_team_id=self.md_instat.home_team_id,
             home_formation=self.md_instat.home_formation,
             home_score=self.md_instat.home_score,
             home_team_name=self.md_instat.home_team_name,
-            home_players=home_players,
+            home_players=self.expected_home_players_inmotio_instat,
             away_team_id=self.md_instat.away_team_id,
             away_formation=self.md_instat.away_formation,
             away_score=self.md_instat.away_score,
             away_team_name=self.md_instat.away_team_name,
-            away_players=away_players,
+            away_players=self.expected_away_players_inmotio_instat,
         )
 
         self.match_to_sync = get_match(
@@ -273,18 +304,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -294,18 +325,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # tracking data provider
@@ -316,18 +347,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # event data
@@ -338,18 +369,18 @@ class TestMatch(unittest.TestCase):
                 event_data="event_data",
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -365,18 +396,18 @@ class TestMatch(unittest.TestCase):
                 ),
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # event data provider
@@ -387,18 +418,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=["opta"],
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # pitch dimensions
@@ -409,18 +440,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions={1: 22, 2: 11},
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -430,18 +461,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=[10.0, 11.0, 12.0],
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(TypeError):
@@ -451,18 +482,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=[10, 11.0],
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # periods
@@ -479,12 +510,12 @@ class TestMatch(unittest.TestCase):
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -500,12 +531,12 @@ class TestMatch(unittest.TestCase):
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -521,12 +552,12 @@ class TestMatch(unittest.TestCase):
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -542,12 +573,12 @@ class TestMatch(unittest.TestCase):
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # frame rate
@@ -558,18 +589,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=25.0,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -579,18 +610,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=-25,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # team id
@@ -601,18 +632,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=123.0,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # team name
@@ -623,18 +654,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=["teamone"],
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # team score
@@ -645,18 +676,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=11.5,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -666,18 +697,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=-3,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # team formation
@@ -688,18 +719,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=[1, 4, 2, 2],
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -709,18 +740,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation="one-four-three-three",
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # team players
@@ -731,7 +762,7 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
@@ -742,7 +773,7 @@ class TestMatch(unittest.TestCase):
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(ValueError):
@@ -752,18 +783,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players.drop("shirt_num", axis=1),
+                away_players=self.expected_away_players_tracab_opta.drop("shirt_num", axis=1),
             )
 
         # pitch axis
@@ -776,18 +807,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
         with self.assertRaises(DataBallPyError):
             td_changed = self.td_tracab.copy()
@@ -798,18 +829,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         # playing direction
@@ -822,18 +853,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
         with self.assertRaises(DataBallPyError):
@@ -845,18 +876,18 @@ class TestMatch(unittest.TestCase):
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.md_tracab.pitch_dimensions,
-                periods=self.expected_periods,
+                periods=self.expected_periods_tracab_opta,
                 frame_rate=self.md_tracab.frame_rate,
                 home_team_id=self.md_opta.home_team_id,
                 home_formation=self.md_opta.home_formation,
                 home_score=self.md_opta.home_score,
                 home_team_name=self.md_opta.home_team_name,
-                home_players=self.expected_home_players,
+                home_players=self.expected_home_players_tracab_opta,
                 away_team_id=self.md_opta.away_team_id,
                 away_formation=self.md_opta.away_formation,
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
-                away_players=self.expected_away_players,
+                away_players=self.expected_away_players_tracab_opta,
             )
 
     def test_get_match_wrong_provider(self):

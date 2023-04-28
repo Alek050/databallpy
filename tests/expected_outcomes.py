@@ -461,7 +461,7 @@ MD_INSTAT = Metadata(
         {
             "period": [1, 2, 3, 4, 5],
             "start_datetime_ed": [
-                pd.to_datetime("2023-01-20 20:00:00"),
+                pd.to_datetime("2023-01-01 20:00:00"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -516,15 +516,15 @@ ED_INSTAT = pd.DataFrame(
         "player_id": [2, 1, 3, -999],
         "team_id": [1, 1, 2, -999],
         "outcome": [0, 1, np.nan, np.nan],
-        "start_x": [0, 60.4, 10.5, np.nan],
-        "start_y": [0, -43.0, -15.5, np.nan],
-        "end_x": [4.9, 65.5, np.nan, np.nan],
-        "end_y": [18.0, -47.5, np.nan, np.nan],
+        "start_x": [0, 35.4, 35.5, np.nan],
+        "start_y": [0, -18.0, -40.5, np.nan],
+        "end_x": [-20.1, 40.5, np.nan, np.nan],
+        "end_y": [43.0, -22.5, np.nan, np.nan],
         "datetime": [
-            pd.to_datetime("2023-01-20 20:00:05.370"),
-            pd.to_datetime("2023-01-20 20:00:20.930"),
-            pd.to_datetime("2023-01-20 20:00:23.640"),
-            pd.to_datetime("2023-01-20 20:00:28.640"),
+            pd.to_datetime("2023-01-01 20:00:05.370"),
+            pd.to_datetime("2023-01-01 20:00:20.930"),
+            pd.to_datetime("2023-01-01 20:00:23.640"),
+            pd.to_datetime("2023-01-01 20:00:28.640"),
         ],
         "instat_event": [
             "Attacking pass inaccurate",
