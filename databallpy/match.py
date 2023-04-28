@@ -7,6 +7,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from difflib import SequenceMatcher
 
 from databallpy import DataBallPyError
 from databallpy.load_data.event_data.instat import load_instat_event_data
@@ -897,7 +898,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
 
 def get_matching_full_name(full_name: str, options: list) -> str:
     """Function that finds the best match between a name and a list of names,
-    based on the fraction of words that is a perfect match.
+    based on difflib.SequenceMatcher
 
     Args:
         full_name (str): name that has to be matched
@@ -906,17 +907,11 @@ def get_matching_full_name(full_name: str, options: list) -> str:
     Returns:
         str: the name from the option list that is the best match
     """
-    list_result = []
+    similarity = []
     for option in options:
-        perfect_matches = 0
-        for part_name in full_name.split(" "):
-            for part_options in option.split(" "):
-                if part_name.lower() == part_options.lower():
-                    perfect_matches += 1
-        list_result.append(
-            perfect_matches / min(len(full_name.split(" ")), len(option.split(" ")))
-        )
-    return options[list_result.index(max(list_result))]
+        s = SequenceMatcher(None, full_name, option)
+        similarity.append(s.ratio())
+    return options[similarity.index(max(similarity))]
 
 
 def align_player_ids(event_metadata: Metadata, tracking_metadata: Metadata) -> Metadata:
