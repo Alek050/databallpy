@@ -25,7 +25,16 @@ from databallpy.match import (
     get_open_match,
     get_saved_match,
 )
-from expected_outcomes import MD_INMOTIO, MD_INSTAT, RES_SIM_MAT, RES_SIM_MAT_NO_PLAYER
+from expected_outcomes import (
+    ED_OPTA,
+    MD_INMOTIO,
+    MD_INSTAT,
+    MD_OPTA,
+    MD_TRACAB,
+    RES_SIM_MAT,
+    RES_SIM_MAT_NO_PLAYER,
+    TD_TRACAB,
+)
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
@@ -278,6 +287,46 @@ class TestMatch(unittest.TestCase):
             event_data_provider="opta",
         )
 
+        self.expected_match_tracab = Match(
+            tracking_data=TD_TRACAB,
+            tracking_data_provider="tracab",
+            event_data=pd.DataFrame(),
+            event_data_provider=None,
+            pitch_dimensions=MD_TRACAB.pitch_dimensions,
+            periods=MD_TRACAB.periods_frames,
+            frame_rate=MD_TRACAB.frame_rate,
+            home_team_id=MD_TRACAB.home_team_id,
+            home_formation=MD_TRACAB.home_formation,
+            home_score=MD_TRACAB.home_score,
+            home_team_name=MD_TRACAB.home_team_name,
+            home_players=MD_TRACAB.home_players,
+            away_team_id=MD_TRACAB.away_team_id,
+            away_formation=MD_TRACAB.away_formation,
+            away_score=MD_TRACAB.away_score,
+            away_team_name=MD_TRACAB.away_team_name,
+            away_players=MD_TRACAB.away_players,
+        )
+
+        self.expected_match_opta = Match(
+            tracking_data=pd.DataFrame(),
+            tracking_data_provider=None,
+            event_data=ED_OPTA,
+            event_data_provider="opta",
+            pitch_dimensions=MD_OPTA.pitch_dimensions,
+            periods=MD_OPTA.periods_frames,
+            frame_rate=MD_OPTA.frame_rate,
+            home_team_id=MD_OPTA.home_team_id,
+            home_formation=MD_OPTA.home_formation,
+            home_score=MD_OPTA.home_score,
+            home_team_name=MD_OPTA.home_team_name,
+            home_players=MD_OPTA.home_players,
+            away_team_id=MD_OPTA.away_team_id,
+            away_formation=MD_OPTA.away_formation,
+            away_score=MD_OPTA.away_score,
+            away_team_name=MD_OPTA.away_team_name,
+            away_players=MD_OPTA.away_players,
+        )
+
     def test_match_eq(self):
         assert self.expected_match_metrica == self.expected_match_metrica
         assert self.expected_match_metrica != self.expected_match_tracab_opta
@@ -321,7 +370,9 @@ class TestMatch(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Match(
-                tracking_data=pd.DataFrame({"frame": [], "ball_x": [], "ball_z": []}),
+                tracking_data=pd.DataFrame(
+                    {"frame": [1], "home_1_x": [12], "ball_z": [13]}
+                ),
                 tracking_data_provider=self.td_provider,
                 event_data=self.corrected_ed,
                 event_data_provider=self.ed_provider,
@@ -390,9 +441,9 @@ class TestMatch(unittest.TestCase):
                 tracking_data_provider=self.td_provider,
                 event_data=pd.DataFrame(
                     {
-                        "event_id": [],
-                        "player": [],
-                        "event": [],
+                        "event_id": [1],
+                        "player": ["player_1"],
+                        "event": ["pass"],
                     }
                 ),
                 event_data_provider=self.ed_provider,
@@ -971,13 +1022,13 @@ TeamTwo 2023-01-22 16:46:39"
         )
 
     def test_match_home_players_column_ids(self):
-        assert self.expected_match_tracab_opta.home_players_column_ids == [
+        assert self.expected_match_tracab_opta.home_players_column_ids() == [
             "home_34_x",
             "home_34_y",
         ]
 
     def test_match_away_players_column_ids(self):
-        assert self.expected_match_tracab_opta.away_players_column_ids == [
+        assert self.expected_match_tracab_opta.away_players_column_ids() == [
             "away_17_x",
             "away_17_y",
         ]
@@ -1227,3 +1278,40 @@ TeamTwo 2023-01-22 16:46:39"
         saved_match = get_saved_match(name="test_match", path="tests/test_data")
         assert expected_match == saved_match
         assert saved_match != self.expected_match_tracab_opta
+
+    def test_match_only_tracking_data(self):
+        match = get_match(
+            tracking_data_loc=self.td_tracab_loc,
+            tracking_metadata_loc=self.md_tracab_loc,
+            tracking_data_provider="tracab",
+        )
+        assert match == self.expected_match_tracab
+
+    def test_match_only_event_data(self):
+        match = get_match(
+            event_data_loc=self.ed_opta_loc,
+            event_metadata_loc=self.md_opta_loc,
+            event_data_provider="opta",
+        )
+        # match pitch dimensions = [10, 10],
+        # while expected_match pitch dimensions = [106, 68]
+        x_cols = [col for col in match.event_data.columns if "_x" in col]
+        y_cols = [col for col in match.event_data.columns if "_y" in col]
+        match.event_data[x_cols] = match.event_data[x_cols] / 106.0 * 10
+        match.event_data[y_cols] = match.event_data[y_cols] / 68.0 * 10
+        match.pitch_dimensions = [10.0, 10.0]
+        assert match == self.expected_match_opta
+
+    def test_match_requires_event_data_wrapper(self):
+        match = self.expected_match_opta.copy()
+        with self.assertRaises(DataBallPyError):
+            match.synchronise_tracking_and_event_data()
+
+    def test_match_requires_tracking_data_wrapper(self):
+        match = self.expected_match_tracab.copy()
+        with self.assertRaises(DataBallPyError):
+            match.synchronise_tracking_and_event_data()
+
+    def test_get_match_no_valid_input(self):
+        with self.assertRaises(ValueError):
+            get_match()

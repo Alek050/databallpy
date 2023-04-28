@@ -3,7 +3,8 @@ import os
 import pickle
 from dataclasses import dataclass
 from difflib import SequenceMatcher
-from typing import List
+from functools import wraps
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -23,6 +24,34 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
+
+
+def requires_tracking_data(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if len(args[0].tracking_data) > 0:
+            return func(*args, **kwargs)
+        else:
+            raise DataBallPyError(
+                "No tracking data available, please load \
+Match object with tracking data first."
+            )
+
+    return wrapper
+
+
+def requires_event_data(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if len(args[0].event_data) > 0:
+            return func(*args, **kwargs)
+        else:
+            raise DataBallPyError(
+                "No event data available, please load\
+ Match object with event data first."
+            )
+
+    return wrapper
 
 
 @dataclass
@@ -91,43 +120,47 @@ class Match:
             raise TypeError(
                 f"tracking data should be a pandas df, not a {type(self.tracking_data)}"
             )
-        for col in ["frame", "ball_x", "ball_y"]:
-            if col not in self.tracking_data.columns.to_list():
-                raise ValueError(
-                    f"No {col} in tracking_data columns, this is manditory!"
-                )
+        if len(self.tracking_data) > 0:
+            for col in ["frame", "ball_x", "ball_y"]:
+                if col not in self.tracking_data.columns.to_list():
+                    raise ValueError(
+                        f"No {col} in tracking_data columns, this is manditory!"
+                    )
 
-        # tracking_data_provider
-        if not isinstance(self.tracking_data_provider, str):
-            raise TypeError(
-                f"tracking data provider should be a string, not a \
-                    {type(self.tracking_data_provider)}"
-            )
+            # tracking_data_provider
+            if not isinstance(self.tracking_data_provider, str):
+                raise TypeError(
+                    f"tracking data provider should be a string, not a \
+                        {type(self.tracking_data_provider)}"
+                )
 
         # event_data
         if not isinstance(self.event_data, pd.DataFrame):
             raise TypeError(
                 f"event data should be a pandas df, not a {type(self.event_data)}"
             )
-        for col in [
-            "event_id",
-            "event",
-            "period_id",
-            "team_id",
-            "player_id",
-            "start_x",
-            "start_y",
-            "datetime",
-        ]:
-            if col not in self.event_data.columns.to_list():
-                raise ValueError(f"{col} not in event data columns, this is manditory!")
+        if len(self.event_data) > 0:
+            for col in [
+                "event_id",
+                "event",
+                "period_id",
+                "team_id",
+                "player_id",
+                "start_x",
+                "start_y",
+                "datetime",
+            ]:
+                if col not in self.event_data.columns.to_list():
+                    raise ValueError(
+                        f"{col} not in event data columns, this is manditory!"
+                    )
 
-        # event_data_provider
-        if not isinstance(self.event_data_provider, str):
-            raise TypeError(
-                f"event data provider should be a string, not a \
-                    {type(self.event_data_provider)}"
-            )
+            # event_data_provider
+            if not isinstance(self.event_data_provider, str):
+                raise TypeError(
+                    f"event data provider should be a string, not a \
+                        {type(self.event_data_provider)}"
+                )
 
         # pitch_dimensions
         if not isinstance(self.pitch_dimensions, list):
@@ -236,49 +269,52 @@ class Match:
                         f"{team} team players should contain at least the column \
                             ['id', 'full_name', 'shirt_num'], {col} is missing."
                     )
-
-        # check for pitch axis
-        first_frame = self.tracking_data["ball_x"].first_valid_index()
-        if not abs(self.tracking_data.loc[first_frame, "ball_x"]) < 5.0:
-            x_start = self.tracking_data.loc[first_frame, "ball_x"]
-            y_start = self.tracking_data.loc[first_frame, "ball_y"]
-            raise DataBallPyError(
-                f"The middle point of the pitch should be (0, 0),\
-                                now the kick-off is at ({x_start}, {y_start})"
-            )
-
-        if not abs(self.tracking_data.loc[first_frame, "ball_y"]) < 5.0:
-            x_start = self.tracking_data.loc[first_frame, "ball_x"]
-            y_start = self.tracking_data.loc[first_frame, "ball_y"]
-            raise DataBallPyError(
-                f"The middle point of the pitch should be (0, 0),\
-                                now the kick-off is at ({x_start}, {y_start})"
-            )
-
-        # check for direction of play
-        for _, period_row in self.periods.iterrows():
-            frame = period_row["start_frame"]
-            if len(self.tracking_data[self.tracking_data["frame"] == frame].index) == 0:
-                continue
-            idx = self.tracking_data[self.tracking_data["frame"] == frame].index[0]
-            period = period_row["period"]
-            home_x = [x for x in self.home_players_column_ids if "_x" in x]
-            away_x = [x for x in self.away_players_column_ids if "_x" in x]
-            if self.tracking_data.loc[idx, home_x].mean() > 0:
-                centroid_x = self.tracking_data.loc[idx, home_x].mean()
+        if len(self.tracking_data) > 0:
+            # check for pitch axis
+            first_frame = self.tracking_data["ball_x"].first_valid_index()
+            if not abs(self.tracking_data.loc[first_frame, "ball_x"]) < 5.0:
+                x_start = self.tracking_data.loc[first_frame, "ball_x"]
+                y_start = self.tracking_data.loc[first_frame, "ball_y"]
                 raise DataBallPyError(
-                    f"The home team should be represented as playing\
+                    f"The middle point of the pitch should be (0, 0),\
+                                    now the kick-off is at ({x_start}, {y_start})"
+                )
+
+            if not abs(self.tracking_data.loc[first_frame, "ball_y"]) < 5.0:
+                x_start = self.tracking_data.loc[first_frame, "ball_x"]
+                y_start = self.tracking_data.loc[first_frame, "ball_y"]
+                raise DataBallPyError(
+                    f"The middle point of the pitch should be (0, 0),\
+                                    now the kick-off is at ({x_start}, {y_start})"
+                )
+
+            # check for direction of play
+            for _, period_row in self.periods.iterrows():
+                frame = period_row["start_frame"]
+                if (
+                    len(self.tracking_data[self.tracking_data["frame"] == frame].index)
+                    == 0
+                ):
+                    continue
+                idx = self.tracking_data[self.tracking_data["frame"] == frame].index[0]
+                period = period_row["period"]
+                home_x = [x for x in self.home_players_column_ids() if "_x" in x]
+                away_x = [x for x in self.away_players_column_ids() if "_x" in x]
+                if self.tracking_data.loc[idx, home_x].mean() > 0:
+                    centroid_x = self.tracking_data.loc[idx, home_x].mean()
+                    raise DataBallPyError(
+                        f"The home team should be represented as playing\
 from left to right the whole match. At the start of period {period} the x centroid of \
 the home team is {centroid_x}."
-                )
+                    )
 
-            if self.tracking_data.loc[idx, away_x].mean() < 0:
-                centroid_x = self.tracking_data.loc[idx, away_x].mean()
-                raise DataBallPyError(
-                    f"The away team should be represented as playing\
+                if self.tracking_data.loc[idx, away_x].mean() < 0:
+                    centroid_x = self.tracking_data.loc[idx, away_x].mean()
+                    raise DataBallPyError(
+                        f"The away team should be represented as playing\
 from right to left the whole match. At the start  of period {period} the x centroid of \
 the away team is {centroid_x}."
-                )
+                    )
 
     @property
     def name(self) -> str:
@@ -298,14 +334,15 @@ the away team is {centroid_x}."
             )[:19]
         return f"{home_text} - {away_text} {date}"
 
-    @property
+    @requires_tracking_data
     def home_players_column_ids(self) -> List[str]:
         return [id for id in self.tracking_data.columns if "home" in id]
 
-    @property
+    @requires_tracking_data
     def away_players_column_ids(self) -> List[str]:
         return [id for id in self.tracking_data.columns if "away" in id]
 
+    @requires_tracking_data
     def player_column_id_to_full_name(self, column_id: str) -> str:
         """Simple function to get the full name of a player from the column id
 
@@ -351,6 +388,8 @@ the away team is {centroid_x}."
         else:
             raise ValueError(f"{player_id} is not in either one of the teams")
 
+    @requires_tracking_data
+    @requires_event_data
     def synchronise_tracking_and_event_data(
         self, n_batches_per_half: int = 100, verbose: bool = True
     ):
@@ -509,20 +548,26 @@ the away team is {centroid_x}."
             res = [
                 self.tracking_data.equals(other.tracking_data),
                 self.tracking_data_provider == other.tracking_data_provider,
-                self.event_data.equals(other.event_data),
+                self.event_data.round(6).equals(other.event_data.round(6)),
                 self.pitch_dimensions == other.pitch_dimensions,
                 self.periods.equals(other.periods),
-                self.frame_rate == other.frame_rate,
+                self.frame_rate == other.frame_rate
+                if not pd.isnull(self.frame_rate)
+                else pd.isnull(other.frame_rate),
                 self.home_team_id == other.home_team_id,
                 self.home_team_name == other.home_team_name,
                 self.home_formation == other.home_formation,
                 self.home_players.equals(other.home_players),
-                self.home_score == other.home_score,
+                self.home_score == other.home_score
+                if not pd.isnull(self.home_score)
+                else pd.isnull(other.home_score),
                 self.away_team_id == other.away_team_id,
                 self.away_team_name == other.away_team_name,
                 self.away_formation == other.away_formation,
                 self.away_players.equals(other.away_players),
-                self.away_score == other.away_score,
+                self.away_score == other.away_score
+                if not pd.isnull(self.away_score)
+                else pd.isnull(other.away_score),
             ]
             return all(res)
         else:
@@ -573,149 +618,184 @@ the away team is {centroid_x}."
 
 
 def get_match(
-    *,
-    tracking_data_loc: str,
-    tracking_metadata_loc: str,
-    event_data_loc: str,
-    event_metadata_loc: str,
-    tracking_data_provider: str,
-    event_data_provider: str,
+    tracking_data_loc: str = None,
+    tracking_metadata_loc: str = None,
+    event_data_loc: str = None,
+    event_metadata_loc: str = None,
+    tracking_data_provider: str = None,
+    event_data_provider: str = None,
 ) -> Match:
     """Function to get all information of a match given its datasources
 
     Args:
-        tracking_data_loc (str): location of the tracking data
-        tracking_metadata_loc (str): location of the metadata of the tracking data
-        event_data_loc (str): location of the event data
-        event_metadata_loc (str): location of the metadata of the event data
-        tracking_data_provider (str): provider of the tracking data
-        event_data_provider (str): provider of the event data
+        tracking_data_loc (str, optional): location of the tracking data. Defaults to
+        None.
+        tracking_metadata_loc (str, optional): location of the metadata of the tracking
+        data. Defaults to None.
+        event_data_loc (str, optional): location of the event data. Defaults to None.
+        event_metadata_loc (str, optional): location of the metadata of the event data.
+        Defaults to None.
+        tracking_data_provider (str, optional): provider of the tracking data. Defaults
+        to None.
+        event_data_provider (str, optional): provider of the event data. Defaults to
+        None.
     Returns:
-        (Match): a Match object with all information of the match.
+        (Match): a Match object with all information available of the match.
     """
+    uses_tracking_data = False
+    uses_event_data = False
 
-    assert tracking_data_provider in [
-        "tracab",
-        "metrica",
-        "inmotio",
-    ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
-    "please open an issue in our Github repository."
-    assert event_data_provider in [
-        "opta",
-        "metrica",
-        "instat",
-    ], f"We do not supper '{event_data_provider}' as event data provider yet, "
-    "please open an issue in our Github repository."
+    # Check if tracking data should be loaded
+    if tracking_data_loc and tracking_metadata_loc and tracking_data_provider:
+        tracking_data, tracking_metadata = load_tracking_data(
+            tracking_data_loc=tracking_data_loc,
+            tracking_metadata_loc=tracking_metadata_loc,
+            tracking_data_provider=tracking_data_provider,
+        )
+        uses_tracking_data = True
 
-    # Get event data and event metadata
-    if event_data_provider == "opta":
-        event_data, event_metadata = load_opta_event_data(
-            f7_loc=event_metadata_loc, f24_loc=event_data_loc
+    # Check if event data should be loaded
+    if event_data_loc and event_metadata_loc and event_data_provider:
+        event_data, event_metadata = load_event_data(
+            event_data_loc=event_data_loc,
+            event_metadata_loc=event_metadata_loc,
+            event_data_provider=event_data_provider,
         )
-    elif event_data_provider == "metrica":
-        event_data, event_metadata = load_metrica_event_data(
-            event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
-        )
-    elif event_data_provider == "instat":
-        event_data, event_metadata = load_instat_event_data(
-            event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
-        )
+        uses_event_data = True
 
-    # Get tracking data and tracking metadata
-    if tracking_data_provider == "tracab":
-        tracking_data, tracking_metadata = load_tracab_tracking_data(
-            tracking_data_loc, tracking_metadata_loc
-        )
-    elif tracking_data_provider == "metrica":
-        tracking_data, tracking_metadata = load_metrica_tracking_data(
-            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
-        )
-    elif tracking_data_provider == "inmotio":
-        tracking_data, tracking_metadata = load_inmotio_tracking_data(
-            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
-        )
+    if not uses_event_data and not uses_tracking_data:
+        raise ValueError("No data loaded, please provide data locations and providers")
 
-    # Check if the event data is scaled the right way
-    if not tracking_metadata.pitch_dimensions == event_metadata.pitch_dimensions:
-        x_correction = (
-            tracking_metadata.pitch_dimensions[0] / event_metadata.pitch_dimensions[0]
-        )
-        y_correction = (
-            tracking_metadata.pitch_dimensions[1] / event_metadata.pitch_dimensions[1]
-        )
-        event_data["start_x"] *= x_correction
-        event_data["start_y"] *= y_correction
-
-    # Merge periods
-    periods_cols = event_metadata.periods_frames.columns.difference(
-        tracking_metadata.periods_frames.columns
-    ).to_list()
-    periods_cols.sort(reverse=True)
-    merged_periods = pd.concat(
-        (
-            tracking_metadata.periods_frames,
-            event_metadata.periods_frames[periods_cols],
-        ),
-        axis=1,
-    )
-
-    if (
-        not set(event_metadata.home_players["id"])
-        == set(tracking_metadata.home_players["id"])
-    ) or (
-        not set(event_metadata.away_players["id"])
-        == set(tracking_metadata.away_players["id"])
-    ):
-        event_metadata = align_player_ids(event_metadata, tracking_metadata)
-        full_name_id_map = dict(
-            zip(
-                event_metadata.home_players["full_name"],
-                event_metadata.home_players["id"],
+    if uses_tracking_data and uses_event_data:
+        # Check if the event data is scaled the right way
+        if not tracking_metadata.pitch_dimensions == event_metadata.pitch_dimensions:
+            x_correction = (
+                tracking_metadata.pitch_dimensions[0]
+                / event_metadata.pitch_dimensions[0]
             )
+            y_correction = (
+                tracking_metadata.pitch_dimensions[1]
+                / event_metadata.pitch_dimensions[1]
+            )
+            event_data["start_x"] *= x_correction
+            event_data["start_y"] *= y_correction
+
+        # Merge periods
+        periods_cols = event_metadata.periods_frames.columns.difference(
+            tracking_metadata.periods_frames.columns
+        ).to_list()
+        periods_cols.sort(reverse=True)
+        merged_periods = pd.concat(
+            (
+                tracking_metadata.periods_frames,
+                event_metadata.periods_frames[periods_cols],
+            ),
+            axis=1,
         )
-        full_name_id_map.update(
-            dict(
+
+        # Align player ids
+        if (
+            not set(event_metadata.home_players["id"])
+            == set(tracking_metadata.home_players["id"])
+        ) or (
+            not set(event_metadata.away_players["id"])
+            == set(tracking_metadata.away_players["id"])
+        ):
+            event_metadata = align_player_ids(event_metadata, tracking_metadata)
+            full_name_id_map = dict(
                 zip(
-                    event_metadata.away_players["full_name"],
-                    event_metadata.away_players["id"],
+                    event_metadata.home_players["full_name"],
+                    event_metadata.home_players["id"],
                 )
             )
+            full_name_id_map.update(
+                dict(
+                    zip(
+                        event_metadata.away_players["full_name"],
+                        event_metadata.away_players["id"],
+                    )
+                )
+            )
+            event_data["player_id"] = (
+                event_data["player_name"]
+                .map(full_name_id_map)
+                .fillna(-999)
+                .astype("int64")
+            )
+
+        # Merged player info
+        player_cols = event_metadata.home_players.columns.difference(
+            tracking_metadata.home_players.columns
+        ).to_list()
+        player_cols.append("id")
+        home_players = tracking_metadata.home_players.merge(
+            event_metadata.home_players[player_cols], on="id"
         )
-        event_data["player_id"] = (
-            event_data["player_name"].map(full_name_id_map).fillna(-999).astype("int64")
+        away_players = tracking_metadata.away_players.merge(
+            event_metadata.away_players[player_cols], on="id"
         )
 
-    # Merged player info
-    player_cols = event_metadata.home_players.columns.difference(
-        tracking_metadata.home_players.columns
-    ).to_list()
-    player_cols.append("id")
-    home_players = tracking_metadata.home_players.merge(
-        event_metadata.home_players[player_cols], on="id"
-    )
-    away_players = tracking_metadata.away_players.merge(
-        event_metadata.away_players[player_cols], on="id"
-    )
+        match = Match(
+            tracking_data=tracking_data,
+            tracking_data_provider=tracking_data_provider,
+            event_data=event_data,
+            event_data_provider=event_data_provider,
+            pitch_dimensions=tracking_metadata.pitch_dimensions,
+            periods=merged_periods,
+            frame_rate=tracking_metadata.frame_rate,
+            home_team_id=event_metadata.home_team_id,
+            home_formation=event_metadata.home_formation,
+            home_score=event_metadata.home_score,
+            home_team_name=event_metadata.home_team_name,
+            home_players=home_players,
+            away_team_id=event_metadata.away_team_id,
+            away_formation=event_metadata.away_formation,
+            away_score=event_metadata.away_score,
+            away_team_name=event_metadata.away_team_name,
+            away_players=away_players,
+        )
 
-    match = Match(
-        tracking_data=tracking_data,
-        tracking_data_provider=tracking_data_provider,
-        event_data=event_data,
-        event_data_provider=event_data_provider,
-        pitch_dimensions=tracking_metadata.pitch_dimensions,
-        periods=merged_periods,
-        frame_rate=tracking_metadata.frame_rate,
-        home_team_id=event_metadata.home_team_id,
-        home_formation=event_metadata.home_formation,
-        home_score=event_metadata.home_score,
-        home_team_name=event_metadata.home_team_name,
-        home_players=home_players,
-        away_team_id=event_metadata.away_team_id,
-        away_formation=event_metadata.away_formation,
-        away_score=event_metadata.away_score,
-        away_team_name=event_metadata.away_team_name,
-        away_players=away_players,
-    )
+    elif uses_tracking_data and not uses_event_data:
+        match = Match(
+            tracking_data=tracking_data,
+            tracking_data_provider=tracking_data_provider,
+            event_data=pd.DataFrame(),
+            event_data_provider=None,
+            pitch_dimensions=tracking_metadata.pitch_dimensions,
+            periods=tracking_metadata.periods_frames,
+            frame_rate=tracking_metadata.frame_rate,
+            home_team_id=tracking_metadata.home_team_id,
+            home_formation=tracking_metadata.home_formation,
+            home_score=tracking_metadata.home_score,
+            home_team_name=tracking_metadata.home_team_name,
+            home_players=tracking_metadata.home_players,
+            away_team_id=tracking_metadata.away_team_id,
+            away_formation=tracking_metadata.away_formation,
+            away_score=tracking_metadata.away_score,
+            away_team_name=tracking_metadata.away_team_name,
+            away_players=tracking_metadata.away_players,
+        )
+
+    elif uses_event_data and not uses_tracking_data:
+        match = Match(
+            tracking_data=pd.DataFrame(),
+            tracking_data_provider=None,
+            event_data=event_data,
+            event_data_provider=event_data_provider,
+            pitch_dimensions=event_metadata.pitch_dimensions,
+            periods=event_metadata.periods_frames,
+            frame_rate=event_metadata.frame_rate,
+            home_team_id=event_metadata.home_team_id,
+            home_formation=event_metadata.home_formation,
+            home_score=event_metadata.home_score,
+            home_team_name=event_metadata.home_team_name,
+            home_players=event_metadata.home_players,
+            away_team_id=event_metadata.away_team_id,
+            away_formation=event_metadata.away_formation,
+            away_score=event_metadata.away_score,
+            away_team_name=event_metadata.away_team_name,
+            away_players=event_metadata.away_players,
+        )
 
     return match
 
@@ -962,3 +1042,77 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     with open(os.path.join(path, name + ".pickle"), "rb") as f:
         match = pickle.load(f)
     return match
+
+
+def load_tracking_data(
+    *, tracking_data_loc: str, tracking_metadata_loc: str, tracking_data_provider: str
+) -> Tuple[pd.DataFrame, Metadata]:
+    """Function to load the tracking data of a match
+
+    Args:
+        tracking_data_loc (str): location of the tracking data file
+        tracking_metadata_loc (str): location of the tracking metadata file
+        tracking_data_provider (str): provider of the tracking data
+
+    Returns:
+        Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the match
+    """
+    assert tracking_data_provider in [
+        "tracab",
+        "metrica",
+        "inmotio",
+    ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
+    "please open an issue in our Github repository."
+
+    # Get tracking data and tracking metadata
+    if tracking_data_provider == "tracab":
+        tracking_data, tracking_metadata = load_tracab_tracking_data(
+            tracking_data_loc, tracking_metadata_loc
+        )
+    elif tracking_data_provider == "metrica":
+        tracking_data, tracking_metadata = load_metrica_tracking_data(
+            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
+        )
+    elif tracking_data_provider == "inmotio":
+        tracking_data, tracking_metadata = load_inmotio_tracking_data(
+            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
+        )
+
+    return tracking_data, tracking_metadata
+
+
+def load_event_data(
+    *, event_data_loc: str, event_metadata_loc: str, event_data_provider: str
+) -> Tuple[pd.DataFrame, Metadata]:
+    """Function to load the event data of a match
+
+    Args:
+        event_data_loc (str): location of the event data file
+        event_metadata_loc (str): location of the event metadata file
+        event_data_provider (str): provider of the event data
+
+    Returns:
+        Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
+    """
+    assert event_data_provider in [
+        "opta",
+        "metrica",
+        "instat",
+    ], f"We do not supper '{event_data_provider}' as event data provider yet, "
+    "please open an issue in our Github repository."
+
+    # Get event data and event metadata
+    if event_data_provider == "opta":
+        event_data, event_metadata = load_opta_event_data(
+            f7_loc=event_metadata_loc, f24_loc=event_data_loc
+        )
+    elif event_data_provider == "metrica":
+        event_data, event_metadata = load_metrica_event_data(
+            event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
+        )
+    elif event_data_provider == "instat":
+        event_data, event_metadata = load_instat_event_data(
+            event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
+        )
+
+    return event_data, event_metadata
