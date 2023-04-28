@@ -951,6 +951,8 @@ def align_player_ids(event_metadata: Metadata, tracking_metadata: Metadata) -> M
         event_metadata.away_players.loc[idx, "id"] = id_tracking_data
 
     return event_metadata
+
+
 def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     """Function to load a saved match object
 

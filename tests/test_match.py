@@ -1220,6 +1220,7 @@ TeamTwo 2023-01-22 16:46:39"
         unaligned_metadata.away_players.loc[0, "id"] = 9
         aligned_metadata = align_player_ids(unaligned_metadata, MD_INMOTIO)
         assert aligned_metadata == MD_INSTAT
+
     def test_get_saved_match(self):
         expected_match = self.expected_match_metrica
         expected_match.save_match(name="test_match", path="tests/test_data")
