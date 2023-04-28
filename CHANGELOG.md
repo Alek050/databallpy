@@ -25,4 +25,6 @@
 ## V0.3.0 (date)
 
 - Added way to save Match objects, and to load saved Match objects
+- Fixed bug in opta event data, own goals are now parsed as seperate event type
+
 
