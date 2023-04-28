@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 
@@ -148,7 +149,7 @@ class Metadata:
                 self.match_id == other.match_id,
                 all(
                     [
-                        s == o
+                        s == o if not np.isnan(s) else np.isnan(o)
                         for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
                     ]
                 ),
