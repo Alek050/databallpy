@@ -331,6 +331,15 @@ def _load_event_data(f24_loc: str) -> pd.DataFrame:
 
         if event_type_id in EVENT_TYPE_IDS.keys():
             event_name = EVENT_TYPE_IDS[event_type_id].lower()
+
+            # check if goal is a own goal
+            if event_type_id == 16:
+                for qualifier in event.find_all("Q"):
+                    if (
+                        qualifier.attrs["qualifier_id"] == "280"
+                        and qualifier.attrs["value"] == "OWN_GOAL"
+                    ):
+                        event_name = "own goal"
         else:
             # Unknown event
             event_name = None

@@ -97,8 +97,9 @@ ED_OPTA = pd.DataFrame(
             2499594279,
             2499594285,
             2499594291,
+            2512690515,
         ],
-        "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7],
+        "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16],
         "event": [
             "team set up",
             "start",
@@ -109,10 +110,11 @@ ED_OPTA = pd.DataFrame(
             "deleted event",
             "take on",
             "tackle",
+            "own goal",
         ],
-        "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2],
-        "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31],
-        "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10],
+        "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2, 1],
+        "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9],
+        "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10, 17],
         "player_id": [
             np.nan,
             np.nan,
@@ -123,13 +125,15 @@ ED_OPTA = pd.DataFrame(
             184934,
             45849,
             184934,
+            45849,
         ],
-        "team_id": [194, 3, 194, 3, 3, 3, 194, 3, 194],
-        "outcome": [1, 1, 1, 1, 0, 0, 1, 0, 1],
-        # field dimensions should be [10, 10] to scale down all values by
-        # a factor of 10
-        "start_x": [5.0, -5.0, 5.0, -0.03, -1.84, -1.9, 5.0, 1.57, 1.57],
-        "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68],
+        "team_id": [194, 3, 194, 3, 3, 3, 194, 3, 194, 3],
+        "outcome": [1, 1, 1, 1, 0, 0, 1, 0, 1, 1],
+        # field dimensions are [10, 10], for opta its standard [100, 100].
+        # So all vallues should be divided by 10 and minus  5 to get the
+        # standard databallpy values.
+        "start_x": [5.0, -5.0, 5.0, -0.03, -1.84, -1.9, 5.0, 1.57, 1.57, -4.05],
+        "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68, 0.28],
         "datetime": np.array(
             [
                 "2023-01-22T11:28:32.117",
@@ -141,6 +145,7 @@ ED_OPTA = pd.DataFrame(
                 "2023-01-22T12:18:41.615",
                 "2023-01-22T12:18:43.119",
                 "2023-01-22T12:18:43.120",
+                "2023-01-22T12:18:44.120",
             ],
             dtype="datetime64",
         ),
@@ -154,6 +159,7 @@ ED_OPTA = pd.DataFrame(
             "Pepijn Blok",
             "Jan Boskamp",
             "Pepijn Blok",
+            "Jan Boskamp",
         ],
     }
 )

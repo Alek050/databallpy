@@ -69,5 +69,24 @@
       <Q id="3989624657" qualifier_id="56" value="Back" />
       <Q id="3989624659" qualifier_id="285" />
     </Event>
+    <Event id="2512690515" event_id="5" type_id="16" period_id="1" min="9" sec="17" player_id="45849" team_id="3" outcome="1" x="9.5" y="52.8" timestamp="2023-01-22T11:18:44.120" timestamp_utc="2023-01-22T11:18:44.120" last_modified="2023-01-22T14:45:32" version="1677423068812">
+      <Q id="4058467961" qualifier_id="374" value="2023-01-22T11:18:44.120" />
+      <Q id="4058467957" qualifier_id="25" />
+      <Q id="4058468423" qualifier_id="102" value="54.3" />
+      <Q id="4058468427" qualifier_id="230" value="99.5" />
+      <Q id="4058468437" qualifier_id="282" value="194" />
+      <Q id="4058468433" qualifier_id="281" value="235093" />
+      <Q id="4058468425" qualifier_id="103" value="18.4" />
+      <Q id="4058467511" qualifier_id="17" />
+      <Q id="4058467965" qualifier_id="375" value="09:16.968" />
+      <Q id="4058468429" qualifier_id="231" value="48.4" />
+      <Q id="4058467959" qualifier_id="15" />
+      <Q id="4059273865" qualifier_id="396" value="50.2" />
+      <Q id="4058467515" qualifier_id="56" value="Center" />
+      <Q id="4058468421" qualifier_id="76" />
+      <Q id="4059273863" qualifier_id="395" value="99.5" />
+      <Q id="4058467513" qualifier_id="28" />
+      <Q id="4058468431" qualifier_id="280" value="OWN_GOAL" />
   </Game>
 </Games>
+
