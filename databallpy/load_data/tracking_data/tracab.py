@@ -205,12 +205,12 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         home_team_name=home_team_name,
         home_players=df_home_players,
         home_score=np.nan,
-        home_formation=None,
+        home_formation="",
         away_team_id=away_team_id,
         away_team_name=away_team_name,
         away_players=df_away_players,
         away_score=np.nan,
-        away_formation=None,
+        away_formation="",
     )
 
     file.close()

@@ -60,7 +60,7 @@ MD_TRACAB = Metadata(
     frame_rate=25,
     home_team_id=3,
     home_team_name="TeamOne",
-    home_formation=None,
+    home_formation="",
     home_score=np.nan,
     home_players=pd.DataFrame(
         {
@@ -73,7 +73,7 @@ MD_TRACAB = Metadata(
     ),
     away_team_id=194,
     away_team_name="TeamTwo",
-    away_formation=None,
+    away_formation="",
     away_score=np.nan,
     away_players=pd.DataFrame(
         {
