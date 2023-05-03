@@ -21,6 +21,7 @@ from databallpy.load_data.tracking_data._insert_missing_rows import _insert_miss
 from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.tz_modification import localize_datetime
 
 
 def load_tracab_tracking_data(
@@ -173,6 +174,15 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             frames_dict["end_datetime_td"].append(pd.to_datetime("NaT"))
     df_frames = pd.DataFrame(frames_dict)
 
+    # set to right timezone, tracab has no location/competition info
+    # in metadata, so we have to guess
+    df_frames["start_datetime_td"] = localize_datetime(
+        df_frames["start_datetime_td"], "Netherlands"
+    )
+    df_frames["end_datetime_td"] = localize_datetime(
+        df_frames["end_datetime_td"], "Netherlands"
+    )
+
     home_team = soup.find("HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)
@@ -211,6 +221,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         away_players=df_away_players,
         away_score=np.nan,
         away_formation="",
+        country="",
     )
 
     file.close()

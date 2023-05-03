@@ -38,18 +38,20 @@ MD_TRACAB = Metadata(
             "start_frame": [1509993, 1509996, -999, -999, -999],
             "end_frame": [1509994, 1509997, -999, -999, -999],
             "start_datetime_td": [
-                pd.to_datetime("2023-01-14")
+                pd.to_datetime(
+                    "2023-01-14",
+                ).tz_localize("Europe/Amsterdam")
                 + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
-                pd.to_datetime("2023-01-14")
+                pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                 + dt.timedelta(milliseconds=int((1509996 / 25) * 1000)),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_datetime_td": [
-                pd.to_datetime("2023-01-14")
+                pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                 + dt.timedelta(milliseconds=int((1509994 / 25) * 1000)),
-                pd.to_datetime("2023-01-14")
+                pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                 + dt.timedelta(milliseconds=int((1509997 / 25) * 1000)),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -84,6 +86,7 @@ MD_TRACAB = Metadata(
             "end_frame": [1509997, 1509994],
         }
     ),
+    country="",
 )
 ED_OPTA = pd.DataFrame(
     {
@@ -163,6 +166,11 @@ ED_OPTA = pd.DataFrame(
         ],
     }
 )
+
+ED_OPTA["datetime"] = pd.to_datetime(ED_OPTA["datetime"]).dt.tz_localize(
+    "Europe/Amsterdam"
+)
+
 MD_OPTA = Metadata(
     match_id=1908,
     pitch_dimensions=[10.0, 10.0],
@@ -170,15 +178,23 @@ MD_OPTA = Metadata(
         {
             "period": [1, 2, 3, 4, 5],
             "start_datetime_ed": [
-                pd.to_datetime("2023-01-22T12:18:32.000"),
-                pd.to_datetime("2023-01-22T13:21:13.000"),
+                pd.to_datetime("2023-01-22T12:18:32.000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
+                pd.to_datetime("2023-01-22T13:21:13.000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_datetime_ed": [
-                pd.to_datetime("2023-01-22T13:04:32.000"),
-                pd.to_datetime("2023-01-22T14:09:58.000"),
+                pd.to_datetime("2023-01-22T13:04:32.000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
+                pd.to_datetime("2023-01-22T14:09:58.000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -214,7 +230,9 @@ MD_OPTA = Metadata(
             "shirt_num": [1, 2],
         }
     ),
+    country="Netherlands",
 )
+
 TD_METRICA = pd.DataFrame(
     {
         "frame": [1, 2, 3, 4, 5, 6],
@@ -256,9 +274,9 @@ ED_METRICA = pd.DataFrame(
         "end_y": [np.nan, -15.0, 0.0],
         "td_frame": [1, 3, 5],
         "datetime": [
-            pd.to_datetime("2019-02-21T03:30:07.000"),
-            pd.to_datetime("2019-02-21T03:30:08.000"),
-            pd.to_datetime("2019-02-21T03:30:09.000"),
+            pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
+            pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
+            pd.to_datetime("2019-02-21T03:30:09.000", utc=True),
         ],
     }
 )
@@ -271,15 +289,15 @@ MD_METRICA_TD = Metadata(
             "start_frame": [1, 4, -999, -999, -999],
             "end_frame": [3, 6, -999, -999, -999],
             "start_datetime_td": [
-                pd.to_datetime("2019-02-21T03:30:07.000"),
-                pd.to_datetime("2019-02-21T03:30:08.500"),
+                pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
+                pd.to_datetime("2019-02-21T03:30:08.500", utc=True),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_datetime_td": [
-                pd.to_datetime("2019-02-21T03:30:08.000"),
-                pd.to_datetime("2019-02-21T03:30:09.500"),
+                pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
+                pd.to_datetime("2019-02-21T03:30:09.500", utc=True),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -315,6 +333,7 @@ MD_METRICA_TD = Metadata(
     ),
     away_formation="0001",
     away_score=2,
+    country="",
 )
 
 
@@ -327,15 +346,15 @@ MD_METRICA_ED = Metadata(
             "start_frame": [1, 4, -999, -999, -999],
             "end_frame": [3, 6, -999, -999, -999],
             "start_datetime_ed": [
-                pd.to_datetime("2019-02-21T03:30:07.000"),
-                pd.to_datetime("2019-02-21T03:30:08.500"),
+                pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
+                pd.to_datetime("2019-02-21T03:30:08.500", utc=True),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_datetime_ed": [
-                pd.to_datetime("2019-02-21T03:30:08.000"),
-                pd.to_datetime("2019-02-21T03:30:09.500"),
+                pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
+                pd.to_datetime("2019-02-21T03:30:09.500", utc=True),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -371,6 +390,7 @@ MD_METRICA_ED = Metadata(
     ),
     away_formation="0001",
     away_score=2,
+    country="",
 )
 
 TD_CHANNELS_METRICA = pd.DataFrame(
@@ -414,15 +434,23 @@ MD_INMOTIO = Metadata(
             "start_frame": [2, 5, -999, -999, -999],
             "end_frame": [3, 6, -999, -999, -999],
             "start_datetime_td": [
-                pd.to_datetime("2023-01-01T19:00:00.000"),
-                pd.to_datetime("2023-01-01T20:00:00.000"),
+                pd.to_datetime("2023-01-01T20:00:00.000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
+                pd.to_datetime("2023-01-01T21:00:00.000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
             ],
             "end_datetime_td": [
-                pd.to_datetime("2023-01-01T19:45:00.000"),
-                pd.to_datetime("2023-01-01T20:45:00.0000"),
+                pd.to_datetime("2023-01-01T20:45:00.000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
+                pd.to_datetime("2023-01-01T21:45:00.0000").tz_localize(
+                    "Europe/Amsterdam"
+                ),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -458,6 +486,7 @@ MD_INMOTIO = Metadata(
     ),
     away_formation="",
     away_score=1,
+    country="",
 )
 
 MD_INSTAT = Metadata(
@@ -467,7 +496,7 @@ MD_INSTAT = Metadata(
         {
             "period": [1, 2, 3, 4, 5],
             "start_datetime_ed": [
-                pd.to_datetime("2023-01-01 20:00:00"),
+                pd.to_datetime("2023-01-01 20:00:00").tz_localize("Europe/Amsterdam"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
                 pd.to_datetime("NaT"),
@@ -509,6 +538,7 @@ MD_INSTAT = Metadata(
     ),
     away_formation="442",
     away_score=2,
+    country="Netherlands",
 )
 
 ED_INSTAT = pd.DataFrame(
@@ -527,10 +557,10 @@ ED_INSTAT = pd.DataFrame(
         "end_x": [-20.1, 40.5, np.nan, np.nan],
         "end_y": [43.0, -22.5, np.nan, np.nan],
         "datetime": [
-            pd.to_datetime("2023-01-01 20:00:05.370"),
-            pd.to_datetime("2023-01-01 20:00:20.930"),
-            pd.to_datetime("2023-01-01 20:00:23.640"),
-            pd.to_datetime("2023-01-01 20:00:28.640"),
+            pd.to_datetime("2023-01-01 20:00:05.370").tz_localize("Europe/Amsterdam"),
+            pd.to_datetime("2023-01-01 20:00:20.930").tz_localize("Europe/Amsterdam"),
+            pd.to_datetime("2023-01-01 20:00:23.640").tz_localize("Europe/Amsterdam"),
+            pd.to_datetime("2023-01-01 20:00:28.640").tz_localize("Europe/Amsterdam"),
         ],
         "instat_event": [
             "Attacking pass inaccurate",

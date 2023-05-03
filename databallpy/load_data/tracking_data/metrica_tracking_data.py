@@ -27,7 +27,7 @@ from databallpy.load_data.tracking_data._insert_missing_rows import _insert_miss
 from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
     _normalize_playing_direction_tracking,
 )
-from databallpy.utils import _to_int
+from databallpy.utils.utils import _to_int
 
 
 def load_metrica_tracking_data(

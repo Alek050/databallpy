@@ -66,33 +66,41 @@ class TestMatch(unittest.TestCase):
                 "start_frame": [1509993, 1509996, -999, -999, -999],
                 "end_frame": [1509994, 1509997, -999, -999, -999],
                 "start_datetime_td": [
-                    pd.to_datetime("2023-01-14")
+                    pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                     + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
-                    pd.to_datetime("2023-01-14")
+                    pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                     + dt.timedelta(milliseconds=int((1509996 / 25) * 1000)),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_td": [
-                    pd.to_datetime("2023-01-14")
+                    pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                     + dt.timedelta(milliseconds=int((1509994 / 25) * 1000)),
-                    pd.to_datetime("2023-01-14")
+                    pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                     + dt.timedelta(milliseconds=int((1509997 / 25) * 1000)),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "start_datetime_ed": [
-                    pd.to_datetime("2023-01-22T12:18:32.000"),
-                    pd.to_datetime("2023-01-22T13:21:13.000"),
+                    pd.to_datetime("2023-01-22T12:18:32.000").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
+                    pd.to_datetime("2023-01-22T13:21:13.000").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_ed": [
-                    pd.to_datetime("2023-01-22T13:04:32.000"),
-                    pd.to_datetime("2023-01-22T14:09:58.000"),
+                    pd.to_datetime("2023-01-22T13:04:32.000").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
+                    pd.to_datetime("2023-01-22T14:09:58.000").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
@@ -145,6 +153,7 @@ class TestMatch(unittest.TestCase):
             away_score=self.md_opta.away_score,
             away_team_name=self.md_opta.away_team_name,
             away_players=self.expected_away_players_tracab_opta,
+            country=self.md_opta.country,
         )
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
         self.md_metrica_loc = "tests/test_data/metrica_metadata_test.xml"
@@ -157,12 +166,13 @@ class TestMatch(unittest.TestCase):
             self.ed_metrica_loc, self.md_metrica_loc
         )
 
+        # add metrica even data timestamps
         self.md_metrica.periods_frames[
             "start_datetime_ed"
-        ] = md_metrica_ed.periods_frames["start_datetime_ed"].values
+        ] = md_metrica_ed.periods_frames["start_datetime_ed"]
         self.md_metrica.periods_frames[
             "end_datetime_ed"
-        ] = md_metrica_ed.periods_frames["end_datetime_ed"].values
+        ] = md_metrica_ed.periods_frames["end_datetime_ed"]
 
         self.expected_match_metrica = Match(
             tracking_data=self.td_metrica,
@@ -182,6 +192,7 @@ class TestMatch(unittest.TestCase):
             away_score=self.md_metrica.away_score,
             away_team_name=self.md_metrica.away_team_name,
             away_players=self.md_metrica.away_players,
+            country=self.md_metrica.country,
         )
 
         self.td_inmotio_loc = "tests/test_data/inmotio_td_test.txt"
@@ -228,21 +239,31 @@ class TestMatch(unittest.TestCase):
                 "start_frame": [2, 5, -999, -999, -999],
                 "end_frame": [3, 6, -999, -999, -999],
                 "start_datetime_td": [
-                    pd.to_datetime("2023-01-01 19:00:00"),
-                    pd.to_datetime("2023-01-01 20:00:00"),
+                    pd.to_datetime("2023-01-01 20:00:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
+                    pd.to_datetime("2023-01-01 21:00:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_td": [
-                    pd.to_datetime("2023-01-01 19:45:00"),
-                    pd.to_datetime("2023-01-01 20:45:00"),
+                    pd.to_datetime("2023-01-01 20:45:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
+                    pd.to_datetime("2023-01-01 21:45:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "start_datetime_ed": [
-                    pd.to_datetime("2023-01-01 20:00:00"),
+                    pd.to_datetime("2023-01-01 20:00:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
@@ -276,6 +297,7 @@ class TestMatch(unittest.TestCase):
             away_score=self.md_instat.away_score,
             away_team_name=self.md_instat.away_team_name,
             away_players=self.expected_away_players_inmotio_instat,
+            country=self.md_instat.country,
         )
 
         self.match_to_sync = get_match(
@@ -305,6 +327,7 @@ class TestMatch(unittest.TestCase):
             away_score=MD_TRACAB.away_score,
             away_team_name=MD_TRACAB.away_team_name,
             away_players=MD_TRACAB.away_players,
+            country=MD_TRACAB.country,
         )
 
         self.expected_match_opta = Match(
@@ -325,6 +348,7 @@ class TestMatch(unittest.TestCase):
             away_score=MD_OPTA.away_score,
             away_team_name=MD_OPTA.away_team_name,
             away_players=MD_OPTA.away_players,
+            country=MD_OPTA.country,
         )
 
     def test_match_eq(self):
@@ -366,6 +390,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -389,6 +414,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # tracking data provider
@@ -411,6 +437,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # event data
@@ -433,6 +460,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -460,6 +488,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # event data provider
@@ -482,6 +511,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # pitch dimensions
@@ -504,6 +534,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -525,6 +556,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(TypeError):
@@ -546,6 +578,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # periods
@@ -568,6 +601,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -589,6 +623,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -610,6 +645,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -631,6 +667,33 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
+            )
+
+        with self.assertRaises(ValueError):
+            periods = self.expected_periods_tracab_opta.copy()
+            periods["start_datetime_ed"] = periods["start_datetime_ed"].dt.tz_localize(
+                None
+            )
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=periods,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players_tracab_opta,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # frame rate
@@ -653,6 +716,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -674,6 +738,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # team id
@@ -696,6 +761,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # team name
@@ -718,6 +784,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=["teamone"],
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # team score
@@ -740,6 +807,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -761,6 +829,7 @@ class TestMatch(unittest.TestCase):
                 away_score=-3,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # team formation
@@ -783,6 +852,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -804,6 +874,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # team players
@@ -826,6 +897,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(ValueError):
@@ -849,6 +921,7 @@ class TestMatch(unittest.TestCase):
                 away_players=self.expected_away_players_tracab_opta.drop(
                     "shirt_num", axis=1
                 ),
+                country=self.md_opta.country,
             )
 
         # pitch axis
@@ -873,6 +946,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
         with self.assertRaises(DataBallPyError):
             td_changed = self.td_tracab.copy()
@@ -895,6 +969,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         # playing direction
@@ -919,6 +994,7 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
             )
 
         with self.assertRaises(DataBallPyError):
@@ -942,6 +1018,30 @@ class TestMatch(unittest.TestCase):
                 away_score=self.md_opta.away_score,
                 away_team_name=self.md_opta.away_team_name,
                 away_players=self.expected_away_players_tracab_opta,
+                country=self.md_opta.country,
+            )
+
+        # country
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.td_tracab,
+                tracking_data_provider=self.td_provider,
+                event_data=self.corrected_ed,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.md_tracab.pitch_dimensions,
+                periods=self.expected_periods_tracab_opta,
+                frame_rate=self.md_tracab.frame_rate,
+                home_team_id=self.md_opta.home_team_id,
+                home_formation=self.md_opta.home_formation,
+                home_score=self.md_opta.home_score,
+                home_team_name=self.md_opta.home_team_name,
+                home_players=self.expected_home_players_tracab_opta,
+                away_team_id=self.md_opta.away_team_id,
+                away_formation=self.md_opta.away_formation,
+                away_score=self.md_opta.away_score,
+                away_team_name=self.md_opta.away_team_name,
+                away_players=self.expected_away_players_tracab_opta,
+                country=["Netherlands", "Germany"],
             )
 
     def test_get_match_wrong_provider(self):
@@ -1162,7 +1262,9 @@ TeamTwo 2023-01-22 16:46:39"
         expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
-        date = pd.to_datetime(str(self.match_to_sync.periods.iloc[0, 3])[:10])
+        date = pd.to_datetime(
+            str(self.match_to_sync.periods.iloc[0, 3])[:10]
+        ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
             + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
@@ -1184,7 +1286,9 @@ TeamTwo 2023-01-22 16:46:39"
         expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data
-        date = pd.to_datetime(str(self.match_to_sync.periods.iloc[0, 3])[:10])
+        date = pd.to_datetime(
+            str(self.match_to_sync.periods.iloc[0, 3])[:10]
+        ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
             + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))

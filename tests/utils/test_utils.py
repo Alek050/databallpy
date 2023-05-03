@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from databallpy.utils import _to_float, _to_int
+from databallpy.utils.utils import _to_float, _to_int
 
 
 class TestUtils(unittest.TestCase):

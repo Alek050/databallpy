@@ -18,7 +18,7 @@ from databallpy.load_data.metrica_metadata import (
     _get_td_channels,
     _update_metadata,
 )
-from databallpy.utils import _to_float, _to_int
+from databallpy.utils.utils import _to_float, _to_int
 
 
 def load_metrica_event_data(
@@ -78,7 +78,10 @@ def load_metrica_event_data(
         dt.timedelta(milliseconds=(x - first_frame) / frame_rate * 1000)
         for x in event_data["td_frame"]
     ]
-    event_data["datetime"] = [pd.to_datetime(start_time) + x for x in rel_timedelta]
+    # no idea about time zone since we have no real data, so just assume utc
+    event_data["datetime"] = [
+        pd.to_datetime(start_time, utc=True) + x for x in rel_timedelta
+    ]
 
     event_data = _normalize_playing_direction_events(
         event_data, metadata.home_team_id, metadata.away_team_id

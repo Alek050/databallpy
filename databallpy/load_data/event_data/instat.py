@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.load_data.metadata import Metadata
+from databallpy.utils.tz_modification import utc_to_local_datetime
 
 
 def load_instat_event_data(
@@ -58,15 +59,26 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
         data = f.read()
     metadata_json = json.loads(data)
     match_info = metadata_json["data"]["match_info"][0]
-
+    country = match_info["tournament_name"].split(".")[0]
     periods = {
         "period": [1, 2, 3, 4, 5],
-        "start_datetime_ed": [pd.to_datetime("NaT")] * 5,
-        "end_datetime_ed": [pd.to_datetime("NaT")] * 5,
+        "start_datetime_ed": [pd.to_datetime("NaT", utc=True)] * 5,
+        "end_datetime_ed": [pd.to_datetime("NaT", utc=True)] * 5,
     }
+
+    # No idea why the instat times need to be subtracted by 3 hours to get to utc time
     periods["start_datetime_ed"][0] = pd.to_datetime(
-        match_info["match_date"]
-    ) - dt.timedelta(hours=2)
+        match_info["match_date"], utc=True
+    ) - dt.timedelta(hours=3)
+    periods = pd.DataFrame(periods)
+
+    # set time to local time
+    periods["start_datetime_ed"] = utc_to_local_datetime(
+        periods["start_datetime_ed"], country
+    )
+    periods["end_datetime_ed"] = utc_to_local_datetime(
+        periods["end_datetime_ed"], country
+    )
 
     metadata = Metadata(
         match_id=int(match_info["id"]),
@@ -83,6 +95,7 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
         away_players=pd.DataFrame(columns=["id", "full_name", "shirt_num"]),
         away_score=int(match_info["score"].split(":")[1]),
         away_formation="",
+        country=country,
     )
 
     return metadata

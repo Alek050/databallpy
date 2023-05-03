@@ -35,6 +35,7 @@ class TestGetMatchtime(unittest.TestCase):
             away_formation="",
             away_score=np.nan,
             away_players=pd.DataFrame({"id": [], "full_name": [], "shirt_num": []}),
+            country="",
         )
 
     def test_get_matchtime(self):

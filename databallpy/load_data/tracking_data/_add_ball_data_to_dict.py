@@ -1,4 +1,4 @@
-from databallpy.utils import _to_float
+from databallpy.utils.utils import _to_float
 
 
 def _add_ball_data_to_dict(

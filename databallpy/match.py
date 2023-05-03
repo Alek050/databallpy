@@ -107,6 +107,7 @@ class Match:
     away_players: pd.DataFrame
     away_score: int
     away_formation: str
+    country: str
 
     # to save the preprocessing status
     is_synchronised: bool = False
@@ -199,6 +200,12 @@ class Match:
                 f"'period' column in period_frames should contain only the values \
                     [1, 2, 3, 4, 5]. Now it's {res}"
             )
+
+        for col in [col for col in self.periods if "datetime" in col]:
+            if pd.isnull(self.periods[col]).all():
+                continue
+            if self.periods[col].dt.tz is None:
+                raise ValueError(f"{col} column in periods should have a timezone")
 
         # frame_rate
         if not pd.isnull(self.frame_rate):
@@ -315,6 +322,11 @@ the home team is {centroid_x}."
 from right to left the whole match. At the start  of period {period} the x centroid of \
 the away team is {centroid_x}."
                     )
+            # country
+            if not isinstance(self.country, str):
+                raise TypeError(
+                    f"country should be a string, not a {type(self.country)}"
+                )
 
     @property
     def name(self) -> str:
@@ -545,7 +557,7 @@ the away team is {centroid_x}."
 
     def __eq__(self, other):
         if isinstance(other, Match):
-            res = [
+            result = [
                 self.tracking_data.equals(other.tracking_data),
                 self.tracking_data_provider == other.tracking_data_provider,
                 self.event_data.round(6).equals(other.event_data.round(6)),
@@ -568,8 +580,9 @@ the away team is {centroid_x}."
                 self.away_score == other.away_score
                 if not pd.isnull(self.away_score)
                 else pd.isnull(other.away_score),
+                self.country == other.country,
             ]
-            return all(res)
+            return all(result)
         else:
             return False
 
@@ -593,6 +606,7 @@ the away team is {centroid_x}."
             away_score=self.away_score,
             away_team_name=self.away_team_name,
             away_players=self.away_players.copy(),
+            country=self.country,
         )
 
     def save_match(
@@ -753,6 +767,7 @@ def get_match(
             away_score=event_metadata.away_score,
             away_team_name=event_metadata.away_team_name,
             away_players=away_players,
+            country=event_metadata.country,
         )
 
     elif uses_tracking_data and not uses_event_data:
@@ -774,6 +789,7 @@ def get_match(
             away_score=tracking_metadata.away_score,
             away_team_name=tracking_metadata.away_team_name,
             away_players=tracking_metadata.away_players,
+            country=tracking_metadata.country,
         )
 
     elif uses_event_data and not uses_tracking_data:
@@ -795,6 +811,7 @@ def get_match(
             away_score=event_metadata.away_score,
             away_team_name=event_metadata.away_team_name,
             away_players=event_metadata.away_players,
+            country=event_metadata.country,
         )
 
     return match
@@ -814,6 +831,7 @@ def _create_sim_mat(
         np.ndarray: array containing similarity scores between every frame and events,
                     size is #frames, #events
     """
+
     sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
     tracking_batch["datetime"] = tracking_batch["datetime"]
 
@@ -972,6 +990,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         away_score=metadata.away_score,
         away_team_name=metadata.away_team_name,
         away_players=metadata.away_players,
+        country="",
     )
     return match
 
