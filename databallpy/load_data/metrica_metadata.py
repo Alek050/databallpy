@@ -6,7 +6,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils import _to_float, _to_int
+from databallpy.utils.utils import _to_float, _to_int
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
@@ -89,7 +89,9 @@ def _get_metadata(
     pitch_size_x = _to_float(soup.find("FieldSize").find("Width").text)
     pitch_size_y = _to_float(soup.find("FieldSize").find("Height").text)
     frame_rate = _to_int(soup.find("FrameRate").text)
-    datetime = pd.to_datetime(soup.find("Start").text).tz_localize(None)
+
+    # no idea about time zone, so just assume utc
+    datetime = pd.to_datetime(soup.find("Start").text, utc=True)
 
     periods_dict = {
         "period": [],
@@ -254,6 +256,7 @@ def _get_metadata(
         away_players=pd.DataFrame(away_players),
         away_score=teams_info["away"]["score"],
         away_formation=teams_info["away"]["formation"],
+        country="",
     )
     return metadata
 

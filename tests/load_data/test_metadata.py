@@ -13,15 +13,15 @@ class TestMetadata(unittest.TestCase):
             {
                 "period": [1, 2, 3, 4, 5],
                 "start_datetime_ed": [
-                    pd.to_datetime("2023-01-22T12:18:32.000"),
-                    pd.to_datetime("2023-01-22T13:21:13.000"),
+                    pd.to_datetime("2023-01-22T12:18:32.000", utc=True),
+                    pd.to_datetime("2023-01-22T13:21:13.000", utc=True),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_ed": [
-                    pd.to_datetime("2023-01-22T13:04:32.000"),
-                    pd.to_datetime("2023-01-22T14:09:58.000"),
+                    pd.to_datetime("2023-01-22T13:04:32.000", utc=True),
+                    pd.to_datetime("2023-01-22T14:09:58.000", utc=True),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
@@ -39,6 +39,7 @@ class TestMetadata(unittest.TestCase):
         self.away_players = pd.DataFrame({"id": [], "full_name": [], "shirt_num": []})
         self.away_score = 2
         self.away_formation = "1442"
+        self.country = "Netherlands"
 
     def test_metadata__eq__(self):
         metadata1 = Metadata(
@@ -56,6 +57,7 @@ class TestMetadata(unittest.TestCase):
             away_players=self.away_players,
             away_score=self.away_score,
             away_formation=self.away_formation,
+            country=self.country,
         )
 
         metadata2 = Metadata(
@@ -73,6 +75,7 @@ class TestMetadata(unittest.TestCase):
             away_players=self.away_players,
             away_score=self.away_score,
             away_formation=self.away_formation,
+            country=self.country,
         )
         assert metadata1 == metadata1
         assert metadata1 != metadata2
@@ -96,6 +99,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         # pitch dimension
@@ -115,6 +119,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -133,6 +138,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
         with self.assertRaises(TypeError):
             Metadata(
@@ -150,6 +156,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         # periods frames
@@ -169,6 +176,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -187,6 +195,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -205,6 +214,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -223,6 +233,30 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
+            )
+
+        with self.assertRaises(ValueError):
+            periods = self.periods_frames.copy()
+            periods["start_datetime_ed"] = periods["start_datetime_ed"].dt.tz_localize(
+                None
+            )
+            Metadata(
+                match_id=self.match_id,
+                pitch_dimensions=self.pitch_dimensions,
+                periods_frames=periods,
+                frame_rate=self.frame_rate,
+                home_team_id=self.home_team_id,
+                home_team_name=self.home_team_name,
+                home_players=self.home_players,
+                home_formation=self.home_formation,
+                home_score=self.home_score,
+                away_team_id=self.away_team_id,
+                away_team_name=self.away_team_name,
+                away_players=self.away_players,
+                away_score=self.away_score,
+                away_formation=self.away_formation,
+                country=self.country,
             )
 
         # frame rate
@@ -242,6 +276,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -260,6 +295,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         # team id
@@ -279,6 +315,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         # team name
@@ -298,6 +335,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         # team score
@@ -317,6 +355,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -335,6 +374,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=-2,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         # team formation
@@ -354,6 +394,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=1433,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -372,6 +413,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation="13232",
+                country=self.country,
             )
 
         # team players
@@ -391,6 +433,7 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players,
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
             )
 
         with self.assertRaises(ValueError):
@@ -409,4 +452,24 @@ class TestMetadata(unittest.TestCase):
                 away_players=self.away_players.drop("id", axis=1),
                 away_score=self.away_score,
                 away_formation=self.away_formation,
+                country=self.country,
+            )
+
+        with self.assertRaises(TypeError):
+            Metadata(
+                match_id=self.match_id,
+                pitch_dimensions=self.pitch_dimensions,
+                periods_frames=self.periods_frames,
+                frame_rate=self.frame_rate,
+                home_team_id=self.home_team_id,
+                home_team_name=self.home_team_name,
+                home_players=self.home_players,
+                home_formation=self.home_formation,
+                home_score=self.home_score,
+                away_team_id=self.away_team_id,
+                away_team_name=self.away_team_name,
+                away_players=self.away_players,
+                away_score=self.away_score,
+                away_formation=self.away_formation,
+                country=12,
             )

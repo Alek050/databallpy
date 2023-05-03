@@ -23,6 +23,8 @@ class Metadata:
     away_score: int
     away_formation: str
 
+    country: str
+
     def __post_init__(self):
         # match id
         if not isinstance(self.match_id, int):
@@ -68,6 +70,13 @@ class Metadata:
                 f"'period' column in period_frames should contain only the values \
                     [1, 2, 3, 4, 5]. Now it's {res}"
             )
+        for col in [col for col in self.periods_frames if "datetime" in col]:
+            if pd.isnull(self.periods_frames[col]).all():
+                continue
+            if self.periods_frames[col].dt.tz is None:
+                raise ValueError(
+                    f"{col} column in period_frames should have a timezone"
+                )
 
         # frame_rate
         if not pd.isnull(self.frame_rate):
@@ -143,6 +152,10 @@ class Metadata:
                         ['id', 'full_name', 'shirt_num'], now its {players.columns}"
                 )
 
+        # country
+        if not isinstance(self.country, str):
+            raise TypeError(f"country should be a string, not a {type(self.country)}")
+
     def __eq__(self, other):
         if isinstance(other, Metadata):
             result = [
@@ -171,8 +184,8 @@ class Metadata:
                 if not pd.isnull(self.away_score)
                 else pd.isnull(other.away_score),
                 self.away_formation == other.away_formation,
+                self.country == other.country,
             ]
-
             return all(result)
         else:
             return False
@@ -193,4 +206,5 @@ class Metadata:
             away_players=self.away_players.copy(),
             away_score=self.away_score,
             away_formation=self.away_formation,
+            country=self.country,
         )

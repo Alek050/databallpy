@@ -22,7 +22,8 @@ from databallpy.load_data.tracking_data._insert_missing_rows import _insert_miss
 from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
     _normalize_playing_direction_tracking,
 )
-from databallpy.utils import _to_float, _to_int
+from databallpy.utils.tz_modification import utc_to_local_datetime
+from databallpy.utils.utils import _to_float, _to_int
 
 
 def load_inmotio_tracking_data(
@@ -217,11 +218,23 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             periods_dict["start_frame"][i] = _to_int(values[0])
             periods_dict["end_frame"][i] = _to_int(values[1])
             periods_dict["start_datetime_td"][i] = pd.to_datetime(
-                period.find("Start").text
+                period.find("Start").text, utc=True
             )
-            periods_dict["end_datetime_td"][i] = pd.to_datetime(period.find("End").text)
+            periods_dict["end_datetime_td"][i] = pd.to_datetime(
+                period.find("End").text, utc=True
+            )
             i += 1
     periods_frames = pd.DataFrame(periods_dict)
+
+    competition = soup.find("Competition").text.split(",")[0]
+
+    # set to the right timezone
+    periods_frames["start_datetime_td"] = utc_to_local_datetime(
+        periods_frames["start_datetime_td"], competition
+    )
+    periods_frames["end_datetime_td"] = utc_to_local_datetime(
+        periods_frames["end_datetime_td"], competition
+    )
 
     home_team = soup.Teams.find_all("Team")[0]
     home_team_id = home_team.attrs["id"]
@@ -255,6 +268,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         away_players=away_players,
         away_score=away_score,
         away_formation="",
+        country="",
     )
     return metadata
 

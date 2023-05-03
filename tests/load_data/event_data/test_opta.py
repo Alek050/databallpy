@@ -64,7 +64,7 @@ class TestOpta(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_result)
 
     def test_load_event_data(self):
-        event_data = _load_event_data(self.f24_loc)
+        event_data = _load_event_data(self.f24_loc, country="Netherlands")
 
         # player name is added in other function later in the pipeline
         expected_event_data = ED_OPTA.copy().drop("player_name", axis=1)
