@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy import DataBallPyError
+from databallpy.errors import DataBallPyError
 from databallpy.utils.tz_modification import localize_datetime, utc_to_local_datetime
 
 

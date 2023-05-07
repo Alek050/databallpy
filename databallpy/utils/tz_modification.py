@@ -1,7 +1,7 @@
 import pandas as pd
 import pytz
 
-from databallpy import DataBallPyError
+from databallpy.errors import DataBallPyError
 
 CHARACTERISTIC_TIMEZONE = {
     "Netherlands": "Europe/Amsterdam",
