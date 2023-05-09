@@ -4,7 +4,7 @@ import unittest
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from databallpy.match import get_match
+from databallpy.get_match import get_match
 from databallpy.visualize import (
     plot_events,
     plot_soccer_pitch,
