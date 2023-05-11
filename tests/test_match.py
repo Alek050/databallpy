@@ -24,12 +24,14 @@ class TestMatch(unittest.TestCase):
             event_data_loc=ed_opta_loc,
             event_metadata_loc=md_opta_loc,
             event_data_provider="opta",
+            check_quality=False,
         )
 
         self.expected_match_tracab = get_match(
             tracking_data_loc=td_tracab_loc,
             tracking_metadata_loc=md_tracab_loc,
             tracking_data_provider="tracab",
+            check_quality=False
         )
 
         td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -43,6 +45,7 @@ class TestMatch(unittest.TestCase):
             event_data_loc=ed_metrica_loc,
             event_metadata_loc=md_metrica_loc,
             event_data_provider="metrica",
+            check_quality=False,
         )
 
         self.match_to_sync = get_match(
@@ -52,6 +55,7 @@ class TestMatch(unittest.TestCase):
             event_data_loc="tests/test_data/sync/opta_events_sync_test.xml",
             event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
             event_data_provider="opta",
+            check_quality=False,
         )
 
         self.expected_match_opta = get_match(

@@ -287,6 +287,7 @@ class TestGetMatch(unittest.TestCase):
             event_data_loc="tests/test_data/sync/opta_events_sync_test.xml",
             event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
             event_data_provider="opta",
+            check_quality=False,
         )
 
         self.expected_match_tracab = Match(
@@ -339,6 +340,7 @@ class TestGetMatch(unittest.TestCase):
             event_metadata_loc=self.md_opta_loc,
             tracking_data_provider=self.td_provider,
             event_data_provider=self.ed_provider,
+            check_quality=False,
         )
         assert match == self.expected_match_tracab_opta
 
@@ -367,6 +369,7 @@ class TestGetMatch(unittest.TestCase):
             tracking_data_loc=self.td_tracab_loc,
             tracking_metadata_loc=self.md_tracab_loc,
             tracking_data_provider="tracab",
+            check_quality=False,
         )
         assert match == self.expected_match_tracab
 
@@ -379,6 +382,7 @@ class TestGetMatch(unittest.TestCase):
                 event_metadata_loc=self.md_opta_loc,
                 tracking_data_provider=self.td_provider,
                 event_data_provider="wrong",
+                check_quality=False,
             )
 
         with self.assertRaises(AssertionError):
@@ -389,6 +393,7 @@ class TestGetMatch(unittest.TestCase):
                 event_metadata_loc=self.md_opta_loc,
                 tracking_data_provider="also wrong",
                 event_data_provider=self.ed_provider,
+                check_quality=False,
             )
 
     def test_get_match_inmotio_instat_unaligned_player_ids(self):
@@ -399,6 +404,7 @@ class TestGetMatch(unittest.TestCase):
             event_data_loc="tests/test_data/instat_ed_test_unaligned_player_ids.json",
             event_metadata_loc=self.md_instat_loc,
             event_data_provider="instat",
+            check_quality=False,
         )
         assert (
             match_instat_inmotio_unaligned_input == self.expected_match_inmotio_instat
@@ -412,6 +418,7 @@ class TestGetMatch(unittest.TestCase):
             event_data_loc=self.ed_instat_loc,
             event_metadata_loc=self.md_instat_loc,
             event_data_provider="instat",
+            check_quality=False,
         )
 
         assert match_instat_inmotio == self.expected_match_inmotio_instat
@@ -425,6 +432,7 @@ class TestGetMatch(unittest.TestCase):
             event_data_loc=self.ed_metrica_loc,
             event_metadata_loc=self.md_metrica_loc,
             event_data_provider="metrica",
+            check_quality=False,
         )
         assert res == self.expected_match_metrica
 
