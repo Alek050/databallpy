@@ -186,7 +186,7 @@ def _create_sim_mat(
             tracking_batch["ball_y"] - event["start_y"],
         )
 
-        if not np.isnan(event["player_id"]) and event["player_id"] != -999:
+        if not np.isnan(event["player_id"]):
             column_id_player = match.player_id_to_column_id(
                 player_id=event["player_id"]
             )
