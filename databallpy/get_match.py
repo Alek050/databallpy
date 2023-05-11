@@ -11,7 +11,9 @@ from databallpy.load_data.event_data.metrica_event_data import (
 )
 from databallpy.load_data.event_data.opta import load_opta_event_data
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._quality_check_tracking_data import _quality_check_tracking_data
+from databallpy.load_data.tracking_data._quality_check_tracking_data import (
+    _quality_check_tracking_data,
+)
 from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
@@ -29,7 +31,7 @@ def get_match(
     event_metadata_loc: str = None,
     tracking_data_provider: str = None,
     event_data_provider: str = None,
-    check_quality: bool = True
+    check_quality: bool = True,
 ) -> Match:
     """Function to get all information of a match given its datasources
 
@@ -45,8 +47,8 @@ def get_match(
         to None.
         event_data_provider (str, optional): provider of the event data. Defaults to
         None.
-        check_quality (bool, optional): whether you want to check the quality of the tracking
-        data. Defaults to True
+        check_quality (bool, optional): whether you want to check the quality of the
+        tracking data. Defaults to True
     Returns:
         (Match): a Match object with all information available of the match.
     """
@@ -142,10 +144,12 @@ def get_match(
         away_players = tracking_metadata.away_players.merge(
             event_metadata.away_players[player_cols], on="id"
         )
-        
+
         if check_quality:
-            _quality_check_tracking_data(tracking_data, tracking_metadata.frame_rate, merged_periods)
-       
+            _quality_check_tracking_data(
+                tracking_data, tracking_metadata.frame_rate, merged_periods
+            )
+
         match = Match(
             tracking_data=tracking_data,
             tracking_data_provider=tracking_data_provider,
@@ -170,7 +174,7 @@ def get_match(
     elif uses_tracking_data and not uses_event_data:
         if check_quality:
             _quality_check_tracking_data(tracking_data)
-            
+
         match = Match(
             tracking_data=tracking_data,
             tracking_data_provider=tracking_data_provider,

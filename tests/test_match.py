@@ -31,7 +31,7 @@ class TestMatch(unittest.TestCase):
             tracking_data_loc=td_tracab_loc,
             tracking_metadata_loc=md_tracab_loc,
             tracking_data_provider="tracab",
-            check_quality=False
+            check_quality=False,
         )
 
         td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
