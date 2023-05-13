@@ -150,7 +150,7 @@ ED_OPTA = pd.DataFrame(
                 "2023-01-22T12:18:43.120",
                 "2023-01-22T12:18:44.120",
             ],
-            dtype="datetime64[ns]",
+            dtype="datetime64",
         ),
         "player_name": [
             None,
