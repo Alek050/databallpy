@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from databallpy.utils.utils import MISSING_INT
+
 
 def _add_periods_to_tracking_data(
     timestamps: pd.Series, periods_frames: pd.DataFrame
@@ -34,13 +36,13 @@ def _add_periods_to_tracking_data(
     ]
     period_values = [
         1,
-        -999,
+        MISSING_INT,
         2,
-        -999,
+        MISSING_INT,
         3,
-        -999,
+        MISSING_INT,
         4,
-        -999,
+        MISSING_INT,
         5,
     ]
 

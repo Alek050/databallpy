@@ -7,6 +7,7 @@ import pandas as pd
 
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.tz_modification import utc_to_local_datetime
+from databallpy.utils.utils import MISSING_INT
 
 
 def load_instat_event_data(
@@ -193,7 +194,7 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
         "Pass into offside": ["pass", 0],
         "Successful dribbling": ["dribbling", 1],
         "Unsuccessful dribbling": ["dribbling", 0],
-        "Dribbling": ["dribbling", -999],
+        "Dribbling": ["dribbling", MISSING_INT],
         "Crosses accurate": ["cross", 1],
         "Accurate crossing from set piece with a shot": ["cross", 1],
         "Accurate crossing from set piece": ["cross", 1],
@@ -261,11 +262,11 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
             if "player_id" in event.keys():
                 result_dict["player_id"].append(int(event["player_id"]))
             else:
-                result_dict["player_id"].append(-999)
+                result_dict["player_id"].append(MISSING_INT)
             if "team_id" in event.keys():
                 result_dict["team_id"].append(int(event["team_id"]))
             else:
-                result_dict["team_id"].append(-999)
+                result_dict["team_id"].append(MISSING_INT)
             if "pos_x" in event.keys():
                 result_dict["start_x"].append(float(event["pos_x"]))
                 result_dict["start_y"].append(float(event["pos_y"]))

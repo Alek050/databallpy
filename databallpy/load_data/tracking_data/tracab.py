@@ -22,6 +22,7 @@ from databallpy.load_data.tracking_data._normalize_playing_direction_tracking im
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.tz_modification import localize_datetime
+from databallpy.utils.utils import MISSING_INT
 
 
 def load_tracab_tracking_data(
@@ -168,8 +169,8 @@ def _get_metadata(metadata_loc: str) -> Metadata:
                 date + dt.timedelta(milliseconds=int((end_frame / frame_rate) * 1000))
             )
         else:
-            frames_dict["start_frame"].append(-999)
-            frames_dict["end_frame"].append(-999)
+            frames_dict["start_frame"].append(MISSING_INT)
+            frames_dict["end_frame"].append(MISSING_INT)
             frames_dict["start_datetime_td"].append(pd.to_datetime("NaT"))
             frames_dict["end_datetime_td"].append(pd.to_datetime("NaT"))
     df_frames = pd.DataFrame(frames_dict)

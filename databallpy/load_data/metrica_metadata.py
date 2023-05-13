@@ -6,7 +6,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils.utils import _to_float, _to_int
+from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
@@ -132,7 +132,7 @@ def _get_metadata(
                 seconds = (current_frame - first_frame) / frame_rate
                 periods_dict["start_datetime_td"].append(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
-                ) if not current_frame == -999 else periods_dict[
+                ) if not current_frame == MISSING_INT else periods_dict[
                     "start_datetime_td"
                 ].append(
                     pd.to_datetime("NaT")
@@ -141,7 +141,7 @@ def _get_metadata(
                 seconds = (current_frame - first_frame) / frame_rate
                 periods_dict["start_datetime_ed"].append(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
-                ) if not current_frame == -999 else periods_dict[
+                ) if not current_frame == MISSING_INT else periods_dict[
                     "start_datetime_ed"
                 ].append(
                     pd.to_datetime("NaT")
@@ -154,7 +154,7 @@ def _get_metadata(
             if is_tracking_data:
                 periods_dict["end_datetime_td"].append(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
-                ) if not current_frame == -999 else periods_dict[
+                ) if not current_frame == MISSING_INT else periods_dict[
                     "end_datetime_td"
                 ].append(
                     pd.to_datetime("NaT")
@@ -162,7 +162,7 @@ def _get_metadata(
             if is_event_data:
                 periods_dict["end_datetime_ed"].append(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
-                ) if not current_frame == -999 else periods_dict[
+                ) if not current_frame == MISSING_INT else periods_dict[
                     "end_datetime_ed"
                 ].append(
                     pd.to_datetime("NaT")
@@ -170,8 +170,8 @@ def _get_metadata(
 
     # add fifth period
     periods_dict["period"].append(5)
-    periods_dict["start_frame"].append(-999)
-    periods_dict["end_frame"].append(-999)
+    periods_dict["start_frame"].append(MISSING_INT)
+    periods_dict["end_frame"].append(MISSING_INT)
     if is_tracking_data:
         periods_dict["start_datetime_td"].append(pd.to_datetime("NaT"))
         periods_dict["end_datetime_td"].append(pd.to_datetime("NaT"))
