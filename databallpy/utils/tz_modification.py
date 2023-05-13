@@ -1,5 +1,6 @@
+from datetime import timezone
+
 import pandas as pd
-import pytz
 
 from databallpy.errors import DataBallPyError
 
@@ -29,7 +30,7 @@ def utc_to_local_datetime(dt_series: pd.Series, characteristic: str) -> pd.Serie
  an issue with this error on our github page to get it added in our next version."
         )
 
-    assert dt_series.dt.tz == pytz.UTC, "dt_series should be in UTC timezone"
+    assert dt_series.dt.tz == timezone.utc, "dt_series should be in UTC timezone"
 
     converted = dt_series.copy()
 
