@@ -201,4 +201,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                 event_batch=event_data,
                 match=self.match_to_sync,
             )
-        self.assertTrue('999.0 is not in either one of the teams' in str(context.exception))
+        self.assertTrue(
+            '999.0 is not in either one of the teams' in str(context.exception)
+        )
