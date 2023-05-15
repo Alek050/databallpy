@@ -10,13 +10,13 @@ class TestGetVelocity(unittest.TestCase):
     def setUp(self):
         self.input = pd.DataFrame(
             {
-                "ball": [10, 20, 30, 40, 50, 60],
+                "ball": [10, 20, -30, 40, np.nan, 60],
             }
         )
         self.expected_output = pd.DataFrame(
             {
-                "ball": [10, 20, 30, 40, 50, 60],
-                "ball_v": [np.nan, 10, 10, 10, 10, 10],
+                "ball": [10, 20, -30, 40, np.nan, 60],
+                "ball_v": [np.nan, 10, -50, 70, np.nan, np.nan],
             }
         )
         self.framerate = 1
