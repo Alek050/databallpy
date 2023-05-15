@@ -5,6 +5,7 @@ import pandas as pd
 from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.utils import MISSING_INT
 
 
 class TestNormalizePlayingDirection(unittest.TestCase):
@@ -28,8 +29,8 @@ class TestNormalizePlayingDirection(unittest.TestCase):
         self.periods = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_frame": [10, 12, 14, -999, -999],
-                "end_frame": [11, 13, 15, -999, -999],
+                "start_frame": [10, 12, 14, MISSING_INT, MISSING_INT],
+                "end_frame": [11, 13, 15, MISSING_INT, MISSING_INT],
             }
         )
 

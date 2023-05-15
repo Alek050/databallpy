@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.load_data.metadata import Metadata
+from databallpy.utils.utils import MISSING_INT
 
 
 def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:
@@ -65,7 +66,7 @@ def _get_matchtime(
 
     rel_timestamp = np.array(
         [
-            x - period_start_dict[p] if p > 0 else -999 * frame_rate
+            x - period_start_dict[p] if p > 0 else MISSING_INT * frame_rate
             for x, p in zip(timestamp_column.values, period_column.values)
         ]
     )
