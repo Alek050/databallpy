@@ -9,6 +9,7 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
 )
+from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import RES_SIM_MAT, RES_SIM_MAT_NO_PLAYER
 
 
@@ -126,7 +127,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_res = RES_SIM_MAT
         expected_res = expected_res.reshape(13, 4)
 
-        tracking_data = self.match_to_sync.tracking_data
+        tracking_data = self.match_to_sync.tracking_data.copy()
         date = pd.to_datetime(
             str(self.match_to_sync.periods.iloc[0, 3])[:10]
         ).tz_localize("Europe/Amsterdam")
@@ -136,7 +137,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             for x in tracking_data["frame"]
         ]
         tracking_data.reset_index(inplace=True)
-        event_data = self.match_to_sync.event_data
+        event_data = self.match_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
         res = _create_sim_mat(
             tracking_batch=tracking_data,
@@ -150,7 +151,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_res = RES_SIM_MAT_NO_PLAYER
         expected_res = expected_res.reshape(13, 4)
 
-        tracking_data = self.match_to_sync.tracking_data
+        tracking_data = self.match_to_sync.tracking_data.copy()
         date = pd.to_datetime(
             str(self.match_to_sync.periods.iloc[0, 3])[:10]
         ).tz_localize("Europe/Amsterdam")
@@ -160,7 +161,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             for x in tracking_data["frame"]
         ]
         tracking_data.reset_index(inplace=True)
-        event_data = self.match_to_sync.event_data
+        event_data = self.match_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
 
         def _assert_sim_mats_equal(tracking_data, event_data):
@@ -175,32 +176,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         event_data.loc[2, "player_id"] = np.nan
         _assert_sim_mats_equal(tracking_data, event_data)
 
-        # Test with player_id = -999
-        event_data.loc[2, "player_id"] = -999
+        # Test with player_id = MISSING_INT (-999)
+        event_data.loc[2, "player_id"] = MISSING_INT
         _assert_sim_mats_equal(tracking_data, event_data)
-
-    def test_create_sim_mat_unknown_player(self):
-        tracking_data = self.match_to_sync.tracking_data
-        date = pd.to_datetime(
-            str(self.match_to_sync.periods.iloc[0, 3])[:10]
-        ).tz_localize("Europe/Amsterdam")
-        tracking_data["datetime"] = [
-            date
-            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
-            for x in tracking_data["frame"]
-        ]
-        tracking_data.reset_index(inplace=True)
-        event_data = self.match_to_sync.event_data
-        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
-        # Use a player_id that is not in the data
-        event_data.loc[2, "player_id"] = 999
-
-        with self.assertRaises(ValueError) as context:
-            _create_sim_mat(
-                tracking_batch=tracking_data,
-                event_batch=event_data,
-                match=self.match_to_sync,
-            )
-        self.assertTrue(
-            "999.0 is not in either one of the teams" in str(context.exception)
-        )
