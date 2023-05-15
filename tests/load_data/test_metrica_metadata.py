@@ -9,6 +9,7 @@ from databallpy.load_data.metrica_metadata import (
     _get_td_channels,
     _update_metadata,
 )
+from databallpy.utils.utils import MISSING_INT
 
 
 class TestMetricaMetadata(unittest.TestCase):
@@ -20,8 +21,8 @@ class TestMetricaMetadata(unittest.TestCase):
             periods_frames=pd.DataFrame(
                 {
                     "period": [1, 2, 3, 4, 5],
-                    "start_frame": [1, 4, -999, -999, -999],
-                    "end_frame": [3, 6, -999, -999, -999],
+                    "start_frame": [1, 4, MISSING_INT, MISSING_INT, MISSING_INT],
+                    "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
                     "start_datetime_td": [
                         pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
                         pd.to_datetime("2019-02-21T03:30:08.500", utc=True),
