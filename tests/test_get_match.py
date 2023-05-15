@@ -14,6 +14,7 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
 from databallpy.match import Match
+from databallpy.utils.utils import MISSING_INT
 from expected_outcomes import ED_OPTA, MD_OPTA, MD_TRACAB, TD_TRACAB
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
@@ -43,8 +44,14 @@ class TestGetMatch(unittest.TestCase):
         self.expected_periods_tracab_opta = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_frame": [1509993, 1509996, -999, -999, -999],
-                "end_frame": [1509994, 1509997, -999, -999, -999],
+                "start_frame": [
+                    1509993,
+                    1509996,
+                    MISSING_INT,
+                    MISSING_INT,
+                    MISSING_INT,
+                ],
+                "end_frame": [1509994, 1509997, MISSING_INT, MISSING_INT, MISSING_INT],
                 "start_datetime_td": [
                     pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
                     + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
@@ -114,7 +121,7 @@ class TestGetMatch(unittest.TestCase):
             }
         )
 
-        self.td_tracab["period"] = [1, 1, -999, 2, 2]
+        self.td_tracab["period"] = [1, 1, MISSING_INT, 2, 2]
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
@@ -216,8 +223,8 @@ class TestGetMatch(unittest.TestCase):
         self.expected_periods_inmotio_instat = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_frame": [2, 5, -999, -999, -999],
-                "end_frame": [3, 6, -999, -999, -999],
+                "start_frame": [2, 5, MISSING_INT, MISSING_INT, MISSING_INT],
+                "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
                 "start_datetime_td": [
                     pd.to_datetime("2023-01-01 20:00:00").tz_localize(
                         "Europe/Amsterdam"

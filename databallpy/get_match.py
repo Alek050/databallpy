@@ -21,7 +21,7 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
 from databallpy.match import Match
-from databallpy.utils.utils import align_player_ids
+from databallpy.utils.utils import MISSING_INT, align_player_ids
 
 
 def get_match(
@@ -129,7 +129,7 @@ def get_match(
             event_data["player_id"] = (
                 event_data["player_name"]
                 .map(full_name_id_map)
-                .fillna(-999)
+                .fillna(MISSING_INT)
                 .astype("int64")
             )
 

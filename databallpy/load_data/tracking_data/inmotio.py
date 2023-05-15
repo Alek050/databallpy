@@ -23,7 +23,7 @@ from databallpy.load_data.tracking_data._normalize_playing_direction_tracking im
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.tz_modification import utc_to_local_datetime
-from databallpy.utils.utils import _to_float, _to_int
+from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
 
 
 def load_inmotio_tracking_data(
@@ -204,8 +204,8 @@ def _get_metadata(metadata_loc: str) -> Metadata:
 
     periods_dict = {
         "period": [1, 2, 3, 4, 5],
-        "start_frame": [-999] * 5,
-        "end_frame": [-999] * 5,
+        "start_frame": [MISSING_INT] * 5,
+        "end_frame": [MISSING_INT] * 5,
         "start_datetime_td": [pd.to_datetime("NaT")] * 5,
         "end_datetime_td": [pd.to_datetime("NaT")] * 5,
     }

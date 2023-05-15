@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.load_data.metadata import Metadata
+from databallpy.utils.utils import MISSING_INT
 
 TD_TRACAB = pd.DataFrame(
     {
@@ -17,7 +18,7 @@ TD_TRACAB = pd.DataFrame(
         "home_34_y": [-4.75, -4.74, -4.73, np.nan, -4.72],
         "away_17_x": [13.22, 13.21, 13.21, np.nan, 13.21],
         "away_17_y": [-13.16, -13.16, -13.17, np.nan, -13.18],
-        "period": [1, 1, -999, 2, 2],
+        "period": [1, 1, MISSING_INT, 2, 2],
         "matchtime_td": [
             "00:00",
             "00:00",
@@ -35,8 +36,8 @@ MD_TRACAB = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [1509993, 1509996, -999, -999, -999],
-            "end_frame": [1509994, 1509997, -999, -999, -999],
+            "start_frame": [1509993, 1509996, MISSING_INT, MISSING_INT, MISSING_INT],
+            "end_frame": [1509994, 1509997, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_td": [
                 pd.to_datetime(
                     "2023-01-14",
@@ -150,7 +151,7 @@ ED_OPTA = pd.DataFrame(
                 "2023-01-22T12:18:43.120",
                 "2023-01-22T12:18:44.120",
             ],
-            dtype="datetime64",
+            dtype="datetime64[ns]",
         ),
         "player_name": [
             None,
@@ -286,8 +287,8 @@ MD_METRICA_TD = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [1, 4, -999, -999, -999],
-            "end_frame": [3, 6, -999, -999, -999],
+            "start_frame": [1, 4, MISSING_INT, MISSING_INT, MISSING_INT],
+            "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_td": [
                 pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
                 pd.to_datetime("2019-02-21T03:30:08.500", utc=True),
@@ -343,8 +344,8 @@ MD_METRICA_ED = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [1, 4, -999, -999, -999],
-            "end_frame": [3, 6, -999, -999, -999],
+            "start_frame": [1, 4, MISSING_INT, MISSING_INT, MISSING_INT],
+            "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_ed": [
                 pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
                 pd.to_datetime("2019-02-21T03:30:08.500", utc=True),
@@ -420,7 +421,7 @@ TD_INMOTIO = pd.DataFrame(
         "away_1_y": [0.5, 1.5, 2.5, np.nan, -0.2, -1.2],
         "away_2_x": [23.3, 23.3, 25.3, np.nan, -20.0, np.nan],
         "away_2_y": [5.9, 6.9, 5.9, np.nan, -5.0, np.nan],
-        "period": [-999, 1, 1, -999, 2, 2],
+        "period": [MISSING_INT, 1, 1, MISSING_INT, 2, 2],
         "matchtime_td": ["", "00:00", "00:00", "Break", "45:00", "45:00"],
     }
 )
@@ -431,8 +432,8 @@ MD_INMOTIO = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period": [1, 2, 3, 4, 5],
-            "start_frame": [2, 5, -999, -999, -999],
-            "end_frame": [3, 6, -999, -999, -999],
+            "start_frame": [2, 5, MISSING_INT, MISSING_INT, MISSING_INT],
+            "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_td": [
                 pd.to_datetime("2023-01-01T20:00:00.000").tz_localize(
                     "Europe/Amsterdam"
@@ -549,8 +550,8 @@ ED_INSTAT = pd.DataFrame(
         "period_id": [1, 1, 1, 1],
         "minutes": [0.0, 0.0, 0.0, 0.0],
         "seconds": [5.37, 20.93, 23.64, 28.64],
-        "player_id": [2, 1, 3, -999],
-        "team_id": [1, 1, 2, -999],
+        "player_id": [2, 1, 3, MISSING_INT],
+        "team_id": [1, 1, 2, MISSING_INT],
         "outcome": [0, 1, np.nan, np.nan],
         "start_x": [0, 35.4, 35.5, np.nan],
         "start_y": [0, -18.0, -40.5, np.nan],
