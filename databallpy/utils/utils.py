@@ -5,21 +5,23 @@ import numpy as np
 
 from databallpy.load_data.metadata import Metadata
 
+MISSING_INT = -999
+
 
 def _to_int(value) -> int:
-    """Function to make a integer of the value if possible, else -999
+    """Function to make a integer of the value if possible, else MISSING_INT (-999)
 
     Args:
         value (): a variable value
 
     Returns:
-       int: integer if value can be changed to integer, else -999
+       int: integer if value can be changed to integer, else MISSING_INT (-999)
     """
     try:
         value = _to_float(value)
         return int(value)
     except (TypeError, ValueError):
-        return -999
+        return MISSING_INT
 
 
 def _to_float(value) -> Union[float, int]:
