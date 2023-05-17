@@ -186,7 +186,7 @@ def _create_sim_mat(
             tracking_batch["ball_y"] - event["start_y"],
         )
 
-        if not np.isnan(event["player_id"]) and event["player_id"] != -999:
+        if not np.isnan(event["player_id"]):
             column_id_player = match.player_id_to_column_id(
                 player_id=event["player_id"]
             )
@@ -194,6 +194,9 @@ def _create_sim_mat(
                 tracking_batch["ball_x"] - tracking_batch[f"{column_id_player}_x"],
                 tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"],
             )
+            # player indicated by the event data is not present in the tracking data
+            if player_ball_diff.isnull().all():
+                player_ball_diff = 0
         else:
             player_ball_diff = 0
         # similarity function from: https://kwiatkowski.io/sync.soccer
@@ -271,6 +274,11 @@ def _needleman_wunsch(
         elif P[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
+            )
+        else:
+            raise ValueError(
+                f"The algorithm got stuck due to an unexpected "
+                f"value of P[{i}, {j}]: {P[i, j]}"
             )
 
     frames = frames[::-1]
