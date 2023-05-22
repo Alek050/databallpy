@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.velocity import get_velocity
+from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
 
 
@@ -144,7 +145,7 @@ def _check_player_velocity(
     mask_no_break = [False] * len(tracking_data)
     first_frame = periods.loc[0, "start_frame"]
     for _, row in periods.iterrows():
-        if row["start_frame"] != -999:
+        if row["start_frame"] != MISSING_INT:
             p_start = row["start_frame"] - first_frame
             p_end = row["end_frame"] - first_frame
             mask_no_break[p_start:p_end] = [True] * (p_end - p_start)
