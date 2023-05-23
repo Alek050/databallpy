@@ -412,9 +412,9 @@ def check_inputs_match_object(match: Match):
             raise TypeError(
                 f"{team} team formation should be a string, not a {type(form)}"
             )
-        if len(form) > 4:
+        if len(form) > 5:
             raise ValueError(
-                f"{team} team formation should be of length 4 or smaller \
+                f"{team} team formation should be of length 5 or smaller \
                     ('1433'), not {len(form)}"
             )
 
