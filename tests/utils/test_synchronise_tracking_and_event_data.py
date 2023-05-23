@@ -22,6 +22,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_data_loc="tests/test_data/sync/opta_events_sync_test.xml",
             event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
             event_data_provider="opta",
+            check_quality=False,
         )
 
     def test_synchronise_tracking_and_event_data(self):
