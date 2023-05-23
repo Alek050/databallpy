@@ -129,9 +129,9 @@ class Metadata:
                     raise TypeError(
                         f"{team} team formation should be a string, not a {type(form)}"
                     )
-                if len(form) > 4:
+                if len(form) > 5:
                     raise ValueError(
-                        f"{team} team formation should be of length 4 or smaller, not \
+                        f"{team} team formation should be of length 5 or smaller, not \
                             {len(form)}"
                     )
 

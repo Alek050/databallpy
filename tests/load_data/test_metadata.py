@@ -412,7 +412,7 @@ class TestMetadata(unittest.TestCase):
                 away_team_name=self.away_team_name,
                 away_players=self.away_players,
                 away_score=self.away_score,
-                away_formation="13232",
+                away_formation="132321",
                 country=self.country,
             )
 
