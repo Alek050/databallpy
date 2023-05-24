@@ -32,12 +32,6 @@
         <AssistantOfficial FirstName="Sven" LastName="Bakker" Type="Assistant VAR Official" uID="o42092" />
       </AssistantOfficials>
       <Stat Type="match_time">94</Stat>
-      <Stat Type="first_half_start">20230122T111832+0000</Stat>
-      <Stat Type="first_half_time">46</Stat>
-      <Stat Type="first_half_stop">20230122T120432+0000</Stat>
-      <Stat Type="second_half_start">20230122T122113+0000</Stat>
-      <Stat Type="second_half_time">49</Stat>
-      <Stat Type="second_half_stop">20230122T130958+0000</Stat>
       <TeamData Formation="4231" Score="3" Side="Home" TeamRef="t3">
         <Goal EventID="2499595929" EventNumber="152" Min="4" Period="FirstHalf" PlayerRef="p507930" Sec="27" Time="5" TimeStamp="20230122T112259+0000" TimeStampUTC="20230122T112259+0000" Type="Goal" uID="g318-1">
           <Assist PlayerRef="p165388">p165388</Assist>
