@@ -124,6 +124,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         assert res == expected_res
 
+    def test_needleman_wunsch_sim_mat_nan(self):
+        sim_list = 30 * [np.nan]
+        sim_mat = np.array(sim_list).reshape(10, 3)
+
+        with self.assertRaises(ValueError):
+            _needleman_wunsch(sim_mat)
+
     def test_create_sim_mat(self):
         expected_res = RES_SIM_MAT
         expected_res = expected_res.reshape(13, 4)
