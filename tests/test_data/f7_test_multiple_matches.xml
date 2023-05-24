@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SoccerFeed TimeStamp="20230122T203849+0000">
+  <SoccerDocument Type="Result" detail_id="1" uID="f1908">
+    <Competition uID="c9">
+      <Country>Netherlands</Country>
+      <Name>Dutch Eredivisie</Name>
+      <Stat Type="season_id">2022</Stat>
+      <Stat Type="season_name">Season 2022/2023</Stat>
+      <Stat Type="symid">NL_ED</Stat>
+      <Stat Type="matchday">17</Stat>
+    </Competition>
+    <MatchData>
+      <MatchInfo MatchType="2nd Leg" Period="FullTime" PostMatch="1" TimeFrameLengthId="1" TimeStamp="20230122T130958+0000">
+        <Attendance>19029</Attendance>
+        <Date>20230122T111500+0000</Date>
+        <Result Type="NormalResult" Winner="t318" />
+      </MatchInfo>
+      <MatchOfficial uID="o42031">
+        <OfficialData>
+          <OfficialRef Type="Main" />
+        </OfficialData>
+        <OfficialName>
+          <First>Max</First>
+          <Last>Winkels</Last>
+        </OfficialName>
+      </MatchOfficial>
+      <AssistantOfficials>
+        <AssistantOfficial FirstName="Jan" LastName="Derks" Type="Lineman 1" uID="o43540" />
+        <AssistantOfficial FirstName="John" LastName="Mulder" Type="Lineman 2" uID="o47013" />
+        <AssistantOfficial FirstName="Peter" LastName="de Kat" Type="Fourth official" uID="o44344" />
+        <AssistantOfficial FirstName="Adrie" LastName="Smit" Type="Video Assistant Referee" uID="o42023" />
+        <AssistantOfficial FirstName="Sven" LastName="Bakker" Type="Assistant VAR Official" uID="o42092" />
+      </AssistantOfficials>
+      <Stat Type="match_time">94</Stat>
+      <Stat Type="first_half_start">20230122T111832+0000</Stat>
+      <Stat Type="first_half_time">46</Stat>
+      <Stat Type="first_half_stop">20230122T120432+0000</Stat>
+      <Stat Type="second_half_start">20230122T122113+0000</Stat>
+      <Stat Type="second_half_time">49</Stat>
+      <Stat Type="second_half_stop">20230122T130958+0000</Stat>
+      <TeamData Formation="4231" Score="3" Side="Home" TeamRef="t3">
+        <Goal EventID="2499595929" EventNumber="152" Min="4" Period="FirstHalf" PlayerRef="p507930" Sec="27" Time="5" TimeStamp="20230122T112259+0000" TimeStampUTC="20230122T112259+0000" Type="Goal" uID="g318-1">
+          <Assist PlayerRef="p165388">p165388</Assist>
+        </Goal>
+        <Goal EventID="2499634635" EventNumber="2813" Min="80" Period="SecondHalf" PlayerRef="p195426" Sec="30" Time="81" TimeStamp="20230122T125643+0000" TimeStampUTC="20230122T125643+0000" Type="Goal" uID="g318-2">
+          <Assist PlayerRef="p130028">p130028</Assist>
+        </Goal>
+        <Goal EventID="2499634889" EventNumber="2824" Min="81" Period="SecondHalf" PlayerRef="p507930" Sec="56" Time="82" TimeStamp="20230122T125809+0000" TimeStampUTC="20230122T125809+0000" Type="Goal" uID="g318-3">
+          <Assist PlayerRef="p204589">p204589</Assist>
+        </Goal>
+        <PlayerLineUp>
+          <MatchPlayer Formation_Place="4" PlayerRef="p19367" Position="Midfielder" ShirtNumber="1" Status="Start" />
+          <MatchPlayer Formation_Place="0" PlayerRef="p45849" Position="Substitute" ShirtNumber="2" Status="Sub" SubPosition="Midfielder" />
+        </PlayerLineUp>
+        <Substitution EventID="2499630783" EventNumber="2705" Min="69" Period="2" Reason="Tactical" Sec="26" SubOff="p240234" SubOn="p459655" SubstitutePosition="4" Time="70" TimeStamp="20230122T124539+0000" TimeStampUTC="20230122T124539+0000" uID="s318-1" />
+        <Substitution EventID="2499636713" EventNumber="2886" Min="87" Period="2" Reason="Tactical" Sec="37" SubOff="p422182" SubOn="p234274" SubstitutePosition="3" Time="88" TimeStamp="20230122T130350+0000" TimeStampUTC="20230122T130350+0000" uID="s318-2" />
+        <Substitution EventID="2499638645" EventNumber="2937" Min="92" Period="2" Reason="Tactical" Sec="14" SubOff="p181078" SubOn="p510654" SubstitutePosition="3" Time="93" TimeStamp="20230122T130827+0000" TimeStampUTC="20230122T130827+0000" uID="s318-3" />
+        <Substitution EventID="2499638893" EventNumber="2938" Min="92" Period="2" Reason="Tactical" Sec="37" SubOff="p507930" SubOn="p446790" SubstitutePosition="4" Time="93" TimeStamp="20230122T130850+0000" TimeStampUTC="20230122T130850+0000" uID="s318-4" />
+      </TeamData>
+      <TeamData Formation="3412" Score="1" Side="Away" TeamRef="t194">
+        <Booking Card="Yellow" CardType="Yellow" EventID="2499629255" EventNumber="2669" Min="65" Period="SecondHalf" PlayerRef="p450049" Reason="Foul" Sec="51" Time="66" TimeStamp="20230122T124204+0000" TimeStampUTC="20230122T124204+0000" uID="b425-1" />
+        <Booking Card="Yellow" CardType="Yellow" EventID="2499631759" EventNumber="27210" Min="71" Period="SecondHalf" PlayerRef="p228044" Reason="Foul" Sec="53" Time="72" TimeStamp="20230122T124806+0000" TimeStampUTC="20230122T124806+0000" uID="b425-2" />
+        <Booking Card="Yellow" CardType="Yellow" EventID="2499633103" EventNumber="27611" Min="75" Period="SecondHalf" PlayerRef="p502251" Reason="Foul" Sec="39" Time="76" TimeStamp="20230122T125152+0000" TimeStampUTC="20230122T125152+0000" uID="b425-3" />
+        <Goal EventID="2499609821" EventNumber="14015" Min="39" Period="FirstHalf" PlayerRef="p461468" Sec="22" Time="40" TimeStamp="20230122T115754+0000" TimeStampUTC="20230122T115754+0000" Type="Goal" uID="g425-1">
+          <Assist PlayerRef="p439742">p439742</Assist>
+        </Goal>
+        <PlayerLineUp>
+          <MatchPlayer Formation_Place="8" PlayerRef="p184934" Position="Midfielder" ShirtNumber="1" Status="Start" />
+          <MatchPlayer Formation_Place="0" PlayerRef="p450445" Position="Substitute" ShirtNumber="2" Status="Sub" SubPosition="Midfielder" />
+        </PlayerLineUp>
+        <Substitution EventID="2499620351" EventNumber="24516" Min="45" Period="2" Reason="Tactical" Sec="0" SubOff="p223089" SubOn="p502251" SubstitutePosition="3" Time="45" TimeStamp="20230122T122103+0000" TimeStampUTC="20230122T122103+0000" uID="s425-1" />
+        <Substitution EventID="2499627855" EventNumber="26317" Min="62" Period="2" Reason="Tactical" Sec="55" SubOff="p538779" SubOn="p483091" SubstitutePosition="3" Time="63" TimeStamp="20230122T123908+0000" TimeStampUTC="20230122T123908+0000" uID="s425-2" />
+        <Substitution EventID="2499634345" EventNumber="28018" Min="79" Period="2" Reason="Tactical" Sec="27" SubOff="p538777" SubOn="p85144" SubstitutePosition="2" Time="80" TimeStamp="20230122T125540+0000" TimeStampUTC="20230122T125540+0000" uID="s425-3" />
+        <Substitution EventID="2499634409" EventNumber="28019" Min="79" Period="2" Reason="Tactical" Sec="41" SubOff="p450049" SubOn="p173956" SubstitutePosition="2" Time="80" TimeStamp="20230122T125554+0000" TimeStampUTC="20230122T125554+0000" uID="s425-4" />
+      </TeamData>
+    </MatchData>
+    <Team uID="t3">
+      <Country>Netherlands</Country>
+      <Kit id="482" colour1="#0000FF" colour2="#FFFFFF" type="home" />
+      <Name>TeamOne</Name>
+      <Player Position="Midfielder" uID="p19367">
+        <PersonName>
+          <First>Piet</First>
+          <Known>The Legend</Known>
+          <Last>Schrijvers</Last>
+        </PersonName>
+      </Player>
+      <Player Position="Substitute" uID="p45849">
+        <PersonName>
+          <First>Jan</First>
+          <Last>Boskamp</Last>
+        </PersonName>
+      </Player>
+      <TeamOfficial Type="Manager" uID="man49505">
+        <PersonName>
+          <First>Jaap</First>
+          <Last>Frans</Last>
+        </PersonName>
+      </TeamOfficial>
+    </Team>
+    <Team uID="t194">
+      <Country>Netherlands</Country>
+      <Kit id="16526" colour1="#003300" type="third" />
+      <Name>TeamTwo</Name>
+      <Player Position="Midfielder" uID="p184934">
+        <PersonName>
+          <First>Pepijn</First>
+          <Last>Blok</Last>
+        </PersonName>
+      </Player>
+      <Player Position="Substitute" uID="p450445">
+        <PersonName>
+          <First></First>
+          <Last>TestSpeler</Last>
+        </PersonName>
+      </Player>
+      <TeamOfficial Type="Manager" uID="man59663">
+        <PersonName>
+          <First>Pieter</First>
+          <Last>van Beek</Last>
+        </PersonName>
+      </TeamOfficial>
+    </Team>
+    <Venue uID="v117">
+      <Country>Netherlands</Country>
+      <Name>Stadion</Name>
+    </Venue>
+  </SoccerDocument>
+  <SoccerDocument Type="Result" detail_id="1" uID="f1907">
+    <Competition uID="c9">
+      <Country>Netherlands</Country>
+      <Name>Dutch Eredivisie</Name>
+      <Stat Type="season_id">2022</Stat>
+      <Stat Type="season_name">Season 2022/2023</Stat>
+      <Stat Type="symid">NL_ED</Stat>
+      <Stat Type="matchday">16</Stat>
+    </Competition>
+    <MatchData>
+      <MatchInfo MatchType="1st Leg" Period="FullTime" PostMatch="1" TimeFrameLengthId="1" TimeStamp="20230122T130958+0000">
+        <Attendance>19029</Attendance>
+        <Date>20230122T111500+0000</Date>
+        <Result Type="NormalResult" Winner="t318" />
+      </MatchInfo>
+      <MatchOfficial uID="o42031">
+        <OfficialData>
+          <OfficialRef Type="Main" />
+        </OfficialData>
+        <OfficialName>
+          <First>Max</First>
+          <Last>Winkels</Last>
+        </OfficialName>
+      </MatchOfficial>
+      <AssistantOfficials>
+        <AssistantOfficial FirstName="Jan" LastName="Derks" Type="Lineman 1" uID="o43540" />
+        <AssistantOfficial FirstName="John" LastName="Mulder" Type="Lineman 2" uID="o47013" />
+        <AssistantOfficial FirstName="Peter" LastName="de Kat" Type="Fourth official" uID="o44344" />
+        <AssistantOfficial FirstName="Adrie" LastName="Smit" Type="Video Assistant Referee" uID="o42023" />
+        <AssistantOfficial FirstName="Sven" LastName="Bakker" Type="Assistant VAR Official" uID="o42092" />
+      </AssistantOfficials>
+      <Stat Type="match_time">94</Stat>
+      <Stat Type="first_half_start">20230122T111832+0000</Stat>
+      <Stat Type="first_half_time">46</Stat>
+      <Stat Type="first_half_stop">20230122T120432+0000</Stat>
+      <Stat Type="second_half_start">20230122T122113+0000</Stat>
+      <Stat Type="second_half_time">49</Stat>
+      <Stat Type="second_half_stop">20230122T130958+0000</Stat>
+      <TeamData Formation="4231" Score="3" Side="Home" TeamRef="t3">
+        <Goal EventID="2499595929" EventNumber="152" Min="4" Period="FirstHalf" PlayerRef="p507930" Sec="27" Time="5" TimeStamp="20230122T112259+0000" TimeStampUTC="20230122T112259+0000" Type="Goal" uID="g318-1">
+          <Assist PlayerRef="p165388">p165388</Assist>
+        </Goal>
+        <Goal EventID="2499634635" EventNumber="2813" Min="80" Period="SecondHalf" PlayerRef="p195426" Sec="30" Time="81" TimeStamp="20230122T125643+0000" TimeStampUTC="20230122T125643+0000" Type="Goal" uID="g318-2">
+          <Assist PlayerRef="p130028">p130028</Assist>
+        </Goal>
+        <Goal EventID="2499634889" EventNumber="2824" Min="81" Period="SecondHalf" PlayerRef="p507930" Sec="56" Time="82" TimeStamp="20230122T125809+0000" TimeStampUTC="20230122T125809+0000" Type="Goal" uID="g318-3">
+          <Assist PlayerRef="p204589">p204589</Assist>
+        </Goal>
+        <PlayerLineUp>
+          <MatchPlayer Formation_Place="4" PlayerRef="p19367" Position="Midfielder" ShirtNumber="1" Status="Start" />
+          <MatchPlayer Formation_Place="0" PlayerRef="p45849" Position="Substitute" ShirtNumber="2" Status="Sub" SubPosition="Midfielder" />
+        </PlayerLineUp>
+        <Substitution EventID="2499630783" EventNumber="2705" Min="69" Period="2" Reason="Tactical" Sec="26" SubOff="p240234" SubOn="p459655" SubstitutePosition="4" Time="70" TimeStamp="20230122T124539+0000" TimeStampUTC="20230122T124539+0000" uID="s318-1" />
+        <Substitution EventID="2499636713" EventNumber="2886" Min="87" Period="2" Reason="Tactical" Sec="37" SubOff="p422182" SubOn="p234274" SubstitutePosition="3" Time="88" TimeStamp="20230122T130350+0000" TimeStampUTC="20230122T130350+0000" uID="s318-2" />
+        <Substitution EventID="2499638645" EventNumber="2937" Min="92" Period="2" Reason="Tactical" Sec="14" SubOff="p181078" SubOn="p510654" SubstitutePosition="3" Time="93" TimeStamp="20230122T130827+0000" TimeStampUTC="20230122T130827+0000" uID="s318-3" />
+        <Substitution EventID="2499638893" EventNumber="2938" Min="92" Period="2" Reason="Tactical" Sec="37" SubOff="p507930" SubOn="p446790" SubstitutePosition="4" Time="93" TimeStamp="20230122T130850+0000" TimeStampUTC="20230122T130850+0000" uID="s318-4" />
+      </TeamData>
+      <TeamData Formation="3412" Score="1" Side="Away" TeamRef="t194">
+        <Booking Card="Yellow" CardType="Yellow" EventID="2499629255" EventNumber="2669" Min="65" Period="SecondHalf" PlayerRef="p450049" Reason="Foul" Sec="51" Time="66" TimeStamp="20230122T124204+0000" TimeStampUTC="20230122T124204+0000" uID="b425-1" />
+        <Booking Card="Yellow" CardType="Yellow" EventID="2499631759" EventNumber="27210" Min="71" Period="SecondHalf" PlayerRef="p228044" Reason="Foul" Sec="53" Time="72" TimeStamp="20230122T124806+0000" TimeStampUTC="20230122T124806+0000" uID="b425-2" />
+        <Booking Card="Yellow" CardType="Yellow" EventID="2499633103" EventNumber="27611" Min="75" Period="SecondHalf" PlayerRef="p502251" Reason="Foul" Sec="39" Time="76" TimeStamp="20230122T125152+0000" TimeStampUTC="20230122T125152+0000" uID="b425-3" />
+        <Goal EventID="2499609821" EventNumber="14015" Min="39" Period="FirstHalf" PlayerRef="p461468" Sec="22" Time="40" TimeStamp="20230122T115754+0000" TimeStampUTC="20230122T115754+0000" Type="Goal" uID="g425-1">
+          <Assist PlayerRef="p439742">p439742</Assist>
+        </Goal>
+        <PlayerLineUp>
+          <MatchPlayer Formation_Place="8" PlayerRef="p184934" Position="Midfielder" ShirtNumber="1" Status="Start" />
+          <MatchPlayer Formation_Place="0" PlayerRef="p450445" Position="Substitute" ShirtNumber="2" Status="Sub" SubPosition="Midfielder" />
+        </PlayerLineUp>
+        <Substitution EventID="2499620351" EventNumber="24516" Min="45" Period="2" Reason="Tactical" Sec="0" SubOff="p223089" SubOn="p502251" SubstitutePosition="3" Time="45" TimeStamp="20230122T122103+0000" TimeStampUTC="20230122T122103+0000" uID="s425-1" />
+        <Substitution EventID="2499627855" EventNumber="26317" Min="62" Period="2" Reason="Tactical" Sec="55" SubOff="p538779" SubOn="p483091" SubstitutePosition="3" Time="63" TimeStamp="20230122T123908+0000" TimeStampUTC="20230122T123908+0000" uID="s425-2" />
+        <Substitution EventID="2499634345" EventNumber="28018" Min="79" Period="2" Reason="Tactical" Sec="27" SubOff="p538777" SubOn="p85144" SubstitutePosition="2" Time="80" TimeStamp="20230122T125540+0000" TimeStampUTC="20230122T125540+0000" uID="s425-3" />
+        <Substitution EventID="2499634409" EventNumber="28019" Min="79" Period="2" Reason="Tactical" Sec="41" SubOff="p450049" SubOn="p173956" SubstitutePosition="2" Time="80" TimeStamp="20230122T125554+0000" TimeStampUTC="20230122T125554+0000" uID="s425-4" />
+      </TeamData>
+    </MatchData>
+    <Team uID="t3">
+      <Country>Netherlands</Country>
+      <Kit id="482" colour1="#0000FF" colour2="#FFFFFF" type="home" />
+      <Name>TeamOne</Name>
+      <Player Position="Midfielder" uID="p19367">
+        <PersonName>
+          <First>Piet</First>
+          <Known>The Legend</Known>
+          <Last>Schrijvers</Last>
+        </PersonName>
+      </Player>
+      <Player Position="Substitute" uID="p45849">
+        <PersonName>
+          <First>Jan</First>
+          <Last>Boskamp</Last>
+        </PersonName>
+      </Player>
+      <TeamOfficial Type="Manager" uID="man49505">
+        <PersonName>
+          <First>Jaap</First>
+          <Last>Frans</Last>
+        </PersonName>
+      </TeamOfficial>
+    </Team>
+    <Team uID="t194">
+      <Country>Netherlands</Country>
+      <Kit id="16526" colour1="#003300" type="third" />
+      <Name>TeamTwo</Name>
+      <Player Position="Midfielder" uID="p184934">
+        <PersonName>
+          <First>Pepijn</First>
+          <Last>Blok</Last>
+        </PersonName>
+      </Player>
+      <Player Position="Substitute" uID="p450445">
+        <PersonName>
+          <First></First>
+          <Last>TestSpeler</Last>
+        </PersonName>
+      </Player>
+      <TeamOfficial Type="Manager" uID="man59663">
+        <PersonName>
+          <First>Pieter</First>
+          <Last>van Beek</Last>
+        </PersonName>
+      </TeamOfficial>
+    </Team>
+    <Venue uID="v117">
+      <Country>Netherlands</Country>
+      <Name>Stadion</Name>
+    </Venue>
+  </SoccerDocument>
+</SoccerFeed>
