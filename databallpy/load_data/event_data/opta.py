@@ -169,6 +169,12 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
+    if len(soup.find_all("SoccerDocument")) > 1:
+        # Multiple matches found in f7.xml file
+        # Eliminate the rest of the `SoccerDocument` elements
+        for match in soup.find_all("SoccerDocument")[1:]:
+            match.decompose()
+
     # Obtain match id
     match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
     country = soup.find("Country").text
