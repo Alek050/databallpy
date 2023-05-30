@@ -14,9 +14,20 @@ def get_velocity(
     Returns:
         pd.DataFrame: tracking data with the added velocity columns
     """
+    # for input_column in input_columns:
+    #     output_column = input_column + "_v"
+    #     v = df[input_column].diff() / (1 / framerate)
+    #     df[output_column] = v
+
+    velocities = []
     for input_column in input_columns:
-        output_column = input_column + "_v"
         v = df[input_column].diff() / (1 / framerate)
-        df[output_column] = v
+        velocities.append(v)
+
+    velocity_df = pd.concat(velocities, axis=1)
+    velocity_df.columns = [f"{col}_v" for col in input_columns]
+    df = pd.concat([df, velocity_df], axis=1)
+
+    return df
 
     return df

@@ -209,8 +209,8 @@ class TestMatch(unittest.TestCase):
             Match(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
-                event_data=["opta"],
-                event_data_provider=self.ed_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=["opta"],
                 pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
                 periods=self.expected_match_tracab_opta.periods,
                 frame_rate=self.expected_match_tracab_opta.frame_rate,
@@ -762,6 +762,7 @@ class TestMatch(unittest.TestCase):
 
     def test_preprosessing_status(self):
         match = self.match_to_sync.copy()
+        match.allow_synchronise_tracking_and_event_data = True
         assert match.is_synchronised is False
         assert (
             match.preprocessing_status
@@ -773,6 +774,12 @@ class TestMatch(unittest.TestCase):
             match.preprocessing_status
             == "Preprocessing status:\n\tis_synchronised = True"
         )
+
+    def test_synchronise_tracking_and_event_data_not_allowed(self):
+        match = self.match_to_sync.copy()
+        match.allow_synchronise_tracking_and_event_data = False
+        with self.assertRaises(DataBallPyError):
+            match.synchronise_tracking_and_event_data(n_batches_per_half=1)
 
     def test__repr__(self):
         assert (
@@ -845,6 +852,7 @@ class TestMatch(unittest.TestCase):
             "tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
         )
         match = self.match_to_sync.copy()
+        match.allow_synchronise_tracking_and_event_data = True
         match.save_match(path="tests/test_data")
         assert os.path.exists(
             "tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"

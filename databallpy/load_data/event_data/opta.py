@@ -189,6 +189,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     start_period_2 = soup.find("Stat", attrs={"Type": "second_half_start"})
     end_period_2 = soup.find("Stat", attrs={"Type": "second_half_stop"})
     if not all([start_period_1, end_period_1, start_period_2, end_period_2]):
+        file.close()
         raise ValueError(
             "The f7.xml opta file does not contain the start and end of period datetime"
         )

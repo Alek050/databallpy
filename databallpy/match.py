@@ -63,6 +63,9 @@ class Match:
         away_players (pd.DataFrame): Information about the away players.
         away_score (int): Number of goals scored over the match by the away team.
         away_formation (str): Indication of the formation of the away team.
+        country (str): The country where the match was played.
+        allow_synchronise_tracking_and_event_data (bool): If True, the tracking and
+        event data can be synchronised. If False, it can not. Default = False.
         name (str): The home and away team name and score: "nameH 3 - 1 nameA {date}".
         home_players_column_ids (list): All column ids of the tracking data that refer
                                         to information about the home team players.
@@ -94,6 +97,7 @@ class Match:
     away_score: int
     away_formation: str
     country: str
+    allow_synchronise_tracking_and_event_data: bool = False
 
     # to save the preprocessing status
     is_synchronised: bool = False
@@ -198,6 +202,11 @@ class Match:
             'save', 'foul', 'miss', 'challenge', 'goal'
 
         """
+        if not self.allow_synchronise_tracking_and_event_data:
+            raise DataBallPyError(
+                "Synchronising tracking and event data is not allowed."
+                "The quality of the data is not good enough to ensure valid results."
+            )
         synchronise_tracking_and_event_data(self, n_batches_per_half, verbose)
 
     def __eq__(self, other):

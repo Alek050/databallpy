@@ -15,6 +15,7 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
 from databallpy.match import Match
 from databallpy.utils.utils import MISSING_INT
+from databallpy.warnings import DataBallPyWarning
 from expected_outcomes import ED_OPTA, MD_OPTA, MD_TRACAB, TD_TRACAB
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
@@ -468,3 +469,24 @@ class TestGetMatch(unittest.TestCase):
         saved_match = get_saved_match(name="test_match", path="tests/test_data")
         assert expected_match == saved_match
         assert saved_match != self.expected_match_tracab_opta
+
+    def test_get_match_call_quality_check(self):
+        # does not check functionality since the tracking data is not valid
+        with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
+            get_match(
+                tracking_data_loc=self.td_tracab_loc,
+                tracking_metadata_loc=self.md_tracab_loc,
+                event_data_loc=self.ed_opta_loc,
+                event_metadata_loc=self.md_opta_loc,
+                tracking_data_provider=self.td_provider,
+                event_data_provider=self.ed_provider,
+                check_quality=True,
+            )
+
+        with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
+            get_match(
+                tracking_data_loc=self.td_tracab_loc,
+                tracking_metadata_loc=self.md_tracab_loc,
+                tracking_data_provider=self.td_provider,
+                check_quality=True,
+            )
