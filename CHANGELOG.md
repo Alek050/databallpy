@@ -28,5 +28,6 @@
 - Fixed bug in opta event data, own goals are now parsed as seperate event type
 - Added parser for Inmotio tracking data
 - Added parser for Instat event data
+- Added quality checks for the data, raises warning if quality is not good enough
 
 
