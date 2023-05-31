@@ -2,6 +2,8 @@
 
 A package for loading, preprocessing, vizualising and synchronizing soccer event- and tracking data.
 
+![coverage](https://img.shields.io/badge/coverage-99%25-green)
+
 This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
 
 ### Changelog for version 0.2.0
@@ -15,8 +17,8 @@ This package is developed to create a standardized way to analyse soccer matches
 ### Planned changes
 
 - Adding different filters to filter the tracking data
-- Make the `Match` object more accesable if you don't have tracking or event data
 - Adding features to quantify pressure, ball possession, etc. (if you have any ideas/requests, please open an issue!)
+- Standardizing events in the event data
 - Adding expected passing and goals models
 
 ## Installation
@@ -31,7 +33,7 @@ The package is centered around the `Match` object. A `Match` has tracking data, 
 For a more elaborate example, see the [example file](https://databallpy.readthedocs.io/en/latest/example.html)
 
 ```console
-$ from databallpy.match import get_match, get_open_match
+$ from databallpy import get_match, get_open_match
 $
 $ match = get_match(
 $   tracking_data_loc="../data/tracking_data.dat",
@@ -93,14 +95,25 @@ For now we limited providers. We are planning on adding more providers later on.
 Event data providers:
 - Opta
 - Metrica
+- Instat
 
 Tracking data providers:
 - Tracab
 - Metrica
+- Inmotio
 
 ## Contributing
 
 Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.
+
+#### Maintainers & owners
+
+- [Alek050](https://github.com/Alek050/)
+- [DaanGro](https://github.com/DaanGro/)
+
+#### Contributors
+
+- [rdghe](https://github.com/rdghe/)
 
 ## License
 
