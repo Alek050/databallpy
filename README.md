@@ -2,8 +2,6 @@
 
 A package for loading, preprocessing, vizualising and synchronizing soccer event- and tracking data.
 
-![coverage](https://img.shields.io/badge/coverage-99%25-green)
-
 This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
 
 ### Changelog for version 0.2.0
