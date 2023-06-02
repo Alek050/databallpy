@@ -200,7 +200,7 @@ def _create_sim_mat(
         else:
             player_ball_diff = 0
         # similarity function from: https://kwiatkowski.io/sync.soccer
-        sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
+        sim_mat[:, i] = 0
 
     sim_mat[np.isnan(sim_mat)] = np.nanmax(
         sim_mat
