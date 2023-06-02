@@ -169,6 +169,12 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
+    if len(soup.find_all("SoccerDocument")) > 1:
+        # Multiple matches found in f7.xml file
+        # Eliminate the rest of the `SoccerDocument` elements
+        for match in soup.find_all("SoccerDocument")[1:]:
+            match.decompose()
+
     # Obtain match id
     match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
     country = soup.find("Country").text
@@ -178,10 +184,15 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         "start_datetime_ed": [],
         "end_datetime_ed": [],
     }
-    start_period_1 = soup.find("Stat", attrs={"Type": "first_half_start_utc"})
-    end_period_1 = soup.find("Stat", attrs={"Type": "first_half_stop_utc"})
-    start_period_2 = soup.find("Stat", attrs={"Type": "second_half_start_utc"})
-    end_period_2 = soup.find("Stat", attrs={"Type": "second_half_stop_utc"})
+    start_period_1 = soup.find("Stat", attrs={"Type": "first_half_start"})
+    end_period_1 = soup.find("Stat", attrs={"Type": "first_half_stop"})
+    start_period_2 = soup.find("Stat", attrs={"Type": "second_half_start"})
+    end_period_2 = soup.find("Stat", attrs={"Type": "second_half_stop"})
+    if not all([start_period_1, end_period_1, start_period_2, end_period_2]):
+        file.close()
+        raise ValueError(
+            "The f7.xml opta file does not contain the start and end of period datetime"
+        )
     for start, end in zip(
         [start_period_1, start_period_2], [end_period_1, end_period_2]
     ):
@@ -367,7 +378,7 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
         result_dict["datetime"].append(
-            pd.to_datetime(event.attrs["timestamp_utc"], utc=True)
+            pd.to_datetime(event.attrs["timestamp"], utc=True)
         )
 
     file.close()
