@@ -10,7 +10,11 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     _needleman_wunsch,
 )
 from databallpy.utils.utils import MISSING_INT
-from tests.expected_outcomes import RES_SIM_MAT, RES_SIM_MAT_NO_PLAYER
+from tests.expected_outcomes import (
+    RES_SIM_MAT,
+    RES_SIM_MAT_MISSING_PLAYER,
+    RES_SIM_MAT_NO_PLAYER,
+)
 
 
 class TestSynchroniseTrackingAndEventData(unittest.TestCase):
@@ -125,6 +129,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         assert res == expected_res
 
+    def test_needleman_wunsch_sim_mat_nan(self):
+        sim_list = 30 * [np.nan]
+        sim_mat = np.array(sim_list).reshape(10, 3)
+
+        with self.assertRaises(ValueError):
+            _needleman_wunsch(sim_mat)
+
     def test_create_sim_mat(self):
         expected_res = RES_SIM_MAT
         expected_res = expected_res.reshape(13, 4)
@@ -139,6 +150,32 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             for x in tracking_data["frame"]
         ]
         tracking_data.reset_index(inplace=True)
+        event_data = self.match_to_sync.event_data.copy()
+        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
+        res = _create_sim_mat(
+            tracking_batch=tracking_data,
+            event_batch=event_data,
+            match=self.match_to_sync,
+        )
+
+        np.testing.assert_allclose(expected_res, res)
+
+    def test_create_sim_mat_missing_player(self):
+        expected_res = RES_SIM_MAT_MISSING_PLAYER
+        expected_res = expected_res.reshape(13, 4)
+
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        date = pd.to_datetime(
+            str(self.match_to_sync.periods.iloc[0, 3])[:10]
+        ).tz_localize("Europe/Amsterdam")
+        tracking_data["datetime"] = [
+            date
+            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
+            for x in tracking_data["frame"]
+        ]
+        tracking_data.reset_index(inplace=True)
+        tracking_data["away_1_x"] = [np.nan] * 13
+        tracking_data["away_1_y"] = [np.nan] * 13
         event_data = self.match_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
         res = _create_sim_mat(
