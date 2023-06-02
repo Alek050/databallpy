@@ -200,7 +200,7 @@ def _create_sim_mat(
             if player_ball_diff.isnull().all():
                 player_ball_diff = (np.abs(time_diff) + ball_loc_diff / 5) / 2
         else:
-            player_ball_diff = 0  # (np.abs(time_diff) + ball_loc_diff / 5)/2
+            player_ball_diff = (np.abs(time_diff) + ball_loc_diff / 5) / 2
         # similarity function from: https://kwiatkowski.io/sync.soccer
         sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
 
@@ -278,7 +278,6 @@ def _needleman_wunsch(
                 "An event was left unassigned, check your gap penalty values"
             )
         else:
-            print(P)
             raise ValueError(
                 f"The algorithm got stuck due to an unexpected "
                 f"value of P[{i}, {j}]: {P[i, j]}"
