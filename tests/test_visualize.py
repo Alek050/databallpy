@@ -47,7 +47,7 @@ class TestVisualize(unittest.TestCase):
 
     def test_plot_events(self):
 
-        match = self.match
+        match = self.match.copy()
 
         # Call plot_events function with different arguments
         fig, ax = plot_events(
@@ -163,6 +163,7 @@ class TestVisualize(unittest.TestCase):
             event_data_provider="opta",
             check_quality=False,
         )
+        synced_match.allow_synchronise_tracking_and_event_data = True
 
         synced_match.synchronise_tracking_and_event_data(n_batches_per_half=1)
         events = [

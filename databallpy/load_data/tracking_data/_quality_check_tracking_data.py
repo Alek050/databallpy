@@ -28,13 +28,85 @@ def _quality_check_tracking_data(
         0.5% of the player's play time
         6. there is a gap in the realistic player velocity for at least 1 seconds
         for at least one player
+        7. home player data is not available for more than 30 seconds when the ball
+        status is alive
+        8. away player data is not available for more than 30 seconds when the ball
+        status is alive
+        9. ball data is not available for more than 30 seconds when the ball status
+        is alive
     """
 
     _check_missing_ball_data(tracking_data, framerate)
     _check_ball_velocity(tracking_data, framerate)
     _check_player_velocity(tracking_data, framerate, periods)
+    allow_syncronise_tracking_and_event_data = _check_missing_player_data(
+        tracking_data, framerate
+    )
 
-    return
+    return allow_syncronise_tracking_and_event_data
+
+
+def _check_missing_player_data(
+    tracking_data: pd.DataFrame, framerate: int, n_seconds: float = 30.0
+) -> bool:
+    """Function to check if there is data of at least 7 players available when the
+    ball status is alive. If this is not the case for 30 seconds of data, a warning
+    is raised and false is returned. Else True is returned.
+
+    Args:
+        tracking_data (pd.DataFrame): tracking data
+        framerate (int): framrate of the tracking data
+        n_seconds (float): number of seconds to check for missing data. Defaults to 30.
+
+    Raises:
+        DataBallPyWarning: when at least one of these criteria is met:
+        1. home player data is not available for more than 30 seconds when the ball
+        status is alive
+        2. away player data is not available for more than 30 seconds when the ball
+        status is alive
+        3. ball data is not available for more than 30 seconds when the ball status
+        is alive
+
+    Returns:
+        bool: wheter to allow syncronise tracking and event data.
+    """
+    mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
+        tracking_data["matchtime_td"] != "Break"
+    )
+    home_players = [
+        x for x in tracking_data.columns if "home" in x and ("_x" in x or "_y" in x)
+    ]
+    away_players = [
+        x for x in tracking_data.columns if "away" in x and ("_x" in x or "_y" in x)
+    ]
+    ball = ["ball_x", "ball_y"]
+    missing_home_frames = (
+        tracking_data[mask_ball_alive][home_players].notna().sum(axis=1) < 7 * 2
+    ).sum()
+    missing_away_frames = (
+        tracking_data[mask_ball_alive][away_players].notna().sum(axis=1) < 7 * 2
+    ).sum()
+    missing_ball_frames = (
+        tracking_data[mask_ball_alive][ball].notna().sum(axis=1) < 2
+    ).sum()
+
+    for side, n_missing in zip(
+        ["home players", "away players", "ball"],
+        [missing_home_frames, missing_away_frames, missing_ball_frames],
+    ):
+        if n_missing > n_seconds * framerate:
+            warnings.warn(
+                DataBallPyWarning(
+                    f"{side} data is not available for more than {n_seconds} seconds"
+                    " when the ball status is alive. Syncronising tracking and event"
+                    " data is disabled due to bad quality of the tracking data."
+                    "\nIf you still wish to syncronise the data, please set "
+                    "allow_syncronise_tracking_and_event_data to True in your match "
+                    "object."
+                )
+            )
+            return False
+    return True
 
 
 def _check_missing_ball_data(tracking_data: pd.DataFrame, framerate: int) -> None:
@@ -50,7 +122,9 @@ def _check_missing_ball_data(tracking_data: pd.DataFrame, framerate: int) -> Non
         2. there is a gap in the ball data for more than 1 seconds
 
     """
-    mask_ball_alive = tracking_data["ball_status"] == "alive"
+    mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
+        tracking_data["matchtime_td"] != "Break"
+    )
     valid_frames = ~np.isnan(
         tracking_data.loc[mask_ball_alive, ["ball_x", "ball_y"]]
     ).any(axis=1)
@@ -91,7 +165,9 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
     input_columns = ["ball_x", "ball_y"]
     tracking_data = get_velocity(tracking_data, input_columns, framerate)
     velocity_ball = np.hypot(tracking_data["ball_x_v"], tracking_data["ball_y_v"])
-    mask_ball_alive = tracking_data["ball_status"] == "alive"
+    mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
+        tracking_data["matchtime_td"] != "Break"
+    )
     valid_frames = velocity_ball[mask_ball_alive][1:] < 50
     sum_valid_frames = sum(valid_frames)
     n_total_frames = len(valid_frames)
@@ -99,8 +175,8 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
     if sum_valid_frames < n_total_frames * 0.99:
         warnings.warn(
             DataBallPyWarning(
-                "Ball velocity is unrealistic (> 50 m/s\N{SUPERSCRIPT TWO}) for \
-                    more than 1% of all frames"
+                "Ball velocity is unrealistic (> 50 m/s) for "
+                "more than 1% of all frames"
             )
         )
 
@@ -108,10 +184,7 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
 
     if max_invalid_sequence > 1 * framerate:
         warnings.warn(
-            DataBallPyWarning(
-                "There is a gap in the realistic ball data \
-                    (velocity < 50 m/s\N{SUPERSCRIPT TWO}) for at least 1 seconds"
-            )
+            DataBallPyWarning("There is a gap in the ball data for at least 1 second")
         )
 
     tracking_data = tracking_data[initial_columns]
@@ -122,7 +195,7 @@ def _check_player_velocity(
     tracking_data: pd.DataFrame, framerate: int, periods: pd.DataFrame
 ) -> None:
     """Function that checks all the player tracking data by checking the velocities
-    The max player velocity was set at 12 m/s\N{SUPERSCRIPT TWO}) as this coincides
+    The max player velocity was set at 12 m/s) as this coincides
     with the biggest player velocity recorded in football.
 
     Args:
@@ -177,17 +250,17 @@ def _check_player_velocity(
     if n_players_to_many_invalid_frames > 0:
         warnings.warn(
             DataBallPyWarning(
-                f"For {n_players_to_many_invalid_frames} players, the \
-                    velocity is unrealistic for more than 0.5% of playing time"
+                f"For {n_players_to_many_invalid_frames} players, the "
+                "velocity is unrealistic (speed > 12 m/s) for more than 0.5% of "
+                "playing time"
             )
         )
 
     if n_players_sequence_to_long > 0:
         warnings.warn(
             DataBallPyWarning(
-                f"For {n_players_sequence_to_long} players, there is a gap \
-                    in the realistic tracking data (velocity < 12 \
-                    m/s\N{SUPERSCRIPT TWO}) of at least 1 second"
+                f"For {n_players_sequence_to_long} players, there is a gap "
+                "in the tracking data of at least 1 second."
             )
         )
 
