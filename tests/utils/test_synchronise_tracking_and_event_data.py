@@ -24,6 +24,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_data_provider="opta",
             check_quality=False,
         )
+        self.match_to_sync.allow_synchronise_tracking_and_event_data = True
 
     def test_synchronise_tracking_and_event_data(self):
         expected_event_data = self.match_to_sync.event_data.copy()

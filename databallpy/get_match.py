@@ -146,9 +146,11 @@ def get_match(
         )
 
         if check_quality:
-            _quality_check_tracking_data(
+            allow_synchronise = _quality_check_tracking_data(
                 tracking_data, tracking_metadata.frame_rate, merged_periods
             )
+        else:
+            allow_synchronise = False
 
         match = Match(
             tracking_data=tracking_data,
@@ -169,11 +171,16 @@ def get_match(
             away_team_name=event_metadata.away_team_name,
             away_players=away_players,
             country=event_metadata.country,
+            allow_synchronise_tracking_and_event_data=allow_synchronise,
         )
 
     elif uses_tracking_data and not uses_event_data:
         if check_quality:
-            _quality_check_tracking_data(tracking_data)
+            _ = _quality_check_tracking_data(
+                tracking_data,
+                tracking_metadata.frame_rate,
+                tracking_metadata.periods_frames,
+            )
 
         match = Match(
             tracking_data=tracking_data,
