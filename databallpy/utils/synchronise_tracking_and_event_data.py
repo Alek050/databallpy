@@ -198,9 +198,9 @@ def _create_sim_mat(
             )
             # player indicated by the event data is not present in the tracking data
             if player_ball_diff.isnull().all():
-                player_ball_diff = (np.abs(time_diff) + ball_loc_diff / 5)/2
+                player_ball_diff = (np.abs(time_diff) + ball_loc_diff / 5) / 2
         else:
-            player_ball_diff = 0#(np.abs(time_diff) + ball_loc_diff / 5)/2
+            player_ball_diff = 0  # (np.abs(time_diff) + ball_loc_diff / 5)/2
         # similarity function from: https://kwiatkowski.io/sync.soccer
         sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
 

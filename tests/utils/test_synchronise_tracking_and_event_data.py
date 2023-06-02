@@ -10,7 +10,11 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     _needleman_wunsch,
 )
 from databallpy.utils.utils import MISSING_INT
-from tests.expected_outcomes import RES_SIM_MAT, RES_SIM_MAT_NO_PLAYER
+from tests.expected_outcomes import (
+    RES_SIM_MAT,
+    RES_SIM_MAT_MISSING_PLAYER,
+    RES_SIM_MAT_NO_PLAYER,
+)
 
 
 class TestSynchroniseTrackingAndEventData(unittest.TestCase):
@@ -156,6 +160,32 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         np.testing.assert_allclose(expected_res, res)
 
+    def test_create_sim_mat_missing_player(self):
+        expected_res = RES_SIM_MAT_MISSING_PLAYER
+        expected_res = expected_res.reshape(13, 4)
+
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        date = pd.to_datetime(
+            str(self.match_to_sync.periods.iloc[0, 3])[:10]
+        ).tz_localize("Europe/Amsterdam")
+        tracking_data["datetime"] = [
+            date
+            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
+            for x in tracking_data["frame"]
+        ]
+        tracking_data.reset_index(inplace=True)
+        tracking_data["away_1_x"] = [np.nan] * 13
+        tracking_data["away_1_y"] = [np.nan] * 13
+        event_data = self.match_to_sync.event_data.copy()
+        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
+        res = _create_sim_mat(
+            tracking_batch=tracking_data,
+            event_batch=event_data,
+            match=self.match_to_sync,
+        )
+
+        np.testing.assert_allclose(expected_res, res)
+
     def test_create_sim_mat_without_player(self):
         expected_res = RES_SIM_MAT_NO_PLAYER
         expected_res = expected_res.reshape(13, 4)
@@ -183,8 +213,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         # Test with player_id = np.nan
         event_data.loc[2, "player_id"] = np.nan
-        #_assert_sim_mats_equal(tracking_data, event_data)
+        _assert_sim_mats_equal(tracking_data, event_data)
 
         # Test with player_id = MISSING_INT (-999)
         event_data.loc[2, "player_id"] = MISSING_INT
-        #_assert_sim_mats_equal(tracking_data, event_data)
+        _assert_sim_mats_equal(tracking_data, event_data)
