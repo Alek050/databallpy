@@ -367,5 +367,6 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         away_team_name=metadata.away_team_name,
         away_players=metadata.away_players,
         country="",
+        allow_synchronise_tracking_and_event_data=True,
     )
     return match
