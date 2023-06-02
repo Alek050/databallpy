@@ -4,13 +4,13 @@ A package for loading, preprocessing, vizualising and synchronizing soccer event
 
 This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
 
-### Changelog for version 0.2.0
+### Changelog for version 0.3.0
 
-- Added parser for Metrica, including an open dataset
-- Added functionality to synchronize tracking and event data
-- Added functionality to plot events
-- Fixed bug, now both tracking and event data are normalized in direction
-- Fixed unexpected behaviour, all date related objects are now datetime objects
+- Added way to save Match objects, and to load saved Match objects
+- Fixed bug in opta event data, own goals are now parsed as seperate event type
+- Added parser for Inmotio tracking data
+- Added parser for Instat event data
+- Added quality checks for the data, raises warning if quality is not good enough
 
 ### Planned changes
 
