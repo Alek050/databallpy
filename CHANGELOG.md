@@ -22,5 +22,12 @@
 - Fixed bug, now both tracking and event data are normalized in direction
 - Fixed unexpected behaviour, all date related objects are now datetime objects
 
+## V0.3.0 (02/06/2023)
+
+- Added way to save Match objects, and to load saved Match objects
+- Fixed bug in opta event data, own goals are now parsed as seperate event type
+- Added parser for Inmotio tracking data
+- Added parser for Instat event data
+- Added quality checks for the data, raises warning if quality is not good enough
 
 

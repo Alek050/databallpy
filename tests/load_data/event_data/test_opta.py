@@ -14,6 +14,8 @@ from tests.expected_outcomes import ED_OPTA, MD_OPTA
 class TestOpta(unittest.TestCase):
     def setUp(self):
         self.f7_loc = "tests/test_data/f7_test.xml"
+        self.f7_loc_no_timestamps = "tests/test_data/f7_test_no_timestamps.xml"
+        self.f7_loc_multiple_matches = "tests/test_data/f7_test_multiple_matches.xml"
         self.f24_loc = "tests/test_data/f24_test.xml"
 
     def test_load_opta_event_data(self):
@@ -28,6 +30,16 @@ class TestOpta(unittest.TestCase):
 
         metadata = _load_metadata(self.f7_loc, [10.0, 10.0])
         assert metadata == MD_OPTA
+
+    def test_load_metadata_multiple_matches(self):
+
+        metadata = _load_metadata(self.f7_loc_multiple_matches, [10.0, 10.0])
+        # the second match metadata is dropped
+        assert metadata == MD_OPTA
+
+    def test_load_metadata_no_timestamps(self):
+        with self.assertRaises(ValueError):
+            _load_metadata(self.f7_loc_no_timestamps, [10.0, 10.0])
 
     def test_get_player_info(self):
         player_data = [
@@ -64,15 +76,15 @@ class TestOpta(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_result)
 
     def test_load_event_data(self):
-        event_data = _load_event_data(self.f24_loc)
+        event_data = _load_event_data(self.f24_loc, country="Netherlands")
 
         # player name is added in other function later in the pipeline
         expected_event_data = ED_OPTA.copy().drop("player_name", axis=1)
 
-        # away team coordinates are changed later on in the pipeling
+        # away team coordinates are changed later on in the pipeline
         expected_event_data.loc[[0, 2, 6, 8], ["start_x", "start_y"]] *= -1
 
-        # scaling of pitch dimension is done later on in the pipeling
+        # scaling of pitch dimension is done later on in the pipeline
         expected_event_data.loc[:, ["start_x", "start_y"]] = (
             expected_event_data.loc[:, ["start_x", "start_y"]] + 5
         ) * 10

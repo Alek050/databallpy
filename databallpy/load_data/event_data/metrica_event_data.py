@@ -18,7 +18,7 @@ from databallpy.load_data.metrica_metadata import (
     _get_td_channels,
     _update_metadata,
 )
-from databallpy.utils import _to_float, _to_int
+from databallpy.utils.utils import _to_float, _to_int
 
 
 def load_metrica_event_data(
@@ -49,7 +49,7 @@ def load_metrica_event_data(
             f" not a {type(event_data_loc)}"
         )
 
-    metadata = _get_metadata(metadata_loc)
+    metadata = _get_metadata(metadata_loc, is_tracking_data=False, is_event_data=True)
     td_channels = _get_td_channels(metadata_loc, metadata)
     metadata = _update_metadata(td_channels, metadata)
     event_data = _get_event_data(event_data_loc)
@@ -71,14 +71,17 @@ def load_metrica_event_data(
         metadata.periods_frames["period"] == 1, "start_frame"
     ].iloc[0]
     start_time = metadata.periods_frames.loc[
-        metadata.periods_frames["period"] == 1, "start_time_td"
+        metadata.periods_frames["period"] == 1, "start_datetime_ed"
     ].iloc[0]
     frame_rate = metadata.frame_rate
     rel_timedelta = [
         dt.timedelta(milliseconds=(x - first_frame) / frame_rate * 1000)
         for x in event_data["td_frame"]
     ]
-    event_data["datetime"] = [pd.to_datetime(start_time) + x for x in rel_timedelta]
+    # no idea about time zone since we have no real data, so just assume utc
+    event_data["datetime"] = [
+        pd.to_datetime(start_time, utc=True) + x for x in rel_timedelta
+    ]
 
     event_data = _normalize_playing_direction_events(
         event_data, metadata.home_team_id, metadata.away_team_id

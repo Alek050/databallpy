@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.2.3"
+version = "0.3.0"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
@@ -30,7 +30,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-pandas = "^1.5.3"
+pandas = "2.0.1"
 numpy = "^1.24.1"
 beautifulsoup4 = "^4.11.1"
 lxml = "^4.9.2"

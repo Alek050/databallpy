@@ -372,8 +372,8 @@ def save_match_clip(
     """
 
     td = match.tracking_data.loc[start_idx:end_idx]
-    td_ht = td[[x for x in match.home_players_column_ids if "_x" in x or "_y" in x]]
-    td_at = td[[x for x in match.away_players_column_ids if "_x" in x or "_y" in x]]
+    td_ht = td[[x for x in match.home_players_column_ids() if "_x" in x or "_y" in x]]
+    td_at = td[[x for x in match.away_players_column_ids() if "_x" in x or "_y" in x]]
 
     if variable_of_interest is not None:
         assert (

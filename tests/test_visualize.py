@@ -4,7 +4,7 @@ import unittest
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from databallpy.match import get_match
+from databallpy.get_match import get_match
 from databallpy.visualize import (
     plot_events,
     plot_soccer_pitch,
@@ -22,6 +22,7 @@ class TestVisualize(unittest.TestCase):
             event_data_loc="tests/test_data/f24_test.xml",
             event_metadata_loc="tests/test_data/f7_test.xml",
             event_data_provider="opta",
+            check_quality=False,
         )
 
     def test_requires_ffmpeg_wrapper(self):
@@ -46,7 +47,7 @@ class TestVisualize(unittest.TestCase):
 
     def test_plot_events(self):
 
-        match = self.match
+        match = self.match.copy()
 
         # Call plot_events function with different arguments
         fig, ax = plot_events(
@@ -160,7 +161,9 @@ class TestVisualize(unittest.TestCase):
             event_data_loc="tests/test_data/sync/opta_events_sync_test.xml",
             event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
             event_data_provider="opta",
+            check_quality=False,
         )
+        synced_match.allow_synchronise_tracking_and_event_data = True
 
         synced_match.synchronise_tracking_and_event_data(n_batches_per_half=1)
         events = [

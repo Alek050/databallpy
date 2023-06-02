@@ -6,7 +6,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils import _to_float, _to_int
+from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
@@ -18,7 +18,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
         metadata (Metadata): the Metadata of the match
 
     Returns:
-        pd.DataFrame: df with for every timestamp what players are referred to in
+        pd.DataFrame: df with for every frame what players are referred to in
         the raw tracking data
     """
     if os.path.exists(metadata_loc):
@@ -29,6 +29,14 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
 
+    channel_id_to_player_id_dict = {}
+    for player in soup.find_all("PlayerChannel"):
+        channel_id = player.attrs["id"].split("_")[0]
+        value = player.attrs["id"].split("_")[1]
+        if "y" in value:
+            continue
+        channel_id_to_player_id_dict[channel_id] = int(player.attrs["playerId"][1:])
+
     res = {"start": [], "end": [], "ids": []}
     for idx, data_format_specification in enumerate(
         soup.find_all("DataFormatSpecification")
@@ -37,37 +45,34 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
         res["start"].append(int(data_format_specification.attrs["startFrame"]))
         res["end"].append(int(data_format_specification.attrs["endFrame"]))
         for channel in data_format_specification.findChildren("PlayerChannelRef"):
-            full_name = channel.attrs["playerChannelId"].split("_")[0]
+            channel_id = channel.attrs["playerChannelId"].split("_")[0]
             value = channel.attrs["playerChannelId"].split("_")[1]
             if "y" in value:
                 continue
-            home_mask = (
-                metadata.home_players["full_name"]
-                .str.lower()
-                .str.replace(" ", "")
-                .isin([full_name])
-            )
-            away_mask = (
-                metadata.away_players["full_name"]
-                .str.lower()
-                .str.replace(" ", "")
-                .isin([full_name])
-            )
+            player_id = channel_id_to_player_id_dict[channel_id]
+            home_mask = metadata.home_players["id"] == player_id
+            away_mask = metadata.away_players["id"] == player_id
             if home_mask.any():
                 team = "home"
-                shirt_num = metadata.home_players.loc[home_mask, "shirt_num"].iloc[0]
+                shirt_num = metadata.home_players.loc[home_mask, "shirt_num"].values[0]
             else:
                 team = "away"
-                shirt_num = metadata.away_players.loc[away_mask, "shirt_num"].iloc[0]
+                shirt_num = metadata.away_players.loc[away_mask, "shirt_num"].values[0]
             res["ids"][idx].append(f"{team}_{shirt_num}")
     return pd.DataFrame(res)
 
 
-def _get_metadata(metadata_loc: str) -> Metadata:
+def _get_metadata(
+    metadata_loc: str, is_tracking_data: bool = True, is_event_data: bool = False
+) -> Metadata:
     """Function to get the metadata of the match
 
     Args:
         metadata_loc (str): Location of the metadata .xml file
+        is_tracking_data (bool, optional): Whether the metadata is from the tracking
+        data. Defaults to True.
+        is_event_data (bool, optional): Whether the metadata is from the event data.
+        Defaults to False
 
     Returns:
         Metadata: all information of the match
@@ -84,15 +89,21 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     pitch_size_x = _to_float(soup.find("FieldSize").find("Width").text)
     pitch_size_y = _to_float(soup.find("FieldSize").find("Height").text)
     frame_rate = _to_int(soup.find("FrameRate").text)
-    datetime = pd.to_datetime(soup.find("Start").text).tz_localize(None)
+
+    # no idea about time zone, so just assume utc
+    datetime = pd.to_datetime(soup.find("Start").text, utc=True)
 
     periods_dict = {
         "period": [],
         "start_frame": [],
         "end_frame": [],
-        "start_time_td": [],
-        "end_time_td": [],
     }
+    if is_tracking_data:
+        periods_dict["start_datetime_td"] = []
+        periods_dict["end_datetime_td"] = []
+    if is_event_data:
+        periods_dict["start_datetime_ed"] = []
+        periods_dict["end_datetime_ed"] = []
 
     periods_map = {
         "first_half_start": 1,
@@ -111,37 +122,62 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         name = period_soup.find("Name").text
         period = periods_map[name]
 
-        current_timestamp = _to_int(period_soup.find("Value").text)
+        current_frame = _to_int(period_soup.find("Value").text)
 
         if "start" in name:
             periods_dict["period"].append(period)
-            periods_dict["start_frame"].append(current_timestamp)
-            first_timestamp = periods_dict["start_frame"][0]
-            seconds = (current_timestamp - first_timestamp) / frame_rate
-            periods_dict["start_time_td"].append(
-                datetime + dt.timedelta(milliseconds=seconds * 1000)
-            ) if not current_timestamp == -999 else periods_dict[
-                "start_time_td"
-            ].append(
-                pd.to_datetime("NaT")
-            )
+            periods_dict["start_frame"].append(current_frame)
+            first_frame = periods_dict["start_frame"][0]
+            if is_tracking_data:
+                seconds = (current_frame - first_frame) / frame_rate
+                periods_dict["start_datetime_td"].append(
+                    datetime + dt.timedelta(milliseconds=seconds * 1000)
+                ) if not current_frame == MISSING_INT else periods_dict[
+                    "start_datetime_td"
+                ].append(
+                    pd.to_datetime("NaT")
+                )
+            if is_event_data:
+                seconds = (current_frame - first_frame) / frame_rate
+                periods_dict["start_datetime_ed"].append(
+                    datetime + dt.timedelta(milliseconds=seconds * 1000)
+                ) if not current_frame == MISSING_INT else periods_dict[
+                    "start_datetime_ed"
+                ].append(
+                    pd.to_datetime("NaT")
+                )
 
         elif "end" in name:
-            periods_dict["end_frame"].append(current_timestamp)
-            first_timestamp = periods_dict["start_frame"][0]
-            seconds = (current_timestamp - first_timestamp) / frame_rate
-            periods_dict["end_time_td"].append(
-                datetime + dt.timedelta(milliseconds=seconds * 1000)
-            ) if not current_timestamp == -999 else periods_dict["end_time_td"].append(
-                pd.to_datetime("NaT")
-            )
+            periods_dict["end_frame"].append(current_frame)
+            first_frame = periods_dict["start_frame"][0]
+            seconds = (current_frame - first_frame) / frame_rate
+            if is_tracking_data:
+                periods_dict["end_datetime_td"].append(
+                    datetime + dt.timedelta(milliseconds=seconds * 1000)
+                ) if not current_frame == MISSING_INT else periods_dict[
+                    "end_datetime_td"
+                ].append(
+                    pd.to_datetime("NaT")
+                )
+            if is_event_data:
+                periods_dict["end_datetime_ed"].append(
+                    datetime + dt.timedelta(milliseconds=seconds * 1000)
+                ) if not current_frame == MISSING_INT else periods_dict[
+                    "end_datetime_ed"
+                ].append(
+                    pd.to_datetime("NaT")
+                )
 
     # add fifth period
     periods_dict["period"].append(5)
-    periods_dict["start_frame"].append(-999)
-    periods_dict["end_frame"].append(-999)
-    periods_dict["start_time_td"].append(pd.to_datetime("NaT"))
-    periods_dict["end_time_td"].append(pd.to_datetime("NaT"))
+    periods_dict["start_frame"].append(MISSING_INT)
+    periods_dict["end_frame"].append(MISSING_INT)
+    if is_tracking_data:
+        periods_dict["start_datetime_td"].append(pd.to_datetime("NaT"))
+        periods_dict["end_datetime_td"].append(pd.to_datetime("NaT"))
+    if is_event_data:
+        periods_dict["start_datetime_ed"].append(pd.to_datetime("NaT"))
+        periods_dict["end_datetime_ed"].append(pd.to_datetime("NaT"))
 
     teams_info = {}
     for team in soup.find_all("Team"):
@@ -220,6 +256,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         away_players=pd.DataFrame(away_players),
         away_score=teams_info["away"]["score"],
         away_formation=teams_info["away"]["formation"],
+        country="",
     )
     return metadata
 

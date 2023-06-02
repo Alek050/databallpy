@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 
@@ -21,6 +22,8 @@ class Metadata:
     away_players: pd.DataFrame
     away_score: int
     away_formation: str
+
+    country: str
 
     def __post_init__(self):
         # match id
@@ -67,6 +70,13 @@ class Metadata:
                 f"'period' column in period_frames should contain only the values \
                     [1, 2, 3, 4, 5]. Now it's {res}"
             )
+        for col in [col for col in self.periods_frames if "datetime" in col]:
+            if pd.isnull(self.periods_frames[col]).all():
+                continue
+            if self.periods_frames[col].dt.tz is None:
+                raise ValueError(
+                    f"{col} column in period_frames should have a timezone"
+                )
 
         # frame_rate
         if not pd.isnull(self.frame_rate):
@@ -119,9 +129,9 @@ class Metadata:
                     raise TypeError(
                         f"{team} team formation should be a string, not a {type(form)}"
                     )
-                if len(form) > 4:
+                if len(form) > 5:
                     raise ValueError(
-                        f"{team} team formation should be of length 4 or smaller, not \
+                        f"{team} team formation should be of length 5 or smaller, not \
                             {len(form)}"
                     )
 
@@ -142,33 +152,43 @@ class Metadata:
                         ['id', 'full_name', 'shirt_num'], now its {players.columns}"
                 )
 
-    def __eq__(self, other):
-        result = [
-            self.match_id == other.match_id,
-            all(
-                [s == o for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)]
-            ),
-            self.periods_frames.equals(other.periods_frames),
-            self.frame_rate == other.frame_rate
-            if not pd.isnull(self.frame_rate)
-            else pd.isnull(other.frame_rate),
-            self.home_team_id == other.home_team_id,
-            self.home_team_name == other.home_team_name,
-            self.home_players.equals(other.home_players),
-            self.home_score == other.home_score
-            if not pd.isnull(self.home_score)
-            else pd.isnull(other.home_score),
-            self.home_formation == other.home_formation,
-            self.away_team_id == other.away_team_id,
-            self.away_team_name == other.away_team_name,
-            self.away_players.equals(other.away_players),
-            self.away_score == other.away_score
-            if not pd.isnull(self.away_score)
-            else pd.isnull(other.away_score),
-            self.away_formation == other.away_formation,
-        ]
+        # country
+        if not isinstance(self.country, str):
+            raise TypeError(f"country should be a string, not a {type(self.country)}")
 
-        return all(result)
+    def __eq__(self, other):
+        if isinstance(other, Metadata):
+            result = [
+                self.match_id == other.match_id,
+                all(
+                    [
+                        s == o if not np.isnan(s) else np.isnan(o)
+                        for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
+                    ]
+                ),
+                self.periods_frames.equals(other.periods_frames),
+                self.frame_rate == other.frame_rate
+                if not pd.isnull(self.frame_rate)
+                else pd.isnull(other.frame_rate),
+                self.home_team_id == other.home_team_id,
+                self.home_team_name == other.home_team_name,
+                self.home_players.equals(other.home_players),
+                self.home_score == other.home_score
+                if not pd.isnull(self.home_score)
+                else pd.isnull(other.home_score),
+                self.home_formation == other.home_formation,
+                self.away_team_id == other.away_team_id,
+                self.away_team_name == other.away_team_name,
+                self.away_players.equals(other.away_players),
+                self.away_score == other.away_score
+                if not pd.isnull(self.away_score)
+                else pd.isnull(other.away_score),
+                self.away_formation == other.away_formation,
+                self.country == other.country,
+            ]
+            return all(result)
+        else:
+            return False
 
     def copy(self):
         return Metadata(
@@ -186,4 +206,5 @@ class Metadata:
             away_players=self.away_players.copy(),
             away_score=self.away_score,
             away_formation=self.away_formation,
+            country=self.country,
         )

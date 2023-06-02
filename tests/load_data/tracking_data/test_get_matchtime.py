@@ -8,6 +8,7 @@ from databallpy.load_data.tracking_data._get_matchtime import (
     _get_matchtime,
     _to_matchtime,
 )
+from databallpy.utils.utils import MISSING_INT
 
 
 class TestGetMatchtime(unittest.TestCase):
@@ -35,6 +36,7 @@ class TestGetMatchtime(unittest.TestCase):
             away_formation="",
             away_score=np.nan,
             away_players=pd.DataFrame({"id": [], "full_name": [], "shirt_num": []}),
+            country="",
         )
 
     def test_get_matchtime(self):
@@ -52,13 +54,13 @@ class TestGetMatchtime(unittest.TestCase):
 
         period_column = []
         period_column.extend([1] * 3)
-        period_column.extend([-999])
+        period_column.extend([MISSING_INT])
         period_column.extend([2] * 3)
-        period_column.extend([-999])
+        period_column.extend([MISSING_INT])
         period_column.extend([3] * 3)
-        period_column.extend([-999])
+        period_column.extend([MISSING_INT])
         period_column.extend([4] * 3)
-        period_column.extend([-999])
+        period_column.extend([MISSING_INT])
         period_column.extend([5] * 3)
         period_column = pd.Series(period_column)
 

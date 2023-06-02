@@ -8,7 +8,7 @@ from databallpy.load_data.event_data.metrica_event_data import (
     load_metrica_event_data,
     load_metrica_open_event_data,
 )
-from tests.expected_outcomes import ED_METRICA, MD_METRICA
+from tests.expected_outcomes import ED_METRICA, MD_METRICA_ED
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW
 
 
@@ -30,7 +30,7 @@ class TestMetricaEventData(unittest.TestCase):
 
     def test_load_metrica_event_data(self):
         ed, md = load_metrica_event_data(self.ed_loc, self.md_loc)
-        assert md == MD_METRICA
+        assert md == MD_METRICA_ED
         pd.testing.assert_frame_equal(ed, ED_METRICA)
 
         with self.assertRaises(TypeError):
@@ -42,5 +42,5 @@ class TestMetricaEventData(unittest.TestCase):
     )
     def test_load_open_metrica_event_data(self, _):
         ed, md = load_metrica_open_event_data()
-        assert md == MD_METRICA
+        assert md == MD_METRICA_ED
         pd.testing.assert_frame_equal(ed, ED_METRICA)

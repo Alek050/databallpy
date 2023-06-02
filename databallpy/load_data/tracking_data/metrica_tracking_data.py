@@ -27,7 +27,7 @@ from databallpy.load_data.tracking_data._insert_missing_rows import _insert_miss
 from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
     _normalize_playing_direction_tracking,
 )
-from databallpy.utils import _to_int
+from databallpy.utils.utils import _to_int
 
 
 def load_metrica_tracking_data(
@@ -70,10 +70,10 @@ def load_metrica_tracking_data(
         tracking_data, metadata.periods_frames
     )
     tracking_data["period"] = _add_periods_to_tracking_data(
-        tracking_data["timestamp"], metadata.periods_frames
+        tracking_data["frame"], metadata.periods_frames
     )
     tracking_data["matchtime_td"] = _get_matchtime(
-        tracking_data["timestamp"], tracking_data["period"], metadata
+        tracking_data["frame"], tracking_data["period"], metadata
     )
 
     return tracking_data, metadata
@@ -113,7 +113,7 @@ def _get_tracking_data(
 
     Args:
         tracking_data_loc (Union[str, io.StringIO]): location of the tracking data .txt
-        file channels (dict): dictionary with for all timestamps the order of which
+        file channels (dict): dictionary with for all frames the order of which
         players are referred to in the raw tracking data
         pitch_dimensions (list): x and y dimensions of the pitch in meters
         verbose (bool, optional): whether to print information about the progress in the
@@ -132,7 +132,7 @@ def _get_tracking_data(
 
     size_lines = len(lines)
     data = {
-        "timestamp": [np.nan] * size_lines,
+        "frame": [np.nan] * size_lines,
         "ball_x": [np.nan] * size_lines,
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
@@ -146,12 +146,12 @@ def _get_tracking_data(
 
     for idx, line in enumerate(lines):
 
-        timestamp, players_info, ball_info = line.split(":")
-        timestamp = _to_int(timestamp)
-        data["timestamp"][idx] = timestamp
+        frame, players_info, ball_info = line.split(":")
+        frame = _to_int(frame)
+        data["frame"][idx] = frame
 
         channel = channels.loc[
-            (channels["start"] <= timestamp) & (channels["end"] >= timestamp),
+            (channels["start"] <= frame) & (channels["end"] >= frame),
             "ids",
         ].iloc[0]
 
@@ -174,6 +174,6 @@ def _get_tracking_data(
     for col in [x for x in df.columns if "_y" in x]:
         df[col] = df[col] * pitch_dimensions[1] - (pitch_dimensions[1] / 2)
 
-    df = _insert_missing_rows(df, "timestamp")
+    df = _insert_missing_rows(df, "frame")
 
     return df

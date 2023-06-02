@@ -1,0 +1,217 @@
+<FIFADataTransferFormatEPTS xmlns:tns="FIFADataTransferFormatEPTSNamespace/FIFADataTransferFormatEPTS" xmlns:None="http://www.w3.org/2001/XMLSchema" >
+    <Metadata>
+        <GlobalConfig>
+            <FileDate></FileDate>
+            <FileName></FileName>
+            <ProviderName>Inmotio</ProviderName>
+            <Software>Inmotio Optical</Software>
+            <Version>smart-0.24.5-PROD</Version>
+            <TrackingType>Optical</TrackingType>
+            <FrameRate>25</FrameRate>
+            <Encoding>UTF-8</Encoding>
+            <ProviderGlobalParameters>
+                <ProviderParameter>
+                    <Value>25.00</Value>
+                    <Description>A more accurate value for frame rate</Description>
+                    <Name>FrameRate</Name>
+                </ProviderParameter>
+                <ProviderParameter>
+                    <Value></Value>
+                    <Description>X coordinate of the centre of the pitch</Description>
+                    <Name>Pitch Centre X</Name>
+                </ProviderParameter>
+                <ProviderParameter>
+                    <Value></Value>
+                    <Description>Y coordinate of the centre of the pitch</Description>
+                    <Name>Pitch Centre Y</Name>
+                </ProviderParameter>
+                <ProviderParameter>
+                    <Value>Labeled</Value>
+                    <Description>Indicator describing whether data is generated autonomously, or also includes labeled data</Description>
+                    <Name>Processing Type</Name>
+                </ProviderParameter>
+                <ProviderParameter>
+                    <Value>Full ID</Value>
+                    <Description>Indicator describing what level of detail is in the output data</Description>
+                    <Name>Tracking Level</Name>
+                </ProviderParameter>
+            </ProviderGlobalParameters>
+        </GlobalConfig>
+        <Sessions>
+            <Session id="9999">
+                <SessionType>Full Match</SessionType>
+                <SessionName>Match</SessionName>
+                <Start></Start>
+                <End></End>
+                <MatchParameters>
+                    <Score idLocalTeam="T-0001" idVisitingTeam="T-0002">
+                        <LocalTeamScore>1</LocalTeamScore>
+                        <VisitingTeamScore>1</VisitingTeamScore>
+                    </Score>
+                    <FieldSize>
+                        <Length>100.0</Length>
+                        <Width>50.0</Width>
+                    </FieldSize>
+                </MatchParameters>
+                <Location></Location>
+                <Competition>Eredivisie</Competition>
+                <ProviderSessionParameters>
+                    <ProviderParameter>
+                        <Value></Value>
+                        <Name>Start Frame</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value></Value>
+                        <Name>End Frame</Name>
+                    </ProviderParameter>
+                </ProviderSessionParameters>
+            </Session>
+            <Session id="9999-1">
+                <SessionType>Period</SessionType>
+                <SessionName>1st Half</SessionName>
+                <Start>2023-01-01T19:00:00</Start>
+                <End>2023-01-01T19:45:00</End>
+                <ProviderSessionParameters>
+                    <ProviderParameter>
+                        <Value>2</Value>
+                        <Name>Start Frame</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>3</Value>
+                        <Name>End Frame</Name>
+                    </ProviderParameter>
+                </ProviderSessionParameters>
+            </Session>
+            <Session id="9999-2">
+                <SessionType>Period</SessionType>
+                <SessionName>2nd Half</SessionName>
+                <Start>2023-01-01T20:00:00</Start>
+                <End>2023-01-01T20:45:00</End>
+                <ProviderSessionParameters>
+                    <ProviderParameter>
+                        <Value>5</Value>
+                        <Name>Start Frame</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>6</Value>
+                        <Name>End Frame</Name>
+                    </ProviderParameter>
+                </ProviderSessionParameters>
+            </Session>
+        </Sessions>
+        <Teams>
+            <Team id="T-0001">
+                <Name>Team A</Name>
+                <ProviderTeamParameters>
+                    <ProviderParameter>
+                        <Value>H</Value>
+                        <Description>Indicator for Home/Local (H) or Away/Visiting (A) team</Description>
+                        <Name>Side</Name>
+                    </ProviderParameter>
+                </ProviderTeamParameters>
+            </Team>
+            <Team id="T-0002">
+                <Name>Team B</Name>
+                <ProviderTeamParameters>
+                    <ProviderParameter>
+                        <Value>A</Value>
+                        <Description>Indicator for Home/Local (H) or Away/Visiting (A) team</Description>
+                        <Name>Side</Name>
+                    </ProviderParameter>
+                </ProviderTeamParameters>
+            </Team>
+        </Teams>
+        <Players>
+            <Player id="P-0001" teamId="T-0001">
+                <Name>Player 1</Name>
+                <ShirtNumber>1</ShirtNumber>
+                <ProviderPlayerParameters>
+                    <ProviderParameter>
+                        <Value>Goalkeeper</Value>
+                        <Name>PlayerType</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>2</Value>
+                        <Description>First frame player is part of line-up</Description>
+                        <Name>Start Frame</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>6</Value>
+                        <Description>Last frame player is part of line-up</Description>
+                        <Name>End Frame</Name>
+                    </ProviderParameter>
+                </ProviderPlayerParameters>
+            </Player>
+            <Player id="P-0002" teamId="T-0001">
+                <Name>Player 2</Name>
+                <ShirtNumber>2</ShirtNumber>
+                <ProviderPlayerParameters>
+                    <ProviderParameter>
+                        <Value>Field player</Value>
+                        <Name>PlayerType</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>2</Value>
+                        <Description>First frame player is part of line-up</Description>
+                        <Name>Start Frame</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>6</Value>
+                        <Description>Last frame player is part of line-up</Description>
+                        <Name>End Frame</Name>
+                    </ProviderParameter>
+                </ProviderPlayerParameters>
+            </Player>
+            <Player id="P-0003" teamId="T-0002">
+                <Name>Player 11</Name>
+                <ShirtNumber>1</ShirtNumber>
+                <ProviderPlayerParameters>
+                    <ProviderParameter>
+                        <Value>Goalkeeper</Value>
+                        <Name>PlayerType</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>2</Value>
+                        <Description>First frame player is part of line-up</Description>
+                        <Name>Start Frame</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>6</Value>
+                        <Description>Last frame player is part of line-up</Description>
+                        <Name>End Frame</Name>
+                    </ProviderParameter>
+                </ProviderPlayerParameters>
+            </Player>
+            <Player id="P-0004" teamId="T-0002">
+                <Name>Player 12</Name>
+                <ShirtNumber>2</ShirtNumber>
+                <ProviderPlayerParameters>
+                    <ProviderParameter>
+                        <Value>Field player</Value>
+                        <Name>PlayerType</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>2</Value>
+                        <Description>First frame player is part of line-up</Description>
+                        <Name>Start Frame</Name>
+                    </ProviderParameter>
+                    <ProviderParameter>
+                        <Value>6</Value>
+                        <Description>Last frame player is part of line-up</Description>
+                        <Name>End Frame</Name>
+                    </ProviderParameter>
+                </ProviderPlayerParameters>
+            </Player>
+        </Players>
+        <PlayerChannels>
+            <PlayerChannel id="P-0001_x" channelId="x" playerId="P-0001"/>
+            <PlayerChannel id="P-0001_y" channelId="y" playerId="P-0001"/>
+            <PlayerChannel id="P-0002_x" channelId="x" playerId="P-0002"/>
+            <PlayerChannel id="P-0002_y" channelId="y" playerId="P-0002"/>
+            <PlayerChannel id="P-0003_x" channelId="x" playerId="P-0003"/>
+            <PlayerChannel id="P-0003_y" channelId="y" playerId="P-0003"/>
+            <PlayerChannel id="P-0004_x" channelId="x" playerId="P-0004"/>
+            <PlayerChannel id="P-0004_y" channelId="y" playerId="P-0004"/>
+        </PlayerChannels>
+    </Metadata>
+</FIFADataTransferFormatEPTS>

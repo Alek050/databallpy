@@ -5,13 +5,14 @@ import pandas as pd
 from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.utils import MISSING_INT
 
 
 class TestNormalizePlayingDirection(unittest.TestCase):
     def setUp(self) -> None:
         self.td = pd.DataFrame(
             {
-                "timestamp": [10, 11, 12, 13, 14, 15],
+                "frame": [10, 11, 12, 13, 14, 15],
                 "ball_x": [0, 1, 2, 3, 4, 5],
                 "ball_y": [0, -1, 2, 33, -13, 12],
                 "home_1_x": [-5, -4, 22, 21, -6, 7],
@@ -28,15 +29,15 @@ class TestNormalizePlayingDirection(unittest.TestCase):
         self.periods = pd.DataFrame(
             {
                 "period": [1, 2, 3, 4, 5],
-                "start_frame": [10, 12, 14, -999, -999],
-                "end_frame": [11, 13, 15, -999, -999],
+                "start_frame": [10, 12, 14, MISSING_INT, MISSING_INT],
+                "end_frame": [11, 13, 15, MISSING_INT, MISSING_INT],
             }
         )
 
     def test_normalize_playing_direction(self):
         expected = pd.DataFrame(
             {
-                "timestamp": [10, 11, 12, 13, 14, 15],
+                "frame": [10, 11, 12, 13, 14, 15],
                 "ball_x": [0, 1, -2, -3, 4, 5],
                 "ball_y": [0, -1, -2, -33, -13, 12],
                 "home_1_x": [-5, -4, -22, -21, -6, 7],

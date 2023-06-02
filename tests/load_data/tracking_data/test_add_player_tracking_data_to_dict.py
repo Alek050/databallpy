@@ -23,7 +23,7 @@ class TestAddPlayerTrackingDataToDict(unittest.TestCase):
         ]
 
         self.expected_output = {
-            "timestamp": [0, 1],
+            "frame": [0, 1],
             "away_10_x": [np.nan, 60.0],
             "away_10_y": [-100.0, 100],
             "away_11_x": [300.0, 120.0],
@@ -36,7 +36,7 @@ class TestAddPlayerTrackingDataToDict(unittest.TestCase):
 
     def test_add_player_tracking_to_data_dict(self):
         data = {
-            "timestamp": [0, 1],
+            "frame": [0, 1],
             "away_10_x": [np.nan, np.nan],
             "away_10_y": [np.nan, np.nan],
             "home_9_x": [np.nan, np.nan],

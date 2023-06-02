@@ -1,4 +1,3 @@
-import datetime as dt
 from typing import Tuple
 
 import numpy as np
@@ -6,6 +5,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.metadata import Metadata
+from databallpy.utils.tz_modification import utc_to_local_datetime
 
 EVENT_TYPE_IDS = {
     1: "pass",
@@ -112,8 +112,8 @@ def load_opta_event_data(
     assert f7_loc[-4:] == ".xml", "f7 opta file should by of .xml format"
     assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format"
 
-    event_data = _load_event_data(f24_loc)
     metadata = _load_metadata(f7_loc, pitch_dimensions=pitch_dimensions)
+    event_data = _load_event_data(f24_loc, metadata.country)
 
     # Add player names to the event data dataframe
     home_players = dict(
@@ -130,6 +130,7 @@ def load_opta_event_data(
         event_data["player_id"]
     )
 
+    event_data.loc[:, "player_name"] = None
     event_data.loc[home_mask, "player_name"] = event_data.loc[
         home_mask, "player_id"
     ].map(home_players)
@@ -168,32 +169,48 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
+    if len(soup.find_all("SoccerDocument")) > 1:
+        # Multiple matches found in f7.xml file
+        # Eliminate the rest of the `SoccerDocument` elements
+        for match in soup.find_all("SoccerDocument")[1:]:
+            match.decompose()
+
     # Obtain match id
     match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
-
+    country = soup.find("Country").text
     # Obtain match start and end of period datetime
     periods = {
         "period": [1, 2, 3, 4, 5],
-        "start_datetime_opta": [],
-        "end_datetime_opta": [],
+        "start_datetime_ed": [],
+        "end_datetime_ed": [],
     }
     start_period_1 = soup.find("Stat", attrs={"Type": "first_half_start"})
     end_period_1 = soup.find("Stat", attrs={"Type": "first_half_stop"})
     start_period_2 = soup.find("Stat", attrs={"Type": "second_half_start"})
     end_period_2 = soup.find("Stat", attrs={"Type": "second_half_stop"})
+    if not all([start_period_1, end_period_1, start_period_2, end_period_2]):
+        file.close()
+        raise ValueError(
+            "The f7.xml opta file does not contain the start and end of period datetime"
+        )
     for start, end in zip(
         [start_period_1, start_period_2], [end_period_1, end_period_2]
     ):
-        # Add one hour to go from utc to Dutch time
-        periods["start_datetime_opta"].append(
-            pd.to_datetime(start.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
-        )
-        periods["end_datetime_opta"].append(
-            pd.to_datetime(end.contents[0]).tz_localize(None) + dt.timedelta(hours=1)
-        )
+        periods["start_datetime_ed"].append(pd.to_datetime(start.contents[0], utc=True))
+        periods["end_datetime_ed"].append(pd.to_datetime(end.contents[0], utc=True))
     for _ in range(3):
-        periods["start_datetime_opta"].append(pd.to_datetime("NaT"))
-        periods["end_datetime_opta"].append(pd.to_datetime("NaT"))
+        periods["start_datetime_ed"].append(pd.to_datetime("NaT", utc=True))
+        periods["end_datetime_ed"].append(pd.to_datetime("NaT", utc=True))
+
+    periods = pd.DataFrame(periods)
+
+    # Set datetime to right timezone
+    periods["start_datetime_ed"] = utc_to_local_datetime(
+        periods["start_datetime_ed"], country
+    )
+    periods["end_datetime_ed"] = utc_to_local_datetime(
+        periods["end_datetime_ed"], country
+    )
 
     # Opta has a TeamData and Team attribute in the f7 file
     team_datas = soup.find_all("TeamData")
@@ -239,7 +256,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     metadata = Metadata(
         match_id=match_id,
         pitch_dimensions=pitch_dimensions,
-        periods_frames=pd.DataFrame(periods),
+        periods_frames=periods,
         frame_rate=np.nan,
         home_team_id=teams_info["home"]["team_id"],
         home_team_name=str(teams_info["home"]["team_name"]),
@@ -251,6 +268,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         away_players=teams_player_info["away"],
         away_score=teams_info["away"]["score"],
         away_formation=teams_info["away"]["formation"],
+        country=country,
     )
     return metadata
 
@@ -293,12 +311,13 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
     return pd.DataFrame(result_dict)
 
 
-def _load_event_data(f24_loc: str) -> pd.DataFrame:
+def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     """Function to load the f27 .xml, the events of the match.
     Note: this function does ignore qualifiers for now
 
     Args:
         f24_loc (str): location of the f24.xml file
+        country (str): country of the match
 
     Returns:
         pd.DataFrame: all events of the match in a pd dataframe
@@ -331,6 +350,15 @@ def _load_event_data(f24_loc: str) -> pd.DataFrame:
 
         if event_type_id in EVENT_TYPE_IDS.keys():
             event_name = EVENT_TYPE_IDS[event_type_id].lower()
+
+            # check if goal is a own goal
+            if event_type_id == 16:
+                for qualifier in event.find_all("Q"):
+                    if (
+                        qualifier.attrs["qualifier_id"] == "280"
+                        and qualifier.attrs["value"] == "OWN_GOAL"
+                    ):
+                        event_name = "own goal"
         else:
             # Unknown event
             event_name = None
@@ -350,8 +378,10 @@ def _load_event_data(f24_loc: str) -> pd.DataFrame:
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
         result_dict["datetime"].append(
-            pd.to_datetime(event.attrs["timestamp"]) + dt.timedelta(hours=1)
+            pd.to_datetime(event.attrs["timestamp"], utc=True)
         )
 
     file.close()
-    return pd.DataFrame(result_dict)
+    event_data = pd.DataFrame(result_dict)
+    event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
+    return event_data
