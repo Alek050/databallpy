@@ -34,7 +34,9 @@ class TestFilters(unittest.TestCase):
             }
         )
 
-        output_1 = filter_data(self.input, ["col_1", "col_2"], kind="moving_average")
+        output_1 = filter_data(
+            self.input, ["col_1", "col_2"], filter_type="moving_average"
+        )
         pd.testing.assert_frame_equal(expected_output_1, output_1)
 
     def test_savitzky_golay_filter(self):
@@ -56,7 +58,9 @@ class TestFilters(unittest.TestCase):
             }
         )
 
-        output_2 = filter_data(self.input, ["col_1", "col_2"], kind="savitzky_golay")
+        output_2 = filter_data(
+            self.input, ["col_1", "col_2"], filter_type="savitzky_golay"
+        )
         pd.testing.assert_frame_equal(expected_output_2, output_2)
 
     def test_single_column_filter(self):
@@ -67,7 +71,7 @@ class TestFilters(unittest.TestCase):
             }
         )
 
-        output_3 = filter_data(self.input, ["col_1"], kind="moving_average")
+        output_3 = filter_data(self.input, ["col_1"], filter_type="moving_average")
         pd.testing.assert_frame_equal(expected_output_3, output_3)
 
     def test_different_window_moving_average(self):
@@ -90,46 +94,53 @@ class TestFilters(unittest.TestCase):
         )
 
         output_4 = filter_data(
-            self.input, ["col_1", "col_2"], kind="moving_average", window_length=4
+            self.input,
+            ["col_1", "col_2"],
+            filter_type="moving_average",
+            window_length=4,
         )
         pd.testing.assert_frame_equal(expected_output_4, output_4)
 
     def test_filters_wrong_input(self):
 
         with self.assertRaises(TypeError) as cm:
-            filter_data({"key": "value"}, ["key"], kind="moving_average")
+            filter_data({"key": "value"}, ["key"], filter_type="moving_average")
         self.assertEqual(
             str(cm.exception), "df should be a pd.DataFrame, not a <class 'dict'>"
         )
 
         with self.assertRaises(TypeError) as cm:
-            filter_data(self.input, "col_1", kind="moving_average")
+            filter_data(self.input, "col_1", filter_type="moving_average")
         self.assertEqual(
             str(cm.exception), "input_columns should be a list, not a <class 'str'>"
         )
 
         with self.assertRaises(TypeError) as cm:
-            filter_data(self.input, ["col_1", 2], kind="moving_average")
+            filter_data(self.input, ["col_1", 2], filter_type="moving_average")
         self.assertEqual(
             str(cm.exception), "All elements of input_columns should be strings"
         )
 
         with self.assertRaises(TypeError) as cm:
-            filter_data(self.input, ["col_1", "col_2"], kind=5)
+            filter_data(self.input, ["col_1", "col_2"], filter_type=5)
         self.assertEqual(
-            str(cm.exception), "kind should be a string, not a <class 'int'>"
+            str(cm.exception), "filter_type should be a string, not a <class 'int'>"
         )
 
         with self.assertRaises(TypeError) as cm:
-            filter_data(self.input, ["col_1", "col_2"], kind="magic_filter")
+            filter_data(self.input, ["col_1", "col_2"], filter_type="magic_filter")
         self.assertEqual(
             str(cm.exception),
-            "kind should be one of moving_average, savitzky_golay, not magic_filter",
+            "filter_type should be one of moving_average, savitzky_golay,"
+            " not magic_filter",
         )
 
         with self.assertRaises(TypeError) as cm:
             filter_data(
-                self.input, ["col_1", "col_2"], kind="moving_average", window_length="5"
+                self.input,
+                ["col_1", "col_2"],
+                filter_type="moving_average",
+                window_length="5",
             )
         self.assertEqual(
             str(cm.exception), "window_length should be an int, not a <class 'str'>"
