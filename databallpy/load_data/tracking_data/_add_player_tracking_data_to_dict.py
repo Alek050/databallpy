@@ -16,13 +16,22 @@ def _add_player_tracking_data_to_dict(
 
     Returns:
         dict: contains all tracking data
+
+    Note:
+        Generally, if-statements are quicker than try-except blocks, but since
+        this funciton is called for every player in every frame, it is quicker
+        to use a try-except block here. The except block will only be reached
+        for every player once, while the if-statement would be reached for every
+        player in every frame.
     """
 
-    if f"{team}_{shirt_num}_x" not in data.keys():  # create keys for new player
+    try:
+        data[f"{team}_{shirt_num}_x"][idx] = float(x)
+        data[f"{team}_{shirt_num}_y"][idx] = float(y)
+    except KeyError:
         data[f"{team}_{shirt_num}_x"] = [np.nan] * len(data["frame"])
         data[f"{team}_{shirt_num}_y"] = [np.nan] * len(data["frame"])
-
-    data[f"{team}_{shirt_num}_x"][idx] = float(x)
-    data[f"{team}_{shirt_num}_y"][idx] = float(y)
+        data[f"{team}_{shirt_num}_x"][idx] = float(x)
+        data[f"{team}_{shirt_num}_y"][idx] = float(y)
 
     return data
