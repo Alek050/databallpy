@@ -19,7 +19,7 @@ def _add_player_tracking_data_to_dict(
 
     Note:
         Generally, if-statements are quicker than try-except blocks, but since
-        this funciton is called for every player in every frame, it is quicker
+        this function is called for every player in every frame, it is quicker
         to use a try-except block here. The except block will only be reached
         for every player once, while the if-statement would be reached for every
         player in every frame.
