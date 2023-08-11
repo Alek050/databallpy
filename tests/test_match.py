@@ -204,6 +204,76 @@ class TestMatch(unittest.TestCase):
                 country=self.expected_match_tracab_opta.country,
             )
 
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data,
+                tracking_data_provider=self.td_provider,
+                event_data=pd.DataFrame(
+                    {
+                        "event_id": [1],
+                        "event": ["pass"],
+                        "period_id": [1],
+                        "team_id": [1],
+                        "player_id": [1],
+                        "start_x": [1],
+                        "start_y": [1],
+                        "player": ["player_1"],
+                        "datetime": ["2020-01-01 00:00:00"],  # not datetime object
+                    }
+                ),
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data,
+                tracking_data_provider=self.td_provider,
+                event_data=pd.DataFrame(
+                    {
+                        "event_id": [1],
+                        "event": ["pass"],
+                        "period_id": [1],
+                        "team_id": [1],
+                        "player_id": [1],
+                        "start_x": [1],
+                        "start_y": [1],
+                        "player": ["player_1"],
+                        "datetime": pd.to_datetime(
+                            ["2020-01-01 00:00:00"]
+                        ),  # no timezone assigned
+                    }
+                ),
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+            )
+
         # event data provider
         with self.assertRaises(TypeError):
             Match(

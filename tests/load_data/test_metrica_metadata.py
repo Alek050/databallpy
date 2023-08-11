@@ -14,6 +14,7 @@ from databallpy.utils.utils import MISSING_INT
 
 class TestMetricaMetadata(unittest.TestCase):
     def setUp(self):
+        pass
         self.md_loc = "tests/test_data/metrica_metadata_test.xml"
         self.expected_metadata = Metadata(
             match_id=9999,
