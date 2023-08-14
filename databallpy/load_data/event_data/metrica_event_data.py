@@ -26,6 +26,7 @@ metrica_databallpy_map = {
     "shot": "shot",
 }
 
+
 def load_metrica_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> Tuple[pd.DataFrame, Metadata]:
@@ -83,6 +84,7 @@ def load_metrica_event_data(
         dt.timedelta(milliseconds=(x - first_frame) / frame_rate * 1000)
         for x in event_data["td_frame"]
     ]
+
     # no idea about time zone since we have no real data, so just assume utc
     event_data["datetime"] = [
         pd.to_datetime(start_time, utc=True) + x for x in rel_timedelta
@@ -162,16 +164,22 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
         result_dict["seconds"].append(_to_float(event["start"]["time"] % 60))
         result_dict["player_id"].append(_to_int(event["from"]["id"][1:]))
         result_dict["player_name"].append(event["from"]["name"])
-        result_dict["team_id"].append(event["team"]["id"])
 
         # set outcome for pass or carry events
         if check_outcome_last_event:
-            if event_name in out_of_posession_events and result_dict["team_id"][-1] == event["team"]["id"] or event_name in in_posession_events and result_dict["team_id"][-1] != event["team"]["id"]:
+            if (
+                event_name in out_of_posession_events
+                and result_dict["team_id"][-1] == event["team"]["id"]
+            ) or (
+                event_name in in_posession_events
+                and result_dict["team_id"][-1] != event["team"]["id"]
+            ):
+
                 result_dict["outcome"][-1] = 0
             else:
                 result_dict["outcome"][-1] = 1
             check_outcome_last_event = False
-        
+
         # set outcome for shot events
         if event_name == "shot":
             if isinstance(event["subtypes"], list):
@@ -186,11 +194,12 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
             result_dict["outcome"].append(outcome)
         else:
             result_dict["outcome"].append(np.nan)
-        
+
         # Check if outcome needs to be set based on next event
         if event_name in ["pass", "carry"]:
             check_outcome_last_event = True
 
+        result_dict["team_id"].append(event["team"]["id"])
         result_dict["start_x"].append(_to_float(event["start"]["x"]))
         result_dict["start_y"].append(_to_float(event["start"]["y"]))
         if event["to"] is not None:

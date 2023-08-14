@@ -329,6 +329,15 @@ def check_inputs_match_object(match: Match):
             if col not in match.event_data.columns.to_list():
                 raise ValueError(f"{col} not in event data columns, this is manditory!")
 
+        if not pd.api.types.is_datetime64_any_dtype(match.event_data["datetime"]):
+            raise TypeError(
+                f"datetime column in event_data should be a datetime dtype, not a \
+                    {type(match.event_data['datetime'])}"
+            )
+
+        if match.event_data["datetime"].dt.tz is None:
+            raise ValueError("datetime column in event_data should have a timezone")
+
         # event_data_provider
         if not isinstance(match.event_data_provider, str):
             raise TypeError(

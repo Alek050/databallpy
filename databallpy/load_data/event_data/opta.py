@@ -394,6 +394,8 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
 
     result_dict["databallpy_event"] = [np.nan] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
-    event_data["databallpy_event"] = event_data["opta_event"].map(opta_to_databallpy_map)
+    event_data["databallpy_event"] = event_data["opta_event"].map(
+        opta_to_databallpy_map
+    )
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
     return event_data

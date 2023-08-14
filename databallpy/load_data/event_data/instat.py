@@ -33,6 +33,7 @@ instat_databallpy_map = {
     "Accurate crossing from set piece with a goal": "pass",
 }
 
+
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> Tuple[pd.DataFrame, Metadata]:
@@ -280,7 +281,7 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
             # else:
             result_dict["instat_event"].append(str(event["action_name"]))
             result_dict["outcome"].append(np.nan)
-           
+
             result_dict["period_id"].append(int(event["half"]))
             result_dict["minutes"].append(float(event["second"]) // 60)
             result_dict["seconds"].append(float(event["second"]) % 60)
@@ -312,8 +313,10 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     result_dict["databallpy_event"] = [np.nan] * len(result_dict["event_id"])
 
     event_data = pd.DataFrame(result_dict)
-    event_data["databallpy_event"] = event_data["instat_event"].map(instat_databallpy_map)
-    
+    event_data["databallpy_event"] = event_data["instat_event"].map(
+        instat_databallpy_map
+    )
+
     start_events = ["pass", "shot"]
     x_start, y_start = (
         event_data[event_data["databallpy_event"].isin(start_events)]

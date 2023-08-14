@@ -34,14 +34,14 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_event_data = self.match_to_sync.event_data.copy()
         expected_tracking_data = self.match_to_sync.tracking_data.copy()
         expected_tracking_data["period"] = [1] * 13
-        expected_tracking_data["event"] = [
+        expected_tracking_data["databallpy_event"] = [
             "pass",
             "pass",
             np.nan,
             np.nan,
             np.nan,
-            "take on",
-            "tackle",
+            "dribble",
+            "dribble",
             np.nan,
             np.nan,
             np.nan,
