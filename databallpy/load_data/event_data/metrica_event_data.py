@@ -20,6 +20,11 @@ from databallpy.load_data.metrica_metadata import (
 )
 from databallpy.utils.utils import _to_float, _to_int
 
+metrica_databallpy_map = {
+    "pass": "pass",
+    "carry": "dribble",
+    "shot": "shot",
+}
 
 def load_metrica_event_data(
     event_data_loc: str, metadata_loc: str
@@ -124,7 +129,8 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
     result_dict = {
         "event_id": [],
         "type_id": [],
-        "event": [],
+        "metrica_event": [],
+        "databallpy_event": [],
         "period_id": [],
         "minutes": [],
         "seconds": [],
@@ -141,18 +147,50 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
         "td_frame": [],
     }
 
+    check_outcome_last_event = False
+
+    in_posession_events = ["pass", "carry", "recovery", "shot"]
+    out_of_posession_events = ["fault received", "ball out", "ball lost"]
+
     for event in events_dict["data"]:
         result_dict["event_id"].append(event["index"])
         result_dict["type_id"].append(event["type"]["id"])
         event_name = event["type"]["name"].lower()
-        result_dict["event"].append(event_name)
+        result_dict["metrica_event"].append(event_name)
         result_dict["period_id"].append(event["period"])
         result_dict["minutes"].append(_to_int((event["start"]["time"] // 60)))
         result_dict["seconds"].append(_to_float(event["start"]["time"] % 60))
         result_dict["player_id"].append(_to_int(event["from"]["id"][1:]))
         result_dict["player_name"].append(event["from"]["name"])
         result_dict["team_id"].append(event["team"]["id"])
-        result_dict["outcome"].append(np.nan)
+
+        # set outcome for pass or carry events
+        if check_outcome_last_event:
+            if event_name in out_of_posession_events and result_dict["team_id"][-1] == event["team"]["id"] or event_name in in_posession_events and result_dict["team_id"][-1] != event["team"]["id"]:
+                result_dict["outcome"][-1] = 0
+            else:
+                result_dict["outcome"][-1] = 1
+            check_outcome_last_event = False
+        
+        # set outcome for shot events
+        if event_name == "shot":
+            if isinstance(event["subtypes"], list):
+                outcome = 0
+                for sub in event["subtypes"]:
+                    if sub["name"] == "GOAL":
+                        outcome = 1
+                        break
+            else:
+                subtypes = event["subtypes"]
+                outcome = 1 if subtypes["name"] == "GOAL" else 0
+            result_dict["outcome"].append(outcome)
+        else:
+            result_dict["outcome"].append(np.nan)
+        
+        # Check if outcome needs to be set based on next event
+        if event_name in ["pass", "carry"]:
+            check_outcome_last_event = True
+
         result_dict["start_x"].append(_to_float(event["start"]["x"]))
         result_dict["start_y"].append(_to_float(event["start"]["y"]))
         if event["to"] is not None:
@@ -165,5 +203,7 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
         result_dict["end_y"].append(_to_float(event["end"]["y"]))
         result_dict["td_frame"].append(event["start"]["frame"])
 
+    result_dict["databallpy_event"] = [np.nan] * len(result_dict["event_id"])
     events = pd.DataFrame(result_dict)
+    events["databallpy_event"] = events["metrica_event"].map(metrica_databallpy_map)
     return events

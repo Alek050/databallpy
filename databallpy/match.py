@@ -318,7 +318,7 @@ def check_inputs_match_object(match: Match):
     if len(match.event_data) > 0:
         for col in [
             "event_id",
-            "event",
+            "databallpy_event",
             "period_id",
             "team_id",
             "player_id",
