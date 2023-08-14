@@ -50,21 +50,30 @@ def synchronise_tracking_and_event_data(
     tracking_data = match.tracking_data
     event_data = match.event_data
 
+    # add datetime objects to tracking_data
     start_datetime_period = {}
     start_frame_period = {}
+
     for _, row in match.periods.iterrows():
         start_datetime_period[row["period"]] = row["start_datetime_td"]
         start_frame_period[row["period"]] = row["start_frame"]
 
-    tracking_data["datetime"] = [
-        start_datetime_period[int(p)]
-        + dt.timedelta(
-            milliseconds=int((x - start_frame_period[p]) / match.frame_rate * 1000)
-        )
-        if p > 0
-        else pd.to_datetime("NaT")
-        for x, p in zip(tracking_data["frame"], tracking_data["period"])
-    ]
+    valid_start_frame_periods = np.array(
+        [
+            start_frame_period[p] if p != MISSING_INT else np.nan
+            for p in tracking_data["period"]
+        ]
+    )
+
+    tracking_data["datetime"] = pd.Series(
+        [
+            start_datetime_period[p] if p != MISSING_INT else pd.to_datetime("NaT")
+            for p in tracking_data["period"]
+        ]
+    ) + pd.to_timedelta(
+        (tracking_data["frame"] - valid_start_frame_periods) / match.frame_rate * 1000,
+        "milliseconds",
+    )
 
     tracking_data["event"] = np.nan
     tracking_data["event_id"] = np.nan
@@ -175,34 +184,43 @@ def _create_sim_mat(
         np.ndarray: array containing similarity scores between every frame and events,
                     size is #frames, #events
     """
-
     sim_mat = np.zeros((len(tracking_batch), len(event_batch)))
-    tracking_batch["datetime"] = tracking_batch["datetime"]
 
-    for i, event in event_batch.iterrows():
-        time_diff = (tracking_batch["datetime"] - event["datetime"]) / dt.timedelta(
-            seconds=1
-        )
-        ball_loc_diff = np.hypot(
-            tracking_batch["ball_x"] - event["start_x"],
-            tracking_batch["ball_y"] - event["start_y"],
-        )
+    # Pre-compute time_diff
+    track_dt = tracking_batch["datetime"].values
+    event_dt = event_batch["datetime"].values
+    time_diff = (track_dt[:, np.newaxis] - event_dt) / pd.Timedelta(seconds=1)
 
-        if not np.isnan(event["player_id"]) and event["player_id"] != MISSING_INT:
-            column_id_player = match.player_id_to_column_id(
-                player_id=event["player_id"]
-            )
+    # Pre-compute ball_loc_diff
+    track_bx = tracking_batch["ball_x"].values
+    track_by = tracking_batch["ball_y"].values
+    event_x = event_batch["start_x"].values
+    event_y = event_batch["start_y"].values
+    ball_x_diff = track_bx[:, np.newaxis] - event_x
+    ball_y_diff = track_by[:, np.newaxis] - event_y
+    ball_loc_diff = np.hypot(ball_x_diff, ball_y_diff)
+
+    # Pre-compute time diff and ball diff for all events
+    time_ball_diff = np.abs(time_diff) + ball_loc_diff / 5
+
+    for row in event_batch.itertuples():
+        i = row.Index
+        if not np.isnan(row.player_id) and row.player_id != MISSING_INT:
+            column_id_player = match.player_id_to_column_id(player_id=row.player_id)
             player_ball_diff = np.hypot(
-                tracking_batch["ball_x"] - tracking_batch[f"{column_id_player}_x"],
-                tracking_batch["ball_y"] - tracking_batch[f"{column_id_player}_y"],
+                tracking_batch["ball_x"].values
+                - tracking_batch[f"{column_id_player}_x"].values,
+                tracking_batch["ball_y"].values
+                - tracking_batch[f"{column_id_player}_y"].values,
             )
             # player indicated by the event data is not present in the tracking data
-            if player_ball_diff.isnull().all():
-                player_ball_diff = (np.abs(time_diff) + ball_loc_diff / 5) / 2
+            if np.isnan(player_ball_diff).all():
+                player_ball_diff = time_ball_diff[:, i] / 2
         else:
-            player_ball_diff = (np.abs(time_diff) + ball_loc_diff / 5) / 2
+            player_ball_diff = time_ball_diff[:, i] / 2
+
         # similarity function from: https://kwiatkowski.io/sync.soccer
-        sim_mat[:, i] = np.abs(time_diff) + ball_loc_diff / 5 + player_ball_diff
+        sim_mat[:, i] = time_ball_diff[:, i] + player_ball_diff
 
     sim_mat[np.isnan(sim_mat)] = np.nanmax(
         sim_mat
@@ -248,15 +266,23 @@ def _needleman_wunsch(
             t[0] = F[i, j] + sim_mat[i, j]
             t[1] = F[i, j + 1] + gap_frame  # top + gap frame
             t[2] = F[i + 1, j] + gap_event  # left + gap event
-            tmax = np.max(t)
-            F[i + 1, j + 1] = tmax
 
-            if t[0] == tmax:  # match
+            # manually calculate tmax instead of using np.max() since it is
+            # faster when using small arrays. On top of that, we can now fill in
+            # the pointer matrix at the same time.
+            if t[0] >= t[1] and t[0] >= t[2]:  # t[0] = tmax thus whe got a match
+                tmax = t[0]
                 P[i + 1, j + 1] += 2
-            if t[1] == tmax:  # frame unassigned
+            elif (
+                t[1] >= t[0] and t[1] >= t[2]
+            ):  # t[1] = tmax thus we got a frame unassigned
+                tmax = t[1]
                 P[i + 1, j + 1] += 3
-            if t[2] == tmax:  # event unassigned
+            else:  # t[2] = tmax thus we got an event unassigned
+                tmax = t[2]
                 P[i + 1, j + 1] += 4
+
+            F[i + 1, j + 1] = tmax
 
     # Trace through an optimal alignment.
     i = n_frames
