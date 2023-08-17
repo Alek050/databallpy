@@ -247,8 +247,8 @@ def plot_events(
     event_data = match.event_data
 
     if len(events) > 0:
-        assert all([x in match.event_data["event"].unique() for x in events])
-        event_data = event_data.loc[event_data["event"].isin(events)]
+        assert all([x in match.event_data["databallpy_event"].unique() for x in events])
+        event_data = event_data.loc[event_data["databallpy_event"].isin(events)]
     if outcome is not None:
         assert outcome in [0, 1]
         event_data = event_data.loc[event_data["outcome"] == outcome]
@@ -384,7 +384,7 @@ def save_match_clip(
 
     if len(events) > 0:
         assert (
-            "event" in match.tracking_data.columns
+            "databallpy_event" in match.tracking_data.columns
         ), "No event column found in match.tracking_data.columns, did you synchronize\
             event and tracking data?"
 
@@ -484,7 +484,7 @@ def save_match_clip(
             # Note: this should be last in this function since it assumes that all
             # other info is already plotted in the axes
             if len(events) > 0:
-                if td.loc[idx, "event"] in events:
+                if td.loc[idx, "databallpy_event"] in events:
                     event = (
                         match.event_data[
                             match.event_data["event_id"] == td.loc[idx, "event_id"]
@@ -494,7 +494,7 @@ def save_match_clip(
                     )
 
                     player_name = event["player_name"]
-                    event_name = event["event"]
+                    event_name = event["databallpy_event"]
 
                     # Add event text
                     fig_obj = ax.text(

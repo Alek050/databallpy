@@ -184,7 +184,7 @@ class TestMatch(unittest.TestCase):
                     {
                         "event_id": [1],
                         "player": ["player_1"],
-                        "event": ["pass"],
+                        "databallpy_event": ["pass"],
                     }
                 ),
                 event_data_provider=self.ed_provider,
@@ -211,7 +211,7 @@ class TestMatch(unittest.TestCase):
                 event_data=pd.DataFrame(
                     {
                         "event_id": [1],
-                        "event": ["pass"],
+                        "databallpy_event": ["pass"],
                         "period_id": [1],
                         "team_id": [1],
                         "player_id": [1],
@@ -245,7 +245,7 @@ class TestMatch(unittest.TestCase):
                 event_data=pd.DataFrame(
                     {
                         "event_id": [1],
-                        "event": ["pass"],
+                        "databallpy_event": ["pass"],
                         "period_id": [1],
                         "team_id": [1],
                         "player_id": [1],

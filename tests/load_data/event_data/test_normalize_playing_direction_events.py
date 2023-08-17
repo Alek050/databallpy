@@ -11,15 +11,15 @@ class TestNormalizePlayingDirection(unittest.TestCase):
     def setUp(self) -> None:
         self.event_data = pd.DataFrame(
             {
-                "event": [
+                "databallpy_event": [
                     "pass",
                     "pass",
                     "shot",
-                    "goal",
-                    "miss",
-                    "goal",
                     "shot",
-                    "miss",
+                    "shot",
+                    "shot",
+                    "shot",
+                    "shot",
                 ],
                 "period_id": [1, 1, 1, 1, 2, 2, 2, 2],
                 "start_x": [12, 40, -30, -30, 15, 16, 20, 25],
@@ -31,15 +31,15 @@ class TestNormalizePlayingDirection(unittest.TestCase):
     def test_normalize_playing_direction(self):
         expected = pd.DataFrame(
             {
-                "event": [
+                "databallpy_event": [
                     "pass",
                     "pass",
                     "shot",
-                    "goal",
-                    "miss",
-                    "goal",
                     "shot",
-                    "miss",
+                    "shot",
+                    "shot",
+                    "shot",
+                    "shot",
                 ],
                 "period_id": [1, 1, 1, 1, 2, 2, 2, 2],
                 "start_x": [12, -40, 30, -30, 15, 16, -20, -25],

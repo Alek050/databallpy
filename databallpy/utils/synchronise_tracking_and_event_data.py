@@ -27,24 +27,29 @@ def synchronise_tracking_and_event_data(
         'save', 'foul', 'miss', 'challenge', 'goal'
 
     """
+    # events_to_sync = [
+    #     "pass",
+    #     "aerial",
+    #     "interception",
+    #     "ball recovery",
+    #     "dispossessed",
+    #     "tackle",
+    #     "take on",
+    #     "clearance",
+    #     "blocked pass",
+    #     "offside pass",
+    #     "attempt saved",
+    #     "save",
+    #     "foul",
+    #     "miss",
+    #     "challenge",
+    #     "goal",
+    #     "shot",
+    # ]
     events_to_sync = [
         "pass",
-        "aerial",
-        "interception",
-        "ball recovery",
-        "dispossessed",
-        "tackle",
-        "take on",
-        "clearance",
-        "blocked pass",
-        "offside pass",
-        "attempt saved",
-        "save",
-        "foul",
-        "miss",
-        "challenge",
-        "goal",
         "shot",
+        "dribble",
     ]
 
     tracking_data = match.tracking_data
@@ -75,11 +80,11 @@ def synchronise_tracking_and_event_data(
         "milliseconds",
     )
 
-    tracking_data["event"] = np.nan
+    tracking_data["databallpy_event"] = np.nan
     tracking_data["event_id"] = np.nan
     event_data["tracking_frame"] = np.nan
 
-    mask_events_to_sync = event_data["event"].isin(events_to_sync)
+    mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
     event_data = event_data[mask_events_to_sync]
 
     periods_played = match.periods[match.periods["start_frame"] > 0]["period"].values
@@ -118,9 +123,9 @@ def synchronise_tracking_and_event_data(
 
         tracking_data_period = tracking_data[tracking_data["period"] == p]
         event_data_period = event_data[event_data["period_id"] == p].copy()
-        start_events = ["pass", "miss", "goal"]
+        start_events = ["pass", "shot"]
         datetime_first_event = event_data_period[
-            event_data_period["event"].isin(start_events)
+            event_data_period["databallpy_event"].isin(start_events)
         ].iloc[0]["datetime"]
         datetime_first_tracking_frame = tracking_data_period[
             tracking_data_period["ball_status"] == "alive"
@@ -151,10 +156,10 @@ def synchronise_tracking_and_event_data(
             event_frame_dict = _needleman_wunsch(sim_mat)
             for event, frame in event_frame_dict.items():
                 event_id = int(event_batch.loc[event, "event_id"])
-                event_type = event_batch.loc[event, "event"]
+                event_type = event_batch.loc[event, "databallpy_event"]
                 event_index = int(event_batch.loc[event, "index"])
                 tracking_frame = int(tracking_batch.loc[frame, "index"])
-                tracking_data.loc[tracking_frame, "event"] = event_type
+                tracking_data.loc[tracking_frame, "databallpy_event"] = event_type
                 tracking_data.loc[tracking_frame, "event_id"] = event_id
                 event_data.loc[event_index, "tracking_frame"] = tracking_frame
 

@@ -86,6 +86,16 @@ EVENT_TYPE_IDS = {
     77: "player off pitch",
 }
 
+opta_to_databallpy_map = {
+    "pass": "pass",
+    "take on": "dribble",
+    "offside pass": "pass",
+    "miss": "shot",
+    "post": "shot",
+    "attempt saved": "shot",
+    "goal": "shot",
+}
+
 
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
@@ -323,14 +333,15 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         pd.DataFrame: all events of the match in a pd dataframe
     """
 
-    file = open(f24_loc, "r")
-    lines = file.read()
+    with open(f24_loc, "r") as file:
+        lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
     result_dict = {
         "event_id": [],
         "type_id": [],
-        "event": [],
+        "opta_event": [],
+        "databallpy_event": [],
         "period_id": [],
         "minutes": [],
         "seconds": [],
@@ -363,7 +374,7 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
             # Unknown event
             event_name = None
 
-        result_dict["event"].append(event_name)
+        result_dict["opta_event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
         result_dict["minutes"].append(int(event.attrs["min"]))
         result_dict["seconds"].append(int(event.attrs["sec"]))
@@ -381,7 +392,10 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
             pd.to_datetime(event.attrs["timestamp"], utc=True)
         )
 
-    file.close()
+    result_dict["databallpy_event"] = [np.nan] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
+    event_data["databallpy_event"] = event_data["opta_event"].map(
+        opta_to_databallpy_map
+    )
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
     return event_data

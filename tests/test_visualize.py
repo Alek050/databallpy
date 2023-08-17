@@ -52,7 +52,7 @@ class TestVisualize(unittest.TestCase):
         # Call plot_events function with different arguments
         fig, ax = plot_events(
             match,
-            events=["pass", "take on", "start"],
+            events=["pass", "dribble"],
             player_ids=[45849],
             team_id=3,
             pitch_color="green",
@@ -71,7 +71,7 @@ class TestVisualize(unittest.TestCase):
 
         fig, ax = plot_events(
             match,
-            events=["pass", "take on", "start"],
+            events=["pass", "dribble"],
             player_ids=[45849],
             outcome=1,
             team_id=3,
@@ -85,11 +85,11 @@ class TestVisualize(unittest.TestCase):
 
         fig, ax = plot_events(
             match,
-            events=["pass", "take on", "start"],
+            events=["pass", "dribble"],
             player_ids=[45849],
             team_id=3,
             pitch_color="green",
-            color_by_col="event",
+            color_by_col="databallpy_event",
             team_colors=["blue", "red"],
             title="My Test Plot2",
         )
@@ -99,12 +99,12 @@ class TestVisualize(unittest.TestCase):
         # Check plot elements
         self.assertEqual(ax.get_title(), "My Test Plot2")
         self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "pass")
-        self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "take on")
+        self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "dribble")
         self.assertEqual(len(ax.collections), 5)
 
         fig, ax = plot_events(
             match,
-            events=["pass", "take on", "start"],
+            events=["pass", "dribble"],
             player_ids=[45849],
             team_id=3,
             pitch_color="green",
@@ -168,21 +168,8 @@ class TestVisualize(unittest.TestCase):
         synced_match.synchronise_tracking_and_event_data(n_batches_per_half=1)
         events = [
             "pass",
-            "aerial",
-            "interception",
-            "ball recovery",
-            "dispossessed",
-            "tackle",
-            "take on",
-            "clearance",
-            "blocked pass",
-            "offside pass",
-            "attempt saved",
-            "save",
-            "foul",
-            "miss",
-            "challenge",
-            "goal",
+            "dribble",
+            "shot",
         ]
 
         assert not os.path.exists("tests/test_data/test_match_with_events.mp4")
