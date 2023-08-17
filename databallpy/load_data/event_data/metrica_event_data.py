@@ -18,7 +18,7 @@ from databallpy.load_data.metrica_metadata import (
     _get_td_channels,
     _update_metadata,
 )
-from databallpy.utils.utils import _to_float, _to_int
+from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
 
 metrica_databallpy_map = {
     "pass": "pass",
@@ -131,7 +131,6 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
     result_dict = {
         "event_id": [],
         "type_id": [],
-        "metrica_event": [],
         "databallpy_event": [],
         "period_id": [],
         "minutes": [],
@@ -147,6 +146,7 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
         "end_x": [],
         "end_y": [],
         "td_frame": [],
+        "metrica_event": [],
     }
 
     check_outcome_last_event = False
@@ -165,7 +165,7 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
         result_dict["player_id"].append(_to_int(event["from"]["id"][1:]))
         result_dict["player_name"].append(event["from"]["name"])
 
-        # set outcome for pass or carry events
+        # set outcome for pass or dribble/carry events
         if check_outcome_last_event:
             if (
                 event_name in out_of_posession_events
@@ -193,7 +193,7 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
                 outcome = 1 if subtypes["name"] == "GOAL" else 0
             result_dict["outcome"].append(outcome)
         else:
-            result_dict["outcome"].append(np.nan)
+            result_dict["outcome"].append(MISSING_INT)
 
         # Check if outcome needs to be set based on next event
         if event_name in ["pass", "carry"]:
@@ -206,13 +206,15 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
             result_dict["to_player_id"].append(_to_int(event["to"]["id"][1:]))
             result_dict["to_player_name"].append(event["to"]["name"])
         else:
-            result_dict["to_player_id"].append(np.nan)
+            result_dict["to_player_id"].append(MISSING_INT)
             result_dict["to_player_name"].append(None)
         result_dict["end_x"].append(_to_float(event["end"]["x"]))
         result_dict["end_y"].append(_to_float(event["end"]["y"]))
         result_dict["td_frame"].append(event["start"]["frame"])
 
-    result_dict["databallpy_event"] = [np.nan] * len(result_dict["event_id"])
+    result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     events = pd.DataFrame(result_dict)
-    events["databallpy_event"] = events["metrica_event"].map(metrica_databallpy_map)
+    events["databallpy_event"] = (
+        events["metrica_event"].map(metrica_databallpy_map).replace([np.nan], [None])
+    )
     return events

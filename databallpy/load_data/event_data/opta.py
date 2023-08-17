@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.tz_modification import utc_to_local_datetime
+from databallpy.utils.utils import MISSING_INT
 
 EVENT_TYPE_IDS = {
     1: "pass",
@@ -94,6 +95,7 @@ opta_to_databallpy_map = {
     "post": "shot",
     "attempt saved": "shot",
     "goal": "shot",
+    "own goal": "own_goal",
 }
 
 
@@ -267,7 +269,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         match_id=match_id,
         pitch_dimensions=pitch_dimensions,
         periods_frames=periods,
-        frame_rate=np.nan,
+        frame_rate=MISSING_INT,
         home_team_id=teams_info["home"]["team_id"],
         home_team_name=str(teams_info["home"]["team_name"]),
         home_players=teams_player_info["home"],
@@ -340,7 +342,6 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     result_dict = {
         "event_id": [],
         "type_id": [],
-        "opta_event": [],
         "databallpy_event": [],
         "period_id": [],
         "minutes": [],
@@ -351,6 +352,7 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         "start_x": [],
         "start_y": [],
         "datetime": [],
+        "opta_event": [],
     }
 
     events = soup.find_all("Event")
@@ -382,20 +384,27 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         if "player_id" in event.attrs.keys():
             result_dict["player_id"].append(int(event.attrs["player_id"]))
         else:
-            result_dict["player_id"].append(np.nan)
+            result_dict["player_id"].append(MISSING_INT)
 
         result_dict["team_id"].append(int(event.attrs["team_id"]))
-        result_dict["outcome"].append(int(event.attrs["outcome"]))
+        if event_name in ["pass", "take on"]:
+            result_dict["outcome"].append(int(event.attrs["outcome"]))
+        else:
+            result_dict["outcome"].append(MISSING_INT)
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
         result_dict["datetime"].append(
             pd.to_datetime(event.attrs["timestamp"], utc=True)
         )
 
-    result_dict["databallpy_event"] = [np.nan] * len(result_dict["event_id"])
+    result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
-    event_data["databallpy_event"] = event_data["opta_event"].map(
-        opta_to_databallpy_map
+    event_data["databallpy_event"] = (
+        event_data["opta_event"].map(opta_to_databallpy_map).replace([np.nan], [None])
     )
+    event_data.loc[
+        event_data["opta_event"].isin(["miss", "post", "attempt saved"]), "outcome"
+    ] = 0
+    event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
     return event_data

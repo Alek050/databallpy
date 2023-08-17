@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from databallpy.utils.utils import MISSING_INT
+
 
 @dataclass
 class Metadata:
@@ -79,7 +81,7 @@ class Metadata:
                 )
 
         # frame_rate
-        if not pd.isnull(self.frame_rate):
+        if not pd.isnull(self.frame_rate) and not self.frame_rate == MISSING_INT:
             if not isinstance(self.frame_rate, int):
                 raise TypeError(
                     f"frame_rate should be an integer, not a {type(self.frame_rate)}"
