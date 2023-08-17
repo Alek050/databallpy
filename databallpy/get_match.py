@@ -21,7 +21,8 @@ from databallpy.load_data.tracking_data.metrica_tracking_data import (
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
 from databallpy.match import Match
-from databallpy.utils.utils import MISSING_INT, align_player_ids
+from databallpy.utils.align_player_ids import align_player_ids
+from databallpy.utils.utils import MISSING_INT
 
 
 def get_match(

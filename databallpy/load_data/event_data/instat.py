@@ -10,27 +10,27 @@ from databallpy.utils.tz_modification import utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT
 
 instat_databallpy_map = {
-    "Attacking pass accurate": "pass",
-    "Attacking pass inaccurate": "pass",
-    "Unsuccessful dribbling": "dribble",
-    "Successful dribbling": "dribble",
-    "Dribbling": "dribble",
-    "Inaccurate key pass": "pass",
-    "Crosses inaccurate": "pass",
-    "Blocked shot": "shot",
-    "Shots blocked": "shot",
-    "Wide shot": "shot",
-    "Accurate crossing from set piece with a shot": "pass",
-    "Shot on target": "shot",
-    "Crosses accurate": "pass",
-    "Pass into offside": "pass",
-    "Accurate key pass": "pass",
-    "Shot blocked by field player": "shot",
-    "Inaccurate set-piece cross": "pass",
-    "Accurate crossing from set piece": "pass",
-    "Key assist": "pass",
-    "Goal": "shot",
-    "Accurate crossing from set piece with a goal": "pass",
+    "Attacking pass accurate": ["pass", 1],
+    "Attacking pass inaccurate": ["pass", 0],
+    "Unsuccessful dribbling": ["dribble", 0],
+    "Successful dribbling": ["dribble", 1],
+    "Dribbling": ["dribble", MISSING_INT],
+    "Inaccurate key pass": ["pass", 0],
+    "Crosses inaccurate": ["pass", 1],
+    "Blocked shot": ["shot", 0],
+    "Shots blocked": ["shot", 0],
+    "Wide shot": ["shot", 0],
+    "Accurate crossing from set piece with a shot": ["pass", 1],
+    "Shot on target": ["shot", 0],
+    "Crosses accurate": ["pass", 1],
+    "Pass into offside": ["pass", 0],
+    "Accurate key pass": ["pass", 1],
+    "Shot blocked by field player": ["shot", 0],
+    "Inaccurate set-piece cross": ["pass", 0],
+    "Accurate crossing from set piece": ["pass", 1],
+    "Key assist": ["pass", 1],
+    "Goal": ["shot", 1],
+    "Accurate crossing from set piece with a goal": ["pass", 1],
 }
 
 
@@ -210,27 +210,6 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     Returns:
         pd.DataFrame: event data of the match
     """
-    # EVENT_AND_OUTCOME_INSTAT_EVENTS = {
-    #     "Attacking pass accurate": ["pass", 1],
-    #     "Accurate key pass": ["pass", 1],
-    #     "Attacking pass inaccurate": ["pass", 0],
-    #     "Inaccurate key pass": ["pass", 0],
-    #     "Pass into offside": ["pass", 0],
-    #     "Successful dribbling": ["dribbling", 1],
-    #     "Unsuccessful dribbling": ["dribbling", 0],
-    #     "Dribbling": ["dribbling", MISSING_INT],
-    #     "Crosses accurate": ["cross", 1],
-    #     "Accurate crossing from set piece with a shot": ["cross", 1],
-    #     "Accurate crossing from set piece": ["cross", 1],
-    #     "Accurate crossing from set piece with a goal": ["cross", 1],
-    #     "Crosses inaccurate": ["cross", 0],
-    #     "Cross interception": ["cross", 0],
-    #     "Inaccurate blocked cross": ["cross", 0],
-    #     "Inaccurate set-piece cross": ["cross", 0],
-    #     "Shot on target": ["shot", 1],
-    #     "Blocked shot": ["shot", 0],
-    #     "Wide shot": ["shot", 0],
-    # }
 
     with open(event_data_loc, "r") as f:
         data = f.read()
@@ -240,7 +219,6 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     result_dict = {
         "event_id": [],
         "type_id": [],
-        "instat_event": [],
         "databallpy_event": [],
         "period_id": [],
         "minutes": [],
@@ -253,6 +231,7 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
         "end_x": [],
         "end_y": [],
         "datetime": [],
+        "instat_event": [],
     }
 
     start_time_period = {
@@ -271,50 +250,49 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
         if not event["action_id"].startswith(("16", "15")):
             result_dict["event_id"].append(int(event["id"]))
             result_dict["type_id"].append(int(event["action_id"]))
-
-            # if str(event["action_name"]) in EVENT_AND_OUTCOME_INSTAT_EVENTS.keys():
-            #     event_name, outcome = EVENT_AND_OUTCOME_INSTAT_EVENTS[
-            #         str(event["action_name"])
-            #     ]
-            #     result_dict["event"].append(event_name)
-            #     result_dict["outcome"].append(outcome)
-            # else:
             result_dict["instat_event"].append(str(event["action_name"]))
-            result_dict["outcome"].append(np.nan)
-
             result_dict["period_id"].append(int(event["half"]))
             result_dict["minutes"].append(float(event["second"]) // 60)
             result_dict["seconds"].append(float(event["second"]) % 60)
+
             if "player_id" in event.keys():
                 result_dict["player_id"].append(int(event["player_id"]))
             else:
                 result_dict["player_id"].append(MISSING_INT)
+
             if "team_id" in event.keys():
                 result_dict["team_id"].append(int(event["team_id"]))
             else:
                 result_dict["team_id"].append(MISSING_INT)
+
             if "pos_x" in event.keys():
                 result_dict["start_x"].append(float(event["pos_x"]))
                 result_dict["start_y"].append(float(event["pos_y"]))
             else:
                 result_dict["start_x"].append(np.nan)
                 result_dict["start_y"].append(np.nan)
+
             if "pos_dest_x" in event.keys():
                 result_dict["end_x"].append(float(event["pos_dest_x"]))
                 result_dict["end_y"].append(float(event["pos_dest_y"]))
             else:
                 result_dict["end_x"].append(np.nan)
                 result_dict["end_y"].append(np.nan)
+
             result_dict["datetime"].append(
                 start_time_period[int(event["half"])]
                 + dt.timedelta(milliseconds=float(event["second"]) * 1000)
             )
 
-    result_dict["databallpy_event"] = [np.nan] * len(result_dict["event_id"])
+    result_dict["outcome"] = [MISSING_INT] * len(result_dict["event_id"])
+    result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
 
     event_data = pd.DataFrame(result_dict)
-    event_data["databallpy_event"] = event_data["instat_event"].map(
-        instat_databallpy_map
+    event_data["databallpy_event"] = event_data["instat_event"].apply(
+        lambda x: instat_databallpy_map.get(x, [None, MISSING_INT])[0]
+    )
+    event_data["outcome"] = event_data["instat_event"].apply(
+        lambda x: instat_databallpy_map.get(x, [None, MISSING_INT])[1]
     )
 
     start_events = ["pass", "shot"]

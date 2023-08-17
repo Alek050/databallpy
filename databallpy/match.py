@@ -10,6 +10,7 @@ from databallpy.errors import DataBallPyError
 from databallpy.utils.synchronise_tracking_and_event_data import (
     synchronise_tracking_and_event_data,
 )
+from databallpy.utils.utils import MISSING_INT
 
 
 def requires_tracking_data(func):
@@ -387,7 +388,7 @@ def check_inputs_match_object(match: Match):
             raise ValueError(f"{col} column in periods should have a timezone")
 
     # frame_rate
-    if not pd.isnull(match.frame_rate):
+    if not pd.isnull(match.frame_rate) and not match.frame_rate == MISSING_INT:
         if not isinstance(match.frame_rate, int):
             raise TypeError(
                 f"frame_rate should be an integer, not a {type(match.frame_rate)}"
