@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import pandas as pd
 
 
 @dataclass
-class Event(ABC):
+class Event:
     """This is the base event class from which the specific event classes are inherited.
     It containts all the basic information that is available for every event.
 
@@ -15,6 +14,8 @@ class Event(ABC):
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
         datetime (pd.Timestamp): datetime at which the event occured
+        x_start (float): x-coordinate where the event occured
+        y_start (float): y-coordinate where the event occured
     """
 
     event_id: int
@@ -48,7 +49,3 @@ class Event(ABC):
 
         if not isinstance(self.y_start, float):
             raise TypeError(f"y_start should be a float, not {type(self.y_start)}")
-
-    @abstractmethod
-    def to_dataframe(self):
-        pass
