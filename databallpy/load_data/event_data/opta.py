@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from databallpy.load_data.event_data.PassEvent import PassEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.tz_modification import utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT
@@ -355,6 +356,8 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         "opta_event": [],
     }
 
+    passes_dict = {}
+
     events = soup.find_all("Event")
     for event in events:
         result_dict["event_id"].append(int(event.attrs["id"]))
@@ -375,7 +378,9 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         else:
             # Unknown event
             event_name = None
-
+        if event_name == "pass":
+            passes_dict = _add_info_to_passes_dict(event, passes_dict)
+        
         result_dict["opta_event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
         result_dict["minutes"].append(int(event.attrs["min"]))
@@ -408,3 +413,27 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
     return event_data
+
+def _add_info_to_passes_dict(event ,passes_dict: dict) -> dict:
+    pass_id = int(event.attrs["event_id"])
+    
+    import pdb;pdb.set_trace()
+    _pass = PassEvent(
+        event_id = pass_id,
+        period_id = int(event.attrs["period_id"]),
+        minutes = int(event.attrs["min"]),
+        seconds = int(event.attrs["sec"]),
+        datetime = pd.to_datetime(event.attrs["timestamp"], utc=True),
+        x_start = float(event.attrs["x"]),
+        y_start = float(event.attrs["y"]),
+        outcome = int(event.attrs["outcome"]),
+        team_id = int(event.attrs["team_id"]),
+        player_id = int(event.attrs["player_id"]),
+        x_end =  float(event.find("Q", attrs={"qualifier_id": "140"})["value"]),
+        y_end =  float(event.find("Q", attrs={"qualifier_id": "141"})["value"])
+    )
+    import pdb;pdb.set_trace()
+
+    passes_dict[pass_id] = _pass
+    return passes_dict
+
