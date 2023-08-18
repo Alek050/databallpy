@@ -3,6 +3,9 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
+import bs4
+
+from databallpy.load_data.event_data.ShotEvent import ShotEvent
 
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.tz_modification import utc_to_local_datetime
@@ -97,6 +100,56 @@ opta_to_databallpy_map = {
     "goal": "shot",
     "own goal": "own_goal",
 }
+
+shot_outcomes = {
+    13: "miss_off_target",
+    14: "hit_post",
+    15: "miss_on_target",
+    16: "goal",
+    153: "miss_off_target"
+}
+
+shot_origins_qualifier = {
+    9: "penalty",
+    22: "regular_play",
+    23: "counter_attack",
+    24: "crossed_free_kick",
+    25: "corner_kick",
+    26: "free_kick"
+}
+
+set_piece_qualifiers = {
+    124: "goal_kick",
+    5: "free_kick",
+    107: "throw_in",
+    6: "corner_kick",
+    9: "penalty",
+    279: "kick_off",
+}
+
+body_part_qualifiers = {
+    3: "head",
+    15: "head",
+    20: "right_foot",
+    21: "other",
+    72: "left_foot",
+}
+
+pass_type_qualifiers = {
+    1: "long_ball",
+    2: "cross",
+    4: "through_ball",
+    155: "chipped",
+    157: "lounge",
+    168: "flick_on",
+    196: "switch_off_play",
+    210: "pass_"
+}
+
+
+Y_TARGET_QUALIFIER = 102
+Z_TARGET_QUALIFIER = 103
+
 
 
 def load_opta_event_data(
@@ -325,7 +378,7 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
 
 def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     """Function to load the f27 .xml, the events of the match.
-    Note: this function does ignore qualifiers for now
+    Note: this function does ignore most qualifiers for now.
 
     Args:
         f24_loc (str): location of the f24.xml file
@@ -334,6 +387,8 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: all events of the match in a pd dataframe
     """
+
+    shot_events = {}
 
     with open(f24_loc, "r") as file:
         lines = file.read()
@@ -375,6 +430,9 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         else:
             # Unknown event
             event_name = None
+        
+        if event_name in ["miss", "post", "goal", "own goal"]:
+            shot_events[event.attrs["id"]] = _make_shot_event_instance(event)
 
         result_dict["opta_event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
@@ -407,4 +465,45 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     ] = 0
     event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
-    return event_data
+    return event_data, shot_events
+
+def _make_shot_event_instance(event: bs4.element.Tag, pitch_dimensions: list = [106.0, 68.0]):
+    """Function to create a shot class based on the qualifiers of the event
+
+    Args:
+        event (bs4.element.Tag): shot event from the f24.xml
+        pitch_dimensions (list, optional): size of the pitch in x and y direction. Defaults to [106.0, 68.0].
+
+    Returns:
+        dict: Returns a dict with the shot data. The key is the id of the event and the value is a ShotEvent instance.
+    """
+    shot_outcome = shot_outcomes[int(event["type_id"])]
+
+    if shot_outcome in ["goal", "miss_on_target"]:
+        y_target = 7.32 / 100 * float(event.find("Q", {"qualifier_id": str(Y_TARGET_QUALIFIER)})["value"]) - 3.66
+        z_target = 2.44 / 100 * float(event.find("Q", {"qualifier_id": str(Z_TARGET_QUALIFIER)})["value"])
+    else:
+        y_target, z_target = np.nan, np.nan
+    
+    qualifiers = event.find_all("Q")
+
+    type_of_play_list = [shot_origins_qualifier[int(q["qualifier_id"])] for q in qualifiers if int(q["qualifier_id"]) in shot_origins_qualifier]
+    type_of_play = type_of_play_list[0] if len(type_of_play_list) > 0 else "regular_play"
+
+    body_part_list = [body_part_qualifiers[int(q["qualifier_id"])] for q in qualifiers if int(q["qualifier_id"]) in body_part_qualifiers]
+    body_part = body_part_list[0] if len(body_part_list) > 0  else None
+
+    return ShotEvent(
+        event_id=int(event.attrs["id"]),
+        period_id=int(event.attrs["period_id"]),
+        minutes=int(event.attrs["min"]),
+        seconds=int(event.attrs["sec"]),
+        datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
+        x_start=float(event.attrs["x"]) / 100 * pitch_dimensions[0] - (pitch_dimensions[0] / 2),
+        y_start=float(event.attrs["y"]) / 100 * pitch_dimensions[1] - (pitch_dimensions[1] / 2),
+        shot_outcome=shot_outcome,
+        y_target=y_target,
+        z_target=z_target,
+        body_part=body_part,
+        type_of_play=type_of_play,
+    )
