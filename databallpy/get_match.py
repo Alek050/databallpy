@@ -73,7 +73,7 @@ def get_match(
 
     # Check if event data should be loaded
     if event_data_loc and event_metadata_loc and event_data_provider:
-        event_data, event_metadata = load_event_data(
+        event_data, event_metadata, databallpy_events = load_event_data(
             event_data_loc=event_data_loc,
             event_metadata_loc=event_metadata_loc,
             event_data_provider=event_data_provider,
@@ -96,6 +96,13 @@ def get_match(
             )
             event_data["start_x"] *= x_correction
             event_data["start_y"] *= y_correction
+
+            # correct the databallpy event instances as well
+            if databallpy_events is not None:
+                for dict_of_events in databallpy_events.values():
+                    for event in dict_of_events.values():
+                        event.start_x *= x_correction
+                        event.start_y *= y_correction
 
         # Merge periods
         periods_cols = event_metadata.periods_frames.columns.difference(
@@ -179,6 +186,9 @@ def get_match(
             away_players=away_players,
             country=event_metadata.country,
             allow_synchronise_tracking_and_event_data=allow_synchronise,
+            shot_events=databallpy_events["shot_events"]
+            if "shot_events" in databallpy_events.keys()
+            else {},
         )
 
     elif uses_tracking_data and not uses_event_data:
@@ -230,6 +240,9 @@ def get_match(
             away_team_name=event_metadata.away_team_name,
             away_players=event_metadata.away_players,
             country=event_metadata.country,
+            shot_events=databallpy_events["shot_events"]
+            if "shot_events" in databallpy_events.keys()
+            else {},
         )
 
     return match
@@ -309,8 +322,9 @@ def load_event_data(
     "please open an issue in our Github repository."
 
     # Get event data and event metadata
+    databallpy_events = {}
     if event_data_provider == "opta":
-        event_data, event_metadata = load_opta_event_data(
+        event_data, event_metadata, databallpy_events = load_opta_event_data(
             f7_loc=event_metadata_loc, f24_loc=event_data_loc
         )
     elif event_data_provider == "metrica":
@@ -322,7 +336,7 @@ def load_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
 
-    return event_data, event_metadata
+    return event_data, event_metadata, databallpy_events
 
 
 def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:

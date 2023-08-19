@@ -8,7 +8,7 @@ from databallpy.load_data.event_data.opta import (
     _load_metadata,
     load_opta_event_data,
 )
-from tests.expected_outcomes import ED_OPTA, MD_OPTA
+from tests.expected_outcomes import ED_OPTA, MD_OPTA, SHOT_EVENTS_OPTA
 
 
 class TestOpta(unittest.TestCase):
@@ -20,11 +20,19 @@ class TestOpta(unittest.TestCase):
 
     def test_load_opta_event_data(self):
 
-        event_data, metadata = load_opta_event_data(
+        event_data, metadata, dbp_events = load_opta_event_data(
             self.f7_loc, self.f24_loc, pitch_dimensions=[10.0, 10.0]
         )
         pd.testing.assert_frame_equal(event_data, ED_OPTA)
         assert metadata == MD_OPTA
+
+        # SHOT_EVENTS_OPTA is scaled to a pitch of [106, 68],
+        # while here [10, 10] is expected.
+        shot_events_opta = SHOT_EVENTS_OPTA.copy()
+        for shot_event in shot_events_opta.values():
+            shot_event.start_x = shot_event.start_x / 106 * 10
+            shot_event.start_y = shot_event.start_y / 68 * 10
+        assert dbp_events == {"shot_events": SHOT_EVENTS_OPTA}
 
     def test_load_metadata(self):
 
@@ -76,13 +84,15 @@ class TestOpta(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_result)
 
     def test_load_event_data(self):
-        event_data = _load_event_data(self.f24_loc, country="Netherlands")
+        event_data, dbp_events = _load_event_data(
+            self.f24_loc, away_team_id=194, country="Netherlands"
+        )
 
         # player name is added in other function later in the pipeline
         expected_event_data = ED_OPTA.copy().drop("player_name", axis=1)
 
         # away team coordinates are changed later on in the pipeline
-        expected_event_data.loc[[0, 2, 6, 8], ["start_x", "start_y"]] *= -1
+        expected_event_data.loc[[0, 2, 6, 8, 10], ["start_x", "start_y"]] *= -1
 
         # scaling of pitch dimension is done later on in the pipeline
         expected_event_data.loc[:, ["start_x", "start_y"]] = (
@@ -90,3 +100,5 @@ class TestOpta(unittest.TestCase):
         ) * 10
 
         pd.testing.assert_frame_equal(event_data, expected_event_data)
+
+        assert dbp_events == {"shot_events": SHOT_EVENTS_OPTA}
