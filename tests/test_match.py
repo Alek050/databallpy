@@ -6,6 +6,7 @@ import pandas as pd
 from databallpy.errors import DataBallPyError
 from databallpy.get_match import get_match
 from databallpy.match import Match
+from expected_outcomes import SHOT_EVENTS_OPTA_TRACAB
 
 
 class TestMatch(unittest.TestCase):
@@ -829,6 +830,52 @@ class TestMatch(unittest.TestCase):
                 away_players=self.expected_match_tracab_opta.away_players,
                 country=["Netherlands", "Germany"],
             )
+        # shot_events
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data,
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+                shot_events=["shot", "goal"],
+            )
+        # shot_events
+        with self.assertRaises(TypeError):
+            Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data,
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+                shot_events={"shot": "goal"},
+            )
 
     def test_preprosessing_status(self):
         match = self.match_to_sync.copy()
@@ -906,6 +953,80 @@ class TestMatch(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.expected_match_tracab_opta.player_id_to_column_id(4)
+
+    def test_match_shots_df(self):
+        expected_df = pd.DataFrame(
+            {
+                "event_id": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].event_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].event_id,
+                ],
+                "player_id": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].player_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].player_id,
+                ],
+                "period_id": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].period_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].period_id,
+                ],
+                "minutes": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].minutes,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].minutes,
+                ],
+                "seconds": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].seconds,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].seconds,
+                ],
+                "datetime": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].datetime,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].datetime,
+                ],
+                "start_x": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].start_x,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].start_x,
+                ],
+                "start_y": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].start_y,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].start_y,
+                ],
+                "shot_outcome": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].shot_outcome,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].shot_outcome,
+                ],
+                "y_target": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].y_target,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].y_target,
+                ],
+                "z_target": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].z_target,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].z_target,
+                ],
+                "body_part": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].body_part,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].body_part,
+                ],
+                "type_of_play": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].type_of_play,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].type_of_play,
+                ],
+                "first_touch": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].first_touch,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].first_touch,
+                ],
+                "created_oppertunity": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].created_oppertunity,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].created_oppertunity,
+                ],
+                "related_event_id": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].related_event_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].related_event_id,
+                ],
+            }
+        )
+
+        shots_df = self.expected_match_tracab_opta.shots_df
+
+        pd.testing.assert_frame_equal(shots_df, expected_df)
 
     def test_match_requires_event_data_wrapper(self):
         match = self.expected_match_opta.copy()

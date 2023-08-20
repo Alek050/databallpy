@@ -1,12 +1,13 @@
 import os
 import pickle
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import List
 
 import pandas as pd
 
 from databallpy.errors import DataBallPyError
+from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.utils.synchronise_tracking_and_event_data import (
     synchronise_tracking_and_event_data,
 )
@@ -65,19 +66,26 @@ class Match:
         away_score (int): Number of goals scored over the match by the away team.
         away_formation (str): Indication of the formation of the away team.
         country (str): The country where the match was played.
+        shot_events (dict): A dictionary with all instances of shot events.
         allow_synchronise_tracking_and_event_data (bool): If True, the tracking and
         event data can be synchronised. If False, it can not. Default = False.
+
+    Iargs:
         name (str): The home and away team name and score: "nameH 3 - 1 nameA {date}".
         home_players_column_ids (list): All column ids of the tracking data that refer
                                         to information about the home team players.
         away_players_column_ids (list): All column ids of the tracking data that refer
                                         to information about the away team players.
+        preprocessing_status (dict): A string with the status of the preprocessing.
+        shots_df (pd.DataFrame): A dataframe with all info of shots in the match.
+
 
     Funcs
         player_column_id_to_full_name: Simple function to get the full name of a player
                                        from the column id
         synchronise_tracking_and_event_data: Synchronises the tracking and event data
         save_match: Saves the match to a pickle file.
+        copy: Creates a copy of the match object.
     """
 
     tracking_data: pd.DataFrame
@@ -98,6 +106,8 @@ class Match:
     away_score: int
     away_formation: str
     country: str
+    shot_events: dict = field(default_factory=dict)
+    _shots_df: pd.DataFrame = None
     allow_synchronise_tracking_and_event_data: bool = False
 
     # to save the preprocessing status
@@ -181,6 +191,44 @@ class Match:
         else:
             raise ValueError(f"{player_id} is not in either one of the teams")
 
+    @property
+    @requires_event_data
+    def shots_df(self) -> pd.DataFrame:
+        """Function to get all shots in the match
+
+        Returns:
+            pd.DataFrame: DataFrame with all information of the shots in the match"""
+
+        if self._shots_df is None:
+            res_dict = {
+                "event_id": [shot.event_id for shot in self.shot_events.values()],
+                "player_id": [shot.player_id for shot in self.shot_events.values()],
+                "period_id": [shot.period_id for shot in self.shot_events.values()],
+                "minutes": [shot.minutes for shot in self.shot_events.values()],
+                "seconds": [shot.seconds for shot in self.shot_events.values()],
+                "datetime": [shot.datetime for shot in self.shot_events.values()],
+                "start_x": [shot.start_x for shot in self.shot_events.values()],
+                "start_y": [shot.start_y for shot in self.shot_events.values()],
+                "shot_outcome": [
+                    shot.shot_outcome for shot in self.shot_events.values()
+                ],
+                "y_target": [shot.y_target for shot in self.shot_events.values()],
+                "z_target": [shot.z_target for shot in self.shot_events.values()],
+                "body_part": [shot.body_part for shot in self.shot_events.values()],
+                "type_of_play": [
+                    shot.type_of_play for shot in self.shot_events.values()
+                ],
+                "first_touch": [shot.first_touch for shot in self.shot_events.values()],
+                "created_oppertunity": [
+                    shot.created_oppertunity for shot in self.shot_events.values()
+                ],
+                "related_event_id": [
+                    shot.related_event_id for shot in self.shot_events.values()
+                ],
+            }
+            self._shots_df = pd.DataFrame(res_dict)
+        return self._shots_df
+
     @requires_tracking_data
     @requires_event_data
     def synchronise_tracking_and_event_data(
@@ -235,6 +283,10 @@ class Match:
                 self.away_score == other.away_score
                 if not pd.isnull(self.away_score)
                 else pd.isnull(other.away_score),
+                self.shot_events == other.shot_events,
+                self._shots_df.equals(other._shots_df)
+                if self._shots_df is not None
+                else other._shots_df is None,
                 self.country == other.country,
             ]
             return all(result)
@@ -261,6 +313,8 @@ class Match:
             away_score=self.away_score,
             away_team_name=self.away_team_name,
             away_players=self.away_players.copy(),
+            shot_events=self.shot_events.copy(),
+            _shots_df=self._shots_df.copy() if self._shots_df is not None else None,
             country=self.country,
         )
 
@@ -498,6 +552,20 @@ the home team is {centroid_x}."
 from right to left the whole match. At the start  of period {period} the x centroid of \
 the away team is {centroid_x}."
                 )
+
+        # check shot_events
+        if not isinstance(match.shot_events, dict):
+            raise TypeError(
+                f"shot_events should be a dictionary, not a {type(match.shot_events)}"
+            )
+
+        for shot in match.shot_events.values():
+            if not isinstance(shot, ShotEvent):
+                raise TypeError(
+                    f"shot_events should contain only ShotEvent objects, not \
+                        {type(shot)}"
+                )
+
         # country
         if not isinstance(match.country, str):
             raise TypeError(f"country should be a string, not a {type(match.country)}")

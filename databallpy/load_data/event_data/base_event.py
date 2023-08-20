@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import pandas as pd
 
 
 @dataclass
-class Event(ABC):
+class BaseEvent:
     """This is the base event class from which the specific event classes are inherited.
     It containts all the basic information that is available for every event.
 
@@ -22,8 +21,8 @@ class Event(ABC):
     minutes: int
     seconds: int
     datetime: pd.Timestamp
-    x_start: float
-    y_start: float
+    start_x: float
+    start_y: float
 
     def __post_init__(self):
         if not isinstance(self.event_id, int):
@@ -43,12 +42,22 @@ class Event(ABC):
                 f"datetime should be pd.Timestamp, not {type(self.datetime)}"
             )
 
-        if not isinstance(self.x_start, float):
-            raise TypeError(f"x_start should be a float, not {type(self.x_start)}")
+        if not isinstance(self.start_x, float):
+            raise TypeError(f"x_start should be a float, not {type(self.start_x)}")
 
-        if not isinstance(self.y_start, float):
-            raise TypeError(f"y_start should be a float, not {type(self.y_start)}")
+        if not isinstance(self.start_y, float):
+            raise TypeError(f"y_start should be a float, not {type(self.start_y)}")
 
-    @abstractmethod
-    def to_dataframe(self):
-        pass
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BaseEvent):
+            return False
+        result = [
+            self.event_id == other.event_id,
+            self.period_id == other.period_id,
+            self.minutes == other.minutes,
+            self.seconds == other.seconds,
+            self.datetime == other.datetime,
+            round(self.start_x, 4) == round(other.start_x, 4),
+            round(self.start_y, 4) == round(other.start_y, 4),
+        ]
+        return all(result)

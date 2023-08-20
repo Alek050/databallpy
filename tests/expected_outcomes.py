@@ -3,6 +3,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 
+from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.utils import MISSING_INT
 
@@ -144,8 +145,9 @@ ED_OPTA = pd.DataFrame(
             2499594285,
             2499594291,
             2512690515,
+            2512690516,
         ],
-        "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16],
+        "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 15],
         "databallpy_event": [
             None,
             None,
@@ -157,10 +159,11 @@ ED_OPTA = pd.DataFrame(
             "dribble",
             None,
             "own_goal",
+            "shot",
         ],
-        "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2, 1],
-        "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9],
-        "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10, 17],
+        "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1],
+        "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9, 9],
+        "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10, 17, 17],
         "player_id": [
             MISSING_INT,
             MISSING_INT,
@@ -172,8 +175,9 @@ ED_OPTA = pd.DataFrame(
             45849,
             184934,
             45849,
+            184934,
         ],
-        "team_id": [194, 3, 194, 3, 3, 3, 194, 3, 194, 3],
+        "team_id": [194, 3, 194, 3, 3, 3, 194, 3, 194, 3, 194],
         "outcome": [
             MISSING_INT,
             MISSING_INT,
@@ -185,12 +189,13 @@ ED_OPTA = pd.DataFrame(
             0,
             MISSING_INT,
             1,
+            0,
         ],
         # field dimensions are [10, 10], for opta its standard [100, 100].
-        # So all vallues should be divided by 10 and minus  5 to get the
+        # So all values should be divided by 10 and minus  5 to get the
         # standard databallpy values.
-        "start_x": [5.0, -5.0, 5.0, -0.03, -1.84, -1.9, 5.0, 1.57, 1.57, -4.05],
-        "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68, 0.28],
+        "start_x": [5.0, -5.0, 5.0, -0.03, -1.84, -1.9, 5.0, 1.57, 1.57, -4.05, 4.05],
+        "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68, 0.28, -0.28],
         "datetime": np.array(
             [
                 "2023-01-22T11:28:32.117",
@@ -202,6 +207,7 @@ ED_OPTA = pd.DataFrame(
                 "2023-01-22T12:18:41.615",
                 "2023-01-22T12:18:43.119",
                 "2023-01-22T12:18:43.120",
+                "2023-01-22T12:18:44.120",
                 "2023-01-22T12:18:44.120",
             ],
             dtype="datetime64[ns]",
@@ -217,7 +223,9 @@ ED_OPTA = pd.DataFrame(
             "take on",
             "tackle",
             "own goal",
+            "attempt saved",
         ],
+        "opta_id": [1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "player_name": [
             None,
             None,
@@ -229,6 +237,7 @@ ED_OPTA = pd.DataFrame(
             "Jan Boskamp",
             "Pepijn Blok",
             "Jan Boskamp",
+            "Pepijn Blok",
         ],
     }
 )
@@ -236,6 +245,85 @@ ED_OPTA = pd.DataFrame(
 ED_OPTA["datetime"] = pd.to_datetime(ED_OPTA["datetime"]).dt.tz_localize(
     "Europe/Amsterdam"
 )
+
+SHOT_EVENTS_OPTA = {
+    2512690515: ShotEvent(
+        event_id=2512690515,
+        period_id=1,
+        minutes=9,
+        seconds=17,
+        datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+        start_x=9.5 / 100 * 106 - 53,  # standard opta pitch dimensions = [106, 68]
+        start_y=52.8 / 100 * 68 - 34,
+        z_target=18.4 / 100 * 2.44,
+        y_target=54.3 / 100 * 7.32 - (7.32 / 2),
+        player_id=45849,
+        shot_outcome="own_goal",
+        body_part="head",
+        type_of_play="corner_kick",
+        first_touch=False,
+        created_oppertunity="regular_play",
+        related_event_id=MISSING_INT,
+    ),
+    2512690516: ShotEvent(
+        event_id=2512690516,
+        period_id=1,
+        minutes=9,
+        seconds=17,
+        datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+        start_x=(9.5 / 100 * 106 - 53)
+        * -1,  # standard opta pitch dimensions = [106, 68]
+        start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
+        z_target=np.nan,
+        y_target=np.nan,
+        player_id=184934,
+        shot_outcome="blocked",
+        body_part="head",
+        type_of_play="regular_play",
+        first_touch=False,
+        created_oppertunity="regular_play",
+        related_event_id=22,
+    ),
+}
+
+SHOT_EVENTS_OPTA_TRACAB = {
+    2512690515: ShotEvent(
+        event_id=2512690515,
+        period_id=1,
+        minutes=9,
+        seconds=17,
+        datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+        start_x=9.5 / 100 * 100 - 50,  # tracab pitch dimension = [100, 50]
+        start_y=52.8 / 100 * 50 - 25,
+        z_target=18.4 / 100 * 2.44,
+        y_target=54.3 / 100 * 7.32 - (7.32 / 2),
+        player_id=45849,
+        shot_outcome="own_goal",
+        body_part="head",
+        type_of_play="corner_kick",
+        first_touch=False,
+        created_oppertunity="regular_play",
+        related_event_id=MISSING_INT,
+    ),
+    2512690516: ShotEvent(
+        event_id=2512690516,
+        period_id=1,
+        minutes=9,
+        seconds=17,
+        datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+        start_x=(9.5 / 100 * 100 - 50) * -1,  # tracab pitch dimension = [100, 50]
+        start_y=(52.8 / 100 * 50 - 25) * -1,  # times -1 because its away team
+        z_target=np.nan,
+        y_target=np.nan,
+        player_id=184934,
+        shot_outcome="blocked",
+        body_part="head",
+        type_of_play="regular_play",
+        first_touch=False,
+        created_oppertunity="regular_play",
+        related_event_id=22,
+    ),
+}
 
 MD_OPTA = Metadata(
     match_id=1908,
