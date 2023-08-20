@@ -3,6 +3,9 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
+import bs4
+
+from databallpy.load_data.event_data.ShotEvent import ShotEvent
 
 from databallpy.load_data.event_data.PassEvent import PassEvent
 from databallpy.load_data.metadata import Metadata
@@ -99,6 +102,66 @@ opta_to_databallpy_map = {
     "own goal": "own_goal",
 }
 
+shot_outcomes = {
+    13: "miss_off_target",
+    14: "hit_post",
+    15: "miss_on_target",
+    16: "goal",
+    153: "miss_off_target"
+}
+
+shot_origins_qualifier = {
+    9: "penalty",
+    22: "regular_play",
+    23: "counter_attack",
+    24: "crossed_free_kick",
+    25: "corner_kick",
+    26: "free_kick"
+}
+
+set_piece_qualifiers = {
+    124: "goal_kick",
+    5: "free_kick",
+    107: "throw_in",
+    6: "corner_kick",
+    9: "penalty",
+    279: "kick_off",
+}
+
+body_part_qualifiers = {
+    3: "head",
+    15: "head",
+    20: "right_foot",
+    21: "other",
+    72: "left_foot",
+}
+
+pass_type_qualifiers = {
+    1: "long_ball",
+    2: "cross",
+    4: "through_ball",
+    155: "chipped",
+    156: "lay-off",
+    157: "lounge",
+    168: "flick_on",
+    195: "pull_back",
+    196: "switch_off_play",
+}
+
+
+Y_TARGET_QUALIFIER = 102
+Z_TARGET_QUALIFIER = 103
+
+X_END_QUALIFIER = 140
+Y_END_QUALIFIER = 141
+PASS_LENGTH_QUALIFIER = 212
+PASS_ANGLE_QUALIFIER = 213
+
+ASSIST_TO_SHOT_QUALIFIER = 210
+
+FAIR_PLAY_QUALIFIER = 238
+
+RELATED_EVENT_ID_QUALIFIER = 55
 
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
@@ -326,7 +389,7 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
 
 def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     """Function to load the f27 .xml, the events of the match.
-    Note: this function does ignore qualifiers for now
+    Note: this function does ignore most qualifiers for now.
 
     Args:
         f24_loc (str): location of the f24.xml file
@@ -335,6 +398,9 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: all events of the match in a pd dataframe
     """
+
+    shot_events = {}
+    pass_events = {}
 
     with open(f24_loc, "r") as file:
         lines = file.read()
@@ -356,8 +422,6 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         "opta_event": [],
     }
 
-    passes_dict = {}
-
     events = soup.find_all("Event")
     for event in events:
         result_dict["event_id"].append(int(event.attrs["id"]))
@@ -378,9 +442,22 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
         else:
             # Unknown event
             event_name = None
-        if event_name == "pass":
-            passes_dict = _add_info_to_passes_dict(event, passes_dict)
         
+        if event_name in ["pass", "offside pass"]:
+            pass_events[int(event.attrs["id"])] = _make_pass_instance(event)
+        
+        if event_name in ["miss", "post", "goal", "own goal"]:
+            shot_events[event.attrs["id"]] = _make_shot_event_instance(event)
+            if event_name == "goal":
+                for qualifier in event.find_all("Q"):
+                    if qualifier.attrs["qualifier_id"] == str(RELATED_EVENT_ID_QUALIFIER):
+                        related_event_id = int(qualifier.attrs["value"])
+                        for event in events:
+                            if int(event.attrs["event_id"]) == related_event_id:
+                                assist_id = int(event.attrs["id"])
+                                if assist_id in pass_events.keys():
+                                    pass_events[assist_id].outcome = "assist"
+
         result_dict["opta_event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
         result_dict["minutes"].append(int(event.attrs["min"]))
@@ -412,28 +489,116 @@ def _load_event_data(f24_loc: str, country: str) -> pd.DataFrame:
     ] = 0
     event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
-    return event_data
-
-def _add_info_to_passes_dict(event ,passes_dict: dict) -> dict:
-    pass_id = int(event.attrs["event_id"])
     
-    import pdb;pdb.set_trace()
-    _pass = PassEvent(
+    return event_data, pass_events, shot_events
+
+def _make_pass_instance(event) -> PassEvent:
+    pass_id = int(event.attrs["id"])
+
+    outcome = "succesful" if int(event.attrs["outcome"]) else "unsuccesful"
+    if int(event.attrs["type_id"]) == 2: #offside pass
+        outcome = "offside"
+
+    qualifiers = event.find_all("Q")
+    qualifier_ids = [int(q["qualifier_id"]) for q in qualifiers]
+
+    if any([q == ASSIST_TO_SHOT_QUALIFIER for q in qualifier_ids]):
+        outcome = "results_in_shot"
+
+    if any([q == FAIR_PLAY_QUALIFIER for q in qualifier_ids]):
+        outcome = "fair_play"
+
+    pass_type_list = [pass_type_qualifiers[q] for q in qualifier_ids if q in pass_type_qualifiers]
+    pass_type = pass_type_list[0] if len(pass_type_list)>0 else "not_specified"
+
+    set_piece_list = [set_piece_qualifiers[q] for q in qualifier_ids if q in set_piece_qualifiers]
+    set_piece = set_piece_list[0] if len(set_piece_list)>0 else "no_set_piece"
+
+    x_start =  float(event.attrs["x"])
+    y_start =  float(event.attrs["y"])
+    x_end = float(event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)})["value"])
+    y_end = float(event.find("Q", attrs={"qualifier_id": str(Y_END_QUALIFIER)})["value"])
+
+    if PASS_LENGTH_QUALIFIER in qualifier_ids:
+        length = float(event.find("Q", attrs={"qualifier_id": str(PASS_LENGTH_QUALIFIER)})["value"])
+    else:
+        length = np.round(
+            np.hypot((x_start - x_end), (y_start - y_end)), 1
+            )
+
+    if PASS_ANGLE_QUALIFIER in qualifier_ids:
+        angle = float(event.find("Q", attrs={"qualifier_id": str(PASS_ANGLE_QUALIFIER)})["value"])
+    else:    
+        x = x_end-x_start
+        y = y_end-y_start
+        angle = np.round(np.arctan2(y,x), 1)
+
+    if len(pass_type_list) > 1:
+        print(f"Multiple pass_types: {pass_type_list}")
+
+    qualifier_id_list = [int(q["qualifier_id"]) for q in qualifiers]
+    known_q_list = [1, 2, 3, 4, 5, 6, 7, 22, 56, 74, 107, 123, 124, 140, 141, 152, 154, 155, 156, 157, 168, 189, 195, 196, 198, 199, 210, 212, 213, 223, 224, 233, 236, 237, 238, 241, 279, 286, 287]
+    q_in_known_list = [id_ in known_q_list for id_ in qualifier_id_list]
+    if not all(q_in_known_list):
+        import pdb;pdb.set_trace()
+    
+    return PassEvent(
         event_id = pass_id,
         period_id = int(event.attrs["period_id"]),
         minutes = int(event.attrs["min"]),
         seconds = int(event.attrs["sec"]),
         datetime = pd.to_datetime(event.attrs["timestamp"], utc=True),
-        x_start = float(event.attrs["x"]),
-        y_start = float(event.attrs["y"]),
-        outcome = int(event.attrs["outcome"]),
+        x_start = x_start,
+        y_start = y_start,
+        length = length,
+        angle = angle,
+        outcome = outcome,
         team_id = int(event.attrs["team_id"]),
         player_id = int(event.attrs["player_id"]),
-        x_end =  float(event.find("Q", attrs={"qualifier_id": "140"})["value"]),
-        y_end =  float(event.find("Q", attrs={"qualifier_id": "141"})["value"])
+        x_end =  x_end,
+        y_end =  y_end,
+        pass_type = pass_type,
+        set_piece = set_piece,
     )
-    import pdb;pdb.set_trace()
+  
 
-    passes_dict[pass_id] = _pass
-    return passes_dict
+def _make_shot_event_instance(event: bs4.element.Tag, pitch_dimensions: list = [106.0, 68.0]):
+    """Function to create a shot class based on the qualifiers of the event
 
+    Args:
+        event (bs4.element.Tag): shot event from the f24.xml
+        pitch_dimensions (list, optional): size of the pitch in x and y direction. Defaults to [106.0, 68.0].
+
+    Returns:
+        dict: Returns a dict with the shot data. The key is the id of the event and the value is a ShotEvent instance.
+    """
+    shot_outcome = shot_outcomes[int(event["type_id"])]
+
+    if shot_outcome in ["goal", "miss_on_target"]:
+        y_target = 7.32 / 100 * float(event.find("Q", {"qualifier_id": str(Y_TARGET_QUALIFIER)})["value"]) - 3.66
+        z_target = 2.44 / 100 * float(event.find("Q", {"qualifier_id": str(Z_TARGET_QUALIFIER)})["value"])
+    else:
+        y_target, z_target = np.nan, np.nan
+    
+    qualifiers = event.find_all("Q")
+
+    type_of_play_list = [shot_origins_qualifier[int(q["qualifier_id"])] for q in qualifiers if int(q["qualifier_id"]) in shot_origins_qualifier]
+    type_of_play = type_of_play_list[0] if len(type_of_play_list) > 0 else "regular_play"
+
+    body_part_list = [body_part_qualifiers[int(q["qualifier_id"])] for q in qualifiers if int(q["qualifier_id"]) in body_part_qualifiers]
+    body_part = body_part_list[0] if len(body_part_list) > 0  else None
+
+    return ShotEvent(
+        event_id=int(event.attrs["id"]),
+        period_id=int(event.attrs["period_id"]),
+        minutes=int(event.attrs["min"]),
+        seconds=int(event.attrs["sec"]),
+        datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
+        x_start=float(event.attrs["x"]) / 100 * pitch_dimensions[0] - (pitch_dimensions[0] / 2),
+        y_start=float(event.attrs["y"]) / 100 * pitch_dimensions[1] - (pitch_dimensions[1] / 2),
+        shot_outcome=shot_outcome,
+        y_target=y_target,
+        z_target=z_target,
+        body_part=body_part,
+        type_of_play=type_of_play,
+    )
