@@ -958,68 +958,68 @@ class TestMatch(unittest.TestCase):
         expected_df = pd.DataFrame(
             {
                 "event_id": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].event_id,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].event_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].event_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].event_id,
                 ],
                 "player_id": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].player_id,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].player_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].player_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].player_id,
                 ],
                 "period_id": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].period_id,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].period_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].period_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].period_id,
                 ],
                 "minutes": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].minutes,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].minutes,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].minutes,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].minutes,
                 ],
                 "seconds": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].seconds,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].seconds,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].seconds,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].seconds,
                 ],
                 "datetime": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].datetime,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].datetime,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].datetime,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].datetime,
                 ],
                 "start_x": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].start_x,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].start_x,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].start_x,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].start_x,
                 ],
                 "start_y": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].start_y,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].start_y,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].start_y,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].start_y,
                 ],
                 "shot_outcome": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].shot_outcome,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].shot_outcome,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].shot_outcome,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].shot_outcome,
                 ],
                 "y_target": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].y_target,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].y_target,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].y_target,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].y_target,
                 ],
                 "z_target": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].z_target,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].z_target,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].z_target,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].z_target,
                 ],
                 "body_part": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].body_part,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].body_part,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].body_part,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].body_part,
                 ],
                 "type_of_play": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].type_of_play,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].type_of_play,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].type_of_play,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].type_of_play,
                 ],
                 "first_touch": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].first_touch,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].first_touch,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].first_touch,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].first_touch,
                 ],
                 "created_oppertunity": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].created_oppertunity,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].created_oppertunity,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].created_oppertunity,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].created_oppertunity,
                 ],
-                "related_event": [
-                    SHOT_EVENTS_OPTA_TRACAB["2512690515"].related_event,
-                    SHOT_EVENTS_OPTA_TRACAB["2512690516"].related_event,
+                "related_event_id": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].related_event_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].related_event_id,
                 ],
             }
         )

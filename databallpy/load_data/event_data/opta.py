@@ -103,7 +103,7 @@ OPTA_TO_DATABALLPY_MAP = {
 
 SHOT_OUTCOMES = {
     13: "miss_off_target",
-    14: "hit_post",
+    14: "miss_hit_post",
     15: "miss_on_target",
     16: "goal",
 }
@@ -483,7 +483,7 @@ def _load_event_data(
             "goal",
             "own goal",
         ]:
-            shot_events[event.attrs["id"]] = _make_shot_event_instance(
+            shot_events[int(event.attrs["id"])] = _make_shot_event_instance(
                 event, away_team_id, pitch_dimensions=pitch_dimensions
             )
 
@@ -577,11 +577,11 @@ def _make_shot_event_instance(
     )
 
     if event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)}) is not None:
-        event_id = int(
+        related_event_id = int(
             event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)})["value"]
         )
     else:
-        event_id = MISSING_INT
+        related_event_id = MISSING_INT
 
     if int(event.attrs["team_id"]) == away_team_id:
         x_start *= -1
@@ -603,5 +603,5 @@ def _make_shot_event_instance(
         type_of_play=type_of_play,
         first_touch=first_touch,
         created_oppertunity=created_oppertunity,
-        related_event=event_id,
+        related_event_id=related_event_id,
     )

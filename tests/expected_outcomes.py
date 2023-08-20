@@ -247,7 +247,7 @@ ED_OPTA["datetime"] = pd.to_datetime(ED_OPTA["datetime"]).dt.tz_localize(
 )
 
 SHOT_EVENTS_OPTA = {
-    "2512690515": ShotEvent(
+    2512690515: ShotEvent(
         event_id=2512690515,
         period_id=1,
         minutes=9,
@@ -263,9 +263,9 @@ SHOT_EVENTS_OPTA = {
         type_of_play="corner_kick",
         first_touch=False,
         created_oppertunity="regular_play",
-        related_event=MISSING_INT,
+        related_event_id=MISSING_INT,
     ),
-    "2512690516": ShotEvent(
+    2512690516: ShotEvent(
         event_id=2512690516,
         period_id=1,
         minutes=9,
@@ -282,12 +282,12 @@ SHOT_EVENTS_OPTA = {
         type_of_play="regular_play",
         first_touch=False,
         created_oppertunity="regular_play",
-        related_event=22,
+        related_event_id=22,
     ),
 }
 
 SHOT_EVENTS_OPTA_TRACAB = {
-    "2512690515": ShotEvent(
+    2512690515: ShotEvent(
         event_id=2512690515,
         period_id=1,
         minutes=9,
@@ -303,9 +303,9 @@ SHOT_EVENTS_OPTA_TRACAB = {
         type_of_play="corner_kick",
         first_touch=False,
         created_oppertunity="regular_play",
-        related_event=MISSING_INT,
+        related_event_id=MISSING_INT,
     ),
-    "2512690516": ShotEvent(
+    2512690516: ShotEvent(
         event_id=2512690516,
         period_id=1,
         minutes=9,
@@ -321,7 +321,7 @@ SHOT_EVENTS_OPTA_TRACAB = {
         type_of_play="regular_play",
         first_touch=False,
         created_oppertunity="regular_play",
-        related_event=22,
+        related_event_id=22,
     ),
 }
 

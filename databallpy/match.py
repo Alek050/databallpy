@@ -222,8 +222,8 @@ class Match:
                 "created_oppertunity": [
                     shot.created_oppertunity for shot in self.shot_events.values()
                 ],
-                "related_event": [
-                    shot.related_event for shot in self.shot_events.values()
+                "related_event_id": [
+                    shot.related_event_id for shot in self.shot_events.values()
                 ],
             }
             self._shots_df = pd.DataFrame(res_dict)
