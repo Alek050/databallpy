@@ -104,29 +104,71 @@ class ShotEvent(BaseEvent):
         if not isinstance(self.player_id, int):
             raise TypeError(f"player_id should be int, got {type(self.player_id)}")
         if not isinstance(self.shot_outcome, str):
-            raise TypeError(f"shot_outcome should be str, got {type(self.shot_outcome)}")
-        if not self.shot_outcome in ["goal", "miss_off_target", "miss_hit_post", "miss_on_target", "blocked", "own_goal"]:
-            raise ValueError(f"shot_outcome should be goal, miss_off_target, miss_hit_post, miss_on_target, blocked or own_goal, got {self.shot_outcome}")
+            raise TypeError(
+                f"shot_outcome should be str, got {type(self.shot_outcome)}"
+            )
+        if self.shot_outcome not in [
+            "goal",
+            "miss_off_target",
+            "miss_hit_post",
+            "miss_on_target",
+            "blocked",
+            "own_goal",
+        ]:
+            raise ValueError(
+                "shot_outcome should be goal, miss_off_target, miss_hit_post, "
+                f"miss_on_target, blocked or own_goal, got {self.shot_outcome}"
+            )
         if not isinstance(self.y_target, float):
-            raise TypeError(f"y_target should be float or int, got {type(self.y_target)}")
+            raise TypeError(
+                f"y_target should be float or int, got {type(self.y_target)}"
+            )
         if not isinstance(self.z_target, float):
-            raise TypeError(f"z_target should be float or int, got {type(self.z_target)}")
+            raise TypeError(
+                f"z_target should be float or int, got {type(self.z_target)}"
+            )
         if not isinstance(self.body_part, (str, type(None))):
-            raise TypeError(f"body_part should be str or None, got {type(self.body_part)}")
-        if not self.body_part in ["left_foot", "right_foot", "head", "other"]:
-            raise ValueError(f"body_part should be left_foot, right_foot, head or other, got {self.body_part}")
+            raise TypeError(
+                f"body_part should be str or None, got {type(self.body_part)}"
+            )
+        if self.body_part not in ["left_foot", "right_foot", "head", "other"]:
+            raise ValueError(
+                "body_part should be left_foot, right_foot, head or other, "
+                f"got {self.body_part}"
+            )
         if not isinstance(self.type_of_play, str):
-            raise TypeError(f"type_of_play should be str, got {type(self.type_of_play)}")
-        if not self.type_of_play in ["penalty", "regular_play", "counter_attack", "crossed_free_kick", "corner_kick", "free_kick"]:
-            raise ValueError(f"type_of_play should be penalty, regular_play, counter_attack, crossed_free_kick, corner_kick or free_kick, got {self.type_of_play}")
+            raise TypeError(
+                f"type_of_play should be str, got {type(self.type_of_play)}"
+            )
+        if self.type_of_play not in [
+            "penalty",
+            "regular_play",
+            "counter_attack",
+            "crossed_free_kick",
+            "corner_kick",
+            "free_kick",
+        ]:
+            raise ValueError(
+                "type_of_play should be penalty, regular_play, counter_attack, "
+                f"crossed_free_kick, corner_kick or free_kick, got {self.type_of_play}"
+            )
         if not isinstance(self.first_touch, bool):
             raise TypeError(f"first_touch should be bool, got {type(self.first_touch)}")
         if not isinstance(self.created_oppertunity, (str, type(None))):
             raise TypeError(
-                f"created_oppertunity should be str or None, got {type(self.created_oppertunity)}"
+                "created_oppertunity should be str or None, got "
+                f"{type(self.created_oppertunity)}"
             )
-        if not self.created_oppertunity in ["assisted", "individual_play", "regular_play"]:
-            raise ValueError(f"created_oppertunity should be assisted, regular_play, or individual_play, got {self.created_oppertunity}")
+        if self.created_oppertunity not in [
+            "assisted",
+            "individual_play",
+            "regular_play",
+        ]:
+            raise ValueError(
+                "created_oppertunity should be assisted, regular_play, or "
+                f"individual_play, got {self.created_oppertunity}"
+            )
         if not isinstance(self.related_event_id, int):
-            raise TypeError(f"related_event_id should be int, got {type(self.related_event_id)}")
-        
+            raise TypeError(
+                f"related_event_id should be int, got {type(self.related_event_id)}"
+            )

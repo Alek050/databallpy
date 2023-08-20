@@ -25,7 +25,7 @@ class TestShotEvent(unittest.TestCase):
             created_oppertunity="regular_play",
             related_event_id=123,
         )
-    
+
     def test_post_init(self):
         # super() call
         with self.assertRaises(TypeError):
@@ -47,7 +47,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         # player_id
         with self.assertRaises(TypeError):
             ShotEvent(
@@ -68,7 +68,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         # shot_outcome
         with self.assertRaises(TypeError):
             ShotEvent(
@@ -89,7 +89,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         with self.assertRaises(ValueError):
             ShotEvent(
                 event_id=2512690515,
@@ -109,7 +109,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         # y_target and z_target
         with self.assertRaises(TypeError):
             ShotEvent(
@@ -149,7 +149,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         # body_part
         with self.assertRaises(TypeError):
             ShotEvent(
@@ -189,7 +189,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         # type_of_play
         with self.assertRaises(TypeError):
             ShotEvent(
@@ -229,7 +229,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         # first_touch
         with self.assertRaises(TypeError):
             ShotEvent(
@@ -250,7 +250,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id=123,
             )
-        
+
         # created_oppertunity
         with self.assertRaises(TypeError):
             ShotEvent(
@@ -290,7 +290,7 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="wrong_created_oppertunity",
                 related_event_id=123,
             )
-        
+
         # related_event_id
         with self.assertRaises(TypeError):
             ShotEvent(
