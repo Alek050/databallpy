@@ -27,25 +27,7 @@ def synchronise_tracking_and_event_data(
         'save', 'foul', 'miss', 'challenge', 'goal'
 
     """
-    # events_to_sync = [
-    #     "pass",
-    #     "aerial",
-    #     "interception",
-    #     "ball recovery",
-    #     "dispossessed",
-    #     "tackle",
-    #     "take on",
-    #     "clearance",
-    #     "blocked pass",
-    #     "offside pass",
-    #     "attempt saved",
-    #     "save",
-    #     "foul",
-    #     "miss",
-    #     "challenge",
-    #     "goal",
-    #     "shot",
-    # ]
+
     events_to_sync = [
         "pass",
         "shot",
@@ -70,7 +52,7 @@ def synchronise_tracking_and_event_data(
         ]
     )
 
-    tracking_data["datetime"] = pd.Series(
+    datetime_values = pd.Series(
         [
             start_datetime_period[p] if p != MISSING_INT else pd.to_datetime("NaT")
             for p in tracking_data["period"]
@@ -80,8 +62,15 @@ def synchronise_tracking_and_event_data(
         "milliseconds",
     )
 
-    tracking_data["databallpy_event"] = np.nan
-    tracking_data["event_id"] = np.nan
+    # Combine the calculated values into a DataFrame
+    new_columns = {
+        "datetime": datetime_values,
+        "databallpy_event": np.nan,
+        "event_id": np.nan,
+    }
+
+    tracking_data = pd.concat([tracking_data, pd.DataFrame(new_columns)], axis=1)
+
     event_data["tracking_frame"] = np.nan
 
     mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
@@ -172,7 +161,7 @@ def synchronise_tracking_and_event_data(
     match.tracking_data = tracking_data
     match.event_data = event_data
 
-    match.is_synchronised = True
+    match._is_synchronised = True
 
 
 def _create_sim_mat(

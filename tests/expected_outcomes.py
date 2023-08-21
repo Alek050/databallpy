@@ -127,7 +127,7 @@ MD_TRACAB = Metadata(
             "full_name": ["Pepijn Blok", "TestSpeler"],
             "shirt_num": [1, 2],
             "start_frame": [1509993, 1509993],
-            "end_frame": [1509997, 1509994],
+            "end_frame": [1509997, 1509995],
         }
     ),
     country="",
@@ -255,6 +255,7 @@ SHOT_EVENTS_OPTA = {
         datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
         start_x=9.5 / 100 * 106 - 53,  # standard opta pitch dimensions = [106, 68]
         start_y=52.8 / 100 * 68 - 34,
+        team_id=3,
         z_target=18.4 / 100 * 2.44,
         y_target=54.3 / 100 * 7.32 - (7.32 / 2),
         player_id=45849,
@@ -264,6 +265,12 @@ SHOT_EVENTS_OPTA = {
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=MISSING_INT,
+        ball_goal_distance=np.nan,
+        ball_gk_distance=np.nan,
+        shot_angle=np.nan,
+        gk_angle=np.nan,
+        pressure_on_ball=np.nan,
+        n_obstructive_players=MISSING_INT,
     ),
     2512690516: ShotEvent(
         event_id=2512690516,
@@ -276,6 +283,7 @@ SHOT_EVENTS_OPTA = {
         start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
         z_target=np.nan,
         y_target=np.nan,
+        team_id=194,
         player_id=184934,
         shot_outcome="blocked",
         body_part="head",
@@ -283,10 +291,16 @@ SHOT_EVENTS_OPTA = {
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=22,
+        ball_goal_distance=np.nan,
+        ball_gk_distance=np.nan,
+        shot_angle=np.nan,
+        gk_angle=np.nan,
+        pressure_on_ball=np.nan,
+        n_obstructive_players=MISSING_INT,
     ),
 }
 
-SHOT_EVENTS_OPTA_TRACAB = {
+SHOT_EVENTS_OPTA_TRACAB_WITH_TD_FEATURES = {
     2512690515: ShotEvent(
         event_id=2512690515,
         period_id=1,
@@ -297,6 +311,7 @@ SHOT_EVENTS_OPTA_TRACAB = {
         start_y=52.8 / 100 * 50 - 25,
         z_target=18.4 / 100 * 2.44,
         y_target=54.3 / 100 * 7.32 - (7.32 / 2),
+        team_id=3,
         player_id=45849,
         shot_outcome="own_goal",
         body_part="head",
@@ -304,6 +319,12 @@ SHOT_EVENTS_OPTA_TRACAB = {
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=MISSING_INT,
+        ball_goal_distance=np.nan,
+        ball_gk_distance=np.nan,
+        shot_angle=np.nan,
+        gk_angle=np.nan,
+        pressure_on_ball=np.nan,
+        n_obstructive_players=MISSING_INT,
     ),
     2512690516: ShotEvent(
         event_id=2512690516,
@@ -315,6 +336,7 @@ SHOT_EVENTS_OPTA_TRACAB = {
         start_y=(52.8 / 100 * 50 - 25) * -1,  # times -1 because its away team
         z_target=np.nan,
         y_target=np.nan,
+        team_id=194,
         player_id=184934,
         shot_outcome="blocked",
         body_part="head",
@@ -322,6 +344,12 @@ SHOT_EVENTS_OPTA_TRACAB = {
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=22,
+        ball_goal_distance=np.nan,
+        ball_gk_distance=np.nan,
+        shot_angle=np.nan,
+        gk_angle=np.nan,
+        pressure_on_ball=np.nan,
+        n_obstructive_players=MISSING_INT,
     ),
 }
 
@@ -365,7 +393,7 @@ MD_OPTA = Metadata(
             "id": [19367, 45849],
             "full_name": ["Piet Schrijvers", "Jan Boskamp"],
             "formation_place": [4, 0],
-            "position": ["midfielder", "midfielder"],
+            "position": ["goalkeeper", "midfielder"],
             "starter": [True, False],
             "shirt_num": [1, 2],
         }
@@ -379,7 +407,7 @@ MD_OPTA = Metadata(
             "id": [184934, 450445],
             "full_name": ["Pepijn Blok", "TestSpeler"],
             "formation_place": [8, 0],
-            "position": ["midfielder", "midfielder"],
+            "position": ["midfielder", "goalkeeper"],
             "starter": [True, False],
             "shirt_num": [1, 2],
         }

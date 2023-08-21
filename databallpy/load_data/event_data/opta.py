@@ -596,6 +596,7 @@ def _make_shot_event_instance(
         datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
         start_x=x_start,
         start_y=y_start,
+        team_id=int(event.attrs["team_id"]),
         shot_outcome=shot_outcome,
         y_target=y_target,
         z_target=z_target,

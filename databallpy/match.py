@@ -107,17 +107,20 @@ class Match:
     away_formation: str
     country: str
     shot_events: dict = field(default_factory=dict)
-    _shots_df: pd.DataFrame = None
     allow_synchronise_tracking_and_event_data: bool = False
-
+    _shots_df: pd.DataFrame = None
     # to save the preprocessing status
-    is_synchronised: bool = False
+    _is_synchronised: bool = False
 
     def __repr__(self):
         return "databallpy.match.Match object: " + self.name
 
     def __post_init__(self):
         check_inputs_match_object(self)
+
+    @property
+    def is_synchronised(self) -> bool:
+        return self._is_synchronised
 
     @property
     def name(self) -> str:
@@ -209,6 +212,7 @@ class Match:
                 "datetime": [shot.datetime for shot in self.shot_events.values()],
                 "start_x": [shot.start_x for shot in self.shot_events.values()],
                 "start_y": [shot.start_y for shot in self.shot_events.values()],
+                "team_id": [shot.team_id for shot in self.shot_events.values()],
                 "shot_outcome": [
                     shot.shot_outcome for shot in self.shot_events.values()
                 ],
@@ -225,9 +229,74 @@ class Match:
                 "related_event_id": [
                     shot.related_event_id for shot in self.shot_events.values()
                 ],
+                "ball_goal_distance": [
+                    shot.ball_goal_distance for shot in self.shot_events.values()
+                ],
+                "ball_gk_distance": [
+                    shot.ball_gk_distance for shot in self.shot_events.values()
+                ],
+                "shot_angle": [shot.shot_angle for shot in self.shot_events.values()],
+                "gk_angle": [shot.gk_angle for shot in self.shot_events.values()],
+                "pressure_on_ball": [
+                    shot.pressure_on_ball for shot in self.shot_events.values()
+                ],
+                "n_obstructive_players": [
+                    shot.n_obstructive_players for shot in self.shot_events.values()
+                ],
             }
             self._shots_df = pd.DataFrame(res_dict)
         return self._shots_df
+
+    @requires_event_data
+    @requires_tracking_data
+    def add_tracking_data_features_to_shots(self):
+        """Function to add tracking data features to the shots. This function
+              should be run after the tracking and event data are synchronised.
+
+        Raises:
+            ValueError: if the tracking and event data are not synchronised yet
+        """
+
+        if not self.is_synchronised:
+            raise DataBallPyError(
+                "Tracking and event data are not synchronised yet. Please run the"
+                " synchronise_tracking_and_event_data() method first"
+            )
+
+        for shot in self.shot_events.values():
+            team_side = (
+                "home" if shot.player_id in self.home_players["id"].values else "away"
+            )
+            column_id = self.player_id_to_column_id(shot.player_id)
+            tracking_data_frame = self.tracking_data.loc[
+                self.tracking_data["event_id"] == shot.event_id
+            ].iloc[0]
+
+            if team_side == "home":
+                mask = (
+                    (self.away_players["start_frame"] <= tracking_data_frame["frame"])
+                    & (self.away_players["end_frame"] >= tracking_data_frame["frame"])
+                    & (self.away_players["position"] == "goalkeeper")
+                )
+                gk_column_id = (
+                    f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
+                )
+            else:
+                mask = (
+                    (self.home_players["start_frame"] <= tracking_data_frame["frame"])
+                    & (self.home_players["end_frame"] >= tracking_data_frame["frame"])
+                    & (self.home_players["position"] == "goalkeeper")
+                )
+                gk_column_id = (
+                    f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
+                )
+            shot.add_tracking_data_features(
+                tracking_data_frame,
+                team_side,
+                self.pitch_dimensions,
+                column_id,
+                gk_column_id,
+            )
 
     @requires_tracking_data
     @requires_event_data

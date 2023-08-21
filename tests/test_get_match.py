@@ -21,7 +21,7 @@ from expected_outcomes import (
     MD_OPTA,
     MD_TRACAB,
     SHOT_EVENTS_OPTA,
-    SHOT_EVENTS_OPTA_TRACAB,
+    SHOT_EVENTS_OPTA_TRACAB_WITH_TD_FEATURES,
     TD_TRACAB,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
@@ -111,7 +111,7 @@ class TestGetMatch(unittest.TestCase):
                 "start_frame": [1509993, 1509993],
                 "end_frame": [1509997, 1509995],
                 "formation_place": [4, 0],
-                "position": ["midfielder", "midfielder"],
+                "position": ["goalkeeper", "midfielder"],
                 "starter": [True, False],
             }
         )
@@ -122,9 +122,9 @@ class TestGetMatch(unittest.TestCase):
                 "full_name": ["Pepijn Blok", "TestSpeler"],
                 "shirt_num": [1, 2],
                 "start_frame": [1509993, 1509993],
-                "end_frame": [1509997, 1509994],
+                "end_frame": [1509997, 1509995],
                 "formation_place": [8, 0],
-                "position": ["midfielder", "midfielder"],
+                "position": ["midfielder", "goalkeeper"],
                 "starter": [True, False],
             }
         )
@@ -150,7 +150,7 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=self.md_opta.away_team_name,
             away_players=self.expected_away_players_tracab_opta,
             country=self.md_opta.country,
-            shot_events=SHOT_EVENTS_OPTA_TRACAB,
+            shot_events=SHOT_EVENTS_OPTA_TRACAB_WITH_TD_FEATURES,
         )
 
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
