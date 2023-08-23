@@ -141,12 +141,7 @@ class ShotEvent(BaseEvent):
         players_column_ids = [
             x[:-2]
             for x in tracking_data_frame.index
-            if (
-                "_x" in x
-                and "ball" not in x
-                and "_x_" not in x  # ignore velocity columns '_x_v'
-                and x != f"{column_id}_x"
-            )
+            if ("_x" in x and "ball" not in x and x != f"{column_id}_x")
         ]
         x_vals = tracking_data_frame[[f"{x}_x" for x in players_column_ids]].values
         y_vals = tracking_data_frame[[f"{x}_y" for x in players_column_ids]].values

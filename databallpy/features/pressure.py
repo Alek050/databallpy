@@ -44,9 +44,7 @@ def get_pressure_on_player(
     player_xy = [td_frame[column_id + "_x"], td_frame[column_id + "_y"]]
 
     for opponent_column_id in [
-        x[:-2]
-        for x in td_frame.index
-        if opponent_team in x and "_x" in x and "_x_" not in x
+        x[:-2] for x in td_frame.index if opponent_team in x and "_x" in x
     ]:
         opponent_xy = [
             td_frame[opponent_column_id + "_x"],

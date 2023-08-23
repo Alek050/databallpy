@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from databallpy.features.velocity import get_velocity
+from databallpy.features.differentiate import _differentiate
 from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
 
@@ -162,9 +162,15 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
 
     """
     initial_columns = tracking_data.columns
-    input_columns = ["ball_x", "ball_y"]
-    tracking_data = get_velocity(tracking_data, input_columns, framerate)
-    velocity_ball = np.hypot(tracking_data["ball_x_v"], tracking_data["ball_y_v"])
+    tracking_data = _differentiate(
+        tracking_data,
+        new_name="velocity",
+        metric="",
+        frame_rate=framerate,
+        filter_type=None,
+        column_ids=["ball"],
+    )
+    velocity_ball = tracking_data["ball_velocity"]
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
         tracking_data["matchtime_td"] != "Break"
     )
@@ -212,8 +218,15 @@ def _check_player_velocity(
     """
     initial_columns = tracking_data.columns
     player_columns = [x for x in tracking_data.columns if "home" in x or "away" in x]
-    players = [x.replace("_x", "") for x in player_columns if "_x" in x]
-    tracking_data = get_velocity(tracking_data, player_columns, framerate)
+    players_column_ids = [x.replace("_x", "") for x in player_columns if "_x" in x]
+    tracking_data = _differentiate(
+        tracking_data,
+        new_name="velocity",
+        metric="",
+        frame_rate=framerate,
+        filter_type=None,
+        column_ids=players_column_ids,
+    )
 
     mask_no_break = [False] * len(tracking_data)
     first_frame = periods.loc[0, "start_frame"]
@@ -225,10 +238,8 @@ def _check_player_velocity(
 
     percentages_valid_frames = []
     max_sequences_invalid_frames = []
-    for player in players:
-        velocity_player = np.hypot(
-            tracking_data[f"{player}_x_v"], tracking_data[f"{player}_y_v"]
-        )
+    for player in players_column_ids:
+        velocity_player = tracking_data[f"{player}_velocity"]
         velocity_player = velocity_player[mask_no_break][1:].reset_index(drop=True)
         valid_frames = velocity_player < 12
         sum_valid_frames = sum(valid_frames)
