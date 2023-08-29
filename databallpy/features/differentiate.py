@@ -94,7 +94,9 @@ def _differentiate(
         raw_differentiated = np.linalg.norm([diff_x, diff_y], axis=0)
         if max_val != MISSING_INT:
             diff_x[(raw_differentiated > max_val) & (diff_x > max_val)] = max_val
+            diff_x[(raw_differentiated > max_val) & (diff_x < -max_val)] = -max_val
             diff_y[(raw_differentiated > max_val) & (diff_y > max_val)] = max_val
+            diff_y[(raw_differentiated > max_val) & (diff_y < -max_val)] = -max_val
 
         # smoothing the signal
         if filter_type is not None:

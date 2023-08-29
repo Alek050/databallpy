@@ -41,6 +41,9 @@ def get_smallest_angle(a_vec, b_vec, angle_format="radian"):
     if not isinstance(b_vec, np.ndarray):
         b_vec = np.array(b_vec)
 
+    b_vec = b_vec.astype("float64")
+    a_vec = a_vec.astype("float64")
+
     assert a_vec.shape == b_vec.shape, "a and b should have the same shape"
 
     if len(a_vec.shape) == 1:  # 1D array
@@ -54,6 +57,7 @@ def get_smallest_angle(a_vec, b_vec, angle_format="radian"):
 
     angle_a = np.arctan2(a_vec[:, 1], a_vec[:, 0])
     angle_b = np.arctan2(b_vec[:, 1], b_vec[:, 0])
+
     smallest_angle_radians = np.min(
         [np.abs(angle_a - angle_b), 2 * np.pi - np.abs(angle_a - angle_b)], axis=0
     )
