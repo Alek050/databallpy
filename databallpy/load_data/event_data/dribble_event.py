@@ -5,10 +5,35 @@ from databallpy.load_data.event_data.base_event import BaseEvent
 
 @dataclass
 class DribbleEvent(BaseEvent):
+    """Class for dribble events
+
+    Args:
+        event_id (int): distinct id of the event
+        period_id (int): id of the period
+        minutes (int): minute in which the event occurs
+        seconds (int): seconds within the aforementioned minute where the event occurs
+        datetime (pd.Timestamp): datetime at which the event occured
+        start_x (float): x coordinate of the start location of the event
+        start_y (float): y coordinate of the start location of the event
+        team_id (int): id of the team that performed the event
+        player_id (int): id of the player that performed the event
+        related_event_id (int): id of the event that the dribble is related to
+        duel_type (str): type of duel that the dribble is related to, either
+            ["offensive", "defensive"].
+        outcome (bool): whether the dribble was successful or not
+        has_opponent (bool): whether the dribble has an opponent in the area or not
+
+    Raises:
+        TypeError: when one of the input arguments is of the wrong type
+
+    Returns:
+        DribbleEvent: Dribble event
+    """
+
     player_id: int
     related_event_id: int
     duel_type: str
-    outcome: bool  # whether the dribble was successful or not
+    outcome: bool
     has_opponent: bool = False
 
     def __post_init__(self):

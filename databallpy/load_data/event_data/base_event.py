@@ -14,6 +14,9 @@ class BaseEvent:
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
         datetime (pd.Timestamp): datetime at which the event occured
+        start_x (float): x coordinate of the start location of the event
+        start_y (float): y coordinate of the start location of the event
+        team_id (int): id of the team that performed the event
     """
 
     event_id: int
