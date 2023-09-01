@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def get_smallest_angle(a_vec, b_vec, angle_format="radian"):
+def get_smallest_angle(a_vec: np.ndarray, b_vec: np.ndarray, angle_format="radian"):
     """
     Function to calculate the smallest angle between 2 2D vectors.
 
@@ -10,24 +10,37 @@ def get_smallest_angle(a_vec, b_vec, angle_format="radian"):
     :param angle_format: str, how to return the angle {"degree", "radian"}
     :returns: numpy array, the smallest angle of shape (n,)
     """
-    if not isinstance(a_vec, np.ndarray):
-        a_vec = np.array(a_vec)
-    if not isinstance(b_vec, np.ndarray):
-        b_vec = np.array(b_vec)
 
-    b_vec = b_vec.astype("float64")
-    a_vec = a_vec.astype("float64")
+    for input_list in [a_vec, b_vec]:
+        if not isinstance(input_list, list) and not isinstance(input_list, np.ndarray):
+            raise TypeError(f"Input must be a numpy array, not a {type(input_list)}")
+    
+    a_vec = (
+        np.array(a_vec).astype("float64")
+        if isinstance(a_vec, list)
+        else a_vec.astype("float64")
+    )
+    b_vec = (
+        np.array(b_vec).astype("float64")
+        if isinstance(b_vec, list)
+        else b_vec.astype("float64")
+    )
 
-    assert a_vec.shape == b_vec.shape, "a and b should have the same shape"
+    if not a_vec.shape == b_vec.shape:
+        raise ValueError("a and b should have the same shape")
+    if angle_format not in ["degree", "radian"]:
+        raise ValueError(
+            f"input 'format' must be 'degree' or 'radian', not '{angle_format}'."
+        )
 
     if len(a_vec.shape) == 1:  # 1D array
         a_vec = a_vec.reshape(1, -1)
         b_vec = b_vec.reshape(1, -1)
 
-    assert a_vec.shape[1] == 2, "a and b should have shape (n, 2)"
-    assert (
-        angle_format == "degree" or angle_format == "radian"
-    ), f"input 'format' must be 'degree' or 'radian', not '{angle_format}'."
+    if not a_vec.shape[1] == 2 or not b_vec.shape[1] == 2:
+        raise ValueError(
+            f"a and b should have shape (n, 2), not {a_vec.shape} and {b_vec.shape}"
+        )
 
     angle_a = np.arctan2(a_vec[:, 1], a_vec[:, 0])
     angle_b = np.arctan2(b_vec[:, 1], b_vec[:, 0])
