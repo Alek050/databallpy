@@ -119,7 +119,14 @@ class TestVisualize(unittest.TestCase):
         self.assertEqual(len(ax.collections), 4)
 
     def test_save_match_clip(self):
-        match = self.match
+        match = self.match.copy()
+        match.tracking_data["player_posession"] = [
+            None,
+            "home_34",
+            None,
+            None,
+            "away_17",
+        ]
         series = pd.Series([22, 23, 25], index=[1, 2, 3])
         with self.assertRaises(AssertionError):
             save_match_clip(
@@ -130,6 +137,7 @@ class TestVisualize(unittest.TestCase):
                 title="test_clip",
                 events=["pass"],
             )
+        with self.assertRaises(AssertionError):
             save_match_clip(
                 match,
                 0,
@@ -137,6 +145,16 @@ class TestVisualize(unittest.TestCase):
                 save_folder="tests/test_data",
                 title="test_clip",
                 variable_of_interest=series,
+            )
+        with self.assertRaises(AssertionError):
+            save_match_clip(
+                match,
+                1,
+                3,
+                save_folder="tests/test_data",
+                title="test_clip",
+                variable_of_interest=series,
+                player_posession_column="unknown_column",
             )
 
         assert not os.path.exists("tests/test_data/test_clip.mp4")
@@ -148,6 +166,7 @@ class TestVisualize(unittest.TestCase):
             save_folder="tests/test_data",
             title="test_clip",
             variable_of_interest=series,
+            player_posession_column="player_posession",
         )
 
         assert os.path.exists("tests/test_data/test_clip.mp4")

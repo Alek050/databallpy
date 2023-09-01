@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from databallpy.load_data.event_data.dribble_event import DribbleEvent
 from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.tz_modification import utc_to_local_datetime
@@ -57,7 +58,7 @@ EVENT_TYPE_IDS = {
     45: "challenge",
     46: "unknown event 46",
     47: "rescinded card",
-    48: "unknown event 46",
+    48: "unknown event 48",
     49: "ball recovery",
     50: "dispossessed",
     51: "error",
@@ -87,7 +88,6 @@ EVENT_TYPE_IDS = {
     75: "delayed start",
     76: "early end",
     77: "player off pitch",
-    153: "not past goal line",
 }
 
 OPTA_TO_DATABALLPY_MAP = {
@@ -150,17 +150,23 @@ CREATED_OPPERTUNITY_QUALIFIERS = {
     215: "individual_play",
 }
 
+DRIBBLE_DUEL_TYPE_QUALIFIERS = {
+    286: "offensive",
+    285: "defensive",
+}
+
 Y_TARGET_QUALIFIER = 102
 Z_TARGET_QUALIFIER = 103
 FIRST_TOUCH_QUALIFIER = 328
 SHOT_BLOCKED_QUALIFIER = 82
 OWN_GOAL_QUALIFIER = 280
 RELATED_EVENT_QUALIFIER = 55
+OPPOSITE_RELATED_EVENT_ID = 233  # used for dribbles
 
 
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> Tuple[pd.DataFrame, Metadata, dict]:
     """This function retrieves the metadata and event data of a specific match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
@@ -173,7 +179,8 @@ def load_opta_event_data(
         pitch_dimensions (list, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: the event data of the match and the metadata
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
+        and the databallpy_events.
     """
 
     assert isinstance(f7_loc, str), f"f7_loc should be a string, not a {type(f7_loc)}"
@@ -190,6 +197,11 @@ def load_opta_event_data(
         metadata.away_team_id,
         pitch_dimensions=pitch_dimensions,
     )
+
+    # update timezones for databallpy_events
+    for event_types in databallpy_events.values():
+        for event in event_types.values():
+            event.datetime = utc_to_local_datetime(event.datetime, metadata.country)
 
     # Add player names to the event data dataframe
     home_players = dict(
@@ -407,8 +419,8 @@ def _load_event_data(
         pd.DataFrame: all events of the match in a pd dataframe
         dict: dict with "shot_events" as key and a dict with the ShotEvent instances
     """
-    #
     shot_events = {}
+    dribble_events = {}
 
     with open(f24_loc, "r") as file:
         lines = file.read()
@@ -487,6 +499,11 @@ def _load_event_data(
                 event, away_team_id, pitch_dimensions=pitch_dimensions
             )
 
+        if event_name == "take on":
+            dribble_events[int(event.attrs["id"])] = _make_dribble_event_instance(
+                event, away_team_id, pitch_dimensions=pitch_dimensions
+            )
+
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
     event_data["databallpy_event"] = (
@@ -497,7 +514,7 @@ def _load_event_data(
     ] = 0
     event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
-    return event_data, {"shot_events": shot_events}
+    return event_data, {"shot_events": shot_events, "dribble_events": dribble_events}
 
 
 def _make_shot_event_instance(
@@ -596,6 +613,7 @@ def _make_shot_event_instance(
         datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
         start_x=x_start,
         start_y=y_start,
+        team_id=int(event.attrs["team_id"]),
         shot_outcome=shot_outcome,
         y_target=y_target,
         z_target=z_target,
@@ -605,3 +623,62 @@ def _make_shot_event_instance(
         created_oppertunity=created_oppertunity,
         related_event_id=related_event_id,
     )
+
+
+def _make_dribble_event_instance(
+    event: bs4.element.Tag, away_team_id: int, pitch_dimensions: list = [106.0, 68.0]
+) -> DribbleEvent:
+    """Function to create a dribble class based on the qualifiers of the event
+
+    Args:
+        event (bs4.element.Tag): dribble event from the f24.xml
+        away_team_id (int): id of the away team
+        pitch_dimensions (list, optional): pitch dimensions in x and y direction.
+            Defaults to [106.0, 68.0].
+
+    Returns:
+        DribbleEvent: instance of the DribbleEvent class
+    """
+    qualifiers = event.find_all("Q")
+
+    if event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)}) is not None:
+        related_event_id = int(
+            event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)})["value"]
+        )
+    else:
+        related_event_id = MISSING_INT
+
+    duel_type_list = [
+        DRIBBLE_DUEL_TYPE_QUALIFIERS[int(q["qualifier_id"])]
+        for q in qualifiers
+        if int(q["qualifier_id"]) in DRIBBLE_DUEL_TYPE_QUALIFIERS
+    ]
+    duel_type = duel_type_list[0] if len(duel_type_list) > 0 else None
+
+    x_start = float(event.attrs["x"]) / 100 * pitch_dimensions[0] - (
+        pitch_dimensions[0] / 2
+    )
+    y_start = float(event.attrs["y"]) / 100 * pitch_dimensions[1] - (
+        pitch_dimensions[1] / 2
+    )
+    if int(event.attrs["team_id"]) == away_team_id:
+        x_start *= -1
+        y_start *= -1
+
+    dribble_event = DribbleEvent(
+        player_id=int(event.attrs["player_id"]),
+        event_id=int(event.attrs["id"]),
+        period_id=int(event.attrs["period_id"]),
+        minutes=int(event.attrs["min"]),
+        seconds=int(event.attrs["sec"]),
+        datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
+        start_x=x_start,
+        start_y=y_start,
+        team_id=int(event.attrs["team_id"]),
+        related_event_id=related_event_id,
+        duel_type=duel_type,
+        outcome=bool(event.attrs["outcome"]),
+        has_opponent=True,  # opta take ons are always against an opponent
+    )
+
+    return dribble_event

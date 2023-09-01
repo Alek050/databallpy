@@ -67,6 +67,7 @@ class Match:
         away_formation (str): Indication of the formation of the away team.
         country (str): The country where the match was played.
         shot_events (dict): A dictionary with all instances of shot events.
+        dribble_events (dict): A dictionary with all instances of dribble events.
         allow_synchronise_tracking_and_event_data (bool): If True, the tracking and
         event data can be synchronised. If False, it can not. Default = False.
 
@@ -107,17 +108,22 @@ class Match:
     away_formation: str
     country: str
     shot_events: dict = field(default_factory=dict)
-    _shots_df: pd.DataFrame = None
+    dribble_events: dict = field(default_factory=dict)
     allow_synchronise_tracking_and_event_data: bool = False
-
+    _shots_df: pd.DataFrame = None
+    _dribbles_df: pd.DataFrame = None
     # to save the preprocessing status
-    is_synchronised: bool = False
+    _is_synchronised: bool = False
 
     def __repr__(self):
         return "databallpy.match.Match object: " + self.name
 
     def __post_init__(self):
         check_inputs_match_object(self)
+
+    @property
+    def is_synchronised(self) -> bool:
+        return self._is_synchronised
 
     @property
     def name(self) -> str:
@@ -209,6 +215,7 @@ class Match:
                 "datetime": [shot.datetime for shot in self.shot_events.values()],
                 "start_x": [shot.start_x for shot in self.shot_events.values()],
                 "start_y": [shot.start_y for shot in self.shot_events.values()],
+                "team_id": [shot.team_id for shot in self.shot_events.values()],
                 "shot_outcome": [
                     shot.shot_outcome for shot in self.shot_events.values()
                 ],
@@ -225,9 +232,127 @@ class Match:
                 "related_event_id": [
                     shot.related_event_id for shot in self.shot_events.values()
                 ],
+                "ball_goal_distance": [
+                    shot.ball_goal_distance for shot in self.shot_events.values()
+                ],
+                "ball_gk_distance": [
+                    shot.ball_gk_distance for shot in self.shot_events.values()
+                ],
+                "shot_angle": [shot.shot_angle for shot in self.shot_events.values()],
+                "gk_angle": [shot.gk_angle for shot in self.shot_events.values()],
+                "pressure_on_ball": [
+                    shot.pressure_on_ball for shot in self.shot_events.values()
+                ],
+                "n_obstructive_players": [
+                    shot.n_obstructive_players for shot in self.shot_events.values()
+                ],
             }
             self._shots_df = pd.DataFrame(res_dict)
         return self._shots_df
+
+    @property
+    @requires_event_data
+    def dribbles_df(self) -> pd.DataFrame:
+        """Function to get all shots in the match
+
+        Returns:
+            pd.DataFrame: DataFrame with all information of the shots in the match"""
+
+        if self._dribbles_df is None:
+            res_dict = {
+                "event_id": [
+                    dribble.event_id for dribble in self.dribble_events.values()
+                ],
+                "player_id": [
+                    dribble.player_id for dribble in self.dribble_events.values()
+                ],
+                "period_id": [
+                    dribble.period_id for dribble in self.dribble_events.values()
+                ],
+                "minutes": [
+                    dribble.minutes for dribble in self.dribble_events.values()
+                ],
+                "seconds": [
+                    dribble.seconds for dribble in self.dribble_events.values()
+                ],
+                "datetime": [
+                    dribble.datetime for dribble in self.dribble_events.values()
+                ],
+                "start_x": [
+                    dribble.start_x for dribble in self.dribble_events.values()
+                ],
+                "start_y": [
+                    dribble.start_y for dribble in self.dribble_events.values()
+                ],
+                "team_id": [
+                    dribble.team_id for dribble in self.dribble_events.values()
+                ],
+                "related_event_id": [
+                    dribble.related_event_id for dribble in self.dribble_events.values()
+                ],
+                "duel_type": [
+                    dribble.duel_type for dribble in self.dribble_events.values()
+                ],
+                "outcome": [
+                    dribble.outcome for dribble in self.dribble_events.values()
+                ],
+                "has_opponent": [
+                    dribble.has_opponent for dribble in self.dribble_events.values()
+                ],
+            }
+            self._dribbles_df = pd.DataFrame(res_dict)
+        return self._dribbles_df
+
+    @requires_event_data
+    @requires_tracking_data
+    def add_tracking_data_features_to_shots(self):
+        """Function to add tracking data features to the shots. This function
+              should be run after the tracking and event data are synchronised.
+
+        Raises:
+            ValueError: if the tracking and event data are not synchronised yet
+        """
+
+        if not self.is_synchronised:
+            raise DataBallPyError(
+                "Tracking and event data are not synchronised yet. Please run the"
+                " synchronise_tracking_and_event_data() method first"
+            )
+
+        for shot in self.shot_events.values():
+            team_side = (
+                "home" if shot.player_id in self.home_players["id"].values else "away"
+            )
+            column_id = self.player_id_to_column_id(shot.player_id)
+            tracking_data_frame = self.tracking_data.loc[
+                self.tracking_data["event_id"] == shot.event_id
+            ].iloc[0]
+
+            if team_side == "home":
+                mask = (
+                    (self.away_players["start_frame"] <= tracking_data_frame["frame"])
+                    & (self.away_players["end_frame"] >= tracking_data_frame["frame"])
+                    & (self.away_players["position"] == "goalkeeper")
+                )
+                gk_column_id = (
+                    f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
+                )
+            else:
+                mask = (
+                    (self.home_players["start_frame"] <= tracking_data_frame["frame"])
+                    & (self.home_players["end_frame"] >= tracking_data_frame["frame"])
+                    & (self.home_players["position"] == "goalkeeper")
+                )
+                gk_column_id = (
+                    f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
+                )
+            shot.add_tracking_data_features(
+                tracking_data_frame,
+                team_side,
+                self.pitch_dimensions,
+                column_id,
+                gk_column_id,
+            )
 
     @requires_tracking_data
     @requires_event_data
@@ -245,10 +370,8 @@ class Match:
             verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
 
-        Currently works for the following events:
-            'pass', 'aerial', 'interception', 'ball recovery', 'dispossessed', 'tackle',
-            'take on', 'clearance', 'blocked pass', 'offside pass', 'attempt saved',
-            'save', 'foul', 'miss', 'challenge', 'goal'
+        Currently works for the following databallpy events:
+            'pass', 'shot', and 'dribble'
 
         """
         if not self.allow_synchronise_tracking_and_event_data:
@@ -287,6 +410,10 @@ class Match:
                 self._shots_df.equals(other._shots_df)
                 if self._shots_df is not None
                 else other._shots_df is None,
+                self.dribble_events == other.dribble_events,
+                self._dribbles_df.equals(other._dribbles_df)
+                if self._dribbles_df is not None
+                else other._dribbles_df is None,
                 self.country == other.country,
             ]
             return all(result)
@@ -315,6 +442,10 @@ class Match:
             away_players=self.away_players.copy(),
             shot_events=self.shot_events.copy(),
             _shots_df=self._shots_df.copy() if self._shots_df is not None else None,
+            dribble_events=self.dribble_events.copy(),
+            _dribbles_df=self._dribbles_df.copy()
+            if self._dribbles_df is not None
+            else None,
             country=self.country,
         )
 

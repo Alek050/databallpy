@@ -83,14 +83,24 @@ def plot_soccer_pitch(
     D_pos = 12 * meters_per_yard
     centre_circle_radius = 10 * meters_per_yard
 
+    zorder = -2
+
     # Plot half way line
-    ax.plot([0, 0], [-half_pitch_width, half_pitch_width], lc, linewidth=linewidth)
-    ax.scatter(0.0, 0.0, marker="o", facecolor=lc, linewidth=0, s=markersize)
+    ax.plot(
+        [0, 0],
+        [-half_pitch_width, half_pitch_width],
+        lc,
+        linewidth=linewidth,
+        zorder=zorder,
+    )
+    ax.scatter(
+        0.0, 0.0, marker="o", facecolor=lc, linewidth=0, s=markersize, zorder=zorder
+    )
     # Plot center circle
     y = np.linspace(-1, 1, 150) * centre_circle_radius
     x = np.sqrt(centre_circle_radius**2 - y**2)
-    ax.plot(x, y, lc, linewidth=linewidth)
-    ax.plot(-x, y, lc, linewidth=linewidth)
+    ax.plot(x, y, lc, linewidth=linewidth, zorder=zorder)
+    ax.plot(-x, y, lc, linewidth=linewidth, zorder=zorder)
 
     signs = [-1, 1]
     for s in signs:  # plots each line seperately
@@ -101,12 +111,14 @@ def plot_soccer_pitch(
             [s * half_pitch_width, s * half_pitch_width],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
         ax.plot(
             [s * half_pitch_length, s * half_pitch_length],
             [-half_pitch_width, half_pitch_width],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
 
         # Goal posts & line
@@ -116,6 +128,7 @@ def plot_soccer_pitch(
             pc + "s",
             markersize=6 * markersize / 20.0,
             linewidth=linewidth,
+            zorder=zorder - 1,
         )
 
         # 6 yard box
@@ -124,12 +137,14 @@ def plot_soccer_pitch(
             [box_width / 2.0, box_width / 2.0],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
         ax.plot(
             [s * half_pitch_length, s * half_pitch_length - s * box_length],
             [-box_width / 2.0, -box_width / 2.0],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
         ax.plot(
             [
@@ -139,6 +154,7 @@ def plot_soccer_pitch(
             [-box_width / 2.0, box_width / 2.0],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
 
         # Penalty area
@@ -147,12 +163,14 @@ def plot_soccer_pitch(
             [area_width / 2.0, area_width / 2.0],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
         ax.plot(
             [s * half_pitch_length, s * half_pitch_length - s * area_length],
             [-area_width / 2.0, -area_width / 2.0],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
         ax.plot(
             [
@@ -162,6 +180,7 @@ def plot_soccer_pitch(
             [-area_width / 2.0, area_width / 2.0],
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
 
         # Penalty spot
@@ -172,6 +191,7 @@ def plot_soccer_pitch(
             facecolor=lc,
             linewidth=0,
             s=markersize,
+            zorder=zorder,
         )
 
         # Corner flags
@@ -182,9 +202,14 @@ def plot_soccer_pitch(
             -half_pitch_width + y,
             lc,
             linewidth=linewidth,
+            zorder=zorder,
         )
         ax.plot(
-            s * half_pitch_length - s * x, half_pitch_width - y, lc, linewidth=linewidth
+            s * half_pitch_length - s * x,
+            half_pitch_width - y,
+            lc,
+            linewidth=linewidth,
+            zorder=zorder,
         )
 
         # Draw the half circles by the box: the D
@@ -192,7 +217,9 @@ def plot_soccer_pitch(
             np.linspace(-1, 1, 50) * D_length
         )  # D_length is the chord of the circle that defines the D
         x = np.sqrt(D_radius**2 - y**2) + D_pos
-        ax.plot(s * half_pitch_length - s * x, y, lc, linewidth=linewidth)
+        ax.plot(
+            s * half_pitch_length - s * x, y, lc, linewidth=linewidth, zorder=zorder
+        )
 
     # remove axis labels and ticks
     ax.set_xticklabels([])
@@ -347,6 +374,7 @@ def save_match_clip(
     pitch_color: str = "mediumseagreen",
     events: list = [],
     variable_of_interest: pd.Series = None,
+    player_posession_column: str = None,
     verbose: bool = True,
 ):
     """Function to save a subset of a match clip of the tracking data.
@@ -361,14 +389,18 @@ def save_match_clip(
         save_folder (str): Location where to save the clip.
         title (str, optional): Title of the clip. Defaults to "test_clip".
         team_colors (list, optional): Colors of the home and away team. Defaults to
-        ["green", "red"].
+            ["green", "red"].
         pitch_color (str, optional): Color of the pitch. Defaults to "mediumseagreen".
         events (list, optional): What events should be plotted as well. Defaults to [].
         variable_of_interest (pd.Series, optional): Variable you want to have plotted
-        in the clip, this is a pd.Series that should have the same index
-        (start_idx:end_idx) as the tracking data that will be plotted. Defaults to None.
+            in the clip, this is a pd.Series that should have the same index
+            (start_idx:end_idx) as the tracking data that will be plotted. Defaults to
+            None.
+        player_posession_column (str, optional): Column in match.tracking_data that
+            contains the player id of the player that has posession of the ball.
+            Defaults to None.
         verbose (bool, optional): Whether or not to print info in the terminal on the
-        progress
+            progress
     """
 
     td = match.tracking_data.loc[start_idx:end_idx]
@@ -382,6 +414,11 @@ def save_match_clip(
             "Index of variable of interest and of the tracking data should be alike!"
         )
 
+    if player_posession_column is not None:
+        assert (
+            player_posession_column in match.tracking_data.columns
+        ), f"Column {player_posession_column} not found in match.tracking_data.columns"
+
     if len(events) > 0:
         assert (
             "databallpy_event" in match.tracking_data.columns
@@ -391,7 +428,7 @@ def save_match_clip(
     animation_metadata = {
         "title": title,
         "artist": "Matplotlib",
-        "comment": "Made with databallpy",
+        "comment": "Made with DataballPy",
     }
     writer = animation.FFMpegWriter(fps=match.frame_rate, metadata=animation_metadata)
     video_loc = f"{save_folder}/{title}.mp4"
@@ -479,6 +516,22 @@ def save_match_clip(
                     fontsize=14,
                 )
                 variable_fig_objs.append(fig_obj)
+
+            # add player posessions
+            if player_posession_column is not None:
+                column_id = match.tracking_data.loc[idx, player_posession_column]
+                if not pd.isnull(column_id):
+                    circle = plt.Circle(
+                        (
+                            match.tracking_data.loc[idx, f"{column_id}_x"],
+                            match.tracking_data.loc[idx, f"{column_id}_y"],
+                        ),
+                        radius=1,
+                        color="gold",
+                        fill=False,
+                    )
+                    fig_obj = ax.add_artist(circle)
+                    variable_fig_objs.append(fig_obj)
 
             # Add events
             # Note: this should be last in this function since it assumes that all

@@ -49,7 +49,7 @@
           <Assist PlayerRef="p204589">p204589</Assist>
         </Goal>
         <PlayerLineUp>
-          <MatchPlayer Formation_Place="4" PlayerRef="p19367" Position="Midfielder" ShirtNumber="1" Status="Start" />
+          <MatchPlayer Formation_Place="4" PlayerRef="p19367" Position="Goalkeeper" ShirtNumber="1" Status="Start" />
           <MatchPlayer Formation_Place="0" PlayerRef="p45849" Position="Substitute" ShirtNumber="2" Status="Sub" SubPosition="Midfielder" />
         </PlayerLineUp>
         <Substitution EventID="2499630783" EventNumber="2705" Min="69" Period="2" Reason="Tactical" Sec="26" SubOff="p240234" SubOn="p459655" SubstitutePosition="4" Time="70" TimeStamp="20230122T124539+0000" TimeStampUTC="20230122T124539+0000" uID="s318-1" />
@@ -66,7 +66,7 @@
         </Goal>
         <PlayerLineUp>
           <MatchPlayer Formation_Place="8" PlayerRef="p184934" Position="Midfielder" ShirtNumber="1" Status="Start" />
-          <MatchPlayer Formation_Place="0" PlayerRef="p450445" Position="Substitute" ShirtNumber="2" Status="Sub" SubPosition="Midfielder" />
+          <MatchPlayer Formation_Place="0" PlayerRef="p450445" Position="Goalkeeper" ShirtNumber="2" Status="Sub" SubPosition="Midfielder" />
         </PlayerLineUp>
         <Substitution EventID="2499620351" EventNumber="24516" Min="45" Period="2" Reason="Tactical" Sec="0" SubOff="p223089" SubOn="p502251" SubstitutePosition="3" Time="45" TimeStamp="20230122T122103+0000" TimeStampUTC="20230122T122103+0000" uID="s425-1" />
         <Substitution EventID="2499627855" EventNumber="26317" Min="62" Period="2" Reason="Tactical" Sec="55" SubOff="p538779" SubOn="p483091" SubstitutePosition="3" Time="63" TimeStamp="20230122T123908+0000" TimeStampUTC="20230122T123908+0000" uID="s425-2" />

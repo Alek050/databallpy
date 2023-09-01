@@ -14,6 +14,9 @@ class BaseEvent:
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
         datetime (pd.Timestamp): datetime at which the event occured
+        start_x (float): x coordinate of the start location of the event
+        start_y (float): y coordinate of the start location of the event
+        team_id (int): id of the team that performed the event
     """
 
     event_id: int
@@ -23,6 +26,7 @@ class BaseEvent:
     datetime: pd.Timestamp
     start_x: float
     start_y: float
+    team_id: int
 
     def __post_init__(self):
         if not isinstance(self.event_id, int):
@@ -48,6 +52,9 @@ class BaseEvent:
         if not isinstance(self.start_y, float):
             raise TypeError(f"y_start should be a float, not {type(self.start_y)}")
 
+        if not isinstance(self.team_id, int):
+            raise TypeError(f"team_id should be int, not {type(self.team_id)}")
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BaseEvent):
             return False
@@ -59,5 +66,6 @@ class BaseEvent:
             self.datetime == other.datetime,
             round(self.start_x, 4) == round(other.start_x, 4),
             round(self.start_y, 4) == round(other.start_y, 4),
+            self.team_id == other.team_id,
         ]
         return all(result)

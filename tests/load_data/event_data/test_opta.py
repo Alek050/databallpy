@@ -1,13 +1,19 @@
 import unittest
 
 import pandas as pd
+from bs4 import BeautifulSoup
 
+from databallpy.load_data.event_data.dribble_event import DribbleEvent
 from databallpy.load_data.event_data.opta import (
     _get_player_info,
     _load_event_data,
     _load_metadata,
+    _make_dribble_event_instance,
+    _make_shot_event_instance,
     load_opta_event_data,
 )
+from databallpy.load_data.event_data.shot_event import ShotEvent
+from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import ED_OPTA, MD_OPTA, SHOT_EVENTS_OPTA
 
 
@@ -32,7 +38,11 @@ class TestOpta(unittest.TestCase):
         for shot_event in shot_events_opta.values():
             shot_event.start_x = shot_event.start_x / 106 * 10
             shot_event.start_y = shot_event.start_y / 68 * 10
-        assert dbp_events == {"shot_events": SHOT_EVENTS_OPTA}
+
+        assert "shot_events" in dbp_events.keys()
+        for key, event in dbp_events["shot_events"].items():
+            assert key in shot_events_opta.keys()
+            assert event == shot_events_opta[key]
 
     def test_load_metadata(self):
 
@@ -101,4 +111,80 @@ class TestOpta(unittest.TestCase):
 
         pd.testing.assert_frame_equal(event_data, expected_event_data)
 
-        assert dbp_events == {"shot_events": SHOT_EVENTS_OPTA}
+        assert "shot_events" in dbp_events.keys()
+        for key, event in dbp_events["shot_events"].items():
+            assert key in SHOT_EVENTS_OPTA.keys()
+            assert event == SHOT_EVENTS_OPTA[key]
+
+    def test_make_shot_event_instance(self):
+        event_xml = """
+            <Event event_id="15" id="2529877443" last_modified="2023-04-08T02:39:48"
+                   min="0" outcome="1" period_id="1" player_id="223345" sec="31"
+                   team_id="325" timestamp="2023-04-07T19:02:07.364"
+                   timestamp_utc="2023-04-07T18:02:07.364" type_id="16"
+                   version="1680917987858" x="46.2" y="6.1">
+                <Q id="4171346209" qualifier_id="464"/>
+                <Q id="4170359433" qualifier_id="233" value="34"/>
+                <Q id="4170356073" qualifier_id="286"/>
+                <Q id="4170356071" qualifier_id="56" value="Back"/>
+                <Q id="4170356075" qualifier_id="102" value="22.8"/>
+                <Q id="4170356077" qualifier_id="103" value="7.2"/>
+                <Q id="4170356079" qualifier_id="20"/>
+            </Event>
+            """
+
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+
+        expected_output = ShotEvent(
+            player_id=223345,
+            event_id=2529877443,
+            period_id=1,
+            minutes=0,
+            seconds=31,
+            datetime=pd.to_datetime("2023-04-07T19:02:07.364", utc=True),
+            start_x=-4.0279999,
+            start_y=-29.852,
+            team_id=325,
+            shot_outcome="goal",
+            y_target=-1.991040,
+            z_target=0.17568,
+            body_part="right_foot",
+            type_of_play="regular_play",
+            first_touch=False,
+            created_oppertunity="regular_play",
+            related_event_id=MISSING_INT,
+        )
+        actual_output = _make_shot_event_instance(event, 111)
+        self.assertEqual(actual_output, expected_output)
+
+    def test_make_dribble_event_instance(self):
+        event_xml = """
+            <Event type_id="3" event_id="15" id="2529877443"
+            last_modified="2023-04-08T02:39:48" min="0" outcome="1" period_id="1"
+            player_id="223345" sec="31" team_id="325"
+            timestamp="2023-04-07T19:02:07.364" timestamp_utc="2023-04-07T18:02:07.364"
+            version="1680917987858" x="46.2" y="6.1">
+                <Q id="4171346209" qualifier_id="464"/>
+                <Q id="4170356073" qualifier_id="286"/>
+                <Q id="4170356071" qualifier_id="56" value="Back"/>
+            </Event>
+        """
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+
+        dribble_event = _make_dribble_event_instance(event, away_team_id=325)
+
+        assert dribble_event == DribbleEvent(
+            player_id=223345,
+            event_id=2529877443,
+            period_id=1,
+            minutes=0,
+            seconds=31,
+            datetime=pd.to_datetime("2023-04-07T19:02:07.364", utc=True),
+            start_x=4.0279999,
+            start_y=29.852,
+            team_id=325,
+            related_event_id=MISSING_INT,
+            duel_type="offensive",
+            outcome=True,
+            has_opponent=True,
+        )

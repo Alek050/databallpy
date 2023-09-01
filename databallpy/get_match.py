@@ -189,6 +189,9 @@ def get_match(
             shot_events=databallpy_events["shot_events"]
             if "shot_events" in databallpy_events.keys()
             else {},
+            dribble_events=databallpy_events["dribble_events"]
+            if "dribble_events" in databallpy_events.keys()
+            else {},
         )
 
     elif uses_tracking_data and not uses_event_data:
@@ -242,6 +245,9 @@ def get_match(
             country=event_metadata.country,
             shot_events=databallpy_events["shot_events"]
             if "shot_events" in databallpy_events.keys()
+            else {},
+            dribble_events=databallpy_events["dribble_events"]
+            if "dribble_events" in databallpy_events.keys()
             else {},
         )
 

@@ -17,6 +17,8 @@ from databallpy.match import Match
 from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
 from expected_outcomes import (
+    DRIBBLE_EVENTS_OPTA,
+    DRIBBLE_EVENTS_OPTA_TRACAB,
     ED_OPTA,
     MD_OPTA,
     MD_TRACAB,
@@ -111,7 +113,7 @@ class TestGetMatch(unittest.TestCase):
                 "start_frame": [1509993, 1509993],
                 "end_frame": [1509997, 1509995],
                 "formation_place": [4, 0],
-                "position": ["midfielder", "midfielder"],
+                "position": ["goalkeeper", "midfielder"],
                 "starter": [True, False],
             }
         )
@@ -122,9 +124,9 @@ class TestGetMatch(unittest.TestCase):
                 "full_name": ["Pepijn Blok", "TestSpeler"],
                 "shirt_num": [1, 2],
                 "start_frame": [1509993, 1509993],
-                "end_frame": [1509997, 1509994],
+                "end_frame": [1509997, 1509995],
                 "formation_place": [8, 0],
-                "position": ["midfielder", "midfielder"],
+                "position": ["midfielder", "goalkeeper"],
                 "starter": [True, False],
             }
         )
@@ -151,6 +153,7 @@ class TestGetMatch(unittest.TestCase):
             away_players=self.expected_away_players_tracab_opta,
             country=self.md_opta.country,
             shot_events=SHOT_EVENTS_OPTA_TRACAB,
+            dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB,
         )
 
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -349,6 +352,7 @@ class TestGetMatch(unittest.TestCase):
             away_players=MD_OPTA.away_players,
             country=MD_OPTA.country,
             shot_events=SHOT_EVENTS_OPTA,
+            dribble_events=DRIBBLE_EVENTS_OPTA,
         )
 
     def test_get_match_opta_tracab(self):
@@ -455,9 +459,6 @@ class TestGetMatch(unittest.TestCase):
             check_quality=False,
         )
         assert res == self.expected_match_metrica
-
-    # def test_match_wrong_input(self):
-    #     assert not self.expected_match_tracab_opta == 3
 
     @patch(
         "requests.get",

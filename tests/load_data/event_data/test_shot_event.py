@@ -1,7 +1,9 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 
+from databallpy.features.angle import get_smallest_angle
 from databallpy.load_data.event_data.shot_event import ShotEvent
 
 
@@ -15,6 +17,7 @@ class TestShotEvent(unittest.TestCase):
             datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
             start_x=50.0,
             start_y=20.0,
+            team_id=123,
             z_target=15.0,
             y_target=3.5,
             player_id=45849,
@@ -24,6 +27,21 @@ class TestShotEvent(unittest.TestCase):
             first_touch=False,
             created_oppertunity="regular_play",
             related_event_id=123,
+        )
+
+        self.tracking_data_frame = pd.Series(
+            {
+                "frame": 1,
+                "home_1_x": 0,
+                "home_1_y": 0,
+                "away_1_x": 10,
+                "away_1_y": 10,
+                "away_2_x": 30,
+                "away_2_y": 0,
+                "ball_x": 0,
+                "ball_y": 0,
+                "event_id": 2512690515,
+            }
         )
 
     def test_post_init(self):
@@ -37,6 +55,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -58,6 +77,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id="45849",
@@ -79,6 +99,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -99,6 +120,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -120,6 +142,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target="15.0",
                 y_target=3.5,
                 player_id=45849,
@@ -139,6 +162,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3,
                 player_id=45849,
@@ -160,6 +184,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -179,6 +204,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -200,6 +226,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -219,6 +246,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -240,6 +268,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -261,6 +290,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -280,6 +310,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -301,6 +332,7 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                team_id=123,
                 z_target=15.0,
                 y_target=3.5,
                 player_id=45849,
@@ -324,6 +356,37 @@ class TestShotEvent(unittest.TestCase):
         assert self.shot_event != shot_event_changed_shot_attr
 
         assert self.shot_event != 1
+
+    def test_shot_event_add_tracking_data_features(self):
+        shot_event = self.shot_event.copy()
+        shot_event.add_tracking_data_features(
+            tracking_data_frame=self.tracking_data_frame,
+            team_side="home",
+            pitch_dimensions=[100, 50],
+            column_id="home_1",
+            gk_column_id="away_1",
+        )
+        goal_middle_vec = [50, 0]
+        ball_goal_vec = [50, 0]
+        goal_gk_vec = [40, -10]
+
+        self.assertAlmostEqual(
+            shot_event.ball_goal_distance, np.sqrt(50**2), places=4
+        )
+        self.assertAlmostEqual(
+            shot_event.ball_gk_distance, np.sqrt(10**2 + 10**2), places=4
+        )
+        self.assertAlmostEqual(
+            shot_event.shot_angle,
+            get_smallest_angle(goal_middle_vec, ball_goal_vec),
+            places=4,
+        )
+        self.assertAlmostEqual(
+            shot_event.gk_angle,
+            get_smallest_angle(ball_goal_vec, goal_gk_vec),
+            places=4,
+        )
+        self.assertEqual(shot_event.n_obstructive_players, 1)
 
     def test_shot_event_copy(self):
         shot_event_copy = self.shot_event.copy()

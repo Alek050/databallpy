@@ -1,12 +1,15 @@
 import os
 import unittest
+from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 
 from databallpy.errors import DataBallPyError
 from databallpy.get_match import get_match
 from databallpy.match import Match
-from expected_outcomes import SHOT_EVENTS_OPTA_TRACAB
+from databallpy.utils.utils import MISSING_INT
+from expected_outcomes import DRIBBLE_EVENTS_OPTA_TRACAB, SHOT_EVENTS_OPTA_TRACAB
 
 
 class TestMatch(unittest.TestCase):
@@ -954,7 +957,7 @@ class TestMatch(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.expected_match_tracab_opta.player_id_to_column_id(4)
 
-    def test_match_shots_df(self):
+    def test_match_shots_df_without_td_features(self):
         expected_df = pd.DataFrame(
             {
                 "event_id": [
@@ -989,6 +992,10 @@ class TestMatch(unittest.TestCase):
                     SHOT_EVENTS_OPTA_TRACAB[2512690515].start_y,
                     SHOT_EVENTS_OPTA_TRACAB[2512690516].start_y,
                 ],
+                "team_id": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].team_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].team_id,
+                ],
                 "shot_outcome": [
                     SHOT_EVENTS_OPTA_TRACAB[2512690515].shot_outcome,
                     SHOT_EVENTS_OPTA_TRACAB[2512690516].shot_outcome,
@@ -1021,12 +1028,119 @@ class TestMatch(unittest.TestCase):
                     SHOT_EVENTS_OPTA_TRACAB[2512690515].related_event_id,
                     SHOT_EVENTS_OPTA_TRACAB[2512690516].related_event_id,
                 ],
+                "ball_goal_distance": [np.nan, np.nan],
+                "ball_gk_distance": [np.nan, np.nan],
+                "shot_angle": [np.nan, np.nan],
+                "gk_angle": [np.nan, np.nan],
+                "pressure_on_ball": [np.nan, np.nan],
+                "n_obstructive_players": [MISSING_INT, MISSING_INT],
             }
         )
 
         shots_df = self.expected_match_tracab_opta.shots_df
-
         pd.testing.assert_frame_equal(shots_df, expected_df)
+
+    @patch(
+        "databallpy.load_data.event_data.shot_event."
+        "ShotEvent.add_tracking_data_features"
+    )
+    def test_match_shots_df_tracking_data_features(
+        self, mock_add_tracking_data_features
+    ):
+        mock_add_tracking_data_features.return_value = "Return value"
+
+        # for away team shot
+        match = self.expected_match_tracab_opta.copy()
+        match.tracking_data["event_id"] = [np.nan, np.nan, np.nan, np.nan, 2512690516]
+        match.tracking_data["databallpy_event"] = [
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            "shot",
+        ]
+        match._is_synchronised = True
+        match.shot_events = {2512690516: match.shot_events[2512690516]}
+        match.add_tracking_data_features_to_shots()
+
+        expected_team_side = "away"
+        expected_td_frame = match.tracking_data.iloc[-1]
+        pitch_dimension = match.pitch_dimensions
+        expected_column_id = "away_1"
+        expected_gk_column_id = "home_1"
+
+        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
+        called_td_frame = called_args[0]
+        called_team_side = called_args[1]
+        called_pitch_dimension = called_args[2]
+        called_column_id = called_args[3]
+        called_gk_column_id = called_args[4]
+
+        pd.testing.assert_series_equal(called_td_frame, expected_td_frame)
+        assert called_team_side == expected_team_side
+        assert called_pitch_dimension == pitch_dimension
+        assert called_column_id == expected_column_id
+        assert called_gk_column_id == expected_gk_column_id
+
+        # for home team shot
+        match = self.expected_match_tracab_opta.copy()
+        match.tracking_data["event_id"] = [np.nan, np.nan, 2512690515, np.nan, np.nan]
+        match.tracking_data["databallpy_event"] = [
+            np.nan,
+            np.nan,
+            "own_goal",
+            np.nan,
+            np.nan,
+        ]
+        match._is_synchronised = True
+        match.shot_events = {2512690515: match.shot_events[2512690515]}
+        match.add_tracking_data_features_to_shots()
+
+        expected_team_side = "home"
+        expected_td_frame = match.tracking_data.iloc[-3]
+        pitch_dimension = match.pitch_dimensions
+        expected_column_id = "home_2"
+        expected_gk_column_id = "away_2"
+
+        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
+        called_td_frame = called_args[0]
+        called_team_side = called_args[1]
+        called_pitch_dimension = called_args[2]
+        called_column_id = called_args[3]
+        called_gk_column_id = called_args[4]
+
+        pd.testing.assert_series_equal(called_td_frame, expected_td_frame)
+        assert called_team_side == expected_team_side
+        assert called_pitch_dimension == pitch_dimension
+        assert called_column_id == expected_column_id
+        assert called_gk_column_id == expected_gk_column_id
+
+        with self.assertRaises(DataBallPyError):
+            match._is_synchronised = False
+            match.add_tracking_data_features_to_shots()
+
+    def test_match_dribbles_df_without_td_features(self):
+        expected_df = pd.DataFrame(
+            {
+                "event_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].event_id],
+                "player_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].player_id],
+                "period_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].period_id],
+                "minutes": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].minutes],
+                "seconds": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].seconds],
+                "datetime": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].datetime],
+                "start_x": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].start_x],
+                "start_y": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].start_y],
+                "team_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].team_id],
+                "related_event_id": [
+                    DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].related_event_id
+                ],
+                "duel_type": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].duel_type],
+                "outcome": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].outcome],
+                "has_opponent": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].has_opponent],
+            }
+        )
+        dribbles_df = self.expected_match_tracab_opta.dribbles_df
+        pd.testing.assert_frame_equal(dribbles_df, expected_df)
 
     def test_match_requires_event_data_wrapper(self):
         match = self.expected_match_opta.copy()
