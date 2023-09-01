@@ -39,14 +39,14 @@ class TestGetSmallestAngle(unittest.TestCase):
         b = [-1, 1]
         with self.assertRaises(ValueError):
             get_smallest_angle(a, b)
-        
+
         a = [[1, 1, 0], [1, 1, 0]]
         b = [[-1, 1, 1], [-1, 1, 1]]
         with self.assertRaises(ValueError):
             get_smallest_angle(a, b)
-    
+
     def test_get_smallest_angle_invalid_type(self):
-        a = {"list1":[1, 1, 0]}
+        a = {"list1": [1, 1, 0]}
         b = [-1, 1]
         with self.assertRaises(TypeError):
             get_smallest_angle(a, b)
