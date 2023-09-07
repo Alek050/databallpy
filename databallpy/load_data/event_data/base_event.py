@@ -4,7 +4,7 @@ import pandas as pd
 
 
 @dataclass
-class Event:
+class BaseEvent:
     """This is the base event class from which the specific event classes are inherited.
     It containts all the basic information that is available for every event.
 
@@ -14,8 +14,9 @@ class Event:
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
         datetime (pd.Timestamp): datetime at which the event occured
-        x_start (float): x-coordinate where the event occured
-        y_start (float): y-coordinate where the event occured
+        start_x (float): x coordinate of the start location of the event
+        start_y (float): y coordinate of the start location of the event
+        team_id (int): id of the team that performed the event
     """
 
     event_id: int
@@ -23,8 +24,9 @@ class Event:
     minutes: int
     seconds: int
     datetime: pd.Timestamp
-    x_start: float
-    y_start: float
+    start_x: float
+    start_y: float
+    team_id: int
 
     def __post_init__(self):
         if not isinstance(self.event_id, int):
@@ -44,8 +46,26 @@ class Event:
                 f"datetime should be pd.Timestamp, not {type(self.datetime)}"
             )
 
-        if not isinstance(self.x_start, float):
-            raise TypeError(f"x_start should be a float, not {type(self.x_start)}")
+        if not isinstance(self.start_x, float):
+            raise TypeError(f"x_start should be a float, not {type(self.start_x)}")
 
-        if not isinstance(self.y_start, float):
-            raise TypeError(f"y_start should be a float, not {type(self.y_start)}")
+        if not isinstance(self.start_y, float):
+            raise TypeError(f"y_start should be a float, not {type(self.start_y)}")
+
+        if not isinstance(self.team_id, int):
+            raise TypeError(f"team_id should be int, not {type(self.team_id)}")
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BaseEvent):
+            return False
+        result = [
+            self.event_id == other.event_id,
+            self.period_id == other.period_id,
+            self.minutes == other.minutes,
+            self.seconds == other.seconds,
+            self.datetime == other.datetime,
+            round(self.start_x, 4) == round(other.start_x, 4),
+            round(self.start_y, 4) == round(other.start_y, 4),
+            self.team_id == other.team_id,
+        ]
+        return all(result)

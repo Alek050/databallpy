@@ -33,6 +33,7 @@ def get_match(
     tracking_data_provider: str = None,
     event_data_provider: str = None,
     check_quality: bool = True,
+    verbose=True,
 ) -> Match:
     """Function to get all information of a match given its datasources
 
@@ -56,6 +57,7 @@ def get_match(
                                              - Instat
         check_quality (bool, optional): whether you want to check the quality of the
                                         tracking data. Defaults to True
+        verbose (bool, optional): whether or not to print info about progress
     Returns:
         (Match): a Match object with all information available of the match.
     """
@@ -68,12 +70,13 @@ def get_match(
             tracking_data_loc=tracking_data_loc,
             tracking_metadata_loc=tracking_metadata_loc,
             tracking_data_provider=tracking_data_provider,
+            verbose=verbose,
         )
         uses_tracking_data = True
 
     # Check if event data should be loaded
     if event_data_loc and event_metadata_loc and event_data_provider:
-        event_data, event_metadata = load_event_data(
+        event_data, event_metadata, databallpy_events = load_event_data(
             event_data_loc=event_data_loc,
             event_metadata_loc=event_metadata_loc,
             event_data_provider=event_data_provider,
@@ -96,6 +99,13 @@ def get_match(
             )
             event_data["start_x"] *= x_correction
             event_data["start_y"] *= y_correction
+
+            # correct the databallpy event instances as well
+            if databallpy_events is not None:
+                for dict_of_events in databallpy_events.values():
+                    for event in dict_of_events.values():
+                        event.start_x *= x_correction
+                        event.start_y *= y_correction
 
         # Merge periods
         periods_cols = event_metadata.periods_frames.columns.difference(
@@ -179,6 +189,15 @@ def get_match(
             away_players=away_players,
             country=event_metadata.country,
             allow_synchronise_tracking_and_event_data=allow_synchronise,
+            shot_events=databallpy_events["shot_events"]
+            if "shot_events" in databallpy_events.keys()
+            else {},
+            dribble_events=databallpy_events["dribble_events"]
+            if "dribble_events" in databallpy_events.keys()
+            else {},
+            pass_events=databallpy_events["pass_events"]
+            if "pass_events" in databallpy_events.keys()
+            else {},
         )
 
     elif uses_tracking_data and not uses_event_data:
@@ -230,6 +249,15 @@ def get_match(
             away_team_name=event_metadata.away_team_name,
             away_players=event_metadata.away_players,
             country=event_metadata.country,
+            shot_events=databallpy_events["shot_events"]
+            if "shot_events" in databallpy_events.keys()
+            else {},
+            dribble_events=databallpy_events["dribble_events"]
+            if "dribble_events" in databallpy_events.keys()
+            else {},
+            pass_events=databallpy_events["pass_events"]
+            if "pass_events" in databallpy_events.keys()
+            else {},
         )
 
     return match
@@ -252,7 +280,11 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
 
 
 def load_tracking_data(
-    *, tracking_data_loc: str, tracking_metadata_loc: str, tracking_data_provider: str
+    *,
+    tracking_data_loc: str,
+    tracking_metadata_loc: str,
+    tracking_data_provider: str,
+    verbose: bool = True,
 ) -> Tuple[pd.DataFrame, Metadata]:
     """Function to load the tracking data of a match
 
@@ -260,6 +292,7 @@ def load_tracking_data(
         tracking_data_loc (str): location of the tracking data file
         tracking_metadata_loc (str): location of the tracking metadata file
         tracking_data_provider (str): provider of the tracking data
+        verbose (bool, optional): whether or not to print info about progress
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the match
@@ -274,15 +307,19 @@ def load_tracking_data(
     # Get tracking data and tracking metadata
     if tracking_data_provider == "tracab":
         tracking_data, tracking_metadata = load_tracab_tracking_data(
-            tracking_data_loc, tracking_metadata_loc
+            tracking_data_loc, tracking_metadata_loc, verbose=verbose
         )
     elif tracking_data_provider == "metrica":
         tracking_data, tracking_metadata = load_metrica_tracking_data(
-            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
+            tracking_data_loc=tracking_data_loc,
+            metadata_loc=tracking_metadata_loc,
+            verbose=verbose,
         )
     elif tracking_data_provider == "inmotio":
         tracking_data, tracking_metadata = load_inmotio_tracking_data(
-            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
+            tracking_data_loc=tracking_data_loc,
+            metadata_loc=tracking_metadata_loc,
+            verbose=verbose,
         )
 
     return tracking_data, tracking_metadata
@@ -309,8 +346,9 @@ def load_event_data(
     "please open an issue in our Github repository."
 
     # Get event data and event metadata
+    databallpy_events = {}
     if event_data_provider == "opta":
-        event_data, event_metadata = load_opta_event_data(
+        event_data, event_metadata, databallpy_events = load_opta_event_data(
             f7_loc=event_metadata_loc, f24_loc=event_data_loc
         )
     elif event_data_provider == "metrica":
@@ -322,7 +360,7 @@ def load_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
 
-    return event_data, event_metadata
+    return event_data, event_metadata, databallpy_events
 
 
 def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:

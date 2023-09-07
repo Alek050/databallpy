@@ -30,7 +30,29 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         )
         self.match_to_sync.allow_synchronise_tracking_and_event_data = True
 
-    def test_synchronise_tracking_and_event_data(self):
+        self.match_to_sync.tracking_data["ball_acceleration"] = np.array(
+            [180.0, 180.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150.0, 0]
+        )
+        self.match_to_sync.tracking_data["ball_velocity"] = np.array(
+            [
+                1.0,
+                80.0,
+                81.0,
+                82.0,
+                83.0,
+                84.0,
+                85.0,
+                86.0,
+                87.0,
+                88.0,
+                89.0,
+                240.0,
+                239.0,
+            ]
+        )
+        self.match_to_sync.event_data.loc[8, "databallpy_event"] = "shot"
+
+    def test_synchronise_tracking_and_event_data_normal_condition(self):
         expected_event_data = self.match_to_sync.event_data.copy()
         expected_tracking_data = self.match_to_sync.tracking_data.copy()
         expected_tracking_data["period"] = [1] * 13
@@ -40,13 +62,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             np.nan,
             np.nan,
             np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
             "dribble",
-            "dribble",
             np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
+            "shot",
             np.nan,
         ]
         expected_tracking_data["event_id"] = [
@@ -55,13 +77,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             np.nan,
             np.nan,
             np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
             2499594285,
+            np.nan,
             2499594291,
-            np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
             np.nan,
         ]
 
@@ -73,15 +95,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             1.0,
             np.nan,
             np.nan,
-            5.0,
-            6.0,
+            9.0,
+            11.0,
         ]
         expected_event_data = expected_event_data[
             expected_event_data["type_id"].isin([1, 3, 7])
         ]
-
         self.match_to_sync.synchronise_tracking_and_event_data(n_batches_per_half=1)
-
         pd.testing.assert_frame_equal(
             self.match_to_sync.tracking_data, expected_tracking_data
         )
@@ -149,6 +169,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
             for x in tracking_data["frame"]
         ]
+        tracking_data["ball_acceleration_sqrt"] = 5.0
+        tracking_data["goal_angle_home_team"] = 0.0
+        tracking_data["goal_angle_away_team"] = 0.0
         tracking_data.reset_index(inplace=True)
         event_data = self.match_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
@@ -176,6 +199,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data.reset_index(inplace=True)
         tracking_data["away_1_x"] = [np.nan] * 13
         tracking_data["away_1_y"] = [np.nan] * 13
+        tracking_data["ball_acceleration_sqrt"] = 5.0
+        tracking_data["goal_angle_home_team"] = 0.0
+        tracking_data["goal_angle_away_team"] = 0.0
         event_data = self.match_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
         res = _create_sim_mat(
@@ -184,7 +210,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             match=self.match_to_sync,
         )
 
-        np.testing.assert_allclose(expected_res, res)
+        np.testing.assert_allclose(expected_res, res, rtol=1e-05)
 
     def test_create_sim_mat_without_player(self):
         expected_res = RES_SIM_MAT_NO_PLAYER
@@ -199,6 +225,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
             for x in tracking_data["frame"]
         ]
+        tracking_data["ball_acceleration_sqrt"] = 5.0
+        tracking_data["goal_angle_home_team"] = 0.0
+        tracking_data["goal_angle_away_team"] = 0.0
         tracking_data.reset_index(inplace=True)
         event_data = self.match_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()

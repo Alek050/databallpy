@@ -1,14 +1,27 @@
 import unittest
 
 import pandas as pd
+from bs4 import BeautifulSoup
 
+from databallpy.load_data.event_data.dribble_event import DribbleEvent
 from databallpy.load_data.event_data.opta import (
     _get_player_info,
     _load_event_data,
     _load_metadata,
+    _make_dribble_event_instance,
+    _make_shot_event_instance,
+    _update_pass_outcome,
     load_opta_event_data,
 )
-from tests.expected_outcomes import ED_OPTA, MD_OPTA
+from databallpy.load_data.event_data.shot_event import ShotEvent
+from databallpy.utils.utils import MISSING_INT
+from tests.expected_outcomes import (
+    DRIBBLE_EVENTS_OPTA,
+    ED_OPTA,
+    MD_OPTA,
+    PASS_EVENTS_OPTA,
+    SHOT_EVENTS_OPTA,
+)
 
 
 class TestOpta(unittest.TestCase):
@@ -20,11 +33,23 @@ class TestOpta(unittest.TestCase):
 
     def test_load_opta_event_data(self):
 
-        event_data, metadata = load_opta_event_data(
+        event_data, metadata, dbp_events = load_opta_event_data(
             self.f7_loc, self.f24_loc, pitch_dimensions=[10.0, 10.0]
         )
         pd.testing.assert_frame_equal(event_data, ED_OPTA)
         assert metadata == MD_OPTA
+
+        # SHOT_EVENTS_OPTA is scaled to a pitch of [106, 68],
+        # while here [10, 10] is expected.
+        shot_events_opta = SHOT_EVENTS_OPTA.copy()
+        for shot_event in shot_events_opta.values():
+            shot_event.start_x = shot_event.start_x / 106 * 10
+            shot_event.start_y = shot_event.start_y / 68 * 10
+
+        assert "shot_events" in dbp_events.keys()
+        for key, event in dbp_events["shot_events"].items():
+            assert key in shot_events_opta.keys()
+            assert event == shot_events_opta[key]
 
     def test_load_metadata(self):
 
@@ -76,13 +101,15 @@ class TestOpta(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_result)
 
     def test_load_event_data(self):
-        event_data = _load_event_data(self.f24_loc, country="Netherlands")
+        event_data, dbp_events = _load_event_data(
+            self.f24_loc, away_team_id=194, country="Netherlands"
+        )
 
         # player name is added in other function later in the pipeline
         expected_event_data = ED_OPTA.copy().drop("player_name", axis=1)
 
         # away team coordinates are changed later on in the pipeline
-        expected_event_data.loc[[0, 2, 6, 8], ["start_x", "start_y"]] *= -1
+        expected_event_data.loc[[0, 2, 4, 6, 8, 10, 11], ["start_x", "start_y"]] *= -1
 
         # scaling of pitch dimension is done later on in the pipeline
         expected_event_data.loc[:, ["start_x", "start_y"]] = (
@@ -90,3 +117,141 @@ class TestOpta(unittest.TestCase):
         ) * 10
 
         pd.testing.assert_frame_equal(event_data, expected_event_data)
+
+        assert "shot_events" in dbp_events.keys()
+        for key, event in dbp_events["shot_events"].items():
+            assert key in SHOT_EVENTS_OPTA.keys()
+            assert event == SHOT_EVENTS_OPTA[key]
+
+        assert "dribble_events" in dbp_events.keys()
+        for key, event in dbp_events["dribble_events"].items():
+            assert key in DRIBBLE_EVENTS_OPTA.keys()
+            assert event == DRIBBLE_EVENTS_OPTA[key]
+
+        assert "pass_events" in dbp_events.keys()
+        for key, event in dbp_events["pass_events"].items():
+            assert key in PASS_EVENTS_OPTA.keys()
+            assert event == PASS_EVENTS_OPTA[key]
+
+    def test_make_shot_event_instance(self):
+        event_xml = """
+            <Event event_id="15" id="2529877443" last_modified="2023-04-08T02:39:48"
+                   min="0" outcome="1" period_id="1" player_id="223345" sec="31"
+                   team_id="325" timestamp="2023-04-07T19:02:07.364"
+                   timestamp_utc="2023-04-07T18:02:07.364" type_id="16"
+                   version="1680917987858" x="46.2" y="6.1">
+                <Q id="4171346209" qualifier_id="464"/>
+                <Q id="4170359433" qualifier_id="233" value="34"/>
+                <Q id="4170356073" qualifier_id="286"/>
+                <Q id="4170356071" qualifier_id="56" value="Back"/>
+                <Q id="4170356075" qualifier_id="102" value="22.8"/>
+                <Q id="4170356077" qualifier_id="103" value="7.2"/>
+                <Q id="4170356079" qualifier_id="20"/>
+            </Event>
+            """
+
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+
+        expected_output = ShotEvent(
+            player_id=223345,
+            event_id=2529877443,
+            period_id=1,
+            minutes=0,
+            seconds=31,
+            datetime=pd.to_datetime("2023-04-07T19:02:07.364", utc=True),
+            start_x=-4.0279999,
+            start_y=-29.852,
+            team_id=325,
+            shot_outcome="goal",
+            y_target=-1.991040,
+            z_target=0.17568,
+            body_part="right_foot",
+            type_of_play="regular_play",
+            first_touch=False,
+            created_oppertunity="regular_play",
+            related_event_id=MISSING_INT,
+        )
+        actual_output = _make_shot_event_instance(event, 111)
+        self.assertEqual(actual_output, expected_output)
+
+    def test_make_dribble_event_instance(self):
+        event_xml = """
+            <Event type_id="3" event_id="15" id="2529877443"
+            last_modified="2023-04-08T02:39:48" min="0" outcome="1" period_id="1"
+            player_id="223345" sec="31" team_id="325"
+            timestamp="2023-04-07T19:02:07.364" timestamp_utc="2023-04-07T18:02:07.364"
+            version="1680917987858" x="46.2" y="6.1">
+                <Q id="4171346209" qualifier_id="464"/>
+                <Q id="4170356073" qualifier_id="286"/>
+                <Q id="4170356071" qualifier_id="56" value="Back"/>
+            </Event>
+        """
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+
+        dribble_event = _make_dribble_event_instance(event, away_team_id=325)
+
+        assert dribble_event == DribbleEvent(
+            player_id=223345,
+            event_id=2529877443,
+            period_id=1,
+            minutes=0,
+            seconds=31,
+            datetime=pd.to_datetime("2023-04-07T19:02:07.364", utc=True),
+            start_x=4.0279999,
+            start_y=29.852,
+            team_id=325,
+            related_event_id=MISSING_INT,
+            duel_type="offensive",
+            outcome=True,
+            has_opponent=True,
+        )
+
+    def test_update_pass_outcome_no_related_event_id(self):
+        shot_events = SHOT_EVENTS_OPTA.copy()
+        pass_events = PASS_EVENTS_OPTA.copy()
+        event_data = ED_OPTA.copy()
+
+        for event in shot_events.values():
+            event.related_event_id = MISSING_INT
+
+        res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
+
+        for key, event in res_passes.items():
+            assert key in pass_events.keys()
+            assert event == pass_events[key]
+
+    def test_update_pass_outcome_pass_not_found(self):
+        shot_events = SHOT_EVENTS_OPTA.copy()
+        pass_events = PASS_EVENTS_OPTA.copy()
+        event_data = ED_OPTA.copy()
+
+        for event in shot_events.values():
+            # none of the pass events have event_id 120
+            event.related_event_id = 120
+
+        res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
+
+        for key, event in res_passes.items():
+            assert key in pass_events.keys()
+            assert event == pass_events[key]
+
+    def test_update_pass_outcome_multiple_options(self):
+        shot_events = SHOT_EVENTS_OPTA.copy()
+        pass_events = PASS_EVENTS_OPTA.copy()
+        event_data = ED_OPTA.copy()
+
+        for event in shot_events.values():
+            if event.shot_outcome == "goal":
+                event.related_event_id = 120
+
+        event_data.loc[event_data["databallpy_event"] == "pass", "opta_id"] = 120
+
+        # the pass event with event_id 120 has two options
+        assert len(event_data.loc[event_data["opta_id"] == 120]) == 2
+
+        res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
+        expected_passes = pass_events.copy()
+        expected_passes[2499594243].outcome = "assist"
+        for key, event in res_passes.items():
+            assert key in expected_passes.keys()
+            assert event == expected_passes[key]
