@@ -110,7 +110,6 @@ class ShotEvent(BaseEvent):
             column_id (str): column id of the player who takes the shot
             gk_column_id (str): column id of the goalkeeper
         """
-
         # define positions
         goal_xy = (
             [pitch_dimensions[0] / 2.0, 0]

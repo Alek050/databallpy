@@ -425,9 +425,8 @@ def _load_event_data(
         pd.DataFrame: all events of the match in a pd dataframe
         dict: dict with "shot_events" as key and a dict with the ShotEvent instances
     """
-    shot_events = {}
-    dribble_events = {}
 
+    dribble_events = {}
     shot_events = {}
     pass_events = {}
 
@@ -590,7 +589,7 @@ def _make_pass_instance(
     ]
     set_piece = set_piece_list[0] if len(set_piece_list) > 0 else "no_set_piece"
 
-    x_start, y_start = rescale_opta_dimensions(
+    x_start, y_start = _rescale_opta_dimensions(
         float(event.attrs["x"]),
         float(event.attrs["y"]),
         pitch_dimensions=pitch_dimensions,
@@ -599,7 +598,7 @@ def _make_pass_instance(
     if event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)}) and event.find(
         "Q", attrs={"qualifier_id": str(Y_END_QUALIFIER)}
     ):
-        x_end, y_end = rescale_opta_dimensions(
+        x_end, y_end = _rescale_opta_dimensions(
             float(
                 event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)})["value"]
             ),
@@ -693,7 +692,7 @@ def _make_shot_event_instance(
     ]
     body_part = body_part_list[0] if len(body_part_list) > 0 else None
 
-    x_start, y_start = rescale_opta_dimensions(
+    x_start, y_start = _rescale_opta_dimensions(
         float(event.attrs["x"]),
         float(event.attrs["y"]),
         pitch_dimensions=pitch_dimensions,
@@ -776,7 +775,7 @@ def _make_dribble_event_instance(
     ]
     duel_type = duel_type_list[0] if len(duel_type_list) > 0 else None
 
-    x_start, y_start = rescale_opta_dimensions(
+    x_start, y_start = _rescale_opta_dimensions(
         float(event.attrs["x"]),
         float(event.attrs["y"]),
         pitch_dimensions=pitch_dimensions,
@@ -805,7 +804,7 @@ def _make_dribble_event_instance(
     return dribble_event
 
 
-def rescale_opta_dimensions(
+def _rescale_opta_dimensions(
     x: float, y: float, pitch_dimensions: list = [106.0, 68.0]
 ) -> Tuple[float, float]:
     """Function to rescale the x and y coordinates from the opta data to the pitch
@@ -841,10 +840,8 @@ def _update_pass_outcome(
     Returns:
         dict: updated list of PassEvent instances
     """
-
-    for goal_event_ids in event_data[
-        event_data["opta_event"] == "goal"
-    ].event_id.to_list():
+    event_ids = event_data[event_data["opta_event"] == "goal"].event_id.to_list()
+    for goal_event_ids in event_ids:
         shot_event = shot_events[goal_event_ids]
         related_event_id = shot_event.related_event_id
 

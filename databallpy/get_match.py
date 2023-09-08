@@ -10,6 +10,7 @@ from databallpy.load_data.event_data.metrica_event_data import (
     load_metrica_open_event_data,
 )
 from databallpy.load_data.event_data.opta import load_opta_event_data
+from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data._quality_check_tracking_data import (
     _quality_check_tracking_data,
@@ -106,6 +107,9 @@ def get_match(
                     for event in dict_of_events.values():
                         event.start_x *= x_correction
                         event.start_y *= y_correction
+                        if isinstance(event, PassEvent):
+                            event.end_x *= x_correction
+                            event.end_y *= y_correction
 
         # Merge periods
         periods_cols = event_metadata.periods_frames.columns.difference(

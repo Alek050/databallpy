@@ -10,7 +10,11 @@ from databallpy.get_match import get_match
 from databallpy.match import Match
 from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
-from expected_outcomes import DRIBBLE_EVENTS_OPTA_TRACAB, SHOT_EVENTS_OPTA_TRACAB
+from expected_outcomes import (
+    DRIBBLE_EVENTS_OPTA_TRACAB,
+    PASS_EVENTS_OPTA_TRACAB,
+    SHOT_EVENTS_OPTA_TRACAB,
+)
 
 
 class TestMatch(unittest.TestCase):
@@ -920,6 +924,9 @@ class TestMatch(unittest.TestCase):
             self.expected_match_tracab_opta.name
             == "TeamOne 3 - 1 TeamTwo 2023-01-14 16:46:39"
         )
+        assert (
+            self.expected_match_opta.name == "TeamOne 3 - 1 TeamTwo 2023-01-22 12:18:32"
+        )
 
     def test_match_home_players_column_ids(self):
         assert self.expected_match_tracab_opta.home_players_column_ids() == [
@@ -1054,7 +1061,9 @@ class TestMatch(unittest.TestCase):
                 "n_obstructive_players": [MISSING_INT, MISSING_INT, MISSING_INT],
             }
         )
-
+        match = self.expected_match_tracab_opta.copy()
+        # make sure it will not try to add tracking data features
+        match.allow_synchronise_tracking_and_event_data = False
         shots_df = self.expected_match_tracab_opta.shots_df
         pd.testing.assert_frame_equal(shots_df, expected_df)
 
@@ -1159,6 +1168,78 @@ class TestMatch(unittest.TestCase):
         )
         dribbles_df = self.expected_match_tracab_opta.dribbles_df
         pd.testing.assert_frame_equal(dribbles_df, expected_df)
+
+    def test_match_passes_df_without_td_features(self):
+        expected_df = pd.DataFrame(
+            {
+                "event_id": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].event_id,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].event_id,
+                ],
+                "player_id": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].player_id,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].player_id,
+                ],
+                "period_id": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].period_id,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].period_id,
+                ],
+                "minutes": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].minutes,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].minutes,
+                ],
+                "seconds": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].seconds,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].seconds,
+                ],
+                "datetime": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].datetime,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].datetime,
+                ],
+                "start_x": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].start_x,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].start_x,
+                ],
+                "start_y": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].start_y,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].start_y,
+                ],
+                "team_id": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].team_id,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].team_id,
+                ],
+                "outcome": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].outcome,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].outcome,
+                ],
+                "end_x": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].end_x,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].end_x,
+                ],
+                "end_y": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].end_y,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].end_y,
+                ],
+                "length": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].length,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].length,
+                ],
+                "angle": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].angle,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].angle,
+                ],
+                "pass_type": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].pass_type,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].pass_type,
+                ],
+                "set_piece": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].set_piece,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].set_piece,
+                ],
+            }
+        )
+        passes_df = self.expected_match_tracab_opta.passes_df
+        pd.testing.assert_frame_equal(passes_df, expected_df)
 
     def test_match_requires_event_data_wrapper(self):
         match = self.expected_match_opta.copy()

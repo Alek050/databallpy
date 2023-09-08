@@ -77,8 +77,12 @@ class PassEvent(BaseEvent):
             self.team_id == other.team_id,
             self.outcome == other.outcome,
             self.player_id == other.player_id,
-            round(self.start_x, 4) == round(other.start_x, 4),
-            round(self.start_y, 4) == round(other.start_y, 4),
+            round(self.end_x, 4) == round(other.end_x, 4)
+            if not pd.isnull(self.end_x)
+            else pd.isnull(other.end_x),
+            round(self.end_y, 4) == round(other.end_y, 4)
+            if not pd.isnull(self.end_y)
+            else pd.isnull(other.end_y),
             self.length == other.length
             if not pd.isnull(self.length)
             else pd.isnull(other.length),

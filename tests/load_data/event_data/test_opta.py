@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -9,10 +10,13 @@ from databallpy.load_data.event_data.opta import (
     _load_event_data,
     _load_metadata,
     _make_dribble_event_instance,
+    _make_pass_instance,
     _make_shot_event_instance,
+    _rescale_opta_dimensions,
     _update_pass_outcome,
     load_opta_event_data,
 )
+from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import (
@@ -205,6 +209,59 @@ class TestOpta(unittest.TestCase):
             outcome=True,
             has_opponent=True,
         )
+
+    def test_make_pass_event_instance(self):
+        event_xml = """
+        <Event id="1" type_id="1" period_id="1" min="0" sec="0" team_id="1"
+         player_id="1" outcome="1" x="50.0" y="50.0"
+         timestamp="2022-01-01T00:00:00.000Z">
+            <Q id="1" qualifier_id="210"/>
+            <Q id="2" qualifier_id="1"/>
+            <Q id="3" qualifier_id="157"/>
+        </Event>"""
+
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+        pass_event = _make_pass_instance(event, away_team_id=1)
+
+        expected_pass_event = PassEvent(
+            event_id=1,
+            period_id=1,
+            minutes=0,
+            seconds=0,
+            datetime=pd.to_datetime("2022-01-01T00:00:00.000Z", utc=True),
+            start_x=0.0,
+            start_y=0.0,
+            team_id=1,
+            outcome="results_in_shot",
+            player_id=1,
+            end_x=np.nan,
+            end_y=np.nan,
+            length=np.nan,
+            angle=np.nan,
+            pass_type="long_ball",
+            set_piece="no_set_piece",
+        )
+        assert pass_event == expected_pass_event
+
+    def test_rescale_opta_dimensions(self):
+        # test with default pitch dimensions
+        x, y = _rescale_opta_dimensions(50, 50)
+        self.assertAlmostEqual(x, 0.0)
+        self.assertAlmostEqual(y, 0.0)
+
+        # test with custom pitch dimensions
+        x, y = _rescale_opta_dimensions(50, 100, [100.0, 50.0])
+        self.assertAlmostEqual(x, 0.0)
+        self.assertAlmostEqual(y, 25.0)
+
+        # test with different coordinates
+        x, y = _rescale_opta_dimensions(0, 0)
+        self.assertAlmostEqual(x, -53.0)
+        self.assertAlmostEqual(y, -34.0)
+
+        x, y = _rescale_opta_dimensions(100, 100)
+        self.assertAlmostEqual(x, 53.0)
+        self.assertAlmostEqual(y, 34.0)
 
     def test_update_pass_outcome_no_related_event_id(self):
         shot_events = SHOT_EVENTS_OPTA.copy()
