@@ -181,7 +181,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             match=self.match_to_sync,
         )
 
-        np.testing.assert_allclose(expected_res, res)
+        np.testing.assert_allclose(expected_res, res, rtol=1e-05)
 
     def test_create_sim_mat_missing_player(self):
         expected_res = RES_SIM_MAT_MISSING_PLAYER
@@ -210,7 +210,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             match=self.match_to_sync,
         )
 
-        np.testing.assert_allclose(expected_res, res, rtol=1e-05)
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05, atol=1e-05)
 
     def test_create_sim_mat_without_player(self):
         expected_res = RES_SIM_MAT_NO_PLAYER

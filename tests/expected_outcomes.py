@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.load_data.event_data.dribble_event import DribbleEvent
+from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.utils import MISSING_INT
@@ -147,8 +148,9 @@ ED_OPTA = pd.DataFrame(
             2499594291,
             2512690515,
             2512690516,
+            2512690517,
         ],
-        "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 15],
+        "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 16, 15],
         "databallpy_event": [
             None,
             None,
@@ -161,24 +163,26 @@ ED_OPTA = pd.DataFrame(
             None,
             "own_goal",
             "shot",
+            "shot",
         ],
-        "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1],
-        "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9, 9],
-        "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10, 17, 17],
+        "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1],
+        "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9, 9, 9],
+        "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10, 17, 17, 17],
         "player_id": [
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
             19367,
-            45849,
-            45849,
             184934,
             45849,
             184934,
             45849,
+            184934,
+            45849,
+            184934,
             184934,
         ],
-        "team_id": [194, 3, 194, 3, 3, 3, 194, 3, 194, 3, 194],
+        "team_id": [194, 3, 194, 3, 194, 3, 194, 3, 194, 3, 194, 194],
         "outcome": [
             MISSING_INT,
             MISSING_INT,
@@ -190,13 +194,40 @@ ED_OPTA = pd.DataFrame(
             0,
             MISSING_INT,
             1,
+            1,
             0,
         ],
         # field dimensions are [10, 10], for opta its standard [100, 100].
         # So all values should be divided by 10 and minus  5 to get the
         # standard databallpy values.
-        "start_x": [5.0, -5.0, 5.0, -0.03, -1.84, -1.9, 5.0, 1.57, 1.57, -4.05, 4.05],
-        "start_y": [5.0, -5.0, 5.0, 0.01, -0.93, -0.57, 5.0, -2.68, -2.68, 0.28, -0.28],
+        "start_x": [
+            5.0,
+            -5.0,
+            5.0,
+            -0.03,
+            1.84,
+            -1.9,
+            5.0,
+            1.57,
+            1.57,
+            -4.05,
+            4.05,
+            4.05,
+        ],
+        "start_y": [
+            5.0,
+            -5.0,
+            5.0,
+            0.01,
+            0.93,
+            -0.57,
+            5.0,
+            -2.68,
+            -2.68,
+            0.28,
+            -0.28,
+            -0.28,
+        ],
         "datetime": np.array(
             [
                 "2023-01-22T11:28:32.117",
@@ -210,6 +241,7 @@ ED_OPTA = pd.DataFrame(
                 "2023-01-22T12:18:43.120",
                 "2023-01-22T12:18:44.120",
                 "2023-01-22T12:18:44.120",
+                "2023-01-22T12:18:44.120",
             ],
             dtype="datetime64[ns]",
         ),
@@ -219,25 +251,27 @@ ED_OPTA = pd.DataFrame(
             "start",
             "pass",
             "pass",
-            None,
+            "unknown event",
             "deleted event",
             "take on",
             "tackle",
             "own goal",
+            "goal",
             "attempt saved",
         ],
-        "opta_id": [1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "opta_id": [1, 2, 2, 3, 22, 5, 6, 7, 8, 9, 10, 11],
         "player_name": [
             None,
             None,
             None,
             "Piet Schrijvers",
-            "Jan Boskamp",
-            "Jan Boskamp",
             "Pepijn Blok",
             "Jan Boskamp",
             "Pepijn Blok",
             "Jan Boskamp",
+            "Pepijn Blok",
+            "Jan Boskamp",
+            "Pepijn Blok",
             "Pepijn Blok",
         ],
     }
@@ -286,11 +320,11 @@ SHOT_EVENTS_OPTA = {
         start_x=(9.5 / 100 * 106 - 53)
         * -1,  # standard opta pitch dimensions = [106, 68]
         start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
-        z_target=np.nan,
-        y_target=np.nan,
+        z_target=18.4 / 100 * 2.44,
+        y_target=54.3 / 100 * 7.32 - (7.32 / 2),
         team_id=194,
         player_id=184934,
-        shot_outcome="blocked",
+        shot_outcome="goal",
         body_part="head",
         type_of_play="regular_play",
         first_touch=False,
@@ -303,26 +337,24 @@ SHOT_EVENTS_OPTA = {
         pressure_on_ball=np.nan,
         n_obstructive_players=MISSING_INT,
     ),
-}
-
-SHOT_EVENTS_OPTA_TRACAB = {
-    2512690515: ShotEvent(
-        event_id=2512690515,
+    2512690517: ShotEvent(
+        event_id=2512690517,
         period_id=1,
         minutes=9,
         seconds=17,
         datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True).tz_convert(
             "Europe/Amsterdam"
         ),
-        start_x=9.5 / 100 * 100 - 50,  # tracab pitch dimension = [100, 50]
-        start_y=52.8 / 100 * 50 - 25,
-        z_target=18.4 / 100 * 2.44,
-        y_target=54.3 / 100 * 7.32 - (7.32 / 2),
-        team_id=3,
-        player_id=45849,
-        shot_outcome="own_goal",
+        start_x=(9.5 / 100 * 106 - 53)
+        * -1,  # standard opta pitch dimensions = [106, 68]
+        start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
+        z_target=np.nan,
+        y_target=np.nan,
+        team_id=194,
+        player_id=184934,
+        shot_outcome="blocked",
         body_part="head",
-        type_of_play="corner_kick",
+        type_of_play="regular_play",
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=MISSING_INT,
@@ -333,34 +365,17 @@ SHOT_EVENTS_OPTA_TRACAB = {
         pressure_on_ball=np.nan,
         n_obstructive_players=MISSING_INT,
     ),
-    2512690516: ShotEvent(
-        event_id=2512690516,
-        period_id=1,
-        minutes=9,
-        seconds=17,
-        datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True).tz_convert(
-            "Europe/Amsterdam"
-        ),
-        start_x=(9.5 / 100 * 100 - 50) * -1,  # tracab pitch dimension = [100, 50]
-        start_y=(52.8 / 100 * 50 - 25) * -1,  # times -1 because its away team
-        z_target=np.nan,
-        y_target=np.nan,
-        team_id=194,
-        player_id=184934,
-        shot_outcome="blocked",
-        body_part="head",
-        type_of_play="regular_play",
-        first_touch=False,
-        created_oppertunity="regular_play",
-        related_event_id=22,
-        ball_goal_distance=np.nan,
-        ball_gk_distance=np.nan,
-        shot_angle=np.nan,
-        gk_angle=np.nan,
-        pressure_on_ball=np.nan,
-        n_obstructive_players=MISSING_INT,
-    ),
 }
+
+SHOT_EVENTS_OPTA_TRACAB = {}
+for key, shot_event in SHOT_EVENTS_OPTA.items():
+    SHOT_EVENTS_OPTA_TRACAB[key] = shot_event.copy()
+    SHOT_EVENTS_OPTA_TRACAB[key].start_x = (
+        SHOT_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
+    )
+    SHOT_EVENTS_OPTA_TRACAB[key].start_y = (
+        SHOT_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
+    )
 
 DRIBBLE_EVENTS_OPTA = {
     2499594285: DribbleEvent(
@@ -382,25 +397,71 @@ DRIBBLE_EVENTS_OPTA = {
     )
 }
 
-DRIBBLE_EVENTS_OPTA_TRACAB = {
-    2499594285: DribbleEvent(
-        event_id=2499594285,
-        period_id=2,
-        minutes=30,
-        seconds=10,
-        datetime=pd.to_datetime("2023-01-22T12:18:43.119").tz_localize(
+DRIBBLE_EVENTS_OPTA_TRACAB = {}
+for key, dribble_event in DRIBBLE_EVENTS_OPTA.items():
+    DRIBBLE_EVENTS_OPTA_TRACAB[key] = dribble_event.copy()
+    DRIBBLE_EVENTS_OPTA_TRACAB[key].start_x = (
+        DRIBBLE_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
+    )
+    DRIBBLE_EVENTS_OPTA_TRACAB[key].start_y = (
+        DRIBBLE_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
+    )
+
+PASS_EVENTS_OPTA = {
+    2499594225: PassEvent(
+        event_id=2499594225,
+        period_id=1,
+        minutes=0,
+        seconds=1,
+        datetime=pd.to_datetime("2023-01-22T12:18:33.637").tz_localize(
             "Europe/Amsterdam"
         ),
-        start_x=65.7 / 100 * 100 - 50,  # tracab pitch dimensions = [100, 50]
-        start_y=23.2 / 100 * 50 - 25,
+        start_x=(49.7 / 100 * 106 - 53),  # standard opta pitch dimensions = [106, 68]
+        start_y=(50.1 / 100 * 68 - 34),
         team_id=3,
-        player_id=45849,
-        related_event_id=4,
-        duel_type="offensive",
-        outcome=True,
-        has_opponent=True,
-    )
+        outcome="successful",
+        player_id=19367,
+        end_x=np.nan,
+        end_y=np.nan,
+        pass_type="not_specified",
+        set_piece="kick_off",
+        length=np.nan,
+        angle=np.nan,
+    ),
+    2499594243: PassEvent(
+        event_id=2499594243,
+        period_id=1,
+        minutes=0,
+        seconds=4,
+        datetime=pd.to_datetime("2023-01-22T12:18:36.207").tz_localize(
+            "Europe/Amsterdam"
+        ),
+        start_x=(31.6 / 100 * 106 - 53)
+        * -1,  # standard opta pitch dimensions = [106, 68]
+        start_y=(40.7 / 100 * 68 - 34) * -1,  # times -1 because its away team
+        team_id=194,
+        outcome="assist",
+        player_id=184934,
+        end_x=(70.6 / 100 * 106 - 53) * -1,
+        end_y=(57.5 / 100 * 68 - 34) * -1,
+        pass_type="long_ball",
+        set_piece="no_set_piece",
+        length=np.nan,
+        angle=np.nan,
+    ),
 }
+
+PASS_EVENTS_OPTA_TRACAB = {}
+for key, pass_event in PASS_EVENTS_OPTA.items():
+    PASS_EVENTS_OPTA_TRACAB[key] = pass_event.copy()
+    PASS_EVENTS_OPTA_TRACAB[key].start_x = (
+        PASS_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
+    )
+    PASS_EVENTS_OPTA_TRACAB[key].start_y = (
+        PASS_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
+    )
+    PASS_EVENTS_OPTA_TRACAB[key].end_x = PASS_EVENTS_OPTA_TRACAB[key].end_x / 106 * 100
+    PASS_EVENTS_OPTA_TRACAB[key].end_y = PASS_EVENTS_OPTA_TRACAB[key].end_y / 68 * 50
 
 MD_OPTA = Metadata(
     match_id=1908,
@@ -837,7 +898,7 @@ RES_SIM_MAT = np.array(
         0.39301802,
         0.94746644,
         0.94746644,
-        0.17285291,
+        0.0109247,
         0.97337888,
         0.25941903,
         0.25941903,
@@ -894,7 +955,7 @@ RES_SIM_MAT_MISSING_PLAYER = np.array(
         0.37126927,
         0.84365927,
         0.84365927,
-        0.00396633,
+        0.00000066,
         0.91850927,
         0.01425216,
         0.01425216,
@@ -950,7 +1011,7 @@ RES_SIM_MAT_NO_PLAYER = np.array(
         0.09754851,
         0.87416595,
         0.87416595,
-        0.03293576,
+        0.36787944,
         0.93496842,
         0.03464278,
         0.03464278,

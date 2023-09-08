@@ -22,6 +22,8 @@ from expected_outcomes import (
     ED_OPTA,
     MD_OPTA,
     MD_TRACAB,
+    PASS_EVENTS_OPTA,
+    PASS_EVENTS_OPTA_TRACAB,
     SHOT_EVENTS_OPTA,
     SHOT_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
@@ -154,6 +156,7 @@ class TestGetMatch(unittest.TestCase):
             country=self.md_opta.country,
             shot_events=SHOT_EVENTS_OPTA_TRACAB,
             dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB,
+            pass_events=PASS_EVENTS_OPTA_TRACAB,
         )
 
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -353,6 +356,7 @@ class TestGetMatch(unittest.TestCase):
             country=MD_OPTA.country,
             shot_events=SHOT_EVENTS_OPTA,
             dribble_events=DRIBBLE_EVENTS_OPTA,
+            pass_events=PASS_EVENTS_OPTA,
         )
 
     def test_get_match_opta_tracab(self):

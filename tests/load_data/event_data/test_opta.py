@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -9,12 +10,22 @@ from databallpy.load_data.event_data.opta import (
     _load_event_data,
     _load_metadata,
     _make_dribble_event_instance,
+    _make_pass_instance,
     _make_shot_event_instance,
+    _rescale_opta_dimensions,
+    _update_pass_outcome,
     load_opta_event_data,
 )
+from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.utils.utils import MISSING_INT
-from tests.expected_outcomes import ED_OPTA, MD_OPTA, SHOT_EVENTS_OPTA
+from tests.expected_outcomes import (
+    DRIBBLE_EVENTS_OPTA,
+    ED_OPTA,
+    MD_OPTA,
+    PASS_EVENTS_OPTA,
+    SHOT_EVENTS_OPTA,
+)
 
 
 class TestOpta(unittest.TestCase):
@@ -102,7 +113,7 @@ class TestOpta(unittest.TestCase):
         expected_event_data = ED_OPTA.copy().drop("player_name", axis=1)
 
         # away team coordinates are changed later on in the pipeline
-        expected_event_data.loc[[0, 2, 6, 8, 10], ["start_x", "start_y"]] *= -1
+        expected_event_data.loc[[0, 2, 4, 6, 8, 10, 11], ["start_x", "start_y"]] *= -1
 
         # scaling of pitch dimension is done later on in the pipeline
         expected_event_data.loc[:, ["start_x", "start_y"]] = (
@@ -115,6 +126,16 @@ class TestOpta(unittest.TestCase):
         for key, event in dbp_events["shot_events"].items():
             assert key in SHOT_EVENTS_OPTA.keys()
             assert event == SHOT_EVENTS_OPTA[key]
+
+        assert "dribble_events" in dbp_events.keys()
+        for key, event in dbp_events["dribble_events"].items():
+            assert key in DRIBBLE_EVENTS_OPTA.keys()
+            assert event == DRIBBLE_EVENTS_OPTA[key]
+
+        assert "pass_events" in dbp_events.keys()
+        for key, event in dbp_events["pass_events"].items():
+            assert key in PASS_EVENTS_OPTA.keys()
+            assert event == PASS_EVENTS_OPTA[key]
 
     def test_make_shot_event_instance(self):
         event_xml = """
@@ -188,3 +209,106 @@ class TestOpta(unittest.TestCase):
             outcome=True,
             has_opponent=True,
         )
+
+    def test_make_pass_event_instance(self):
+        event_xml = """
+        <Event id="1" type_id="1" period_id="1" min="0" sec="0" team_id="1"
+         player_id="1" outcome="1" x="50.0" y="50.0"
+         timestamp="2022-01-01T00:00:00.000Z">
+            <Q id="1" qualifier_id="210"/>
+            <Q id="2" qualifier_id="1"/>
+            <Q id="3" qualifier_id="157"/>
+        </Event>"""
+
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+        pass_event = _make_pass_instance(event, away_team_id=1)
+
+        expected_pass_event = PassEvent(
+            event_id=1,
+            period_id=1,
+            minutes=0,
+            seconds=0,
+            datetime=pd.to_datetime("2022-01-01T00:00:00.000Z", utc=True),
+            start_x=0.0,
+            start_y=0.0,
+            team_id=1,
+            outcome="results_in_shot",
+            player_id=1,
+            end_x=np.nan,
+            end_y=np.nan,
+            length=np.nan,
+            angle=np.nan,
+            pass_type="long_ball",
+            set_piece="no_set_piece",
+        )
+        assert pass_event == expected_pass_event
+
+    def test_rescale_opta_dimensions(self):
+        # test with default pitch dimensions
+        x, y = _rescale_opta_dimensions(50, 50)
+        self.assertAlmostEqual(x, 0.0)
+        self.assertAlmostEqual(y, 0.0)
+
+        # test with custom pitch dimensions
+        x, y = _rescale_opta_dimensions(50, 100, [100.0, 50.0])
+        self.assertAlmostEqual(x, 0.0)
+        self.assertAlmostEqual(y, 25.0)
+
+        # test with different coordinates
+        x, y = _rescale_opta_dimensions(0, 0)
+        self.assertAlmostEqual(x, -53.0)
+        self.assertAlmostEqual(y, -34.0)
+
+        x, y = _rescale_opta_dimensions(100, 100)
+        self.assertAlmostEqual(x, 53.0)
+        self.assertAlmostEqual(y, 34.0)
+
+    def test_update_pass_outcome_no_related_event_id(self):
+        shot_events = SHOT_EVENTS_OPTA.copy()
+        pass_events = PASS_EVENTS_OPTA.copy()
+        event_data = ED_OPTA.copy()
+
+        for event in shot_events.values():
+            event.related_event_id = MISSING_INT
+
+        res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
+
+        for key, event in res_passes.items():
+            assert key in pass_events.keys()
+            assert event == pass_events[key]
+
+    def test_update_pass_outcome_pass_not_found(self):
+        shot_events = SHOT_EVENTS_OPTA.copy()
+        pass_events = PASS_EVENTS_OPTA.copy()
+        event_data = ED_OPTA.copy()
+
+        for event in shot_events.values():
+            # none of the pass events have event_id 120
+            event.related_event_id = 120
+
+        res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
+
+        for key, event in res_passes.items():
+            assert key in pass_events.keys()
+            assert event == pass_events[key]
+
+    def test_update_pass_outcome_multiple_options(self):
+        shot_events = SHOT_EVENTS_OPTA.copy()
+        pass_events = PASS_EVENTS_OPTA.copy()
+        event_data = ED_OPTA.copy()
+
+        for event in shot_events.values():
+            if event.shot_outcome == "goal":
+                event.related_event_id = 120
+
+        event_data.loc[event_data["databallpy_event"] == "pass", "opta_id"] = 120
+
+        # the pass event with event_id 120 has two options
+        assert len(event_data.loc[event_data["opta_id"] == 120]) == 2
+
+        res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
+        expected_passes = pass_events.copy()
+        expected_passes[2499594243].outcome = "assist"
+        for key, event in res_passes.items():
+            assert key in expected_passes.keys()
+            assert event == expected_passes[key]

@@ -98,9 +98,8 @@ class TestVisualize(unittest.TestCase):
 
         # Check plot elements
         self.assertEqual(ax.get_title(), "My Test Plot2")
-        self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "pass")
-        self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "dribble")
-        self.assertEqual(len(ax.collections), 5)
+        self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "dribble")
+        self.assertEqual(len(ax.collections), 4)
 
         fig, ax = plot_events(
             match,

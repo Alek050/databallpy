@@ -299,6 +299,9 @@ def _create_sim_mat(
                 ].values
 
         # take the mean of all cost function variables.
+        mask = np.isnan(total).all(axis=1)
+        if total[mask].shape[0] > 0:
+            total[mask] = np.nanmax(total)
         sim_mat[:, i] = np.nanmean(total, axis=1)
     # replace nan values with highest value, the algorithm will not assign these
     sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat)
@@ -309,7 +312,7 @@ def _create_sim_mat(
 
 
 def _needleman_wunsch(
-    sim_mat: np.ndarray, gap_event: int = -1, gap_frame: int = 1
+    sim_mat: np.ndarray, gap_event: int = -10, gap_frame: int = 1
 ) -> dict:
     """
     Function that calculates the optimal alignment between events and frames
@@ -319,7 +322,7 @@ def _needleman_wunsch(
     Args:
         sim_mat (np.ndarray): matrix with similarity between every frame and event
         gap_event (int): penalty for leaving an event unassigned to a frame
-                         (not allowed), defaults to -1
+                         (not allowed), defaults to -10
         gap_frame (int): penalty for leaving a frame unassigned to a penalty
                          (very common), defaults to 1
 

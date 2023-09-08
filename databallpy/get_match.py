@@ -10,6 +10,7 @@ from databallpy.load_data.event_data.metrica_event_data import (
     load_metrica_open_event_data,
 )
 from databallpy.load_data.event_data.opta import load_opta_event_data
+from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.tracking_data._quality_check_tracking_data import (
     _quality_check_tracking_data,
@@ -33,6 +34,7 @@ def get_match(
     tracking_data_provider: str = None,
     event_data_provider: str = None,
     check_quality: bool = True,
+    verbose=True,
 ) -> Match:
     """Function to get all information of a match given its datasources
 
@@ -56,6 +58,7 @@ def get_match(
                                              - Instat
         check_quality (bool, optional): whether you want to check the quality of the
                                         tracking data. Defaults to True
+        verbose (bool, optional): whether or not to print info about progress
     Returns:
         (Match): a Match object with all information available of the match.
     """
@@ -68,6 +71,7 @@ def get_match(
             tracking_data_loc=tracking_data_loc,
             tracking_metadata_loc=tracking_metadata_loc,
             tracking_data_provider=tracking_data_provider,
+            verbose=verbose,
         )
         uses_tracking_data = True
 
@@ -103,6 +107,9 @@ def get_match(
                     for event in dict_of_events.values():
                         event.start_x *= x_correction
                         event.start_y *= y_correction
+                        if isinstance(event, PassEvent):
+                            event.end_x *= x_correction
+                            event.end_y *= y_correction
 
         # Merge periods
         periods_cols = event_metadata.periods_frames.columns.difference(
@@ -192,6 +199,9 @@ def get_match(
             dribble_events=databallpy_events["dribble_events"]
             if "dribble_events" in databallpy_events.keys()
             else {},
+            pass_events=databallpy_events["pass_events"]
+            if "pass_events" in databallpy_events.keys()
+            else {},
         )
 
     elif uses_tracking_data and not uses_event_data:
@@ -249,6 +259,9 @@ def get_match(
             dribble_events=databallpy_events["dribble_events"]
             if "dribble_events" in databallpy_events.keys()
             else {},
+            pass_events=databallpy_events["pass_events"]
+            if "pass_events" in databallpy_events.keys()
+            else {},
         )
 
     return match
@@ -271,7 +284,11 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
 
 
 def load_tracking_data(
-    *, tracking_data_loc: str, tracking_metadata_loc: str, tracking_data_provider: str
+    *,
+    tracking_data_loc: str,
+    tracking_metadata_loc: str,
+    tracking_data_provider: str,
+    verbose: bool = True,
 ) -> Tuple[pd.DataFrame, Metadata]:
     """Function to load the tracking data of a match
 
@@ -279,6 +296,7 @@ def load_tracking_data(
         tracking_data_loc (str): location of the tracking data file
         tracking_metadata_loc (str): location of the tracking metadata file
         tracking_data_provider (str): provider of the tracking data
+        verbose (bool, optional): whether or not to print info about progress
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the match
@@ -293,15 +311,19 @@ def load_tracking_data(
     # Get tracking data and tracking metadata
     if tracking_data_provider == "tracab":
         tracking_data, tracking_metadata = load_tracab_tracking_data(
-            tracking_data_loc, tracking_metadata_loc
+            tracking_data_loc, tracking_metadata_loc, verbose=verbose
         )
     elif tracking_data_provider == "metrica":
         tracking_data, tracking_metadata = load_metrica_tracking_data(
-            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
+            tracking_data_loc=tracking_data_loc,
+            metadata_loc=tracking_metadata_loc,
+            verbose=verbose,
         )
     elif tracking_data_provider == "inmotio":
         tracking_data, tracking_metadata = load_inmotio_tracking_data(
-            tracking_data_loc=tracking_data_loc, metadata_loc=tracking_metadata_loc
+            tracking_data_loc=tracking_data_loc,
+            metadata_loc=tracking_metadata_loc,
+            verbose=verbose,
         )
 
     return tracking_data, tracking_metadata

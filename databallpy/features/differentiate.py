@@ -117,5 +117,5 @@ def _differentiate(
         res_dict[player + f"_{new_name[0]}y"] = np.array(diff_y)
         res_dict[player + f"_{new_name}"] = np.linalg.norm([diff_x, diff_y], axis=0)
 
-    df = df.assign(**res_dict)
-    return df
+    new_df = pd.concat([df, pd.DataFrame(res_dict)], axis=1)
+    return new_df

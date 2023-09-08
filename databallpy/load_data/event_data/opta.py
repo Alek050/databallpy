@@ -6,6 +6,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.load_data.event_data.dribble_event import DribbleEvent
+from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.utils.tz_modification import utc_to_local_datetime
@@ -39,11 +40,8 @@ EVENT_TYPE_IDS = {
     25: "official change",
     27: "start delay",
     28: "end delay",
-    29: "unknown event 29",
     30: "end",
-    31: "unknown event 31",
     32: "start",
-    33: "unknown event 33",
     34: "team set up",
     35: "player changed position",
     36: "player changed jersey number",
@@ -56,9 +54,7 @@ EVENT_TYPE_IDS = {
     43: "deleted event",
     44: "aerial",
     45: "challenge",
-    46: "unknown event 46",
     47: "rescinded card",
-    48: "unknown event 48",
     49: "ball recovery",
     50: "dispossessed",
     51: "error",
@@ -72,7 +68,6 @@ EVENT_TYPE_IDS = {
     59: "keeper sweeper",
     60: "chance missed",
     61: "ball touch",
-    62: "unknown event 62",
     63: "temp_save",
     64: "resume",
     65: "contentious referee decision",
@@ -139,10 +134,11 @@ PASS_TYPE_QUALIFIERS = {
     2: "cross",
     4: "through_ball",
     155: "chipped",
+    156: "lay-off",
     157: "lounge",
     168: "flick_on",
+    195: "pull_back",
     196: "switch_off_play",
-    210: "pass_",
 }
 
 CREATED_OPPERTUNITY_QUALIFIERS = {
@@ -155,6 +151,16 @@ DRIBBLE_DUEL_TYPE_QUALIFIERS = {
     285: "defensive",
 }
 
+
+Y_TARGET_QUALIFIER = 102
+Z_TARGET_QUALIFIER = 103
+X_END_QUALIFIER = 140
+Y_END_QUALIFIER = 141
+PASS_LENGTH_QUALIFIER = 212
+PASS_ANGLE_QUALIFIER = 213
+ASSIST_TO_SHOT_QUALIFIER = 210
+FAIR_PLAY_QUALIFIER = 238
+RELATED_EVENT_ID_QUALIFIER = 55
 Y_TARGET_QUALIFIER = 102
 Z_TARGET_QUALIFIER = 103
 FIRST_TOUCH_QUALIFIER = 328
@@ -419,8 +425,10 @@ def _load_event_data(
         pd.DataFrame: all events of the match in a pd dataframe
         dict: dict with "shot_events" as key and a dict with the ShotEvent instances
     """
-    shot_events = {}
+
     dribble_events = {}
+    shot_events = {}
+    pass_events = {}
 
     with open(f24_loc, "r") as file:
         lines = file.read()
@@ -462,8 +470,7 @@ def _load_event_data(
                     ):
                         event_name = "own goal"
         else:
-            # Unknown event
-            event_name = None
+            event_name = "unknown event"
 
         result_dict["opta_event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
@@ -487,6 +494,12 @@ def _load_event_data(
         )
 
         # get extra information for databallpy events
+
+        if event_name in ["pass", "offside pass"]:
+            pass_events[int(event.attrs["id"])] = _make_pass_instance(
+                event, away_team_id, pitch_dimensions=pitch_dimensions
+            )
+
         if event_name in [
             "miss",
             "post",
@@ -514,7 +527,111 @@ def _load_event_data(
     ] = 0
     event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
     event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
-    return event_data, {"shot_events": shot_events, "dribble_events": dribble_events}
+
+    # reassign the outcome of passes that result in a shot that is scored to 'assist'
+    pass_events = _update_pass_outcome(event_data, shot_events, pass_events)
+
+    return event_data, {
+        "shot_events": shot_events,
+        "pass_events": pass_events,
+        "dribble_events": dribble_events,
+    }
+
+
+def _make_pass_instance(
+    event: bs4.element.Tag, away_team_id: int, pitch_dimensions: list = [106.0, 68.0]
+) -> PassEvent:
+    """Function to create a pass class based on the qualifiers of the event
+
+    Args:
+        event (bs4.element.Tag): pass event from the f24.xml
+        away_team_id (int): id of the away team
+        pitch_dimensions (list, optional): size of the pitch in x and y direction.
+            Defaults to [106.0, 68.0].
+
+    Returns:
+        PassEvent: Returns a PassEvent instance
+    """
+    pass_id = int(event.attrs["id"])
+
+    outcome = "successful" if int(event.attrs["outcome"]) else "unsuccessful"
+    outcome = "offside" if int(event.attrs["type_id"]) == 2 else outcome
+
+    qualifiers = event.find_all("Q")
+    qualifier_ids = [int(q["qualifier_id"]) for q in qualifiers]
+
+    outcome = (
+        "results_in_shot"
+        if any([q == ASSIST_TO_SHOT_QUALIFIER for q in qualifier_ids])
+        else outcome
+    )
+    outcome = (
+        "fair_play"
+        if any([q == FAIR_PLAY_QUALIFIER for q in qualifier_ids])
+        else outcome
+    )
+
+    # sometimes there are multiple pass type qualifiers added to the event
+    # we only pick one, based on the following hiearchy:
+    # cross > through_ball > long_ball > first_event_available
+    pass_type_list = [
+        PASS_TYPE_QUALIFIERS[q] for q in qualifier_ids if q in PASS_TYPE_QUALIFIERS
+    ]
+    pass_type = pass_type_list[0] if len(pass_type_list) > 0 else "not_specified"
+    pass_type_hiearchy = ["cross", "through_ball", "long_ball"]
+    for pass_type_option in pass_type_hiearchy:
+        if pass_type_option in pass_type_list:
+            pass_type = pass_type_option
+            break
+
+    set_piece_list = [
+        SET_PIECE_QUALIFIERS[q] for q in qualifier_ids if q in SET_PIECE_QUALIFIERS
+    ]
+    set_piece = set_piece_list[0] if len(set_piece_list) > 0 else "no_set_piece"
+
+    x_start, y_start = _rescale_opta_dimensions(
+        float(event.attrs["x"]),
+        float(event.attrs["y"]),
+        pitch_dimensions=pitch_dimensions,
+    )
+
+    if event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)}) and event.find(
+        "Q", attrs={"qualifier_id": str(Y_END_QUALIFIER)}
+    ):
+        x_end, y_end = _rescale_opta_dimensions(
+            float(
+                event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)})["value"]
+            ),
+            float(
+                event.find("Q", attrs={"qualifier_id": str(Y_END_QUALIFIER)})["value"]
+            ),
+            pitch_dimensions=pitch_dimensions,
+        )
+    else:
+        x_end, y_end = np.nan, np.nan
+
+    if int(event.attrs["team_id"]) == away_team_id:
+        x_start *= -1
+        y_start *= -1
+        x_end *= -1
+        y_end *= -1
+
+    return PassEvent(
+        event_id=pass_id,
+        period_id=int(event.attrs["period_id"]),
+        minutes=int(event.attrs["min"]),
+        seconds=int(event.attrs["sec"]),
+        datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
+        start_x=x_start,
+        start_y=y_start,
+        outcome=outcome,
+        team_id=int(event.attrs["team_id"]),
+        player_id=int(event.attrs["player_id"]),
+        end_x=x_end,
+        end_y=y_end,
+        pass_type=pass_type,
+        set_piece=set_piece,
+    )
 
 
 def _make_shot_event_instance(
@@ -533,7 +650,11 @@ def _make_shot_event_instance(
         the value is a ShotEvent instance.
     """
     shot_outcome = SHOT_OUTCOMES[int(event["type_id"])]
-    if event.find("Q", {"qualifier_id": str(SHOT_BLOCKED_QUALIFIER)}) is not None:
+
+    if (
+        event.find("Q", {"qualifier_id": str(SHOT_BLOCKED_QUALIFIER)}) is not None
+        and shot_outcome != "goal"
+    ):
         shot_outcome = "blocked"
     elif event.find("Q", {"qualifier_id": str(OWN_GOAL_QUALIFIER)}) is not None:
         shot_outcome = "own_goal"
@@ -571,11 +692,10 @@ def _make_shot_event_instance(
     ]
     body_part = body_part_list[0] if len(body_part_list) > 0 else None
 
-    x_start = float(event.attrs["x"]) / 100 * pitch_dimensions[0] - (
-        pitch_dimensions[0] / 2
-    )
-    y_start = float(event.attrs["y"]) / 100 * pitch_dimensions[1] - (
-        pitch_dimensions[1] / 2
+    x_start, y_start = _rescale_opta_dimensions(
+        float(event.attrs["x"]),
+        float(event.attrs["y"]),
+        pitch_dimensions=pitch_dimensions,
     )
 
     first_touch = (
@@ -655,12 +775,12 @@ def _make_dribble_event_instance(
     ]
     duel_type = duel_type_list[0] if len(duel_type_list) > 0 else None
 
-    x_start = float(event.attrs["x"]) / 100 * pitch_dimensions[0] - (
-        pitch_dimensions[0] / 2
+    x_start, y_start = _rescale_opta_dimensions(
+        float(event.attrs["x"]),
+        float(event.attrs["y"]),
+        pitch_dimensions=pitch_dimensions,
     )
-    y_start = float(event.attrs["y"]) / 100 * pitch_dimensions[1] - (
-        pitch_dimensions[1] / 2
-    )
+
     if int(event.attrs["team_id"]) == away_team_id:
         x_start *= -1
         y_start *= -1
@@ -682,3 +802,72 @@ def _make_dribble_event_instance(
     )
 
     return dribble_event
+
+
+def _rescale_opta_dimensions(
+    x: float, y: float, pitch_dimensions: list = [106.0, 68.0]
+) -> Tuple[float, float]:
+    """Function to rescale the x and y coordinates from the opta data to the pitch
+    dimensions. This funciton assumes taht the x and y coordinates range from 0 to 100,
+    with (0, 0) being the bottom left corner of the pitch.
+
+    Args:
+        x (float): x coordinate of the event
+        y (float): y coordinate of the event
+        pitch_dimensions (list, optional): dimensions of the pitch in x and y direction.
+            Defaults to [106.0, 68.0].
+
+    Returns:
+        Tuple[float, float]: rescaled x and y coordinates
+    """
+    x = x / 100 * pitch_dimensions[0] - (pitch_dimensions[0] / 2)
+    y = y / 100 * pitch_dimensions[1] - (pitch_dimensions[1] / 2)
+    return x, y
+
+
+def _update_pass_outcome(
+    event_data: pd.DataFrame, shot_events: dict, pass_events: dict
+) -> dict:
+    """Function to update the outcome of passes that result in a shot that is scored to
+    'assist'. This function is needed because the opta data does not provide the
+    outcome of passes that result in a goal.
+
+    Args:
+        event_data (pd.DataFrame): all event data of the match
+        shot_events (dict): list of ShotEvent instances
+        pass_events (dict): list of PassEvent instances
+
+    Returns:
+        dict: updated list of PassEvent instances
+    """
+    event_ids = event_data[event_data["opta_event"] == "goal"].event_id.to_list()
+    for goal_event_ids in event_ids:
+        shot_event = shot_events[goal_event_ids]
+        related_event_id = shot_event.related_event_id
+
+        if related_event_id is None or related_event_id == MISSING_INT:
+            continue
+
+        related_pass = event_data[
+            (event_data["opta_id"] == related_event_id)
+            & (event_data["databallpy_event"] == "pass")
+        ]
+
+        if related_pass.shape[0] == 0:
+            continue
+
+        if related_pass.shape[0] > 1:
+            # compute time diff to find the pass that is closest and before the shot
+            shot_secs = shot_event.minutes * 60 + shot_event.seconds
+            related_pass_secs = related_pass["minutes"] * 60 + related_pass["seconds"]
+            time_diff = shot_secs - related_pass_secs
+            min_diff_idx = np.argmin(np.where(time_diff >= 0, time_diff, np.inf))
+            related_pass = (
+                related_pass.iloc[min_diff_idx] if min_diff_idx is not None else None
+            )
+        else:
+            related_pass = related_pass.iloc[0]
+        # assign assist to pass
+        pass_events[related_pass["event_id"]].outcome = "assist"
+
+    return pass_events
