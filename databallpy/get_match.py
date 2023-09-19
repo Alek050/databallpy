@@ -36,19 +36,25 @@ def get_match(
     """Function to get all information of a match given its datasources
 
     Args:
-        tracking_data_loc (str, optional): location of the tracking data. Defaults to
-        None.
+        tracking_data_loc (str, optional): location of the tracking data.
+                                           Defaults to None.
         tracking_metadata_loc (str, optional): location of the metadata of the tracking
-        data. Defaults to None.
+                                               data. Defaults to None.
         event_data_loc (str, optional): location of the event data. Defaults to None.
         event_metadata_loc (str, optional): location of the metadata of the event data.
-        Defaults to None.
+                                            Defaults to None.
         tracking_data_provider (str, optional): provider of the tracking data. Defaults
-        to None.
+                                                to None. Supported providers are:
+                                                - Tracab
+                                                - Metrica
+                                                - Inmotio
         event_data_provider (str, optional): provider of the event data. Defaults to
-        None.
+                                             None. Supported providers are:
+                                             - Opta
+                                             - Metrica
+                                             - Instat
         check_quality (bool, optional): whether you want to check the quality of the
-        tracking data. Defaults to True
+                                        tracking data. Defaults to True
     Returns:
         (Match): a Match object with all information available of the match.
     """

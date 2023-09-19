@@ -86,20 +86,20 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         "ball_status": [None] * size_lines,
         "ball_possession": [None] * size_lines,
     }
+    team_ids = {0: "away", 1: "home"}
+    home_away_map = {"H": "home", "A": "away"}
 
     if verbose:
         print("Writing lines to dataframe:")
         lines = tqdm(lines)
 
-    for idx, line in enumerate(lines):
-
-        frame, players_info, ball_info, _ = line.split(":")
+    for idx, (frame, players_info, ball_info, _) in enumerate(
+        (line.split(":") for line in lines)
+    ):
         data["frame"][idx] = int(frame)
 
         players = players_info.split(";")[:-1]
-        for player in players:
-            team_id, _, shirt_num, x, y, _ = player.split(",")
-            team_ids = {0: "away", 1: "home"}
+        for team_id, _, shirt_num, x, y, _ in (player.split(",") for player in players):
             team = team_ids.get(int(team_id))
             if team is None:  # player is unknown or referee
                 continue
@@ -108,7 +108,7 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         ball_x, ball_y, ball_z, _, possession, status = ball_info.split(";")[0].split(
             ","
         )[:6]
-        home_away_map = {"H": "home", "A": "away"}
+
         possession = home_away_map[possession]
         data = _add_ball_data_to_dict(
             ball_x, ball_y, ball_z, possession, status.lower(), data, idx

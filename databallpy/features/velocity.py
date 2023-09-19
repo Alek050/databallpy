@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 
 
@@ -13,21 +15,17 @@ def get_velocity(
 
     Returns:
         pd.DataFrame: tracking data with the added velocity columns
+
+    Notes:
+        - Pandas PerformanceWarning is ignored. It suggests using df.copy() to
+        defragment the memory. However, this is not possible in this case, since
+        the dataframe is quite big, taking up a uneccessary memory, and the
+        df.copy makes the function about twice as slow.
     """
-    # for input_column in input_columns:
-    #     output_column = input_column + "_v"
-    #     v = df[input_column].diff() / (1 / framerate)
-    #     df[output_column] = v
-
-    velocities = []
-    for input_column in input_columns:
-        v = df[input_column].diff() / (1 / framerate)
-        velocities.append(v)
-
-    velocity_df = pd.concat(velocities, axis=1)
-    velocity_df.columns = [f"{col}_v" for col in input_columns]
-    df = pd.concat([df, velocity_df], axis=1)
-
-    return df
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+        for input_column in input_columns:
+            velocity_column = f"{input_column}_v"
+            df[velocity_column] = df[input_column].diff() * framerate
 
     return df
