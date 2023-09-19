@@ -14,7 +14,7 @@ from databallpy.warnings import DataBallPyWarning
 def load_ortec_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> Tuple[pd.DataFrame, Metadata]:
-    """ Function that loads the event data from Ortec
+    """Function that loads the event data from Ortec
 
     Args:
         event_data_loc (str): location of the event data
