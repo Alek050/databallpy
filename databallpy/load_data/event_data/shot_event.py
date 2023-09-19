@@ -23,10 +23,13 @@ class ShotEvent(BaseEvent):
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
         datetime (pd.Timestamp): datetime at which the event occured
+        start_x (float): x location of the event
+        start_y (float): y location of the event
+        team_id (int): id of the team that takes the shot
         player_id (int): id of the player who takes the shot
         shot_outcome (str): whether the shot is a goal or not on target or not.
             Possible values: "goal", "own_goal", "miss_off_target", "miss_on_target",
-            "blocked", "miss_hit_post"
+            "blocked", "miss_hit_post" "miss"
         y_target (float, optional): y location of the goal. Defaults to np.nan.
         z_target (float, optional): z location of the goal. Defaults to np.nan.
         body_part (str, optional): body part with which the shot is taken. Defaults to
@@ -251,11 +254,12 @@ class ShotEvent(BaseEvent):
             "miss_on_target",
             "blocked",
             "own_goal",
+            "miss",
             "not_specified",
         ]:
             raise ValueError(
                 "shot_outcome should be goal, miss_off_target, miss_hit_post, "
-                f"miss_on_target, blocked or own_goal, got {self.shot_outcome}"
+                f"miss_on_target, blocked or own_goal, got '{self.shot_outcome}'"
             )
         if not isinstance(self.y_target, float):
             raise TypeError(

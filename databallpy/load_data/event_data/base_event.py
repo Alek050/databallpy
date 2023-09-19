@@ -35,10 +35,10 @@ class BaseEvent:
         if not isinstance(self.period_id, int):
             raise TypeError(f"period_id should be int, not {type(self.period_id)}")
 
-        if not isinstance(self.minutes, int):
+        if not isinstance(self.minutes, (int, float)):
             raise TypeError(f"minutes should be int, not {type(self.minutes)}")
 
-        if not isinstance(self.seconds, int):
+        if not isinstance(self.seconds, (int, float)):
             raise TypeError(f"seconds should be int, not {type(self.seconds)}")
 
         if not isinstance(self.datetime, pd.Timestamp):
@@ -62,7 +62,7 @@ class BaseEvent:
             self.event_id == other.event_id,
             self.period_id == other.period_id,
             self.minutes == other.minutes,
-            self.seconds == other.seconds,
+            round(self.seconds, 4) == round(other.seconds, 4),
             self.datetime == other.datetime,
             round(self.start_x, 4) == round(other.start_x, 4)
             if not pd.isnull(self.start_x)

@@ -382,8 +382,17 @@ class Match:
 
             if team_side == "home":
                 mask = (
-                    (self.away_players["start_frame"] <= tracking_data_frame["frame"])
-                    & (self.away_players["end_frame"] >= tracking_data_frame["frame"])
+                    (
+                        (
+                            self.away_players["start_frame"]
+                            <= tracking_data_frame["frame"]
+                        )
+                        | (self.away_players["start_frame"] == MISSING_INT)
+                    )
+                    & (
+                        (self.away_players["end_frame"] >= tracking_data_frame["frame"])
+                        | (self.away_players["end_frame"] == MISSING_INT)
+                    )
                     & (self.away_players["position"] == "goalkeeper")
                 )
                 gk_column_id = (
@@ -391,8 +400,17 @@ class Match:
                 )
             else:
                 mask = (
-                    (self.home_players["start_frame"] <= tracking_data_frame["frame"])
-                    & (self.home_players["end_frame"] >= tracking_data_frame["frame"])
+                    (
+                        (
+                            self.home_players["start_frame"]
+                            <= tracking_data_frame["frame"]
+                        )
+                        | (self.home_players["start_frame"] == MISSING_INT)
+                    )
+                    & (
+                        (self.home_players["end_frame"] >= tracking_data_frame["frame"])
+                        | (self.home_players["end_frame"] == MISSING_INT)
+                    )
                     & (self.home_players["position"] == "goalkeeper")
                 )
 

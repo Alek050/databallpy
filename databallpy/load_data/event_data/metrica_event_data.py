@@ -12,6 +12,9 @@ from bs4 import BeautifulSoup
 from databallpy.load_data.event_data._normalize_playing_direction_events import (
     _normalize_playing_direction_events,
 )
+from databallpy.load_data.event_data.dribble_event import DribbleEvent
+from databallpy.load_data.event_data.pass_event import PassEvent
+from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.load_data.metadata import Metadata
 from databallpy.load_data.metrica_metadata import (
     _get_metadata,
@@ -93,8 +96,9 @@ def load_metrica_event_data(
     event_data = _normalize_playing_direction_events(
         event_data, metadata.home_team_id, metadata.away_team_id
     )
+    databallpy_events = _get_databallpy_events(event_data)
 
-    return event_data, metadata
+    return event_data, metadata, databallpy_events
 
 
 def load_metrica_open_event_data() -> Tuple[pd.DataFrame, Metadata]:
@@ -117,6 +121,14 @@ def load_metrica_open_event_data() -> Tuple[pd.DataFrame, Metadata]:
 
 
 def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
+    """Function to load metrica event data
+
+    Args:
+        event_data_loc (Union[str, io.StringIO]): location of the event data file
+
+    Returns:
+        pd.DataFrame: event data
+    """
 
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
         file = open(event_data_loc)
@@ -218,3 +230,103 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
         events["metrica_event"].map(metrica_databallpy_map).replace([np.nan], [None])
     )
     return events
+
+
+def _get_databallpy_events(event_data: pd.DataFrame) -> dict:
+    """Function to get the databallpy events from the event data
+
+    Args:
+        event_data (pd.DataFrame): event data
+
+    Returns:
+        dict: dictionary with the databallpy events
+    """
+    shot_events = {}
+    pass_events = {}
+    dribble_events = {}
+
+    shot_mask = event_data["databallpy_event"] == "shot"
+    shot_events = {
+        shot.event_id: shot
+        for shot in event_data[shot_mask].apply(_get_shot_event, axis=1)
+    }
+
+    pass_maks = event_data["databallpy_event"] == "pass"
+    pass_events = {
+        pass_.event_id: pass_
+        for pass_ in event_data[pass_maks].apply(_get_pass_event, axis=1)
+    }
+
+    dribble_mask = event_data["databallpy_event"] == "dribble"
+    dribble_events = {
+        dribble.event_id: dribble
+        for dribble in event_data[dribble_mask].apply(_get_dribble_event, axis=1)
+    }
+
+    databallpy_events = {
+        "shot_events": shot_events,
+        "pass_events": pass_events,
+        "dribble_events": dribble_events,
+    }
+    return databallpy_events
+
+
+def _get_shot_event(row: pd.Series) -> ShotEvent:
+    return ShotEvent(
+        event_id=row.event_id,
+        period_id=row.period_id,
+        minutes=row.minutes,
+        seconds=row.seconds,
+        datetime=row.datetime,
+        start_x=row.start_x,
+        start_y=row.start_y,
+        team_id=row.team_id,
+        player_id=row.player_id,
+        shot_outcome=["miss", "goal"][row.outcome],
+        y_target=np.nan,
+        z_target=np.nan,
+        body_part=None,
+        type_of_play=None,
+        first_touch=None,
+        created_oppertunity=None,
+        related_event_id=MISSING_INT,
+    )
+
+
+def _get_pass_event(row: pd.Series) -> PassEvent:
+    return PassEvent(
+        event_id=row.event_id,
+        period_id=row.period_id,
+        minutes=row.minutes,
+        seconds=row.seconds,
+        datetime=row.datetime,
+        start_x=row.start_x,
+        start_y=row.start_y,
+        team_id=row.team_id,
+        player_id=row.player_id,
+        outcome=["unsuccessful", "successful"][row.outcome]
+        if not pd.isnull(row.outcome)
+        else "not_specified",
+        end_x=row.end_x,
+        end_y=row.end_y,
+        pass_type="not_specified",
+        set_piece="unspecified_set_piece",
+    )
+
+
+def _get_dribble_event(row: pd.Series) -> DribbleEvent:
+    return DribbleEvent(
+        event_id=row.event_id,
+        period_id=row.period_id,
+        minutes=row.minutes,
+        seconds=row.seconds,
+        datetime=row.datetime,
+        start_x=row.start_x,
+        start_y=row.start_y,
+        team_id=row.team_id,
+        player_id=row.player_id,
+        related_event_id=MISSING_INT,
+        duel_type=None,
+        outcome=bool(row.outcome),
+        has_opponent=False,
+    )
