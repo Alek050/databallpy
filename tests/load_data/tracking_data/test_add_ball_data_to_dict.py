@@ -20,7 +20,7 @@ class TestAddBallDataToDict(unittest.TestCase):
             "ball_x": [150.0, 22.0, 124.0],
             "ball_y": [-46.0, 17.0, np.nan],
             "ball_z": [7.0, 15.0, 7.0],
-            "ball_posession": ["away", "home", "away"],
+            "ball_possession": ["away", "home", "away"],
             "ball_status": ["alive", "dead", "dead"],
         }
 
@@ -30,15 +30,15 @@ class TestAddBallDataToDict(unittest.TestCase):
             "ball_x": [np.nan] * 3,
             "ball_y": [np.nan] * 3,
             "ball_z": [np.nan] * 3,
-            "ball_posession": [np.nan] * 3,
+            "ball_possession": [np.nan] * 3,
             "ball_status": [np.nan] * 3,
         }
 
         for i, input in enumerate(self.ball_info):
             data["frame"][i] = int(i)
-            ball_x, ball_y, ball_z, ball_posession, ball_status = input
+            ball_x, ball_y, ball_z, ball_possession, ball_status = input
             data = _add_ball_data_to_dict(
-                ball_x, ball_y, ball_z, ball_posession, ball_status.lower(), data, i
+                ball_x, ball_y, ball_z, ball_possession, ball_status.lower(), data, i
             )
 
         assert data == self.expected_dict

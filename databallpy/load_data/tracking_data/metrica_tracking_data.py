@@ -137,7 +137,7 @@ def _get_tracking_data(
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
         "ball_status": [None] * size_lines,
-        "ball_posession": [None] * size_lines,
+        "ball_possession": [None] * size_lines,
     }
 
     if verbose:
