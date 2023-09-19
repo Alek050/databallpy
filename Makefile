@@ -25,26 +25,29 @@ help:
 	$(call echotask,"docs","runs sphinx code to create docs")
 	@echo
 
-deps:
+deps_poetry:
+	pip install --upgrade poetry
+
+deps: deps_poetry
 	poetry install --with docs
 
-format:
+format: deps_poetry
 	poetry run isort --filter-files $(LINT_FILES)
 	poetry run black $(LINT_FILES)
 
-formatcheck:
+formatcheck: deps_poetry
 	poetry run isort --check-only --filter-files $(LINT_FILES)
 	poetry run black --check $(LINT_FILES)
 
-flake8:
+flake8: deps_poetry
 	poetry run flake8 $(LINT_FILES)
 
 lint: flake8 formatcheck
 
 formatlint: format flake8
 
-test:
+test: deps_poetry
 	$(PYTEST) $(PYTEST_ARGS_COV)
 
-documentation: 
+documentation: deps_poetry
 	poetry run make html --directory docs/
