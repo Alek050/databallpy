@@ -14,6 +14,19 @@ from databallpy.warnings import DataBallPyWarning
 def load_ortec_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> Tuple[pd.DataFrame, Metadata]:
+    """ Function that loads the event data from Ortec
+
+    Args:
+        event_data_loc (str): location of the event data
+        metadata_loc (str): location of the metadata
+
+    Note: event data of Ortec is not yet supported since ortec event
+    data uses identifiers which are unknown to us. Therefore, we cannot
+    parse the event data. For now, None is returned as event data.
+
+    Returns:
+        Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
+    """
     metadata = load_metadata(metadata_loc)
 
     if event_data_loc is not None:
