@@ -23,7 +23,7 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
                 "ball_y",
                 "ball_z",
                 "ball_status",
-                "ball_posession",
+                "ball_possession",
                 "home_11_x",
                 "home_11_y",
                 "home_1_x",

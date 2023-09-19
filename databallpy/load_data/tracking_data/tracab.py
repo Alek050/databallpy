@@ -84,7 +84,7 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
         "ball_status": [None] * size_lines,
-        "ball_posession": [None] * size_lines,
+        "ball_possession": [None] * size_lines,
     }
     team_ids = {0: "away", 1: "home"}
     home_away_map = {"H": "home", "A": "away"}
@@ -105,13 +105,13 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
                 continue
             data = _add_player_tracking_data_to_dict(team, shirt_num, x, y, data, idx)
 
-        ball_x, ball_y, ball_z, _, posession, status = ball_info.split(";")[0].split(
+        ball_x, ball_y, ball_z, _, possession, status = ball_info.split(";")[0].split(
             ","
         )[:6]
 
-        posession = home_away_map[posession]
+        possession = home_away_map[possession]
         data = _add_ball_data_to_dict(
-            ball_x, ball_y, ball_z, posession, status.lower(), data, idx
+            ball_x, ball_y, ball_z, possession, status.lower(), data, idx
         )
 
     df = pd.DataFrame(data)
