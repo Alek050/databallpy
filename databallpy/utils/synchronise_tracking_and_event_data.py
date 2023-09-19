@@ -126,7 +126,7 @@ def synchronise_tracking_and_event_data(
     event_data["tracking_frame"] = np.nan
 
     mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
-    event_data = event_data[mask_events_to_sync]
+    event_data_to_sync = event_data[mask_events_to_sync].copy()
 
     periods_played = match.periods[match.periods["start_frame"] > 0]["period"].values
 
@@ -163,7 +163,9 @@ def synchronise_tracking_and_event_data(
         ]
 
         tracking_data_period = tracking_data[tracking_data["period"] == p]
-        event_data_period = event_data[event_data["period_id"] == p].copy()
+        event_data_period = event_data_to_sync[
+            event_data_to_sync["period_id"] == p
+        ].copy()
         start_events = ["pass", "shot"]
         datetime_first_event = event_data_period[
             event_data_period["databallpy_event"].isin(start_events)
@@ -219,6 +221,7 @@ def synchronise_tracking_and_event_data(
         axis=1,
         inplace=True,
     )
+
     match.tracking_data = tracking_data
     match.event_data = event_data
 
@@ -260,6 +263,7 @@ def _create_sim_mat(
 
     for row in event_batch.itertuples():
         i = row.Index
+
         if not np.isnan(row.player_id) and row.player_id != MISSING_INT:
             column_id_player = match.player_id_to_column_id(player_id=row.player_id)
             player_ball_diff = np.hypot(

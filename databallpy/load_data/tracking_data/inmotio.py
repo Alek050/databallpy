@@ -110,7 +110,7 @@ def _get_tracking_data(
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
         "ball_status": [None] * size_lines,
-        "ball_posession": [None] * size_lines,
+        "ball_possession": [None] * size_lines,
     }
 
     if verbose:
@@ -197,10 +197,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         Metadata: all information of the match
     """
 
-    file = open(metadata_loc, "r", encoding="UTF-8")
-    lines = file.read()
+    with open(metadata_loc, "r", encoding="UTF-8") as file:
+        lines = file.read()
     soup = BeautifulSoup(lines, "xml")
-    file.close()
 
     periods_dict = {
         "period": [1, 2, 3, 4, 5],
@@ -241,14 +240,22 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     home_team_name = home_team.Name.text
     home_team_player_data = soup.find_all("Player", {"teamId": home_team_id})
     home_players = _get_player_data(home_team_player_data)
-    home_score = int(soup.LocalTeamScore.text)
+    home_score = (
+        int(soup.LocalTeamScore.text)
+        if soup.LocalTeamScore is not None
+        else MISSING_INT
+    )
 
     away_team = soup.Teams.find_all("Team")[1]
     away_team_id = away_team.attrs["id"]
     away_team_name = away_team.Name.text
     away_team_player_data = soup.find_all("Player", {"teamId": away_team_id})
     away_players = _get_player_data(away_team_player_data)
-    away_score = int(soup.VisitingTeamScore.text)
+    away_score = (
+        int(soup.VisitingTeamScore.text)
+        if soup.VisitingTeamScore is not None
+        else MISSING_INT
+    )
 
     metadata = Metadata(
         match_id=int(soup.Session.attrs["id"]),

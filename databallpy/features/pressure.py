@@ -51,7 +51,6 @@ def get_pressure_on_player(
             td_frame[opponent_column_id + "_y"],
         ]
         player_opponent_distance = math.dist(player_xy, opponent_xy)
-
         # opponent not close enough to exert pressure on the player
         if player_opponent_distance > max([d_front, d_back]):
             continue
@@ -66,6 +65,7 @@ def get_pressure_on_player(
             ** q
             * 100
         )
+
         current_pressure = 0 if pd.isnull(current_pressure) else current_pressure
         tot_pressure += current_pressure
 
@@ -136,6 +136,7 @@ def calculate_z(
     angles = get_smallest_angle(
         player_goal_vec, player_opponent_vec, angle_format="radian"
     )
+
     return (1.0 + np.cos(angles)) / 2.0
 
 

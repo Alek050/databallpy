@@ -28,7 +28,7 @@ TD_TRACAB = pd.DataFrame(
             np.nan,
             "alive",
         ],
-        "ball_posession": [
+        "ball_possession": [
             "away",
             "away",
             "away",
@@ -532,7 +532,7 @@ TD_METRICA = pd.DataFrame(
         "ball_y": [np.nan, 0, -20, np.nan, np.nan, 20],
         "ball_z": [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
         "ball_status": ["dead", "alive", "alive", np.nan, "dead", "alive"],
-        "ball_posession": [None, None, None, None, None, None],
+        "ball_possession": [None, None, None, None, None, None],
         "home_11_x": [0, 30, 20, np.nan, np.nan, np.nan],
         "home_11_y": [0, 0, -5, np.nan, np.nan, np.nan],
         "home_1_x": [-40, -30, -20, np.nan, -10, 0],
@@ -721,7 +721,7 @@ TD_INMOTIO = pd.DataFrame(
         "ball_y": [0.0, 0.0, 1.0, np.nan, 0.0, 0.0],
         "ball_z": [0.0, 0.0, 0.0, np.nan, 0.0, 0.0],
         "ball_status": ["dead", "alive", "alive", np.nan, "alive", "alive"],
-        "ball_posession": [None, None, None, None, None, None],
+        "ball_possession": [None, None, None, None, None, None],
         "home_1_x": [-46.9, -45.9, -44.9, np.nan, 39.0, 39.0],
         "home_1_y": [0.8, -0.2, -1.2, np.nan, 1.5, 2.5],
         "home_2_x": [-19.0, -20.0, -21.0, np.nan, 23.3, 23.3],
