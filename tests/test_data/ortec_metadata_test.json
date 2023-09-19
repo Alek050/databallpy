@@ -1,0 +1,93 @@
+{
+    "Competition": {
+        "Id": 66,
+        "Name": "Netherlands 2e klasse"
+    },
+    "CompetitionEdition": {
+        "Id": 32,
+        "Name": "2023/2024"
+    },
+    "CompetitionPhase": {
+        "Id": 4093,
+        "Name": "Regular competition"
+    },
+    "Id": 1999,
+    "HomeTeam": {
+        "Id": 2000,
+        "UId": 1,
+        "Name": "Team 1 2023/2024",
+        "DisplayName": "Team 1",
+        "Abbreviation": "1",
+        "SelectionType": 0,
+        "Persons": [
+            {
+                "ShirtNumber": 27,
+                "StartInMatch": false,
+                "Role": "left-midfield",
+                "IsCaptain": false,
+                "Id": 278,
+                "SelectionId": 2000,
+                "DisplayName": "Team1 Player1",
+                "ShortDisplayName": null,
+                "FirstName": null,
+                "SurNamePrefix": null,
+                "SurName": null
+            },
+            {
+                "ShirtNumber": 10,
+                "StartInMatch": false,
+                "Role": "bench",
+                "IsCaptain": false,
+                "Id": 108,
+                "SelectionId": 2000,
+                "DisplayName": "Team1 Player2",
+                "ShortDisplayName": null,
+                "FirstName": null,
+                "SurNamePrefix": null,
+                "SurName": null
+            }
+        ]
+    },
+    "AwayTeam": {
+        "Id": 2001,
+        "UId": 2,
+        "Name": "Team 2 2023/2024",
+        "DisplayName": "Team 2",
+        "Abbreviation": "2",
+        "SelectionType": 0,
+        "Persons": [
+            {
+                "ShirtNumber": 43,
+                "StartInMatch": false,
+                "Role": "left-centre-back",
+                "IsCaptain": false,
+                "Id": 438,
+                "SelectionId": 2001,
+                "DisplayName": "Team2 Player1",
+                "ShortDisplayName": null,
+                "FirstName": null,
+                "SurNamePrefix": null,
+                "SurName": null
+            },
+            {
+                "ShirtNumber": 2,
+                "StartInMatch": false,
+                "Role": "right-centre-midfield",
+                "IsCaptain": false,
+                "Id": 28,
+                "SelectionId": 2001,
+                "DisplayName": "Team2 Player2",
+                "ShortDisplayName": null,
+                "FirstName": null,
+                "SurNamePrefix": null,
+                "SurName": null
+            }
+        ]
+    },
+    "DateTime": "2023-09-03T18:00:00+00:00",
+    "Round": 2,
+    "AnalysisFinished": true,
+    "LastChanged": "2023-09-04T17:53:11.4313595+00:00",
+    "MatchStatus": null,
+    "VenueId": 999
+}

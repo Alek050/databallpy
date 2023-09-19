@@ -52,7 +52,7 @@ class BaseEvent:
         if not isinstance(self.start_y, float):
             raise TypeError(f"y_start should be a float, not {type(self.start_y)}")
 
-        if not isinstance(self.team_id, int):
+        if not isinstance(self.team_id, int) and not isinstance(self.team_id, str):
             raise TypeError(f"team_id should be int, not {type(self.team_id)}")
 
     def __eq__(self, other: object) -> bool:
@@ -64,8 +64,12 @@ class BaseEvent:
             self.minutes == other.minutes,
             self.seconds == other.seconds,
             self.datetime == other.datetime,
-            round(self.start_x, 4) == round(other.start_x, 4),
-            round(self.start_y, 4) == round(other.start_y, 4),
+            round(self.start_x, 4) == round(other.start_x, 4)
+            if not pd.isnull(self.start_x)
+            else pd.isnull(other.start_x),
+            round(self.start_y, 4) == round(other.start_y, 4)
+            if not pd.isnull(self.start_y)
+            else pd.isnull(other.start_y),
             self.team_id == other.team_id,
         ]
         return all(result)

@@ -128,5 +128,5 @@ class TestBaseEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2020-01-01 00:00:00"),
                 start_x=10.0,
                 start_y=11.0,
-                team_id="1",
+                team_id=[1],
             )

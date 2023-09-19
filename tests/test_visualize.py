@@ -119,7 +119,7 @@ class TestVisualize(unittest.TestCase):
 
     def test_save_match_clip(self):
         match = self.match.copy()
-        match.tracking_data["player_posession"] = [
+        match.tracking_data["player_possession"] = [
             None,
             "home_34",
             None,
@@ -153,7 +153,7 @@ class TestVisualize(unittest.TestCase):
                 save_folder="tests/test_data",
                 title="test_clip",
                 variable_of_interest=series,
-                player_posession_column="unknown_column",
+                player_possession_column="unknown_column",
             )
 
         assert not os.path.exists("tests/test_data/test_clip.mp4")
@@ -165,7 +165,7 @@ class TestVisualize(unittest.TestCase):
             save_folder="tests/test_data",
             title="test_clip",
             variable_of_interest=series,
-            player_posession_column="player_posession",
+            player_possession_column="player_possession",
         )
 
         assert os.path.exists("tests/test_data/test_clip.mp4")

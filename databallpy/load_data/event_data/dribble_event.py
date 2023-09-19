@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import pandas as pd
+
 from databallpy.load_data.event_data.base_event import BaseEvent
 
 
@@ -48,7 +50,9 @@ class DribbleEvent(BaseEvent):
                 super().__eq__(other),
                 self.player_id == other.player_id,
                 self.related_event_id == other.related_event_id,
-                self.duel_type == other.duel_type,
+                self.duel_type == other.duel_type
+                if not pd.isnull(self.duel_type)
+                else pd.isnull(other.duel_type),
                 self.outcome == other.outcome,
                 self.has_opponent == other.has_opponent,
             ]
@@ -81,9 +85,9 @@ class DribbleEvent(BaseEvent):
                 f"related_event_id should be int, got {type(self.related_event_id)} "
                 "instead"
             )
-        if not isinstance(self.duel_type, str):
+        if not isinstance(self.duel_type, (str, type(None))):
             raise TypeError(
                 f"duel_type should be str, got {type(self.duel_type)} instead"
             )
-        if not isinstance(self.outcome, bool):
+        if not isinstance(self.outcome, (bool, type(None))):
             raise TypeError(f"outcome should be bool, got {type(self.outcome)} instead")

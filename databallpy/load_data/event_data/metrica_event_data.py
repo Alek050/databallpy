@@ -151,8 +151,8 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
 
     check_outcome_last_event = False
 
-    in_posession_events = ["pass", "carry", "recovery", "shot"]
-    out_of_posession_events = ["fault received", "ball out", "ball lost"]
+    in_possession_events = ["pass", "carry", "recovery", "shot"]
+    out_of_possession_events = ["fault received", "ball out", "ball lost"]
 
     for event in events_dict["data"]:
         result_dict["event_id"].append(event["index"])
@@ -168,10 +168,10 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
         # set outcome for pass or dribble/carry events
         if check_outcome_last_event:
             if (
-                event_name in out_of_posession_events
+                event_name in out_of_possession_events
                 and result_dict["team_id"][-1] == event["team"]["id"]
             ) or (
-                event_name in in_posession_events
+                event_name in in_possession_events
                 and result_dict["team_id"][-1] != event["team"]["id"]
             ):
 

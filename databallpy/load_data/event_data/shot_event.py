@@ -178,10 +178,18 @@ class ShotEvent(BaseEvent):
             round(self.z_target, 4) == round(other.z_target, 4)
             if not pd.isnull(self.z_target)
             else pd.isnull(other.z_target),
-            self.body_part == other.body_part,
-            self.type_of_play == other.type_of_play,
-            self.first_touch == other.first_touch,
-            self.created_oppertunity == other.created_oppertunity,
+            self.body_part == other.body_part
+            if not pd.isnull(self.body_part)
+            else pd.isnull(other.body_part),
+            self.type_of_play == other.type_of_play
+            if not pd.isnull(self.type_of_play)
+            else pd.isnull(other.type_of_play),
+            self.first_touch == other.first_touch
+            if not pd.isnull(self.first_touch)
+            else pd.isnull(other.first_touch),
+            self.created_oppertunity == other.created_oppertunity
+            if not pd.isnull(self.created_oppertunity)
+            else pd.isnull(other.created_oppertunity),
             self.related_event_id == other.related_event_id,
             self.ball_gk_distance == other.ball_gk_distance
             if not pd.isnull(self.ball_gk_distance)
@@ -243,6 +251,7 @@ class ShotEvent(BaseEvent):
             "miss_on_target",
             "blocked",
             "own_goal",
+            "not_specified",
         ]:
             raise ValueError(
                 "shot_outcome should be goal, miss_off_target, miss_hit_post, "
@@ -260,12 +269,12 @@ class ShotEvent(BaseEvent):
             raise TypeError(
                 f"body_part should be str or None, got {type(self.body_part)}"
             )
-        if self.body_part not in ["left_foot", "right_foot", "head", "other"]:
+        if self.body_part not in ["left_foot", "right_foot", "head", "other", None]:
             raise ValueError(
                 "body_part should be left_foot, right_foot, head or other, "
                 f"got {self.body_part}"
             )
-        if not isinstance(self.type_of_play, str):
+        if not isinstance(self.type_of_play, (str, type(None))):
             raise TypeError(
                 f"type_of_play should be str, got {type(self.type_of_play)}"
             )
@@ -276,12 +285,13 @@ class ShotEvent(BaseEvent):
             "crossed_free_kick",
             "corner_kick",
             "free_kick",
+            None,
         ]:
             raise ValueError(
                 "type_of_play should be penalty, regular_play, counter_attack, "
                 f"crossed_free_kick, corner_kick or free_kick, got {self.type_of_play}"
             )
-        if not isinstance(self.first_touch, bool):
+        if not isinstance(self.first_touch, (bool, type(None))):
             raise TypeError(f"first_touch should be bool, got {type(self.first_touch)}")
         if not isinstance(self.created_oppertunity, (str, type(None))):
             raise TypeError(
@@ -292,6 +302,7 @@ class ShotEvent(BaseEvent):
             "assisted",
             "individual_play",
             "regular_play",
+            None,
         ]:
             raise ValueError(
                 "created_oppertunity should be assisted, regular_play, or "

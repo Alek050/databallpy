@@ -374,7 +374,7 @@ def save_match_clip(
     pitch_color: str = "mediumseagreen",
     events: list = [],
     variable_of_interest: pd.Series = None,
-    player_posession_column: str = None,
+    player_possession_column: str = None,
     verbose: bool = True,
 ):
     """Function to save a subset of a match clip of the tracking data.
@@ -396,8 +396,8 @@ def save_match_clip(
             in the clip, this is a pd.Series that should have the same index
             (start_idx:end_idx) as the tracking data that will be plotted. Defaults to
             None.
-        player_posession_column (str, optional): Column in match.tracking_data that
-            contains the player id of the player that has posession of the ball.
+        player_possession_column (str, optional): Column in match.tracking_data that
+            contains the player id of the player that has possession of the ball.
             Defaults to None.
         verbose (bool, optional): Whether or not to print info in the terminal on the
             progress
@@ -414,10 +414,10 @@ def save_match_clip(
             "Index of variable of interest and of the tracking data should be alike!"
         )
 
-    if player_posession_column is not None:
+    if player_possession_column is not None:
         assert (
-            player_posession_column in match.tracking_data.columns
-        ), f"Column {player_posession_column} not found in match.tracking_data.columns"
+            player_possession_column in match.tracking_data.columns
+        ), f"Column {player_possession_column} not found in match.tracking_data.columns"
 
     if len(events) > 0:
         assert (
@@ -517,9 +517,9 @@ def save_match_clip(
                 )
                 variable_fig_objs.append(fig_obj)
 
-            # add player posessions
-            if player_posession_column is not None:
-                column_id = match.tracking_data.loc[idx, player_posession_column]
+            # add player possessions
+            if player_possession_column is not None:
+                column_id = match.tracking_data.loc[idx, player_possession_column]
                 if not pd.isnull(column_id):
                     circle = plt.Circle(
                         (

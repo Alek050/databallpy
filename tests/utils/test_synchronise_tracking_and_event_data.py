@@ -98,13 +98,12 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             9.0,
             11.0,
         ]
-        expected_event_data = expected_event_data[
-            expected_event_data["type_id"].isin([1, 3, 7])
-        ]
+
         self.match_to_sync.synchronise_tracking_and_event_data(n_batches_per_half=1)
         pd.testing.assert_frame_equal(
             self.match_to_sync.tracking_data, expected_tracking_data
         )
+
         pd.testing.assert_frame_equal(
             self.match_to_sync.event_data, expected_event_data
         )

@@ -118,6 +118,7 @@ class Match:
     dribble_events: dict = field(default_factory=dict)
     pass_events: dict = field(default_factory=dict)
     allow_synchronise_tracking_and_event_data: bool = False
+    extra_data: pd.DataFrame = None
     _shots_df: pd.DataFrame = None
     _dribbles_df: pd.DataFrame = None
     _passes_df: pd.DataFrame = None
@@ -394,6 +395,7 @@ class Match:
                     & (self.home_players["end_frame"] >= tracking_data_frame["frame"])
                     & (self.home_players["position"] == "goalkeeper")
                 )
+
                 gk_column_id = (
                     f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
                 )
@@ -471,6 +473,9 @@ class Match:
                 if self._passes_df is not None
                 else other._passes_df is None,
                 self.country == other.country,
+                self.extra_data.equals(other.extra_data)
+                if self.extra_data is not None
+                else other.extra_data is None,
             ]
             return all(result)
         else:
@@ -505,6 +510,7 @@ class Match:
             pass_events=self.pass_events.copy(),
             _passes_df=self._passes_df.copy() if self._passes_df is not None else None,
             country=self.country,
+            extra_data=self.extra_data,
         )
 
     def save_match(
@@ -681,7 +687,7 @@ def check_inputs_match_object(match: Match):
 
     # team scores
     for team, score in zip(["home", "away"], [match.home_score, match.away_score]):
-        if not pd.isnull(score):
+        if not pd.isnull(score) and not score == MISSING_INT:
             if not isinstance(score, int):
                 raise TypeError(
                     f"{team} team score should be an integer, not a {type(score)}"
@@ -765,8 +771,8 @@ def check_inputs_match_object(match: Match):
             for event in event_dict.values():
                 if not isinstance(event, event_type):
                     raise TypeError(
-                        f"{event_name}_events should contain only ShotEvent objects, "
-                        f"not {type(event)}"
+                        f"{event_name}_events should contain only {event_type} objects,"
+                        f" not {type(event)}"
                     )
 
         # country

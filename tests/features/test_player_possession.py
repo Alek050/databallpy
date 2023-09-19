@@ -3,17 +3,17 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.features.player_posession import (
+from databallpy.features.player_possession import (
     get_distance_between_ball_and_players,
     get_duels,
-    get_individual_player_posessions_and_duels,
-    get_initial_posessions,
-    get_lost_posession_idx,
+    get_individual_player_possessions_and_duels,
+    get_initial_possessions,
+    get_lost_possession_idx,
     get_valid_gains,
 )
 
 
-class TestPlayerPosession(unittest.TestCase):
+class TestPlayerPossession(unittest.TestCase):
     def setUp(self):
         self.tracking_data_full = pd.DataFrame(
             {
@@ -85,15 +85,15 @@ class TestPlayerPosession(unittest.TestCase):
         self.duels = pd.Series(
             [None, None, None, None, None, None, None, None, None, None]
         )
-        self.posession_start_idxs = np.array([0, 6])
-        self.posession_end_idxs = np.array([4, 9])
+        self.possession_start_idxs = np.array([0, 6])
+        self.possession_end_idxs = np.array([4, 9])
 
-    def test_get_individual_player_posession(self):
+    def test_get_individual_player_possession(self):
         td = self.tracking_data_full.copy()
-        posessions, duels = get_individual_player_posessions_and_duels(
+        possessions, duels = get_individual_player_possessions_and_duels(
             td, 1, bv_threshold=3
         )
-        expected_posessions = pd.Series(
+        expected_possessions = pd.Series(
             [
                 None,
                 "home_1",
@@ -121,11 +121,11 @@ class TestPlayerPosession(unittest.TestCase):
                 None,
             ]
         )
-        pd.testing.assert_series_equal(posessions, expected_posessions)
+        pd.testing.assert_series_equal(possessions, expected_possessions)
         pd.testing.assert_series_equal(duels, expected_duels)
 
-    def test_get_initial_posessions(self):
-        posessions_no_min_frames = get_initial_posessions(
+    def test_get_initial_possessions(self):
+        possessions_no_min_frames = get_initial_possessions(
             self.tracking_data, self.distances, pz_radius=1.5, min_frames=0
         )
         expected_no_min_frames = pd.Series(
@@ -142,15 +142,17 @@ class TestPlayerPosession(unittest.TestCase):
                 "away_2",
             ]
         )
-        pd.testing.assert_series_equal(posessions_no_min_frames, expected_no_min_frames)
+        pd.testing.assert_series_equal(
+            possessions_no_min_frames, expected_no_min_frames
+        )
 
-        posessions_min_frames = get_initial_posessions(
+        possessions_min_frames = get_initial_possessions(
             self.tracking_data, self.distances, pz_radius=1.5, min_frames=2
         )
         expected_min_frames = pd.Series(
             [None, None, None, None, None, None, None, "away_2", "away_2", "away_2"]
         )
-        pd.testing.assert_series_equal(posessions_min_frames, expected_min_frames)
+        pd.testing.assert_series_equal(possessions_min_frames, expected_min_frames)
 
     def test_get_duels(self):
         duels = get_duels(
@@ -169,15 +171,15 @@ class TestPlayerPosession(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(distances, expected)
 
-    def test_get_lost_posession_idx(self):
+    def test_get_lost_possession_idx(self):
         # ball does not go faster than 2m/s, thus last index should be returned
-        lost_posession_idx = get_lost_posession_idx(self.tracking_data, 2)
-        self.assertEqual(lost_posession_idx, 9)
+        lost_possession_idx = get_lost_possession_idx(self.tracking_data, 2)
+        self.assertEqual(lost_possession_idx, 9)
 
         td = self.tracking_data.copy()
         td.loc[[5, 7], "ball_velocity"] = [3, 3]
-        lost_posession_idx = get_lost_posession_idx(td, 2)
-        self.assertEqual(lost_posession_idx, 5)
+        lost_possession_idx = get_lost_possession_idx(td, 2)
+        self.assertEqual(lost_possession_idx, 5)
 
     def test_get_valid_gains_event_found(self):
         td = pd.DataFrame(
@@ -206,13 +208,13 @@ class TestPlayerPosession(unittest.TestCase):
         )
 
         valid_gains = get_valid_gains(
-            td, self.posession_start_idxs, self.posession_end_idxs, 5.0, 10.0, duels
+            td, self.possession_start_idxs, self.possession_end_idxs, 5.0, 10.0, duels
         )
         np.testing.assert_allclose(valid_gains, np.array([True, False]))
 
         # if duels not passed, should not check on databallpy_event
         valid_gains = get_valid_gains(
-            td, self.posession_start_idxs, self.posession_end_idxs, 5.0, 10.0
+            td, self.possession_start_idxs, self.possession_end_idxs, 5.0, 10.0
         )
         np.testing.assert_allclose(valid_gains, np.array([False, False]))
 
@@ -241,8 +243,8 @@ class TestPlayerPosession(unittest.TestCase):
 
         valid_gains = get_valid_gains(
             td,
-            self.posession_start_idxs,
-            self.posession_end_idxs,
+            self.possession_start_idxs,
+            self.possession_end_idxs,
             5.0,
             10.0,
             self.duels,
@@ -274,8 +276,8 @@ class TestPlayerPosession(unittest.TestCase):
 
         valid_gains = get_valid_gains(
             td,
-            self.posession_start_idxs,
-            self.posession_end_idxs,
+            self.possession_start_idxs,
+            self.possession_end_idxs,
             5.0,
             10.0,
             self.duels,

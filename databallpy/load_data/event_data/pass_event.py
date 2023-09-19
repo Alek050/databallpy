@@ -33,7 +33,7 @@ class PassEvent(BaseEvent):
             'flick_on', 'pull_back', 'switch_off_play', 'not_specified']
         set_piece (str): type of set piece, options are:
             ['goal_kick', 'free_kick', 'throw_in', 'corner_kick', 'kick_off',
-            'penalty', 'no_set_piece']
+            'penalty', 'no_set_piece', unspecified_set_piece]
 
 
     Raises:
@@ -97,7 +97,7 @@ class PassEvent(BaseEvent):
     def __post_init__(self):
         super().__post_init__()
 
-        if not isinstance(self.outcome, str):
+        if not isinstance(self.outcome, (str, type(None))):
             raise TypeError(f"outcome should be str, not {type(self.outcome)}")
 
         valid_outcomes = [
@@ -108,6 +108,7 @@ class PassEvent(BaseEvent):
             "assist",
             "fair_play",
             "not_specified",
+            None,
         ]
         if self.outcome not in valid_outcomes:
             raise ValueError(
@@ -136,6 +137,7 @@ class PassEvent(BaseEvent):
             "pull_back",
             "switch_off_play",
             "not_specified",
+            "assist",
         ]
         if self.pass_type not in valid_pass_types:
             raise ValueError(
@@ -153,6 +155,7 @@ class PassEvent(BaseEvent):
             "kick_off",
             "penalty",
             "no_set_piece",
+            "unspecified_set_piece",
         ]
         if self.set_piece not in valid_set_pieces:
             raise ValueError(
