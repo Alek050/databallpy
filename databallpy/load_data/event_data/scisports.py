@@ -676,7 +676,6 @@ def _get_pass_instances(event_data: pd.DataFrame) -> dict:
     passes_mask = event_data["databallpy_event"] == "pass"
     pass_events = {}
     for pass_ in event_data.loc[passes_mask].itertuples():
-
         outcome = (
             ["successful", "unsuccessful"][pass_.outcome == 0]
             if not pd.isnull(pass_.outcome)

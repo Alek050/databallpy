@@ -216,7 +216,6 @@ class Match:
             pd.DataFrame: DataFrame with all information of the shots in the match"""
 
         if self._shots_df is None:
-
             if (
                 not self.is_synchronised
                 and self.allow_synchronise_tracking_and_event_data
@@ -664,7 +663,6 @@ def check_inputs_match_object(match: Match):
     if any(
         [x not in match.periods["period"].value_counts().index for x in [1, 2, 3, 4, 5]]
     ) or not all(match.periods["period"].value_counts() == 1):
-
         res = match.periods["period"]
         raise ValueError(
             f"'period' column in period_frames should contain only the values \

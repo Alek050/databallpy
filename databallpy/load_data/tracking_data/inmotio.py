@@ -118,7 +118,6 @@ def _get_tracking_data(
         lines = tqdm(lines)
 
     for idx, line in enumerate(lines):
-
         frame, players_home, players_away, ball_info = line.split(":")
         frame = _to_int(frame)
         data["frame"][idx] = frame

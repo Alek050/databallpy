@@ -72,7 +72,6 @@ class TestQualityCheckTrackingData(unittest.TestCase):
             )
 
     def test_check_missing_ball_data(self):
-
         self.assertIsNone(
             _check_missing_ball_data(self.tracking_data_no_warning, self.framerate)
         )
@@ -80,7 +79,6 @@ class TestQualityCheckTrackingData(unittest.TestCase):
             _check_missing_ball_data(self.tracking_data_warning, self.framerate)
 
     def test_check_ball_velocity(self):
-
         self.assertIsNone(
             _check_ball_velocity(self.tracking_data_no_warning, self.framerate)
         )

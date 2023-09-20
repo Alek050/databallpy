@@ -104,7 +104,6 @@ def plot_soccer_pitch(
 
     signs = [-1, 1]
     for s in signs:  # plots each line seperately
-
         # Plot pitch boundary
         ax.plot(
             [-half_pitch_length, half_pitch_length],
@@ -461,7 +460,6 @@ def save_match_clip(
         else:
             indexes = td.index
         for _, idx in enumerate(indexes):
-
             variable_fig_objs = []
 
             # Scatter plot the teams

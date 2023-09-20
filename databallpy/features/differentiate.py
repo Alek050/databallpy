@@ -59,7 +59,6 @@ def _differentiate(
     poly_order: int = 2,
     column_ids: list = None,
 ):
-
     """
     Function to differentiate the metric in x and y direction and update the df with the
     differentiated values in x and y direction and the absolute magnitude.

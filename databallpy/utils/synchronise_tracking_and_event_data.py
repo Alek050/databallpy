@@ -185,7 +185,6 @@ def synchronise_tracking_and_event_data(
         else:
             zip_batches = zip(end_batches_frames, end_batches_datetime)
         for end_batch_frame, end_batch_datetime in zip_batches:
-
             tracking_batch = tracking_data_period[
                 (tracking_data_period["frame"] <= end_batch_frame)
                 & (tracking_data_period["frame"] >= start_batch_frame)

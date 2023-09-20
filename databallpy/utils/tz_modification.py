@@ -31,7 +31,6 @@ def utc_to_local_datetime(
         )
 
     if isinstance(dt_series, pd.Series):
-
         if pd.isnull(dt_series).all():
             return dt_series
 
@@ -42,7 +41,6 @@ def utc_to_local_datetime(
         return converted.dt.tz_convert(CHARACTERISTIC_TIMEZONE[characteristic])
 
     elif isinstance(dt_series, pd.Timestamp):
-
         assert dt_series.tz == timezone.utc, "dt_series should be in UTC timezone"
 
         converted = dt_series.tz_convert(CHARACTERISTIC_TIMEZONE[characteristic])

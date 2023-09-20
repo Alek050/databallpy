@@ -66,7 +66,6 @@ class Metadata:
                 for x in [1, 2, 3, 4, 5]
             ]
         ) or not all(self.periods_frames["period"].value_counts() == 1):
-
             res = self.periods_frames["period"]
             raise ValueError(
                 f"'period' column in period_frames should contain only the values \

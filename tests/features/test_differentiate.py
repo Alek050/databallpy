@@ -42,7 +42,6 @@ class TestDifferentiate(unittest.TestCase):
             get_velocity(input_df, ["ball"], self.framerate, filter_type="test")
 
     def test_differentiate_sg_filter(self):
-
         output = _differentiate(
             self.input.copy(),
             new_name="velocity",
@@ -74,7 +73,6 @@ class TestDifferentiate(unittest.TestCase):
         pd.testing.assert_frame_equal(output, expected_output)
 
     def test_differentiate_ma_filter(self):
-
         output = _differentiate(
             self.input.copy(),
             new_name="velocity",

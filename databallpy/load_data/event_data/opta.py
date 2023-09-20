@@ -312,7 +312,6 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     teams_info = {}
     teams_player_info = {}
     for team_data, team in zip(team_datas, teams):
-
         # Team information
         team_name = team.findChildren("Name")[0].contents[0]
         team_info = {}
