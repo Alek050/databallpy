@@ -127,7 +127,9 @@ class TestScisports(unittest.TestCase):
         with self.assertRaises(TypeError):
             load_scisports_event_data(1)
 
-        res_ed, res_pos = load_scisports_event_data(self.scisports_event_loc)
+        with self.assertWarns(DataBallPyWarning):
+            res_ed, res_pos = load_scisports_event_data(self.scisports_event_loc)
+
         pd.testing.assert_frame_equal(res_ed, self.expected_event_data)
         pd.testing.assert_frame_equal(res_pos, self.expected_possessions)
 

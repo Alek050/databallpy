@@ -134,8 +134,8 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         Metadata: class that contains metadata
     """
 
-    file = open(metadata_loc, "r")
-    lines = file.read()
+    with open(metadata_loc, "r") as file:
+        lines = file.read()
     lines = lines.replace("ï»¿", "")
     soup = BeautifulSoup(lines, "xml")
 
@@ -214,17 +214,15 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         home_team_id=home_team_id,
         home_team_name=home_team_name,
         home_players=df_home_players,
-        home_score=np.nan,
+        home_score=MISSING_INT,
         home_formation="",
         away_team_id=away_team_id,
         away_team_name=away_team_name,
         away_players=df_away_players,
-        away_score=np.nan,
+        away_score=MISSING_INT,
         away_formation="",
         country="",
     )
-
-    file.close()
 
     return metadata
 

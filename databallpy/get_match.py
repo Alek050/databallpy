@@ -87,7 +87,8 @@ def get_match(
             event_metadata_loc=event_metadata_loc,
             event_data_provider=event_data_provider,
         )
-        uses_event_data = True
+        if event_data is not None and len(event_data) > 0:
+            uses_event_data = True
         uses_event_metadata = True
 
     # temporary, in the case of ortec, we only have metadata
@@ -511,6 +512,13 @@ def align_player_and_team_ids(
         event_data["team_id"] = event_data["team_id"].replace(
             {event_home_team_id: tracking_home_team_id}
         )
+        if type(tracking_home_team_id) is not type(event_home_team_id):
+            if MISSING_INT in event_data["team_id"].unique():
+                event_data.loc[event_data["team_id"] == MISSING_INT, "team_id"] = None
+            else:
+                event_data.loc[
+                    pd.isnull(event_data["team_id"]), "team_id"
+                ] = MISSING_INT
     if not event_metadata.away_team_id == tracking_metadata.away_team_id:
         event_away_team_id = event_metadata.away_team_id
         tracking_away_team_id = tracking_metadata.away_team_id

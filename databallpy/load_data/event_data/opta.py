@@ -193,58 +193,66 @@ def load_opta_event_data(
     assert isinstance(
         f24_loc, str
     ), f"f24_loc should be a string, not a {type(f24_loc)}"
+
     assert f7_loc[-4:] == ".xml", "f7 opta file should by of .xml format"
-    assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format"
+    if not f24_loc == "pass":
+        assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format"
 
     metadata = _load_metadata(f7_loc, pitch_dimensions=pitch_dimensions)
-    event_data, databallpy_events = _load_event_data(
-        f24_loc,
-        metadata.country,
-        metadata.away_team_id,
-        pitch_dimensions=pitch_dimensions,
-    )
+    if f24_loc != "pass":
+        event_data, databallpy_events = _load_event_data(
+            f24_loc,
+            metadata.country,
+            metadata.away_team_id,
+            pitch_dimensions=pitch_dimensions,
+        )
 
-    # update timezones for databallpy_events
-    for event_types in databallpy_events.values():
-        for event in event_types.values():
-            event.datetime = utc_to_local_datetime(event.datetime, metadata.country)
+        # update timezones for databallpy_events
+        for event_types in databallpy_events.values():
+            for event in event_types.values():
+                event.datetime = utc_to_local_datetime(event.datetime, metadata.country)
 
-    # Add player names to the event data dataframe
-    home_players = dict(
-        zip(metadata.home_players["id"], metadata.home_players["full_name"])
-    )
-    away_players = dict(
-        zip(metadata.away_players["id"], metadata.away_players["full_name"])
-    )
+        # Add player names to the event data dataframe
+        home_players = dict(
+            zip(metadata.home_players["id"], metadata.home_players["full_name"])
+        )
+        away_players = dict(
+            zip(metadata.away_players["id"], metadata.away_players["full_name"])
+        )
 
-    home_mask = (event_data["team_id"] == metadata.home_team_id) & ~pd.isnull(
-        event_data["player_id"]
-    )
-    away_mask = (event_data["team_id"] == metadata.away_team_id) & ~pd.isnull(
-        event_data["player_id"]
-    )
+        home_mask = (event_data["team_id"] == metadata.home_team_id) & ~pd.isnull(
+            event_data["player_id"]
+        )
+        away_mask = (event_data["team_id"] == metadata.away_team_id) & ~pd.isnull(
+            event_data["player_id"]
+        )
 
-    event_data.loc[:, "player_name"] = None
-    event_data.loc[home_mask, "player_name"] = event_data.loc[
-        home_mask, "player_id"
-    ].map(home_players)
-    event_data.loc[away_mask, "player_name"] = event_data.loc[
-        away_mask, "player_id"
-    ].map(away_players)
+        event_data["player_name"] = None
+        event_data.loc[home_mask, "player_name"] = event_data.loc[
+            home_mask, "player_id"
+        ].map(home_players)
+        event_data.loc[away_mask, "player_name"] = event_data.loc[
+            away_mask, "player_id"
+        ].map(away_players)
+        event_data["player_name"] = event_data["player_name"].replace({np.nan: None})
 
-    # Rescale the x and y coordinates relative to the pitch dimensions
-    # The original dimension of the x and y coordinates range from 0 to 100
-    event_data.loc[:, ["start_x"]] = (
-        event_data.loc[:, ["start_x"]] / 100 * pitch_dimensions[0]
-    ) - (pitch_dimensions[0] / 2.0)
-    event_data.loc[:, ["start_y"]] = (
-        event_data.loc[:, ["start_y"]] / 100 * pitch_dimensions[1]
-    ) - (pitch_dimensions[1] / 2.0)
+        # Rescale the x and y coordinates relative to the pitch dimensions
+        # The original dimension of the x and y coordinates range from 0 to 100
+        event_data.loc[:, ["start_x"]] = (
+            event_data.loc[:, ["start_x"]] / 100 * pitch_dimensions[0]
+        ) - (pitch_dimensions[0] / 2.0)
+        event_data.loc[:, ["start_y"]] = (
+            event_data.loc[:, ["start_y"]] / 100 * pitch_dimensions[1]
+        ) - (pitch_dimensions[1] / 2.0)
 
-    # Change direction of play of the away team so it is represented from right to left
-    event_data.loc[
-        event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
-    ] *= -1
+        # Change direction of play of the away team so it is represented from right to
+        # left
+        event_data.loc[
+            event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
+        ] *= -1
+    else:
+        event_data = pd.DataFrame()
+        databallpy_events = {}
 
     return event_data, metadata, databallpy_events
 

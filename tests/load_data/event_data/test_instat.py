@@ -59,5 +59,6 @@ class TestInstat(unittest.TestCase):
             self.instat_event_data_loc, MD_INSTAT
         )
         expected_event_data = ED_INSTAT
+
         pd.testing.assert_frame_equal(event_data, expected_event_data)
         assert pitch_dimensions == [100.0, 50.0]

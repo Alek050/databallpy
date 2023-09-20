@@ -67,7 +67,7 @@ def get_individual_player_possessions_and_duels(
     )
     duels = get_duels(tracking_data, distances_df, dz_radius=dz_radius)
 
-    player_possession = pd.Series(index=tracking_data.index)
+    player_possession = pd.Series(index=tracking_data.index, dtype="object")
     player_possession[:] = None
 
     # Find intervals of player possessions, can also include intervals with None values.

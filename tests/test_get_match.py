@@ -309,10 +309,11 @@ class TestGetMatch(unittest.TestCase):
             away_players=self.expected_away_players_inmotio_instat,
             country=self.md_instat.country,
         )
-        self.expected_match_inmotio_instat.event_data.loc[[0, 1, 2], "team_id"] = [
+        self.expected_match_inmotio_instat.event_data["team_id"] = [
             "T-0001",
             "T-0001",
             "T-0002",
+            None,
         ]
 
         self.match_to_sync = get_match(
@@ -445,7 +446,6 @@ class TestGetMatch(unittest.TestCase):
             event_data_provider="instat",
             check_quality=False,
         )
-
         assert (
             match_instat_inmotio_unaligned_input == self.expected_match_inmotio_instat
         )
