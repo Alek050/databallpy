@@ -496,9 +496,12 @@ def _load_event_data(
             result_dict["outcome"].append(MISSING_INT)
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
-        result_dict["datetime"].append(
-            pd.to_datetime(event.attrs["timestamp"], utc=True)
+        datetime = (
+            pd.to_datetime(event.attrs["timestamp_utc"], utc=True)
+            if event.attrs["timestamp_utc"]
+            else pd.to_datetime(event.attrs["timestamp"], utc=True)
         )
+        result_dict["datetime"].append(datetime)
 
         # get extra information for databallpy events
 

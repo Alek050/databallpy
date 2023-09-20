@@ -965,6 +965,15 @@ def _handle_scisports_data(
                     "team_id"
                 ].replace({event_away_team_id: tracking_away_team_id})
 
+            if str(scisports_event_data["team_id"].dtype) == "float64":
+                scisports_event_data["team_id"] = scisports_event_data[
+                    "team_id"
+                ].astype("int64")
+            if str(scisports_event_data["player_id"].dtype) == "float64":
+                scisports_event_data["player_id"] = scisports_event_data[
+                    "player_id"
+                ].astype("int64")
+
         if tracking_data["ball_possession"].isnull().all():
             tracking_data = _add_team_possessions_to_tracking_data(
                 tracking_data,
