@@ -91,7 +91,6 @@ class TestMatch(unittest.TestCase):
         assert self.expected_match_tracab_opta != copied
 
     def test_match_post_init(self):
-
         # tracking data
         with self.assertRaises(TypeError):
             Match(

@@ -464,7 +464,6 @@ class TestGetMatch(unittest.TestCase):
         assert match_instat_inmotio == self.expected_match_inmotio_instat
 
     def test_get_match_metrica_data(self):
-
         res = get_match(
             tracking_data_loc=self.td_metrica_loc,
             tracking_metadata_loc=self.md_metrica_loc,

@@ -92,13 +92,11 @@ def get_individual_player_possessions_and_duels(
     for idx, (start_idx, end_idx) in enumerate(
         zip(possession_start_idxs, possession_end_idxs)
     ):
-
         if pz_initial[start_idx] is None:
             continue
 
         player_column_id = pz_initial[start_idx]
         if valid_gains[idx]:
-
             # possession is lost somewhere between last pz index
             # and the next possession of a player
             if pz_initial[next_possession_start_idxs[idx]] is None:

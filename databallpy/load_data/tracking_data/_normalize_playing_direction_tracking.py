@@ -21,7 +21,6 @@ def _normalize_playing_direction_tracking(
     all_x_y = [x for x in td.columns if "_x" in x or "_y" in x]
     for _, period_row in periods.iterrows():
         if len(td[td["frame"] == period_row["start_frame"]].index) > 0:
-
             idx_start = td[td["frame"] == period_row["start_frame"]].index[0]
             idx_end = td[td["frame"] == period_row["end_frame"]].index[0]
 

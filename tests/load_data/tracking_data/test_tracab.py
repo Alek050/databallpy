@@ -17,7 +17,6 @@ class TestTracab(unittest.TestCase):
         self.metadata_loc = "tests/test_data/tracab_metadata_test.xml"
 
     def test_get_metadata(self):
-
         metadata = _get_metadata(self.metadata_loc)
         assert metadata == MD_TRACAB
 

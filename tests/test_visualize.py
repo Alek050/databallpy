@@ -46,7 +46,6 @@ class TestVisualize(unittest.TestCase):
         self.assertEqual(len(ax.collections), 3)
 
     def test_plot_events(self):
-
         match = self.match.copy()
 
         # Call plot_events function with different arguments

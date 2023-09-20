@@ -36,7 +36,6 @@ class TestOpta(unittest.TestCase):
         self.f24_loc = "tests/test_data/f24_test.xml"
 
     def test_load_opta_event_data(self):
-
         event_data, metadata, dbp_events = load_opta_event_data(
             self.f7_loc, self.f24_loc, pitch_dimensions=[10.0, 10.0]
         )
@@ -56,12 +55,10 @@ class TestOpta(unittest.TestCase):
             assert event == shot_events_opta[key]
 
     def test_load_metadata(self):
-
         metadata = _load_metadata(self.f7_loc, [10.0, 10.0])
         assert metadata == MD_OPTA
 
     def test_load_metadata_multiple_matches(self):
-
         metadata = _load_metadata(self.f7_loc_multiple_matches, [10.0, 10.0])
         # the second match metadata is dropped
         assert metadata == MD_OPTA

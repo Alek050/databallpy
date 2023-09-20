@@ -186,7 +186,6 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
                 event_name in in_possession_events
                 and result_dict["team_id"][-1] != event["team"]["id"]
             ):
-
                 result_dict["outcome"][-1] = 0
             else:
                 result_dict["outcome"][-1] = 1
