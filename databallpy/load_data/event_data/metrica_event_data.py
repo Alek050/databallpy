@@ -272,6 +272,15 @@ def _get_databallpy_events(event_data: pd.DataFrame) -> dict:
 
 
 def _get_shot_event(row: pd.Series) -> ShotEvent:
+    """Function to return a ShotEvent object from a row of the metrica
+      event data
+
+    Args:
+        row (pd.Series): row of the metrica event data with a shot event
+
+    Returns:
+        ShotEvent: ShotEvent object
+    """
     return ShotEvent(
         event_id=row.event_id,
         period_id=row.period_id,
@@ -294,6 +303,15 @@ def _get_shot_event(row: pd.Series) -> ShotEvent:
 
 
 def _get_pass_event(row: pd.Series) -> PassEvent:
+    """Function to return a PassEvent object from a row of the metrica
+     event data.
+
+    Args:
+        row (pd.Series): row of the metrica event data with a pass event
+
+    Returns:
+        PassEvent: PassEvent object
+    """
     return PassEvent(
         event_id=row.event_id,
         period_id=row.period_id,
@@ -315,6 +333,15 @@ def _get_pass_event(row: pd.Series) -> PassEvent:
 
 
 def _get_dribble_event(row: pd.Series) -> DribbleEvent:
+    """Function to return a DribbleEvent object from a row of the metrica
+     event data.
+
+    Args:
+        row (pd.Series): row of the metrica event data with a dribble event
+
+    Returns:
+        DribbleEvent: DribbleEvent object
+    """
     return DribbleEvent(
         event_id=row.event_id,
         period_id=row.period_id,

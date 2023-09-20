@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 import pandas as pd
 
 from databallpy.load_data.event_data.metrica_event_data import (
+    _get_databallpy_events,
     _get_event_data,
     load_metrica_event_data,
     load_metrica_open_event_data,
@@ -56,3 +57,9 @@ class TestMetricaEventData(unittest.TestCase):
         assert dbpe["shot_events"] == SHOT_EVENTS_METRICA
         assert dbpe["pass_events"] == PASS_EVENTS_METRICA
         assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
+
+    def test_get_databallpy_events(self):
+        res_dbpe = _get_databallpy_events(ED_METRICA)
+        assert res_dbpe["shot_events"] == SHOT_EVENTS_METRICA
+        assert res_dbpe["pass_events"] == PASS_EVENTS_METRICA
+        assert res_dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
