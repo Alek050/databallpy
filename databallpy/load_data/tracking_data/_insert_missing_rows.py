@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 from databallpy.utils.utils import MISSING_INT
 
 
@@ -28,7 +29,7 @@ def _insert_missing_rows(df: pd.DataFrame, col: str) -> pd.DataFrame:
         all_missing_timestamps = np.concatenate(
             (all_missing_timestamps, missing_timestamps)
         )
-    
+
     to_add_data = {
         x: [valid_nan_type(dtypes[x])] * len(all_missing_timestamps) for x in df.columns
     }
@@ -41,6 +42,7 @@ def _insert_missing_rows(df: pd.DataFrame, col: str) -> pd.DataFrame:
 
     return df
 
+
 def valid_nan_type(dtype):
     if "float" in str(dtype):
         return np.nan
@@ -48,8 +50,7 @@ def valid_nan_type(dtype):
         return MISSING_INT
     elif "object" in str(dtype):
         return None
-    elif  "datetime" in str(dtype):
+    elif "datetime" in str(dtype):
         return pd.to_datetime("NaT")
     else:
         return None
-

@@ -160,7 +160,9 @@ def load_scisports_event_data(events_xml: str) -> Tuple[pd.DataFrame, pd.DataFra
     event_data["databallpy_event"] = event_data["scisports_event"].map(
         SCISPORTS_TO_DATABALLPY_MAP
     )
-    event_data["databallpy_event"] = event_data["databallpy_event"].replace({np.nan: None})
+    event_data["databallpy_event"] = event_data["databallpy_event"].replace(
+        {np.nan: None}
+    )
 
     return event_data, possessions
 

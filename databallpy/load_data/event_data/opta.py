@@ -206,7 +206,6 @@ def load_opta_event_data(
             metadata.away_team_id,
             pitch_dimensions=pitch_dimensions,
         )
-    
 
         # update timezones for databallpy_events
         for event_types in databallpy_events.values():
@@ -246,7 +245,8 @@ def load_opta_event_data(
             event_data.loc[:, ["start_y"]] / 100 * pitch_dimensions[1]
         ) - (pitch_dimensions[1] / 2.0)
 
-        # Change direction of play of the away team so it is represented from right to left
+        # Change direction of play of the away team so it is represented from right to
+        # left
         event_data.loc[
             event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
         ] *= -1

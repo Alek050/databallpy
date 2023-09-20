@@ -6,14 +6,29 @@ import pandas as pd
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
 from databallpy.utils.utils import MISSING_INT
 
+
 class TestInsertMissingRows(unittest.TestCase):
     def setUp(self):
         self.input = pd.DataFrame(
             {
                 "frame": [0, 1, 2, 3, 4, 6, 9, 10, 15, 16, 17, 18, 21],
                 "values_int": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                "values_float": [1., 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                "values_object": ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
+                "values_float": [1.0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                "values_object": [
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                ],
                 "values_datetime": ["2023-02-02 00:00:00"] * 13,
                 "values_other": [[1]] * 13,
             }

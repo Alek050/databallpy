@@ -313,7 +313,7 @@ class TestGetMatch(unittest.TestCase):
             "T-0001",
             "T-0001",
             "T-0002",
-            None
+            None,
         ]
 
         self.match_to_sync = get_match(

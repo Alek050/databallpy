@@ -512,11 +512,13 @@ def align_player_and_team_ids(
         event_data["team_id"] = event_data["team_id"].replace(
             {event_home_team_id: tracking_home_team_id}
         )
-        if type(tracking_home_team_id) != type(event_home_team_id):
+        if type(tracking_home_team_id) is not type(event_home_team_id):
             if MISSING_INT in event_data["team_id"].unique():
                 event_data.loc[event_data["team_id"] == MISSING_INT, "team_id"] = None
             else:
-                event_data.loc[pd.isnull(event_data["team_id"]), "team_id"] = MISSING_INT
+                event_data.loc[
+                    pd.isnull(event_data["team_id"]), "team_id"
+                ] = MISSING_INT
     if not event_metadata.away_team_id == tracking_metadata.away_team_id:
         event_away_team_id = event_metadata.away_team_id
         tracking_away_team_id = tracking_metadata.away_team_id
