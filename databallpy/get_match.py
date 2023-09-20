@@ -148,10 +148,15 @@ def get_match(
 
     # extra checks when using both tracking and event data
     if uses_tracking_data and uses_event_metadata:
-        periods = merge_metadata_periods(tracking_metadata.periods_frames, event_metadata.periods_frames)
+        periods = merge_metadata_periods(
+            tracking_metadata.periods_frames, event_metadata.periods_frames
+        )
         if uses_event_data:
             event_data, databallpy_events = rescale_event_data(
-                tracking_metadata.pitch_dimensions, event_metadata.pitch_dimensions, event_data, databallpy_events
+                tracking_metadata.pitch_dimensions,
+                event_metadata.pitch_dimensions,
+                event_data,
+                databallpy_events,
             )
             event_data, event_metadata = align_player_and_team_ids(
                 event_data, event_metadata, tracking_metadata
@@ -398,9 +403,7 @@ def merge_metadata_periods(
         pd.DataFrame: merged periods
     """
 
-    periods_cols = event_periods.columns.difference(
-        tracking_periods.columns
-    ).to_list()
+    periods_cols = event_periods.columns.difference(tracking_periods.columns).to_list()
     periods_cols.sort(reverse=True)
     merged_periods = pd.concat(
         (
@@ -438,12 +441,8 @@ def rescale_event_data(
     ):
         return event_data, databallpy_events
 
-    x_correction = (
-        tracking_pitch_dimensions[0] / event_pitch_dimensions[0]
-    )
-    y_correction = (
-        tracking_pitch_dimensions[1] / event_pitch_dimensions[1]
-    )
+    x_correction = tracking_pitch_dimensions[0] / event_pitch_dimensions[0]
+    y_correction = tracking_pitch_dimensions[1] / event_pitch_dimensions[1]
     event_data["start_x"] *= x_correction
     event_data["start_y"] *= y_correction
 
@@ -533,7 +532,7 @@ def merge_player_info(
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: merged home player information
-            and merged away player information. 
+            and merged away player information.
     """
 
     player_cols = event_metadata.home_players.columns.difference(
