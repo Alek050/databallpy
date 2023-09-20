@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from databallpy.utils.utils import MISSING_INT
+
 
 @dataclass
 class Metadata:
@@ -79,7 +81,7 @@ class Metadata:
                 )
 
         # frame_rate
-        if not pd.isnull(self.frame_rate):
+        if not pd.isnull(self.frame_rate) and not self.frame_rate == MISSING_INT:
             if not isinstance(self.frame_rate, int):
                 raise TypeError(
                     f"frame_rate should be an integer, not a {type(self.frame_rate)}"
@@ -93,7 +95,11 @@ class Metadata:
         for team, team_id in zip(
             ["home", "away"], [self.home_team_id, self.away_team_id]
         ):
-            if not isinstance(team_id, int) and not isinstance(team_id, str):
+            if (
+                not isinstance(team_id, int)
+                and not isinstance(team_id, str)
+                and not team_id == MISSING_INT
+            ):
                 raise TypeError(
                     f"{team} team id should be an integer or string, not a \
                         {type(team_id)}"
@@ -110,7 +116,7 @@ class Metadata:
 
         # team scores
         for team, score in zip(["home", "away"], [self.home_score, self.away_score]):
-            if not pd.isnull(score):
+            if not pd.isnull(score) and not score == MISSING_INT:
                 if not isinstance(score, int):
                     raise TypeError(
                         f"{team} team score should be an integer, not a {type(score)}"

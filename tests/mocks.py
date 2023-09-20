@@ -95,6 +95,118 @@ ED_METRICA_RAW = """{
 				"id": "P3568"
 			},
 			"to": null
+		},
+    {
+			"index": 6,
+			"team": {
+				"name": "Team A",
+				"id": "FIFATMA"
+			},
+			"type": {
+				"name": "SHOT",
+				"id": 2
+			},
+			"subtypes": [
+				{
+					"name": "OFF TARGET",
+					"id": 29
+				},
+				{
+					"name": "OUT",
+					"id": 31
+				}
+			],
+			"start": {
+				"frame": 7,
+				"time": 76.08,
+				"x": 0.7,
+				"y": 0.6
+			},
+			"end": {
+				"frame": 8,
+				"time": 76.36,
+				"x": 0.1,
+				"y": 0.5
+			},
+			"period": 2,
+			"from": {
+				"name": "Player 1",
+				"id": "P3568"
+			},
+			"to": null
+		},
+    {
+			"index": 7,
+			"team": {
+				"name": "Team A",
+				"id": "FIFATMA"
+			},
+			"type": {
+				"name": "SHOT",
+				"id": 2
+			},
+			"subtypes":
+				{
+					"name": "GOAL",
+					"id": 30
+				},
+			"start": {
+				"frame": 7,
+				"time": 76.08,
+				"x": 0.7,
+				"y": 0.6
+			},
+			"end": {
+				"frame": 8,
+				"time": 76.36,
+				"x": 0.1,
+				"y": 0.5
+			},
+			"period": 2,
+			"from": {
+				"name": "Player 1",
+				"id": "P3568"
+			},
+			"to": null
+		},
+    {
+			"index": 8,
+			"team": {
+				"name": "Team A",
+				"id": "FIFATMA"
+			},
+			"type": {
+				"name": "SHOT",
+				"id": 2
+			},
+			"subtypes": [
+				{
+					"name": "ON TARGET",
+					"id": 33
+				},
+				{
+					"name": "GOAL",
+					"id": 30
+				}
+			],
+			"start": {
+				"frame": 7,
+				"time": 76.08,
+				"x": 0.7,
+				"y": 0.6
+			},
+			"end": {
+				"frame": 8,
+				"time": 76.36,
+				"x": 0.1,
+				"y": 0.5
+			},
+			"period": 2,
+			"from": {
+				"name": "Player 1",
+				"id": "P3568"
+			},
+			"to": null
 		}
     ]
 }"""

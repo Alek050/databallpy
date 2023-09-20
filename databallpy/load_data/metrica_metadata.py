@@ -206,6 +206,8 @@ def _get_metadata(
                 "position": [],
                 "starter": [],
                 "shirt_num": [],
+                "start_frame": [],
+                "end_frame": [],
             },
         },
         {
@@ -217,6 +219,8 @@ def _get_metadata(
                 "position": [],
                 "starter": [],
                 "shirt_num": [],
+                "start_frame": [],
+                "end_frame": [],
             },
         },
     ]
@@ -230,9 +234,11 @@ def _get_metadata(
                 res_dict["full_name"].append(player.find("Name").text)
                 res_dict["shirt_num"].append(_to_int(player.find("ShirtNumber").text))
                 res_dict["starter"].append(np.nan)
+                res_dict["start_frame"].append(MISSING_INT)
+                res_dict["end_frame"].append(MISSING_INT)
                 for param in player.findChildren("ProviderParameter"):
                     if param.find("Name").text == "position_type":
-                        res_dict["position"].append(param.find("Value").text)
+                        res_dict["position"].append(param.find("Value").text.lower())
                     elif param.find("Name").text == "position_index":
                         res_dict["formation_place"].append(
                             _to_int(param.find("Value").text)

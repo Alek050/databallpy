@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from databallpy.features.angle import get_smallest_angle
+from databallpy.features.differentiate import _differentiate
 from databallpy.utils.utils import MISSING_INT
 
 
@@ -11,44 +13,81 @@ def synchronise_tracking_and_event_data(
     match, n_batches_per_half: int = 100, verbose: bool = True
 ):
     """Function that synchronises tracking and event data using Needleman-Wunsch
-       algorithmn. Based on: https://kwiatkowski.io/sync.soccer
+       algorithmn. Based on: https://kwiatkowski.io/sync.soccer. The similarity
+       function is used but information based on the specific event is added. For
+       instance, when the event is a shot, the ball acceleration should be high and
+       the ball should move towards the goal.
 
     Args:
         match (Match): Match object
         n_batches_per_half (int): the number of batches that are created per half.
-        A higher number of batches reduces the time the code takes to load, but
-        reduces the accuracy for events close to the splits. Default = 100
+            A higher number of batches reduces the time the code takes to load, but
+            reduces the accuracy for events close to the splits. Default = 100
         verbose (bool, optional): Wheter or not to print info about the progress
-        in the terminal. Defaults to True.
+            in the terminal. Defaults to True.
 
-    Currently works for the following events:
-        'pass', 'aerial', 'interception', 'ball recovery', 'dispossessed', 'tackle',
-        'take on', 'clearance', 'blocked pass', 'offside pass', 'attempt saved',
-        'save', 'foul', 'miss', 'challenge', 'goal'
-
+    Currently works for the following databallpy_events:
+        'pass', 'shot', and 'dribble'
     """
+
     events_to_sync = [
         "pass",
-        "aerial",
-        "interception",
-        "ball recovery",
-        "dispossessed",
-        "tackle",
-        "take on",
-        "clearance",
-        "blocked pass",
-        "offside pass",
-        "attempt saved",
-        "save",
-        "foul",
-        "miss",
-        "challenge",
-        "goal",
         "shot",
+        "dribble",
     ]
 
     tracking_data = match.tracking_data
     event_data = match.event_data
+
+    # precompute ball acceleration
+    if "ball_velocity" not in tracking_data.columns:
+        tracking_data = _differentiate(
+            df=tracking_data,
+            max_val=50,
+            new_name="velocity",
+            metric="",  # differentiate the x and y values
+            frame_rate=match.frame_rate,
+            filter_type=None,
+            column_ids=["ball"],
+        )
+    if "ball_acceleration" not in tracking_data.columns:
+        tracking_data = _differentiate(
+            df=tracking_data,
+            new_name="acceleration",
+            metric="v",  # differentiate the vx and vy values
+            frame_rate=match.frame_rate,
+            filter_type="savitzky_golay",
+            max_val=150,
+            column_ids=["ball"],
+        )
+    # take the square root to decrease the quadratic effect of the data
+    tracking_data["ball_acceleration_sqrt"] = np.sqrt(
+        tracking_data["ball_acceleration"]
+    )
+
+    # pre compute ball moving vector - ball goal vector angle
+    goal_angle = get_smallest_angle(
+        (
+            match.tracking_data.loc[1:, ["ball_x", "ball_y"]]
+            - match.tracking_data[["ball_x", "ball_y"]][:-1].values
+        ).values,
+        np.array([match.pitch_dimensions[0] / 2, 0])
+        - match.tracking_data[["ball_x", "ball_y"]][:-1].values,
+        angle_format="radian",
+    )
+    tracking_data["goal_angle_home_team"] = np.concatenate([goal_angle, [np.nan]])
+
+    goal_angle = get_smallest_angle(
+        (
+            match.tracking_data.loc[1:, ["ball_x", "ball_y"]]
+            - match.tracking_data[["ball_x", "ball_y"]][:-1].values
+        ).values,
+        np.array([-match.pitch_dimensions[0] / 2, 0])
+        - match.tracking_data[["ball_x", "ball_y"]][:-1].values,
+        angle_format="radian",
+    )
+
+    tracking_data["goal_angle_away_team"] = np.concatenate([goal_angle, [np.nan]])
 
     # add datetime objects to tracking_data
     start_datetime_period = {}
@@ -65,7 +104,7 @@ def synchronise_tracking_and_event_data(
         ]
     )
 
-    tracking_data["datetime"] = pd.Series(
+    datetime_values = pd.Series(
         [
             start_datetime_period[p] if p != MISSING_INT else pd.to_datetime("NaT")
             for p in tracking_data["period"]
@@ -75,12 +114,19 @@ def synchronise_tracking_and_event_data(
         "milliseconds",
     )
 
-    tracking_data["event"] = np.nan
-    tracking_data["event_id"] = np.nan
+    # Combine the calculated values into a DataFrame
+    new_columns = {
+        "datetime": datetime_values,
+        "databallpy_event": np.nan,
+        "event_id": np.nan,
+    }
+
+    tracking_data = pd.concat([tracking_data, pd.DataFrame(new_columns)], axis=1)
+
     event_data["tracking_frame"] = np.nan
 
-    mask_events_to_sync = event_data["event"].isin(events_to_sync)
-    event_data = event_data[mask_events_to_sync]
+    mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
+    event_data_to_sync = event_data[mask_events_to_sync].copy()
 
     periods_played = match.periods[match.periods["start_frame"] > 0]["period"].values
 
@@ -117,10 +163,12 @@ def synchronise_tracking_and_event_data(
         ]
 
         tracking_data_period = tracking_data[tracking_data["period"] == p]
-        event_data_period = event_data[event_data["period_id"] == p].copy()
-        start_events = ["pass", "miss", "goal"]
+        event_data_period = event_data_to_sync[
+            event_data_to_sync["period_id"] == p
+        ].copy()
+        start_events = ["pass", "shot"]
         datetime_first_event = event_data_period[
-            event_data_period["event"].isin(start_events)
+            event_data_period["databallpy_event"].isin(start_events)
         ].iloc[0]["datetime"]
         datetime_first_tracking_frame = tracking_data_period[
             tracking_data_period["ball_status"] == "alive"
@@ -151,10 +199,10 @@ def synchronise_tracking_and_event_data(
             event_frame_dict = _needleman_wunsch(sim_mat)
             for event, frame in event_frame_dict.items():
                 event_id = int(event_batch.loc[event, "event_id"])
-                event_type = event_batch.loc[event, "event"]
+                event_type = event_batch.loc[event, "databallpy_event"]
                 event_index = int(event_batch.loc[event, "index"])
                 tracking_frame = int(tracking_batch.loc[frame, "index"])
-                tracking_data.loc[tracking_frame, "event"] = event_type
+                tracking_data.loc[tracking_frame, "databallpy_event"] = event_type
                 tracking_data.loc[tracking_frame, "event_id"] = event_id
                 event_data.loc[event_index, "tracking_frame"] = tracking_frame
 
@@ -163,11 +211,21 @@ def synchronise_tracking_and_event_data(
                 event_data_period["event_id"] == event_id
             ]["datetime"].iloc[0]
 
-    tracking_data.drop("datetime", axis=1, inplace=True)
+    tracking_data.drop(
+        [
+            "datetime",
+            "ball_acceleration_sqrt",
+            "goal_angle_home_team",
+            "goal_angle_away_team",
+        ],
+        axis=1,
+        inplace=True,
+    )
+
     match.tracking_data = tracking_data
     match.event_data = event_data
 
-    match.is_synchronised = True
+    match._is_synchronised = True
 
 
 def _create_sim_mat(
@@ -205,6 +263,7 @@ def _create_sim_mat(
 
     for row in event_batch.itertuples():
         i = row.Index
+
         if not np.isnan(row.player_id) and row.player_id != MISSING_INT:
             column_id_player = match.player_id_to_column_id(player_id=row.player_id)
             player_ball_diff = np.hypot(
@@ -213,18 +272,43 @@ def _create_sim_mat(
                 tracking_batch["ball_y"].values
                 - tracking_batch[f"{column_id_player}_y"].values,
             )
-            # player indicated by the event data is not present in the tracking data
-            if np.isnan(player_ball_diff).all():
-                player_ball_diff = time_ball_diff[:, i] / 2
+
         else:
-            player_ball_diff = time_ball_diff[:, i] / 2
+            player_ball_diff = [np.nan] * len(tracking_batch)
 
         # similarity function from: https://kwiatkowski.io/sync.soccer
-        sim_mat[:, i] = time_ball_diff[:, i] + player_ball_diff
+        # Added information based in the type of event.
 
-    sim_mat[np.isnan(sim_mat)] = np.nanmax(
-        sim_mat
-    )  # replace nan values with highest value
+        # create array with all cost function variables
+        if row.databallpy_event == "pass":
+            total_shape = (len(tracking_batch), 4)
+        elif row.databallpy_event == "shot":
+            total_shape = (len(tracking_batch), 5)
+        elif row.databallpy_event == "dribble":
+            total_shape = (len(tracking_batch), 3)
+
+        total = np.zeros(total_shape)
+        total[:, :3] = np.array(
+            [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff]
+        ).T
+
+        if row.databallpy_event in ["shot", "pass"]:
+            total[:, 3] = 1 / tracking_batch["ball_acceleration_sqrt"].values.clip(
+                0.1
+            )  # ball acceleration
+            if row.databallpy_event == "shot":
+                total[:, 4] = tracking_batch[
+                    f"goal_angle_{['home', 'away'][row.team_id != match.home_team_id]}"
+                    "_team"
+                ].values
+
+        # take the mean of all cost function variables.
+        mask = np.isnan(total).all(axis=1)
+        if total[mask].shape[0] > 0:
+            total[mask] = np.nanmax(total)
+        sim_mat[:, i] = np.nanmean(total, axis=1)
+    # replace nan values with highest value, the algorithm will not assign these
+    sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat)
     den = np.nanmax(np.nanmin(sim_mat, axis=1))  # scale similarity scores
     sim_mat = np.exp(-sim_mat / den)
 
@@ -232,7 +316,7 @@ def _create_sim_mat(
 
 
 def _needleman_wunsch(
-    sim_mat: np.ndarray, gap_event: int = -1, gap_frame: int = 1
+    sim_mat: np.ndarray, gap_event: int = -10, gap_frame: int = 1
 ) -> dict:
     """
     Function that calculates the optimal alignment between events and frames
@@ -242,7 +326,7 @@ def _needleman_wunsch(
     Args:
         sim_mat (np.ndarray): matrix with similarity between every frame and event
         gap_event (int): penalty for leaving an event unassigned to a frame
-                         (not allowed), defaults to -1
+                         (not allowed), defaults to -10
         gap_frame (int): penalty for leaving a frame unassigned to a penalty
                          (very common), defaults to 1
 

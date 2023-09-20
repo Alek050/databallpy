@@ -16,7 +16,21 @@ from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
 from databallpy.match import Match
 from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
-from expected_outcomes import ED_OPTA, MD_OPTA, MD_TRACAB, TD_TRACAB
+from expected_outcomes import (
+    DRIBBLE_EVENTS_METRICA,
+    DRIBBLE_EVENTS_OPTA,
+    DRIBBLE_EVENTS_OPTA_TRACAB,
+    ED_OPTA,
+    MD_OPTA,
+    MD_TRACAB,
+    PASS_EVENTS_METRICA,
+    PASS_EVENTS_OPTA,
+    PASS_EVENTS_OPTA_TRACAB,
+    SHOT_EVENTS_METRICA,
+    SHOT_EVENTS_OPTA,
+    SHOT_EVENTS_OPTA_TRACAB,
+    TD_TRACAB,
+)
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
@@ -32,7 +46,7 @@ class TestGetMatch(unittest.TestCase):
         self.td_tracab, self.md_tracab = load_tracab_tracking_data(
             self.td_tracab_loc, self.md_tracab_loc
         )
-        self.ed_opta, self.md_opta = load_opta_event_data(
+        self.ed_opta, self.md_opta, self.dbp_events = load_opta_event_data(
             f7_loc=self.md_opta_loc, f24_loc=self.ed_opta_loc
         )
 
@@ -104,7 +118,7 @@ class TestGetMatch(unittest.TestCase):
                 "start_frame": [1509993, 1509993],
                 "end_frame": [1509997, 1509995],
                 "formation_place": [4, 0],
-                "position": ["midfielder", "midfielder"],
+                "position": ["goalkeeper", "midfielder"],
                 "starter": [True, False],
             }
         )
@@ -115,14 +129,15 @@ class TestGetMatch(unittest.TestCase):
                 "full_name": ["Pepijn Blok", "TestSpeler"],
                 "shirt_num": [1, 2],
                 "start_frame": [1509993, 1509993],
-                "end_frame": [1509997, 1509994],
+                "end_frame": [1509997, 1509995],
                 "formation_place": [8, 0],
-                "position": ["midfielder", "midfielder"],
+                "position": ["midfielder", "goalkeeper"],
                 "starter": [True, False],
             }
         )
 
         self.td_tracab["period"] = [1, 1, MISSING_INT, 2, 2]
+
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
@@ -142,7 +157,11 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=self.md_opta.away_team_name,
             away_players=self.expected_away_players_tracab_opta,
             country=self.md_opta.country,
+            shot_events=SHOT_EVENTS_OPTA_TRACAB,
+            dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB,
+            pass_events=PASS_EVENTS_OPTA_TRACAB,
         )
+
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
         self.md_metrica_loc = "tests/test_data/metrica_metadata_test.xml"
         self.ed_metrica_loc = "tests/test_data/metrica_event_data_test.json"
@@ -150,7 +169,7 @@ class TestGetMatch(unittest.TestCase):
             self.td_metrica_loc, self.md_metrica_loc
         )
         self.td_metrica["period"] = [1, 1, 1, 2, 2, 2]
-        self.ed_metrica, md_metrica_ed = load_metrica_event_data(
+        self.ed_metrica, md_metrica_ed, dbe_metrica = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
 
@@ -181,6 +200,9 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=self.md_metrica.away_team_name,
             away_players=self.md_metrica.away_players,
             country=self.md_metrica.country,
+            pass_events=PASS_EVENTS_METRICA,
+            shot_events=SHOT_EVENTS_METRICA,
+            dribble_events=DRIBBLE_EVENTS_METRICA,
         )
 
         self.td_inmotio_loc = "tests/test_data/inmotio_td_test.txt"
@@ -287,6 +309,11 @@ class TestGetMatch(unittest.TestCase):
             away_players=self.expected_away_players_inmotio_instat,
             country=self.md_instat.country,
         )
+        self.expected_match_inmotio_instat.event_data.loc[[0, 1, 2], "team_id"] = [
+            "T-0001",
+            "T-0001",
+            "T-0002",
+        ]
 
         self.match_to_sync = get_match(
             tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
@@ -338,9 +365,12 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=MD_OPTA.away_team_name,
             away_players=MD_OPTA.away_players,
             country=MD_OPTA.country,
+            shot_events=SHOT_EVENTS_OPTA,
+            dribble_events=DRIBBLE_EVENTS_OPTA,
+            pass_events=PASS_EVENTS_OPTA,
         )
 
-    def test_get_match(self):
+    def test_get_match_opta_tracab(self):
         match = get_match(
             tracking_data_loc=self.td_tracab_loc,
             tracking_metadata_loc=self.md_tracab_loc,
@@ -364,12 +394,13 @@ class TestGetMatch(unittest.TestCase):
         )
 
         # expected_match pitch dimensions = [10, 10],
-        # while match pitch dimensions = [106, 68]
+        # while opta pitch dimensions = [106, 68]
         x_cols = [col for col in match.event_data.columns if "_x" in col]
         y_cols = [col for col in match.event_data.columns if "_y" in col]
         match.event_data[x_cols] = match.event_data[x_cols] / 106.0 * 10
         match.event_data[y_cols] = match.event_data[y_cols] / 68.0 * 10
         match.pitch_dimensions = [10.0, 10.0]
+
         assert match == self.expected_match_opta
 
     def test_get_match_only_tracking_data(self):
@@ -414,6 +445,7 @@ class TestGetMatch(unittest.TestCase):
             event_data_provider="instat",
             check_quality=False,
         )
+
         assert (
             match_instat_inmotio_unaligned_input == self.expected_match_inmotio_instat
         )
@@ -443,9 +475,6 @@ class TestGetMatch(unittest.TestCase):
             check_quality=False,
         )
         assert res == self.expected_match_metrica
-
-    # def test_match_wrong_input(self):
-    #     assert not self.expected_match_tracab_opta == 3
 
     @patch(
         "requests.get",

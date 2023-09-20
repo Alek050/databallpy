@@ -116,9 +116,8 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
 
     df = pd.DataFrame(data)
 
-    for col in df.columns:
-        if "_x" in col or "_y" in col or "_z" in col:
-            df[col] = np.round(df[col] / 100, 3)  # change cm to m
+    mask = df.columns.str.contains("_x|_y|_z")
+    df.loc[:, mask] = np.round(df.loc[:, mask] / 100, 3)  # change cm to m
 
     df = _insert_missing_rows(df, "frame")
 

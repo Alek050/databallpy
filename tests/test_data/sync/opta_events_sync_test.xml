@@ -63,7 +63,7 @@
       <Q id="3989658107" qualifier_id="233" value="4" />
       <Q id="3989624627" qualifier_id="56" value="Center" />
     </Event>
-    <Event id="2499594291" event_id="4" type_id="7" period_id="1" min="31" sec="10" player_id="184934" team_id="194" outcome="1" x="68.3" y="54.8" timestamp="2023-01-22T15:46:40.160" timestamp_utc="2023-01-22T15:46:40.160" last_modified="2023-01-22T14:45:32" version="1674398732917">
+    <Event id="2499594291" event_id="4" type_id="3" period_id="1" min="31" sec="10" player_id="184934" team_id="194" outcome="1" x="68.3" y="54.8" timestamp="2023-01-22T15:46:40.160" timestamp_utc="2023-01-22T15:46:40.160" last_modified="2023-01-22T14:45:32" version="1674398732917">
       <Q id="3989624671" qualifier_id="233" value="6" />
       <Q id="3990156399" qualifier_id="383" />
       <Q id="3989624657" qualifier_id="56" value="Back" />

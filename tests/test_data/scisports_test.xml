@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='utf8'?>
+<file>
+    <ALL_INSTANCES>
+        <instance>
+            <ID>1</ID>
+            <start>0</start>
+            <end>1</end>
+            <code>SciSports timestamps</code>
+        </instance>
+        <instance>
+            <ID>2</ID>
+            <start>3</start>
+            <end>4</end>
+            <code>SciSports timestamps</code>
+        </instance>
+        <instance>
+            <ID>3</ID>
+            <start>5</start>
+            <end>6</end>
+            <code>SciSports timestamps</code>
+        </instance>
+        <instance>
+            <ID>4</ID>
+            <start>11</start>
+            <end>12</end>
+            <code>SciSports timestamps</code>
+        </instance>
+        <instance>
+            <ID>5</ID>
+            <start>1</start>
+            <end>10.5</end>
+            <code>Team 1 - Physical: Deep Run</code>
+            <label>
+                <group>run_type</group>
+                <text>RunType: High Run</text>
+            </label>
+            <label>
+                <group>player</group>
+                <text>11 - F. Team1Player11</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>6</ID>
+            <start>2</start>
+            <end>4</end>
+            <code>Team 1 - GK Pass: Open Play</code>
+            <label>
+                <group>Player</group>
+                <text>1 - H. Team1Player1</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>7</ID>
+            <start>2</start>
+            <end>4</end>
+            <code>Team 1 - Pass (Successful): Open Play</code>
+            <label>
+                <group>Player</group>
+                <text>1 - H. Team1Player1</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>8</ID>
+            <start>3</start>
+            <end>7</end>
+            <code>Team 2 - Set Piece: Crossed Free Kick</code>
+            <label>
+                <group>Player</group>
+                <text>8 - Z. Team2Player8</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>9</ID>
+            <start>5.5</start>
+            <end>7.5</end>
+            <code>Team 1 - Set Piece: Free Kick | Own Half</code>
+            <label>
+                <group>Player</group>
+                <text>2 - J. Team1Player2</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>10</ID>
+            <start>5.5</start>
+            <end>7.5</end>
+            <code>Team 2 - Set Piece: Free Kick | Att. Half</code>
+            <label>
+                <group>Player</group>
+                <text>3 - J. Team2Player3</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>11</ID>
+            <start>7</start>
+            <end>10</end>
+            <code>Team 2 - Set Piece: Throw In | Att. Half</code>
+            <label>
+                <group>Player</group>
+                <text>3 - J. Team2Player3</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>12</ID>
+            <start>8</start>
+            <end>11</end>
+            <code>Team 2 - Set Piece: Penalty | Att. Half</code>
+            <label>
+                <group>Player</group>
+                <text>3 - J. Team2Player3</text>
+            </label>
+        </instance>
+        <instance>
+            <ID>13</ID>
+            <start>0</start>
+            <end>3</end>
+            <code>Team 1 - Possession: free_kick</code>
+        </instance>
+        <instance>
+            <ID>14</ID>
+            <start>1</start>
+            <end>6</end>
+            <code>Team 1 - Possession: free_kick</code>
+        </instance>
+         <instance>
+            <ID>15</ID>
+            <start>5</start>
+            <end>9</end>
+            <code>Team 2 - Possession: open_play</code>
+        </instance>
+        <instance>
+            <ID>16</ID>
+            <start>8</start>
+            <end>11</end>
+            <code>Team 2 - Unknown Event</code>
+            <label>
+                <group>Player</group>
+                <text>3 - J. Team2Player3</text>
+            </label>
+        </instance>
+    </ALL_INSTANCES>
+    <SESSION_INFO>
+        <start_time>None</start_time>
+    </SESSION_INFO>
+</file>
