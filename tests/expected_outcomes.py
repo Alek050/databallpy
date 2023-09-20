@@ -25,14 +25,14 @@ TD_TRACAB = pd.DataFrame(
             "alive",
             "dead",
             "alive",
-            np.nan,
+            None,
             "alive",
         ],
         "ball_possession": [
             "away",
             "away",
             "away",
-            np.nan,
+            None,
             "home",
         ],
         "home_34_x": [
@@ -109,7 +109,7 @@ MD_TRACAB = Metadata(
     home_team_id=3,
     home_team_name="TeamOne",
     home_formation="",
-    home_score=np.nan,
+    home_score=MISSING_INT,
     home_players=pd.DataFrame(
         {
             "id": [19367, 45849],
@@ -122,7 +122,7 @@ MD_TRACAB = Metadata(
     away_team_id=194,
     away_team_name="TeamTwo",
     away_formation="",
-    away_score=np.nan,
+    away_score=MISSING_INT,
     away_players=pd.DataFrame(
         {
             "id": [184934, 450445],
@@ -531,7 +531,7 @@ TD_METRICA = pd.DataFrame(
         "ball_x": [np.nan, 0, 40, np.nan, np.nan, -40],
         "ball_y": [np.nan, 0, -20, np.nan, np.nan, 20],
         "ball_z": [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-        "ball_status": ["dead", "alive", "alive", np.nan, "dead", "alive"],
+        "ball_status": ["dead", "alive", "alive", None, "dead", "alive"],
         "ball_possession": [None, None, None, None, None, None],
         "home_11_x": [0, 30, 20, np.nan, np.nan, np.nan],
         "home_11_y": [0, 0, -5, np.nan, np.nan, np.nan],
@@ -821,7 +821,7 @@ TD_INMOTIO = pd.DataFrame(
         "ball_x": [0.0, 0.0, -1.0, np.nan, 0.0, 0.0],
         "ball_y": [0.0, 0.0, 1.0, np.nan, 0.0, 0.0],
         "ball_z": [0.0, 0.0, 0.0, np.nan, 0.0, 0.0],
-        "ball_status": ["dead", "alive", "alive", np.nan, "alive", "alive"],
+        "ball_status": ["dead", "alive", "alive", None, "alive", "alive"],
         "ball_possession": [None, None, None, None, None, None],
         "home_1_x": [-46.9, -45.9, -44.9, np.nan, 39.0, 39.0],
         "home_1_y": [0.8, -0.2, -1.2, np.nan, 1.5, 2.5],
@@ -956,7 +956,7 @@ ED_INSTAT = pd.DataFrame(
     {
         "event_id": [10107, 10110, 10111, 10112],
         "type_id": [1012, 1011, 2010, 2011],
-        "databallpy_event": ["pass", "pass", np.nan, np.nan],
+        "databallpy_event": ["pass", "pass", None, None],
         "period_id": [1, 1, 1, 1],
         "minutes": [0.0, 0.0, 0.0, 0.0],
         "seconds": [5.37, 20.93, 23.64, 28.64],
@@ -979,7 +979,7 @@ ED_INSTAT = pd.DataFrame(
             "Challenge",
             "Challenge",
         ],
-        "player_name": ["Player 2", "Player 1", "Player 11", np.nan],
+        "player_name": ["Player 2", "Player 1", "Player 11", None],
     }
 )
 

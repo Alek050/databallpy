@@ -117,13 +117,13 @@ def synchronise_tracking_and_event_data(
     # Combine the calculated values into a DataFrame
     new_columns = {
         "datetime": datetime_values,
-        "databallpy_event": np.nan,
-        "event_id": np.nan,
+        "databallpy_event": None,
+        "event_id": MISSING_INT,
     }
 
     tracking_data = pd.concat([tracking_data, pd.DataFrame(new_columns)], axis=1)
 
-    event_data["tracking_frame"] = np.nan
+    event_data["tracking_frame"] = MISSING_INT
 
     mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
     event_data_to_sync = event_data[mask_events_to_sync].copy()

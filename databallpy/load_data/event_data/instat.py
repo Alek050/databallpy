@@ -315,7 +315,7 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
         zip(metadata.away_players["id"], metadata.away_players["full_name"])
     )
     id_full_name_dict.update(id_full_name_dict_away)
-    event_data["player_name"] = event_data["player_id"].map(id_full_name_dict)
+    event_data["player_name"] = event_data["player_id"].map(id_full_name_dict).replace({np.nan: None})
     away_mask = event_data["team_id"] == metadata.away_team_id
     event_data.loc[away_mask, ["start_x", "start_y", "end_x", "end_y"]] *= -1
 

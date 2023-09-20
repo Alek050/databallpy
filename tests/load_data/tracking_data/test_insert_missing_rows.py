@@ -4,16 +4,21 @@ import numpy as np
 import pandas as pd
 
 from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-
+from databallpy.utils.utils import MISSING_INT
 
 class TestInsertMissingRows(unittest.TestCase):
     def setUp(self):
         self.input = pd.DataFrame(
             {
                 "frame": [0, 1, 2, 3, 4, 6, 9, 10, 15, 16, 17, 18, 21],
-                "values": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                "values_int": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                "values_float": [1., 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                "values_object": ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
+                "values_datetime": ["2023-02-02 00:00:00"] * 13,
+                "values_other": [[1]] * 13,
             }
         )
+        self.input["values_datetime"] = pd.to_datetime(self.input["values_datetime"])
         self.expected_output = pd.DataFrame(
             {
                 "frame": [
@@ -40,7 +45,31 @@ class TestInsertMissingRows(unittest.TestCase):
                     20,
                     21,
                 ],
-                "values": [
+                "values_int": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    MISSING_INT,
+                    1,
+                    MISSING_INT,
+                    MISSING_INT,
+                    1,
+                    1,
+                    MISSING_INT,
+                    MISSING_INT,
+                    MISSING_INT,
+                    MISSING_INT,
+                    1,
+                    1,
+                    1,
+                    1,
+                    MISSING_INT,
+                    MISSING_INT,
+                    1,
+                ],
+                "values_float": [
                     1,
                     1,
                     1,
@@ -63,6 +92,78 @@ class TestInsertMissingRows(unittest.TestCase):
                     np.nan,
                     np.nan,
                     1,
+                ],
+                "values_object": [
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    None,
+                    "1",
+                    None,
+                    None,
+                    "1",
+                    "1",
+                    None,
+                    None,
+                    None,
+                    None,
+                    "1",
+                    "1",
+                    "1",
+                    "1",
+                    None,
+                    None,
+                    "1",
+                ],
+                "values_datetime": [
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-02-02 00:00:00"),
+                ],
+                "values_other": [
+                    [1],
+                    [1],
+                    [1],
+                    [1],
+                    [1],
+                    None,
+                    [1],
+                    None,
+                    None,
+                    [1],
+                    [1],
+                    None,
+                    None,
+                    None,
+                    None,
+                    [1],
+                    [1],
+                    [1],
+                    [1],
+                    None,
+                    None,
+                    [1],
                 ],
             }
         )
