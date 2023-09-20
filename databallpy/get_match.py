@@ -433,7 +433,7 @@ def load_event_data(
             f7_loc=event_metadata_loc, f24_loc=event_data_loc
         )
     elif event_data_provider == "metrica":
-        event_data, event_metadata = load_metrica_event_data(
+        event_data, event_metadata, databallpy_events = load_metrica_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
     elif event_data_provider == "instat":
@@ -460,7 +460,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
 
     if provider == "metrica":
         tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
-        event_data, ed_metadata = load_metrica_open_event_data()
+        event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
     periods_cols = ed_metadata.periods_frames.columns.difference(
         metadata.periods_frames.columns
@@ -494,5 +494,14 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         away_players=metadata.away_players,
         country="",
         allow_synchronise_tracking_and_event_data=True,
+        shot_events=databallpy_events["shot_events"]
+        if "shot_events" in databallpy_events.keys()
+        else {},
+        dribble_events=databallpy_events["dribble_events"]
+        if "dribble_events" in databallpy_events.keys()
+        else {},
+        pass_events=databallpy_events["pass_events"]
+        if "pass_events" in databallpy_events.keys()
+        else {},
     )
     return match

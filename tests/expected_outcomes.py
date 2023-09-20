@@ -590,6 +590,99 @@ ED_METRICA = pd.DataFrame(
         ],
     }
 )
+
+SHOT_EVENTS_METRICA = {
+    6: ShotEvent(
+        event_id=6,
+        period_id=2,
+        minutes=1,
+        seconds=16.08,
+        datetime=pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
+        start_x=20.0,
+        start_y=5.0,
+        team_id="FIFATMA",
+        player_id=3568,
+        shot_outcome="miss",
+        body_part=None,
+        type_of_play=None,
+        first_touch=None,
+        created_oppertunity=None,
+        related_event_id=MISSING_INT,
+    ),
+    7: ShotEvent(
+        event_id=7,
+        period_id=2,
+        minutes=1,
+        seconds=16.08,
+        datetime=pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
+        start_x=20.0,
+        start_y=5.0,
+        team_id="FIFATMA",
+        player_id=3568,
+        shot_outcome="goal",
+        body_part=None,
+        type_of_play=None,
+        first_touch=None,
+        created_oppertunity=None,
+        related_event_id=MISSING_INT,
+    ),
+    8: ShotEvent(
+        event_id=8,
+        period_id=2,
+        minutes=1,
+        seconds=16.08,
+        datetime=pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
+        start_x=20.0,
+        start_y=5.0,
+        team_id="FIFATMA",
+        player_id=3568,
+        shot_outcome="goal",
+        body_part=None,
+        type_of_play=None,
+        first_touch=None,
+        created_oppertunity=None,
+        related_event_id=MISSING_INT,
+    ),
+}
+
+DRIBBLE_EVENTS_METRICA = {
+    5: DribbleEvent(
+        event_id=5,
+        period_id=2,
+        minutes=1,
+        seconds=15.08,
+        datetime=pd.to_datetime("2019-02-21T03:30:09.000", utc=True),
+        start_x=20.0,
+        start_y=5.0,
+        team_id="FIFATMA",
+        player_id=3568,
+        related_event_id=MISSING_INT,
+        duel_type=None,
+        outcome=True,
+        has_opponent=False,
+    )
+}
+
+PASS_EVENTS_METRICA = {
+    4: PassEvent(
+        event_id=4,
+        period_id=1,
+        minutes=1,
+        seconds=4.22,
+        datetime=pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
+        start_x=0.0,
+        start_y=-5.0,
+        team_id="FIFATMB",
+        outcome="unsuccessful",
+        player_id=3699,
+        end_x=-20.0,
+        end_y=-15.0,
+        pass_type="not_specified",
+        set_piece="unspecified_set_piece",
+    )
+}
+
+
 MD_METRICA_TD = Metadata(
     match_id=9999,
     pitch_dimensions=[100.0, 50.0],
@@ -622,9 +715,11 @@ MD_METRICA_TD = Metadata(
             "id": [3578, 3568],
             "full_name": ["Player 11", "Player 1"],
             "formation_place": [0, 1],
-            "position": ["Goalkeeper", "Right Back"],
+            "position": ["goalkeeper", "right back"],
             "starter": [True, True],
             "shirt_num": [11, 1],
+            "start_frame": [MISSING_INT, MISSING_INT],
+            "end_frame": [MISSING_INT, MISSING_INT],
         }
     ),
     home_formation="1100",
@@ -636,9 +731,11 @@ MD_METRICA_TD = Metadata(
             "id": [3699, 3700],
             "full_name": ["Player 34", "Player 35"],
             "formation_place": [3, 1],
-            "position": ["Left Forward (2)", "Left Back"],
+            "position": ["left forward (2)", "left back"],
             "starter": [True, False],
             "shirt_num": [34, 35],
+            "start_frame": [MISSING_INT, MISSING_INT],
+            "end_frame": [MISSING_INT, MISSING_INT],
         }
     ),
     away_formation="0001",
@@ -679,9 +776,11 @@ MD_METRICA_ED = Metadata(
             "id": [3578, 3568],
             "full_name": ["Player 11", "Player 1"],
             "formation_place": [0, 1],
-            "position": ["Goalkeeper", "Right Back"],
+            "position": ["goalkeeper", "right back"],
             "starter": [True, True],
             "shirt_num": [11, 1],
+            "start_frame": [MISSING_INT, MISSING_INT],
+            "end_frame": [MISSING_INT, MISSING_INT],
         }
     ),
     home_formation="1100",
@@ -693,9 +792,11 @@ MD_METRICA_ED = Metadata(
             "id": [3699, 3700],
             "full_name": ["Player 34", "Player 35"],
             "formation_place": [3, 1],
-            "position": ["Left Forward (2)", "Left Back"],
+            "position": ["left forward (2)", "left back"],
             "starter": [True, False],
             "shirt_num": [34, 35],
+            "start_frame": [MISSING_INT, MISSING_INT],
+            "end_frame": [MISSING_INT, MISSING_INT],
         }
     ),
     away_formation="0001",
@@ -705,7 +806,7 @@ MD_METRICA_ED = Metadata(
 
 TD_CHANNELS_METRICA = pd.DataFrame(
     {
-        "start": [1, 5],
+        "start": [1, 4],
         "end": [3, 6],
         "ids": [
             ["home_11", "home_1", "away_34"],

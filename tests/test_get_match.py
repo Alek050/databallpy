@@ -17,13 +17,16 @@ from databallpy.match import Match
 from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
 from expected_outcomes import (
+    DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
     DRIBBLE_EVENTS_OPTA_TRACAB,
     ED_OPTA,
     MD_OPTA,
     MD_TRACAB,
+    PASS_EVENTS_METRICA,
     PASS_EVENTS_OPTA,
     PASS_EVENTS_OPTA_TRACAB,
+    SHOT_EVENTS_METRICA,
     SHOT_EVENTS_OPTA,
     SHOT_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
@@ -166,7 +169,7 @@ class TestGetMatch(unittest.TestCase):
             self.td_metrica_loc, self.md_metrica_loc
         )
         self.td_metrica["period"] = [1, 1, 1, 2, 2, 2]
-        self.ed_metrica, md_metrica_ed = load_metrica_event_data(
+        self.ed_metrica, md_metrica_ed, dbe_metrica = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
 
@@ -197,6 +200,9 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=self.md_metrica.away_team_name,
             away_players=self.md_metrica.away_players,
             country=self.md_metrica.country,
+            pass_events=PASS_EVENTS_METRICA,
+            shot_events=SHOT_EVENTS_METRICA,
+            dribble_events=DRIBBLE_EVENTS_METRICA,
         )
 
         self.td_inmotio_loc = "tests/test_data/inmotio_td_test.txt"
