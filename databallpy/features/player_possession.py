@@ -152,7 +152,6 @@ def get_initial_possessions(
         pd.Series: pd.Series with which player has possession.
     """
 
-    
     # find the player_possession player to the ball
     closest_player = distances_df.idxmin(axis=1, skipna=True)
     close_enough = distances_df.min(axis=1) < pz_radius
