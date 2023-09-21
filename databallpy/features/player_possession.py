@@ -61,7 +61,7 @@ def get_individual_player_possessions_and_duels(
             column_ids=["ball"],
         )
 
-    distances_df = get_distance_between_ball_and_players(tracking_data)
+    distances_df = get_distance_between_ball_and_players(tracking_data).fillna(np.inf)
     pz_initial = get_initial_possessions(
         tracking_data, distances_df, pz_radius=pz_radius, min_frames=min_frames
     )
@@ -153,7 +153,7 @@ def get_initial_possessions(
     """
 
     # find the player_possession player to the ball
-    closest_player = distances_df.idxmin(axis=1)
+    closest_player = distances_df.idxmin(axis=1, skipna=True)
     close_enough = distances_df.min(axis=1) < pz_radius
     initial_possession = np.where(close_enough, closest_player, None)
 
@@ -212,6 +212,9 @@ def get_duels(
     home_distances_df = distances_df.filter(like="home")
     away_distances_df = distances_df.filter(like="away")
 
+    home_closest_player = home_distances_df.idxmin(axis=1, skipna=True)
+    away_closest_player = away_distances_df.idxmin(axis=1, skipna=True)
+
     # .lt is quicker than using the < operator
     home_close_enough = home_distances_df.lt(dz_radius)
     away_close_enough = away_distances_df.lt(dz_radius)
@@ -219,7 +222,7 @@ def get_duels(
     valid_duel = home_close_enough.any(axis=1) & away_close_enough.any(axis=1)
     duel = np.where(
         valid_duel,
-        home_distances_df.idxmin(axis=1) + "-" + away_distances_df.idxmin(axis=1),
+        home_closest_player + "-" + away_closest_player,
         None,
     )
 
