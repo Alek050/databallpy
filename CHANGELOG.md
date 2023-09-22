@@ -30,4 +30,13 @@
 - Added parser for Instat event data
 - Added quality checks for the data, raises warning if quality is not good enough
 
+## V0.4.0 (21/09/2023)
+
+- Added databallpy_events to get a unified type of event data
+- Added individual player possessions (Adrienko et al., 2016)
+- Added pressure feature (Herrold et al., 2022)
+- Added differentiate features with filters
+- Optimized loading in tracab tracking data
+- In quality checks, fixed some minor bugs.
+
 

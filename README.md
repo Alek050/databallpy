@@ -4,19 +4,20 @@ A package for loading, preprocessing, vizualising and synchronizing soccer event
 
 This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
 
-### Changelog for version 0.3.0
+### Changelog V0.4.0 (21/09/2023)
 
-- Added way to save Match objects, and to load saved Match objects
-- Fixed bug in opta event data, own goals are now parsed as seperate event type
-- Added parser for Inmotio tracking data
-- Added parser for Instat event data
-- Added quality checks for the data, raises warning if quality is not good enough
+- Added databallpy_events to get a unified type of event data
+- Added individual player possessions (Adrienko et al., 2016)
+- Added pressure feature (Herrold et al., 2022)
+- Added differentiate features with filters
+- Optimized loading in tracab tracking data
+- In quality checks, fixed some minor bugs.
 
 ### Planned changes
 
 - Adding different filters to filter the tracking data
-- Adding features to quantify pressure, ball possession, etc. (if you have any ideas/requests, please open an issue!)
-- Standardizing events in the event data
+- Adding more features (if you have any ideas/requests, please open an issue!)
+- Creating more databallpy events
 - Adding expected passing and goals models
 
 ## Installation
