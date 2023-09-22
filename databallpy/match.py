@@ -220,7 +220,7 @@ class Match:
                 not self.is_synchronised
                 and self.allow_synchronise_tracking_and_event_data
             ):
-                self.synchronise_tracking_and_event_data()
+                self.synchronise_tracking_and_event_data(verbose=False)
             if self.is_synchronised:
                 self.add_tracking_data_features_to_shots()
             res_dict = {
