@@ -982,9 +982,9 @@ def _handle_scisports_data(
                 home_team_name=tracking_metadata.home_team_name,
             )
 
-    if databallpy_events is None or len(databallpy_events) == 0:
-        databallpy_events = _get_databallpy_events_scisports(
-            tracking_data, tracking_metadata, scisports_event_data, verbose
-        )
+        if databallpy_events is None or len(databallpy_events) == 0:
+            databallpy_events = _get_databallpy_events_scisports(
+                tracking_data, tracking_metadata, scisports_event_data, verbose
+            )
 
     return scisports_event_data, databallpy_events, tracking_data
