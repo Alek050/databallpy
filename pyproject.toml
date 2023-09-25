@@ -49,6 +49,7 @@ isort = "^5.11.4"
 jupyter = "^1.0.0"
 line-profiler = "^4.0.2"
 black = "^23.9.1"
+seaborn = "^0.12.2"
 
 [tool.poetry.group.docs]
 optional = true

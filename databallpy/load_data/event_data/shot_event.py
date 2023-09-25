@@ -46,12 +46,13 @@ class ShotEvent(BaseEvent):
             meters.
         ball_gk_distance (float, optional): distance between the ball and the goalkeeper
             in meters.
-        shot_angle (float, optional): angle between the shooting line and the goal in
-            radian. At 0*pi radians, the ball is positined directly in front of the
-            goal.
-        gk_angle (float, optional): angle between the shooting line and the goalkeeper
-            in radian. At 0*pi radians, the gk is positined directly on the shooting
-            line.
+        shot_angle (float, optional): angle between 2 lines: (1) the line between the 
+            ball and the left post and (2) between the ball and the right post in 
+            degrees. 
+        gk_optimal_loc_distance (float, optional): The distance between the gk and the
+            optimal location of the gk. The optimal location of the gk is the location
+            where the gk is on the line between the ball and the middle of the goal. 
+            The distance is in meters.
         pressure_on_ball (float, optional): pressure on the player who takes the shot.
             See Adrienko et al (2016), or the source code, for more information.
         n_obstructive_players (int, optional): number of obstructive players (both
@@ -82,7 +83,7 @@ class ShotEvent(BaseEvent):
     ball_goal_distance: float = np.nan
     ball_gk_distance: float = np.nan
     shot_angle: float = np.nan
-    gk_angle: float = np.nan
+    gk_optimal_loc_distance: float = np.nan
     pressure_on_ball: float = np.nan
     n_obstructive_players: int = MISSING_INT
 
@@ -137,6 +138,8 @@ class ShotEvent(BaseEvent):
         ball_goal_vector = np.array(goal_xy) - np.array(ball_xy)
         goal_gk_vector = np.array(goal_xy) - np.array(gk_xy)
         goal_middle_vector = np.array(goal_xy) - np.array(middle_xy)
+        ball_left_post_vector = np.array(left_post_xy) - np.array(ball_xy)
+        ball_right_post_vector = np.array(right_post_xy) - np.array(ball_xy)
 
         # calculate obstructive players
         triangle = Delaunay([right_post_xy, left_post_xy, ball_xy])
@@ -156,8 +159,9 @@ class ShotEvent(BaseEvent):
         # add variables
         self.ball_goal_distance = math.dist(ball_xy, goal_xy)
         self.ball_gk_distance = math.dist(ball_xy, gk_xy)
-        self.shot_angle = get_smallest_angle(goal_middle_vector, ball_goal_vector)
-        self.gk_angle = get_smallest_angle(ball_goal_vector, goal_gk_vector)
+        self.shot_angle = get_smallest_angle(ball_left_post_vector, ball_right_post_vector, angle_format="degree")
+        self.gk_optimal_loc_distance = np.linalg.norm(np.cross(goal_xy - ball_xy, ball_xy - gk_xy)) / np.linalg.norm(goal_xy - ball_xy)
+        # self.gk_angle = get_smallest_angle(ball_goal_vector, goal_gk_vector, angle_format="degree")
         self.pressure_on_ball = get_pressure_on_player(
             tracking_data_frame,
             column_id,
@@ -203,9 +207,9 @@ class ShotEvent(BaseEvent):
             self.shot_angle == other.shot_angle
             if not pd.isnull(self.shot_angle)
             else pd.isnull(other.shot_angle),
-            self.gk_angle == other.gk_angle
-            if not pd.isnull(self.gk_angle)
-            else pd.isnull(other.gk_angle),
+            self.gk_optimal_loc_distance == other.gk_optimal_loc_distance
+            if not pd.isnull(self.gk_optimal_loc_distance)
+            else pd.isnull(other.gk_optimal_loc_distance),
             self.pressure_on_ball == other.pressure_on_ball
             if not pd.isnull(self.pressure_on_ball)
             else pd.isnull(other.pressure_on_ball),
@@ -235,7 +239,7 @@ class ShotEvent(BaseEvent):
             ball_gk_distance=self.ball_gk_distance,
             ball_goal_distance=self.ball_goal_distance,
             shot_angle=self.shot_angle,
-            gk_angle=self.gk_angle,
+            gk_optimal_loc_distance=self.gk_optimal_loc_distance,
             pressure_on_ball=self.pressure_on_ball,
             n_obstructive_players=self.n_obstructive_players,
         )

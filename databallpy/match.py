@@ -220,7 +220,7 @@ class Match:
                 not self.is_synchronised
                 and self.allow_synchronise_tracking_and_event_data
             ):
-                self.synchronise_tracking_and_event_data()
+                self.synchronise_tracking_and_event_data(verbose=False)
             if self.is_synchronised:
                 self.add_tracking_data_features_to_shots()
             res_dict = {
@@ -256,7 +256,7 @@ class Match:
                     shot.ball_gk_distance for shot in self.shot_events.values()
                 ],
                 "shot_angle": [shot.shot_angle for shot in self.shot_events.values()],
-                "gk_angle": [shot.gk_angle for shot in self.shot_events.values()],
+                "gk_optimal_loc_distance": [shot.gk_optimal_loc_distance for shot in self.shot_events.values()],
                 "pressure_on_ball": [
                     shot.pressure_on_ball for shot in self.shot_events.values()
                 ],
@@ -747,28 +747,24 @@ def check_inputs_match_object(match: Match):
                 continue
             frame = period_row["start_frame"]
             if (
-                len(match.tracking_data[match.tracking_data["frame"] == frame].index)
+                len(match.tracking_data[match.tracking_data["frame"] >= frame].index)
                 == 0
             ):
                 continue
-            idx = match.tracking_data[match.tracking_data["frame"] == frame].index[0]
+            idx = match.tracking_data[match.tracking_data["frame"] >= frame].index[0]
             period = period_row["period"]
             home_x = [x for x in match.home_players_column_ids() if "_x" in x]
             away_x = [x for x in match.away_players_column_ids() if "_x" in x]
-            if match.tracking_data.loc[idx, home_x].mean() > 0:
-                centroid_x = match.tracking_data.loc[idx, home_x].mean()
+            if match.tracking_data.loc[idx, home_x].mean() -  match.tracking_data.loc[idx, home_x].mean() > 0:
+                centroid_x_home = match.tracking_data.loc[idx, home_x].mean()
+                centroid_x_away = match.tracking_data.loc[idx, away_x].mean()
                 raise DataBallPyError(
                     "The home team should be represented as playing from left to "
                     f"right the whole match. At the start of period {period} the x "
-                    f"centroid of the home team is {centroid_x}."
-                )
-
-            if match.tracking_data.loc[idx, away_x].mean() < 0:
-                centroid_x = match.tracking_data.loc[idx, away_x].mean()
-                raise DataBallPyError(
+                    f"centroid of the home team is {centroid_x_home}."
                     "The away team should be represented as playingfrom right to "
                     f"left the whole match. At the start  of period {period} the x "
-                    f"centroid ofthe away team is {centroid_x}."
+                    f"centroid ofthe away team is {centroid_x_away}."
                 )
 
         # check databallpy_events

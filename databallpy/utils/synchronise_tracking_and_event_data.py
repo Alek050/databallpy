@@ -47,7 +47,9 @@ def synchronise_tracking_and_event_data(
             new_name="velocity",
             metric="",  # differentiate the x and y values
             frame_rate=match.frame_rate,
-            filter_type=None,
+            filter_type="savitzky_golay",
+            window=7,
+            poly_order=3,
             column_ids=["ball"],
         )
     if "ball_acceleration" not in tracking_data.columns:
@@ -57,6 +59,8 @@ def synchronise_tracking_and_event_data(
             metric="v",  # differentiate the vx and vy values
             frame_rate=match.frame_rate,
             filter_type="savitzky_golay",
+            window=25,
+            poly_order=2,
             max_val=150,
             column_ids=["ball"],
         )
@@ -162,19 +166,23 @@ def synchronise_tracking_and_event_data(
             for x in end_batches_frames
         ]
 
+
+       
+
         tracking_data_period = tracking_data[tracking_data["period"] == p]
         event_data_period = event_data_to_sync[
             event_data_to_sync["period_id"] == p
         ].copy()
+         # maybe not that benificial if the first datetime is not the real datetime all events go wrong
         start_events = ["pass", "shot"]
         datetime_first_event = event_data_period[
             event_data_period["databallpy_event"].isin(start_events)
         ].iloc[0]["datetime"]
         datetime_first_tracking_frame = tracking_data_period[
             tracking_data_period["ball_status"] == "alive"
-        ].iloc[0]["datetime"]
+        ].iloc[0]["datetime"] - pd.to_timedelta(10, unit="s") # added to make sure all events are included
         diff_datetime = datetime_first_event - datetime_first_tracking_frame
-        event_data_period["datetime"] -= diff_datetime
+        # event_data_period["datetime"] -= diff_datetime
 
         if verbose:
             print(f"Syncing period {p}...")
@@ -188,12 +196,14 @@ def synchronise_tracking_and_event_data(
             tracking_batch = tracking_data_period[
                 (tracking_data_period["frame"] <= end_batch_frame)
                 & (tracking_data_period["frame"] >= start_batch_frame)
+                # & (tracking_data_period["ball_status"] == "alive") ## ADDED can only add events when ball is alive
             ].reset_index(drop=False)
             event_batch = event_data_period[
                 (event_data_period["datetime"] >= start_batch_datetime)
                 & (event_data_period["datetime"] <= end_batch_datetime)
             ].reset_index(drop=False)
-
+            if len(event_batch) ==0: 
+                continue
             sim_mat = _create_sim_mat(tracking_batch, event_batch, match)
             event_frame_dict = _needleman_wunsch(sim_mat)
             for event, frame in event_frame_dict.items():
@@ -305,6 +315,7 @@ def _create_sim_mat(
         mask = np.isnan(total).all(axis=1)
         if total[mask].shape[0] > 0:
             total[mask] = np.nanmax(total)
+
         sim_mat[:, i] = np.nanmean(total, axis=1)
     # replace nan values with highest value, the algorithm will not assign these
     sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat)

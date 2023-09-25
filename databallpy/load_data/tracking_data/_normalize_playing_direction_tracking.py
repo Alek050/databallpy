@@ -18,13 +18,16 @@ def _normalize_playing_direction_tracking(
     """
 
     home_x = [x for x in td.columns if "_x" in x and "home" in x]
+    away_x = [x for x in td.columns if "_x" in x and "away" in x]
     all_x_y = [x for x in td.columns if "_x" in x or "_y" in x]
     for _, period_row in periods.iterrows():
-        if len(td[td["frame"] == period_row["start_frame"]].index) > 0:
-            idx_start = td[td["frame"] == period_row["start_frame"]].index[0]
-            idx_end = td[td["frame"] == period_row["end_frame"]].index[0]
-
-            if td.loc[idx_start, home_x].mean() > 0:
+        start_frame = period_row["start_frame"]
+        end_frame = period_row["end_frame"]
+        batch = td[td["frame"].between(start_frame, end_frame, inclusive="both")]
+        if len(batch) > 0:
+            idx_start = batch.index[0]
+            idx_end = batch.index[-1]
+            if td.loc[idx_start, home_x].mean() - td.loc[idx_start, away_x].mean() > 0:
                 td.loc[idx_start:idx_end, all_x_y] *= -1
 
     return td
