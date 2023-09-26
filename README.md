@@ -1,7 +1,8 @@
 
-![Logo](https://github.com/Alek050/databallpy/assets/49450063/126c5f4e-12dc-4819-95c5-4283274081af)
+![Logo](https://github.com/Alek050/databallpy/assets/49450063/1d5e6aa3-55a3-408d-bcf6-a70b5e30712a)
 
 # databallpy
+
 
 A package for loading, preprocessing, vizualising and synchronizing soccer event- and tracking data.
 
