@@ -8,6 +8,7 @@ from databallpy.get_match import get_match
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
+    pre_compute_synchronisation_variables,
 )
 from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import (
@@ -29,6 +30,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             check_quality=False,
         )
         self.match_to_sync.allow_synchronise_tracking_and_event_data = True
+        self.match_to_sync._tracking_timestamp_is_precise = False
 
         self.match_to_sync.tracking_data["ball_acceleration"] = np.array(
             [180.0, 180.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150.0, 0]
@@ -56,6 +58,46 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_event_data = self.match_to_sync.event_data.copy()
         expected_tracking_data = self.match_to_sync.tracking_data.copy()
         expected_tracking_data["period"] = [1] * 13
+        expected_tracking_data["datetime"] = [
+            pd.to_datetime("2023-01-22 16:46:39.720000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.760000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.800000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.840000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.880000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.920000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.960000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40+01:00").tz_convert("Europe/Amsterdam"),
+            pd.to_datetime("2023-01-22 16:46:40.040000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.080000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.120000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.160000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.200000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+        ]
+
         expected_tracking_data["databallpy_event"] = [
             "pass",
             "pass",
@@ -98,15 +140,15 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             9,
             11,
         ]
+        match_to_sync = self.match_to_sync.copy()
 
-        self.match_to_sync.synchronise_tracking_and_event_data(n_batches_per_half=1)
-        pd.testing.assert_frame_equal(
-            self.match_to_sync.tracking_data, expected_tracking_data
-        )
+        match_to_sync.synchronise_tracking_and_event_data(n_batches_per_half=1)
 
         pd.testing.assert_frame_equal(
-            self.match_to_sync.event_data, expected_event_data
+            match_to_sync.tracking_data, expected_tracking_data
         )
+
+        pd.testing.assert_frame_equal(match_to_sync.event_data, expected_event_data)
 
     def test_needleman_wunsch(self):
         sim_list = [
@@ -246,3 +288,88 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         # Test with player_id = MISSING_INT (-999)
         event_data.loc[2, "player_id"] = MISSING_INT
         _assert_sim_mats_equal(tracking_data, event_data)
+
+    def test_pre_compute_synchronisation_variables(self):
+        expected_td = self.match_to_sync.tracking_data.copy()
+        expected_td["ball_acceleration_sqrt"] = np.sqrt(
+            expected_td["ball_acceleration"]
+        )
+        expected_td["goal_angle_home_team"] = [
+            0.19953378014112227,
+            0.2249295894248988,
+            np.nan,
+            np.nan,
+            2.916567100863839,
+            0.19953378014112227,
+            0.2249295894248988,
+            0.22967695413522296,
+            2.916567100863839,
+            0.19953378014112227,
+            0.2249295894248988,
+            0.22967695413522296,
+            np.nan,
+        ]
+        expected_td["goal_angle_away_team"] = [
+            0.19953378014112227,
+            0.2249295894248988,
+            np.nan,
+            np.nan,
+            2.916567100863839,
+            0.19953378014112227,
+            0.2249295894248988,
+            0.22967695413522296,
+            2.916567100863839,
+            0.19953378014112227,
+            0.2249295894248988,
+            0.22967695413522296,
+            np.nan,
+        ]
+        expected_td["datetime"] = [
+            pd.to_datetime("2023-01-22 16:46:39.720000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.760000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.800000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.840000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.880000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.920000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.960000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40+01:00").tz_convert("Europe/Amsterdam"),
+            pd.to_datetime("2023-01-22 16:46:40.040000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.080000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.120000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.160000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.200000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+        ]
+        expected_td["databallpy_event"] = [None] * 13
+        expected_td["event_id"] = [MISSING_INT] * 13
+
+        res_tracking_data = pre_compute_synchronisation_variables(
+            tracking_data=self.match_to_sync.tracking_data.copy(),
+            frame_rate=25,
+            pitch_dimensions=(106, 68),
+            periods=self.match_to_sync.periods.copy(),
+        )
+        pd.testing.assert_frame_equal(res_tracking_data, expected_td)

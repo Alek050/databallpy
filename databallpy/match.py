@@ -124,12 +124,25 @@ class Match:
     _passes_df: pd.DataFrame = None
     # to save the preprocessing status
     _is_synchronised: bool = False
+    # to indicate if the timestamps are precise or just the proposed timestamps of the
+    # match (precisely 20:00 for start of match). This is important for the
+    # synchronisation of the tracking and event data
+    _tracking_timestamp_is_precise: bool = False
+    _event_timestamp_is_precise: bool = False
 
     def __repr__(self):
         return "databallpy.match.Match object: " + self.name
 
     def __post_init__(self):
         check_inputs_match_object(self)
+
+    @property
+    def tracking_timestamp_is_precise(self) -> bool:
+        return self._tracking_timestamp_is_precise
+
+    @property
+    def event_timestamp_is_precise(self) -> bool:
+        return self._event_timestamp_is_precise
 
     @property
     def is_synchronised(self) -> bool:
@@ -493,6 +506,11 @@ class Match:
                 self.extra_data.equals(other.extra_data)
                 if self.extra_data is not None
                 else other.extra_data is None,
+                self.allow_synchronise_tracking_and_event_data
+                == other.allow_synchronise_tracking_and_event_data,
+                self._tracking_timestamp_is_precise
+                == other._tracking_timestamp_is_precise,
+                self._event_timestamp_is_precise == other._event_timestamp_is_precise,
             ]
             return all(result)
         else:
@@ -500,6 +518,7 @@ class Match:
 
     def copy(self):
         """Function to return a copy of the current match object"""
+        allow_sync = self.allow_synchronise_tracking_and_event_data
         return Match(
             tracking_data=self.tracking_data.copy(),
             tracking_data_provider=self.tracking_data_provider,
@@ -527,7 +546,10 @@ class Match:
             pass_events=self.pass_events.copy(),
             _passes_df=self._passes_df.copy() if self._passes_df is not None else None,
             country=self.country,
+            allow_synchronise_tracking_and_event_data=allow_sync,
             extra_data=self.extra_data,
+            _tracking_timestamp_is_precise=self._tracking_timestamp_is_precise,
+            _event_timestamp_is_precise=self._event_timestamp_is_precise,
         )
 
     def save_match(
