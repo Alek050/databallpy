@@ -1,3 +1,5 @@
+![Banner](/branding/logo.png)
+
 # databallpy
 
 A package for loading, preprocessing, vizualising and synchronizing soccer event- and tracking data.
