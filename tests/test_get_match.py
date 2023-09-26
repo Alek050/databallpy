@@ -371,6 +371,29 @@ class TestGetMatch(unittest.TestCase):
             pass_events=PASS_EVENTS_OPTA,
         )
 
+    def test_get_match_wrong_inputs(self):
+        with self.assertRaises(ValueError):
+            get_match(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
+
+        with self.assertRaises(ValueError):
+            get_match(
+                event_data_loc=self.ed_opta_loc, event_metadata_loc=self.md_opta_loc
+            )
+
+        with self.assertRaises(ValueError):
+            get_match(event_metadata_loc=self.md_opta_loc)
+
+        with self.assertRaises(ValueError):
+            get_match(
+                tracking_data_loc=self.td_tracab_loc,
+                tracking_metadata_loc=self.md_tracab_loc,
+            )
+
+        with self.assertRaises(ValueError):
+            get_match(
+                tracking_data_loc=self.td_tracab_loc, tracking_data_provider="tracab"
+            )
+
     def test_get_match_opta_tracab(self):
         match = get_match(
             tracking_data_loc=self.td_tracab_loc,

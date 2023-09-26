@@ -65,6 +65,33 @@ def get_match(
     Returns:
         (Match): a Match object with all information available of the match.
     """
+
+    if (event_data_loc or _extra_event_data_loc) and event_metadata_loc is None:
+        raise ValueError(
+            "Please provide an event metadata location when providing an event"
+            " data location"
+        )
+    elif (event_data_loc or _extra_event_data_loc) and event_data_provider is None:
+        raise ValueError(
+            "Please provide an event data provider when providing an event"
+            " data location"
+        )
+    elif event_metadata_loc and event_data_provider is None:
+        raise ValueError(
+            "Please provide an event data provider when providing an event"
+            " metadata location"
+        )
+    elif tracking_data_loc and tracking_data_provider is None:
+        raise ValueError(
+            "Please provide a tracking data provider when providing a tracking"
+            " data location"
+        )
+    elif tracking_data_loc and tracking_metadata_loc is None:
+        raise ValueError(
+            "Please provide a tracking metadata location when providing a tracking"
+            " data location"
+        )
+
     uses_tracking_data = False
     uses_event_data = False
     uses_event_metadata = False

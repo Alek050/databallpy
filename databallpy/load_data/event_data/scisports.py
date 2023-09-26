@@ -918,6 +918,11 @@ def _handle_scisports_data(
         scisports_event_data = _update_scisports_event_data_with_metadata(
             scisports_event_data, tracking_metadata
         )
+    else:
+        raise ValueError(
+            "No metadata provided. Either event_metadata or tracking_metadata"
+            " should be provided."
+        )
 
     if tracking_data is not None:
         if event_metadata is not None:
