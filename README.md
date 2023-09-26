@@ -1,4 +1,5 @@
-![Banner](/branding/logo.png)
+
+![Logo](https://github.com/Alek050/databallpy/assets/49450063/126c5f4e-12dc-4819-95c5-4283274081af)
 
 # databallpy
 
