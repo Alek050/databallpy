@@ -1,4 +1,11 @@
+
+<div align="center">
+  <img src="https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34" alt="Logo">
+</div>
+
+
 # databallpy
+
 
 A package for loading, preprocessing, vizualising and synchronizing soccer event- and tracking data.
 
