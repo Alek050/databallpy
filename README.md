@@ -1,5 +1,6 @@
 
-![Logo](https://github.com/Alek050/databallpy/assets/49450063/1d5e6aa3-55a3-408d-bcf6-a70b5e30712a)
+![Logo](https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34)
+
 
 # databallpy
 
