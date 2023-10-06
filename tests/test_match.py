@@ -892,7 +892,7 @@ class TestMatch(unittest.TestCase):
             match.preprocessing_status
             == "Preprocessing status:\n\tis_synchronised = False"
         )
-        match.synchronise_tracking_and_event_data(n_batches_per_half=1)
+        match.synchronise_tracking_and_event_data(n_batches=2)
         assert match.is_synchronised is True
         assert (
             match.preprocessing_status
@@ -903,7 +903,7 @@ class TestMatch(unittest.TestCase):
         match = self.match_to_sync.copy()
         match.allow_synchronise_tracking_and_event_data = False
         with self.assertRaises(DataBallPyError):
-            match.synchronise_tracking_and_event_data(n_batches_per_half=1)
+            match.synchronise_tracking_and_event_data(n_batches=2)
 
     def test__repr__(self):
         assert (

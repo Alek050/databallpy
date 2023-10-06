@@ -441,14 +441,14 @@ class Match:
     @requires_tracking_data
     @requires_event_data
     def synchronise_tracking_and_event_data(
-        self, n_batches_per_half: int = 100, verbose: bool = True
+        self, n_batches: int = 100, verbose: bool = True
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
 
         Args:
             match (Match): Match object
-            n_batches_per_half (int): the number of batches that are created per half.
+            n_batches (int): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = 100
             verbose (bool, optional): Wheter or not to print info about the progress
@@ -463,7 +463,7 @@ class Match:
                 "Synchronising tracking and event data is not allowed."
                 "The quality of the data is not good enough to ensure valid results."
             )
-        synchronise_tracking_and_event_data(self, n_batches_per_half, verbose)
+        synchronise_tracking_and_event_data(self, n_batches=n_batches, verbose=verbose)
 
     def __eq__(self, other):
         if isinstance(other, Match):

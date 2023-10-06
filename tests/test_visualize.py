@@ -182,7 +182,7 @@ class TestVisualize(unittest.TestCase):
         )
         synced_match.allow_synchronise_tracking_and_event_data = True
 
-        synced_match.synchronise_tracking_and_event_data(n_batches_per_half=1)
+        synced_match.synchronise_tracking_and_event_data(n_batches=2)
         events = [
             "pass",
             "dribble",
