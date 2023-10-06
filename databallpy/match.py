@@ -6,6 +6,9 @@ from functools import wraps
 from typing import List
 
 import pandas as pd
+import numpy as np
+
+from tqdm import tqdm
 
 from databallpy.errors import DataBallPyError
 from databallpy.load_data.event_data.dribble_event import DribbleEvent
@@ -17,6 +20,7 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
 from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
 
+from databallpy.visualize import save_match_clip
 
 def requires_tracking_data(func):
     @wraps(func)
@@ -355,10 +359,16 @@ class Match:
                 "outcome": [pass_.outcome for pass_ in self.pass_events.values()],
                 "end_x": [pass_.end_x for pass_ in self.pass_events.values()],
                 "end_y": [pass_.end_y for pass_ in self.pass_events.values()],
-                "length": [pass_.length for pass_ in self.pass_events.values()],
-                "angle": [pass_.angle for pass_ in self.pass_events.values()],
+                "pass_length": [pass_.pass_length for pass_ in self.pass_events.values()],
                 "pass_type": [pass_.pass_type for pass_ in self.pass_events.values()],
                 "set_piece": [pass_.set_piece for pass_ in self.pass_events.values()],
+                "forward_distance": [pass_.forward_distance for pass_ in self.pass_events.values()],
+                "passer_goal_distance": [pass_.passer_goal_distance for pass_ in self.pass_events.values()],
+                "receiver_goal_distance": [pass_.receiver_goal_distance for pass_ in self.pass_events.values()],
+                "opponents_in_passing_lane": [pass_.opponents_in_passing_lane for pass_ in self.pass_events.values()],
+                "pressure_on_passer": [pass_.pressure_on_passer for pass_ in self.pass_events.values()],
+                "pressure_on_receiver": [pass_.pressure_on_receiver for pass_ in self.pass_events.values()],
+                "pass_goal_angle": [pass_.pass_goal_angle for pass_ in self.pass_events.values()],
             }
             self._passes_df = pd.DataFrame(res_dict)
         return self._passes_df
@@ -437,6 +447,122 @@ class Match:
                 column_id,
                 gk_column_id,
             )
+    
+    @requires_event_data
+    @requires_tracking_data
+    def add_tracking_data_features_to_passes(self):
+        """Function to add tracking data features to the passes. This function
+              should be run after the tracking and event data are synchronised.
+
+        Raises:
+            ValueError: if the tracking and event data are not synchronised yet
+        """
+        if not self.is_synchronised:
+            raise DataBallPyError(
+                "Tracking and event data are not synchronised yet. Please run the"
+                " synchronise_tracking_and_event_data() method first"
+            )
+        if not "player_possession" in self.tracking_data.columns:
+            raise DataBallPyError(
+                "Tracking data does not contain player_possession column. Please run the"
+                " add_player_possession_to_tracking_data() method first"
+            )
+
+        for pass_ in tqdm(self.pass_events.values()):
+            team_side = (
+                "home" if pass_.player_id in self.home_players["id"].values else "away"
+            )
+            passer_column_id = self.player_id_to_column_id(pass_.player_id)
+            tracking_data_frame = self.tracking_data.loc[
+                self.tracking_data["event_id"] == pass_.event_id
+            ]
+
+            # if, for some reason, the pass is not found in the tracking data, continue
+            if len(tracking_data_frame) == 0:
+                continue
+            tracking_data_frame = tracking_data_frame.iloc[0]
+
+
+            end_pos_frame = get_next_possession_frame(
+                self.tracking_data,
+                tracking_data_frame,
+                passer_column_id,
+            )
+            end_loc_td = end_pos_frame[["ball_x", "ball_y"]].values
+            end_loc_ed = np.array([pass_.end_x, pass_.end_y])
+            
+            if not pd.isnull(end_loc_td).any() and not pd.isnull(end_loc_ed).any():
+                end_loc_diff = np.linalg.norm(end_loc_td - end_loc_ed)
+                if end_loc_diff > 10.:
+                    # possibly the a wrongly labeled possession, try to find the next possession and check again
+                    wrong_possession_columnd_id = end_pos_frame["player_possession"]
+                    new_end_pos_frame = get_next_possession_frame(
+                        self.tracking_data,
+                        end_pos_frame,
+                        wrong_possession_columnd_id,
+                    )
+                    new_end_loc_td = new_end_pos_frame[["ball_x", "ball_y"]].values
+                    new_end_loc_ed = np.array([pass_.end_x, pass_.end_y])
+                    new_end_loc_diff = np.linalg.norm(new_end_loc_td - new_end_loc_ed)
+                    if new_end_loc_diff < 10.:
+                        end_loc_td = new_end_loc_td
+                    else:
+                        # the difference is too big, not sure what is wrong
+                        continue
+    
+            # find the proposed receiver of the pass
+            if not pd.isnull(end_pos_frame["player_possession"]) and end_pos_frame["player_possession"][:4] == team_side:
+                receiver_column_id = end_pos_frame["player_possession"]
+            else:
+                # find the closest teammate to the end location
+                closest_player = ""
+                closest_dist = np.inf
+                team_mate_column_ids = [x[:-2] for x in end_pos_frame.index if x[-2:] == "_x" and team_side in x and not x == passer_column_id]
+                for col_id in team_mate_column_ids:
+                    if col_id == passer_column_id:
+                        continue
+                    loc = end_pos_frame[[f"{col_id}_x", f"{col_id}_y"]].values
+                    dist = np.linalg.norm(loc - end_loc_td)
+                    if dist < closest_dist:
+                        closest_dist = dist
+                        closest_player = col_id
+                receiver_column_id = closest_player
+
+            if not pd.isnull(end_loc_td).any() and not pd.isnull(end_loc_ed).any():
+                end_loc_diff = np.linalg.norm(end_loc_td - end_loc_ed)
+                # if end_loc_diff > 10. and tracking_data_frame.frame >= 1110610:
+                #     # possibly the a wrongly labeled possession, try to find the next possession and check again
+
+
+                    
+
+                #     print(f"end_loc_diff = {end_loc_diff}")
+                #     print(f"end_loc_td = {end_loc_td}")
+                #     print(f"end_loc_ed = {end_loc_ed}")
+                #     print(f"passer_column_id = {passer_column_id}")
+                #     print(f"receiver_column_id = {receiver_column_id}")
+                #     print(f"start_pass frame = {tracking_data_frame.frame}")
+                #     print(f"end_pass frame = {end_pos_frame.frame}")
+                #     save_match_clip(match=self, start_idx=tracking_data_frame.name-50, end_idx=end_pos_frame.name+200, save_folder="data", title="temp", events=["pass", "shot", "dribble"], player_possession_column="player_possession", variable_of_interest=self.tracking_data.loc[tracking_data_frame.name-50:end_pos_frame.name+200, "frame"])
+                #     import pdb; pdb.set_trace()
+
+                pass_.end_x = end_loc_td[0]
+                pass_.end_y = end_loc_td[1]
+            
+            elif not pd.isnull(end_loc_td).any():
+                pass_.end_x = end_loc_td[0]
+                pass_.end_y = end_loc_td[1]
+            else:
+                continue
+
+            pass_.add_tracking_data_features(
+                tracking_data_frame,
+                passer_column_id,
+                receiver_column_id,
+                end_loc_td,
+                self.pitch_dimensions,
+            )
+
 
     @requires_tracking_data
     @requires_event_data
@@ -816,3 +942,27 @@ def check_inputs_match_object(match: Match):
         # country
         if not isinstance(match.country, str):
             raise TypeError(f"country should be a string, not a {type(match.country)}")
+
+def get_next_possession_frame(tracking_data, tracking_data_frame, passer_column_id):
+    mask_new_possession = (
+        (~pd.isnull(tracking_data["player_possession"])) &
+        (tracking_data["player_possession"] != passer_column_id) &
+        (tracking_data.index > tracking_data_frame.name)
+    )
+    if len(tracking_data.loc[mask_new_possession]) > 0:
+        first_new_possession_idx = tracking_data.loc[mask_new_possession].index[0]
+    else:
+        first_new_possession_idx = tracking_data.index[-1]
+
+    mask_ball_out = (
+        (tracking_data["ball_status"]=="dead") & 
+        (tracking_data.index > tracking_data_frame.name)
+    )
+    if len(tracking_data.loc[mask_ball_out]) > 0:
+        next_ball_out_idx = tracking_data.loc[mask_ball_out].index[0]
+    else:
+        next_ball_out_idx = tracking_data.index[-1]
+
+    end_pos_frame = tracking_data.loc[min(first_new_possession_idx, next_ball_out_idx)]
+
+    return end_pos_frame  
