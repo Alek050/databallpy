@@ -8,6 +8,7 @@ from databallpy.get_match import get_match
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
+    create_smart_batches,
     pre_compute_synchronisation_variables,
 )
 from databallpy.utils.utils import MISSING_INT
@@ -142,7 +143,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
         match_to_sync = self.match_to_sync.copy()
 
-        match_to_sync.synchronise_tracking_and_event_data(n_batches_per_half=1)
+        match_to_sync.synchronise_tracking_and_event_data(n_batches=2)
 
         pd.testing.assert_frame_equal(
             match_to_sync.tracking_data, expected_tracking_data
@@ -373,3 +374,26 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             periods=self.match_to_sync.periods.copy(),
         )
         pd.testing.assert_frame_equal(res_tracking_data, expected_td)
+
+    def test_create_smart_batches(self):
+        tracking_data = pd.DataFrame(
+            {
+                "datetime": [
+                    "2023-01-22 16:00:00",
+                    "2023-01-22 16:00:10",
+                    "2023-01-22 16:00:20",
+                    "2023-01-22 16:00:30",
+                    "2023-01-22 16:00:40",
+                    "2023-01-22 16:00:50",
+                ],
+                "ball_status": ["alive", "alive", "dead", "dead", "alive", "alive"],
+                "period": [1, 1, 1, 1, 1, 2],
+            }
+        )
+
+        tracking_data["datetime"] = pd.to_datetime(tracking_data["datetime"])
+
+        expected_res = pd.to_datetime(["2023-01-22 16:00:25", "2023-01-22 16:00:53"])
+
+        res = create_smart_batches(tracking_data)
+        assert all(res == expected_res)
