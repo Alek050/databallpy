@@ -698,8 +698,6 @@ def _get_pass_instances(event_data: pd.DataFrame) -> dict:
             player_id=pass_.player_id,
             end_x=np.nan,
             end_y=np.nan,
-            length=np.nan,
-            angle=np.nan,
             pass_type=passes_map[pass_.scisports_event],
             set_piece=set_piece_map[pass_.set_piece],
         )

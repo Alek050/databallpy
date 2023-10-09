@@ -332,8 +332,6 @@ class TestScisports(unittest.TestCase):
                 player_id=101,
                 end_x=np.nan,
                 end_y=np.nan,
-                length=np.nan,
-                angle=np.nan,
                 pass_type="not_specified",
                 set_piece="no_set_piece",
             )

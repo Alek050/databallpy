@@ -233,8 +233,6 @@ class TestOpta(unittest.TestCase):
             player_id=1,
             end_x=np.nan,
             end_y=np.nan,
-            length=np.nan,
-            angle=np.nan,
             pass_type="long_ball",
             set_piece="no_set_piece",
         )

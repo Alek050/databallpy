@@ -425,8 +425,6 @@ PASS_EVENTS_OPTA = {
         end_y=np.nan,
         pass_type="not_specified",
         set_piece="kick_off",
-        length=np.nan,
-        angle=np.nan,
     ),
     2499594243: PassEvent(
         event_id=2499594243,
@@ -446,8 +444,6 @@ PASS_EVENTS_OPTA = {
         end_y=(57.5 / 100 * 68 - 34) * -1,
         pass_type="long_ball",
         set_piece="no_set_piece",
-        length=np.nan,
-        angle=np.nan,
     ),
 }
 

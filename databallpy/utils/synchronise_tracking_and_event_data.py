@@ -61,8 +61,12 @@ def synchronise_tracking_and_event_data(
         )
 
     if verbose:
-        print("Syncing event and tracking data ...")
-        end_datetimes = tqdm(end_datetimes)
+        end_datetimes = tqdm(
+            end_datetimes,
+            desc="Syncing event and tracking data",
+            unit="batches",
+            leave=False,
+        )
 
     # loop over batches
     batch_first_datetime = tracking_data["datetime"].iloc[0]
