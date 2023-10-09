@@ -90,8 +90,9 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     home_away_map = {"H": "home", "A": "away"}
 
     if verbose:
-        print("Writing lines to dataframe:")
-        lines = tqdm(lines)
+        lines = tqdm(
+            lines, desc="Writing lines to dataframe", unit=" lines", leave=False
+        )
 
     for idx, (frame, players_info, ball_info, _) in enumerate(
         (line.split(":") for line in lines)

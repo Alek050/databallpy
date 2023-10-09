@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from databallpy.match import Match
+# from databallpy.match import Match
 
 
 def requires_ffmpeg(func):
@@ -236,7 +236,7 @@ def plot_soccer_pitch(
 
 
 def plot_events(
-    match: Match,
+    match,  #: Match,
     events: list = [],
     outcome: int = None,
     player_ids: list = [],
@@ -363,7 +363,7 @@ def plot_events(
 
 @requires_ffmpeg
 def save_match_clip(
-    match: Match,
+    match,  #: Match,
     start_idx: int,
     end_idx: int,
     save_folder: str,
@@ -455,8 +455,7 @@ def save_match_clip(
     # Generate movie with variable info
     with writer.saving(fig, video_loc, 100):
         if verbose:
-            print("Making match clip...")
-            indexes = tqdm(td.index)
+            indexes = tqdm(td.index, desc="Making match clip", leave=False)
         else:
             indexes = td.index
         for _, idx in enumerate(indexes):
