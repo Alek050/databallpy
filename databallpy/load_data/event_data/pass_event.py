@@ -94,7 +94,7 @@ class PassEvent(BaseEvent):
             frame, passer_loc, pass_end_location, opponent_column_ids
         )
 
-        passer_goal_vec = passer_loc - goal_loc
+        passer_goal_vec = goal_loc - passer_loc
         passer_receiver_vec = pass_end_location - passer_loc
         self.pass_goal_angle = get_smallest_angle(
             passer_goal_vec, passer_receiver_vec, angle_format="degree"
