@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-# from databallpy.match import Match
+from databallpy.match import Match
 
 
 def requires_ffmpeg(func):
@@ -236,7 +236,7 @@ def plot_soccer_pitch(
 
 
 def plot_events(
-    match,  #: Match,
+    match: Match,
     events: list = [],
     outcome: int = None,
     player_ids: list = [],
@@ -363,7 +363,7 @@ def plot_events(
 
 @requires_ffmpeg
 def save_match_clip(
-    match,  #: Match,
+    match: Match,
     start_idx: int,
     end_idx: int,
     save_folder: str,
