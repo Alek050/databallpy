@@ -1,3 +1,5 @@
+.. include:: readme_link.md
+
 .. toctree::
    :maxdepth: 1
 
@@ -5,7 +7,3 @@
    changelog.md
    contributing.md
    conduct.md
-
-.. include:: ../README.md
-   :start-after: Begin README
-   :end-before: End README

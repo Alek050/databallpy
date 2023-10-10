@@ -19,7 +19,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "myst_parser",
-    "m2r"
 ]
 autoapi_dirs = ["../databallpy"]
 
@@ -36,11 +35,4 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "sphinx_rtd_theme"
 
 nb_execution_timeout = 120
-
-import os
-import sys
-sys.path.insert(0, os.path.abspath('..'))
-
-# Specify the master_doc as 'index'
-master_doc = 'index'
 
