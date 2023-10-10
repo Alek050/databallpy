@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.4.0"
-description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
+version = "0.4.1"
+description = "A package for loading, preprocessing, vizualising and synchronizing soccere event and tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
     "Daan Grob <daaniogrob@gmail.com>",

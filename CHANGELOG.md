@@ -39,4 +39,14 @@
 - Optimized loading in tracab tracking data
 - In quality checks, fixed some minor bugs.
 
+### V0.4.1 (10/10/2023)
+
+- Fixed bugs with reading in tracab data in special cases
+- Fixed bus with reading in opta data in special cases
+- Added tracking data passes features
+- Added tracking data shot features
+- optimized performance of processing data
+
+
+
 
