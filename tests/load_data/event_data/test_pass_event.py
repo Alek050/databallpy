@@ -312,7 +312,7 @@ class TestPassEvent(unittest.TestCase):
         pass_manual.pressure_on_receiver = get_pressure_on_player(
             tracking_data_frame, receiver_column_id, pitch_size=pitch_dimensions
         )
-        pass_manual.pass_goal_angle = np.arctan(1 / 10) * 180 / np.pi
+        pass_manual.pass_goal_angle = np.arctan2(1, -10) * 180 / np.pi
 
         pass_.add_tracking_data_features(
             tracking_data_frame,
