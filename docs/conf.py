@@ -19,6 +19,7 @@ extensions = [
     "nbsphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "myst_parser",
 ]
 autoapi_dirs = ["../databallpy"]
 
