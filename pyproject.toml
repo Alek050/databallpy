@@ -49,15 +49,13 @@ isort = "^5.11.4"
 jupyter = "^1.0.0"
 line-profiler = "^4.0.2"
 black = "^23.9.1"
-myst-nb = "^0.17.2"
-sphinx = "5.3"
-autoapi = "^2.0.1"
+sphinx = "^7.2.6"
+nbsphinx = "^0.9.3"
 
 [tool.poetry.group.docs]
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-myst-nb = "^0.17.1"
 sphinx-autoapi = "^2.0.1"
 sphinx-rtd-theme = "^1.1.1"
 
