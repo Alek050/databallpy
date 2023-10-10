@@ -3,7 +3,7 @@ import pickle
 import warnings
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -235,7 +235,7 @@ class Match:
                 not self.is_synchronised
                 and self.allow_synchronise_tracking_and_event_data
             ):
-                self.synchronise_tracking_and_event_data()
+                self.synchronise_tracking_and_event_data(n_batches="smart")
             if self.is_synchronised:
                 self.add_tracking_data_features_to_shots()
             res_dict = {
@@ -271,12 +271,20 @@ class Match:
                     shot.ball_gk_distance for shot in self.shot_events.values()
                 ],
                 "shot_angle": [shot.shot_angle for shot in self.shot_events.values()],
-                "gk_angle": [shot.gk_angle for shot in self.shot_events.values()],
+                "gk_optimal_loc_distance": [
+                    shot.gk_optimal_loc_distance for shot in self.shot_events.values()
+                ],
                 "pressure_on_ball": [
                     shot.pressure_on_ball for shot in self.shot_events.values()
                 ],
                 "n_obstructive_players": [
                     shot.n_obstructive_players for shot in self.shot_events.values()
+                ],
+                "n_obstructive_defenders": [
+                    shot.n_obstructive_defenders for shot in self.shot_events.values()
+                ],
+                "goal_gk_distance": [
+                    shot.goal_gk_distance for shot in self.shot_events.values()
                 ],
             }
             self._shots_df = pd.DataFrame(res_dict)
@@ -611,16 +619,18 @@ class Match:
     @requires_tracking_data
     @requires_event_data
     def synchronise_tracking_and_event_data(
-        self, n_batches: int = 100, verbose: bool = True
+        self, n_batches: Union[int, str] = "smart", verbose: bool = True
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
 
         Args:
             match (Match): Match object
-            n_batches (int): the number of batches that are created.
-            A higher number of batches reduces the time the code takes to load, but
-            reduces the accuracy for events close to the splits. Default = 100
+            n_batches (Union[int, str]): the number of batches that are created. A
+                higher number of batches reduces the time the code takes to load,
+                but reduces the accuracy for events close to the splits.
+                Default = 'smart'. If 'smart', the number of batches is determined
+                based on the number of dead moments in the game.
             verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
 
