@@ -4,7 +4,7 @@ Welcome to DataBallPy documentation!
 .. toctree::
    :maxdepth: 1
 
-   .. mdinclude:: ../README.md
+   .. mdinclude:: https://raw.githubusercontent.com/Alek050/databallpy/main/README.md
 
    example.ipynb
    changelog.md
