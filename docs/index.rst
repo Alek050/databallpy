@@ -1,4 +1,4 @@
-.. literalinclude:: ../README.md
+.. mdinclude:: ../README.md
    :language: markdown
 
 .. toctree::
