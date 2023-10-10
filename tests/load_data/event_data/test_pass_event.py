@@ -276,6 +276,25 @@ class TestPassEvent(unittest.TestCase):
                 set_piece="tackle",
             )
 
+        with self.assertRaises(TypeError):
+            PassEvent(
+                event_id=1,
+                period_id=1,
+                minutes=1,
+                seconds=1,
+                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
+                start_x=1.0,
+                start_y=1.0,
+                team_id=1,
+                outcome="successful",
+                player_id=1,
+                end_x=1.0,
+                end_y=1.0,
+                pass_type="pull_back",
+                set_piece="free_kick",
+                opponents_in_passing_lane="1",
+            )
+
     def test_pass_add_tracking_data_features(self):
         pass_ = self.pass_event.copy()
         tracking_data_frame = pd.Series(

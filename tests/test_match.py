@@ -1055,9 +1055,11 @@ class TestMatch(unittest.TestCase):
                 "ball_goal_distance": [np.nan, np.nan, np.nan],
                 "ball_gk_distance": [np.nan, np.nan, np.nan],
                 "shot_angle": [np.nan, np.nan, np.nan],
-                "gk_angle": [np.nan, np.nan, np.nan],
+                "gk_optimal_loc_distance": [np.nan, np.nan, np.nan],
                 "pressure_on_ball": [np.nan, np.nan, np.nan],
                 "n_obstructive_players": [MISSING_INT, MISSING_INT, MISSING_INT],
+                "n_obstructive_defenders": [MISSING_INT, MISSING_INT, MISSING_INT],
+                "goal_gk_distance": [np.nan, np.nan, np.nan],
             }
         )
         match = self.expected_match_tracab_opta.copy()
