@@ -12,17 +12,6 @@ files = [
 ]
 
 [[package]]
-name = "anyascii"
-version = "0.3.2"
-description = "Unicode to ASCII transliteration"
-optional = false
-python-versions = ">=3.3"
-files = [
-    {file = "anyascii-0.3.2-py3-none-any.whl", hash = "sha256:3b3beef6fc43d9036d3b0529050b0c48bfad8bc960e9e562d7223cfb94fe45d4"},
-    {file = "anyascii-0.3.2.tar.gz", hash = "sha256:9d5d32ef844fe225b8bc7cba7f950534fae4da27a9bf3a6bea2cb0ea46ce4730"},
-]
-
-[[package]]
 name = "anyio"
 version = "4.0.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -192,6 +181,19 @@ dev = ["attrs[docs,tests]", "pre-commit"]
 docs = ["furo", "myst-parser", "sphinx", "sphinx-notfound-page", "sphinxcontrib-towncrier", "towncrier", "zope-interface"]
 tests = ["attrs[tests-no-zope]", "zope-interface"]
 tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
+
+[[package]]
+name = "autoapi"
+version = "2.0.1"
+description = "Automatic API reference documentation generation for Sphinx inspired by Doxygen"
+optional = false
+python-versions = "*"
+files = [
+    {file = "autoapi-2.0.1.tar.gz", hash = "sha256:4003b17599020652d0738dc1c426d0abf2f58f8a1821f5500816043210b3d1d6"},
+]
+
+[package.dependencies]
+sphinx = "*"
 
 [[package]]
 name = "babel"
@@ -3321,24 +3323,24 @@ test = ["cython", "html5lib", "pytest (>=4.6)", "typed_ast"]
 
 [[package]]
 name = "sphinx-autoapi"
-version = "2.1.1"
+version = "2.0.1"
 description = "Sphinx API documentation generator"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "sphinx-autoapi-2.1.1.tar.gz", hash = "sha256:fbadb96e79020d6b0ec45d888517bf816d6b587a2d340fbe1ec31135e300a6c8"},
-    {file = "sphinx_autoapi-2.1.1-py2.py3-none-any.whl", hash = "sha256:d8da890477bd18e3327cafdead9d5a44a7d798476c6fa32492100e288250a5a3"},
+    {file = "sphinx-autoapi-2.0.1.tar.gz", hash = "sha256:cdf47968c20852f4feb0ccefd09e414bb820af8af8f82fab15a24b09a3d1baba"},
+    {file = "sphinx_autoapi-2.0.1-py2.py3-none-any.whl", hash = "sha256:8ed197a0c9108770aa442a5445744c1405b356ea64df848e8553411b9b9e129b"},
 ]
 
 [package.dependencies]
-anyascii = "*"
 astroid = ">=2.7"
 Jinja2 = "*"
 PyYAML = "*"
-sphinx = ">=5.2.0"
+sphinx = ">=4.0"
+unidecode = "*"
 
 [package.extras]
-docs = ["furo", "sphinx", "sphinx-design"]
+docs = ["sphinx", "sphinx-rtd-theme"]
 dotnet = ["sphinxcontrib-dotnetdomain"]
 go = ["sphinxcontrib-golangdomain"]
 
@@ -3728,6 +3730,17 @@ files = [
 ]
 
 [[package]]
+name = "unidecode"
+version = "1.3.7"
+description = "ASCII transliterations of Unicode text"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "Unidecode-1.3.7-py3-none-any.whl", hash = "sha256:663a537f506834ed836af26a81b210d90cbde044c47bfbdc0fbbc9f94c86a6e4"},
+    {file = "Unidecode-1.3.7.tar.gz", hash = "sha256:3c90b4662aa0de0cb591884b934ead8d2225f1800d8da675a7750cbc3bd94610"},
+]
+
+[[package]]
 name = "uri-template"
 version = "1.3.0"
 description = "RFC 6570 URI Template Processor"
@@ -3840,4 +3853,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "19008b07c921ff1517d0665f6a48e31150f15dcc9e14b6602070eb2e0c6fce68"
+content-hash = "f3ba8b9e089341759b3f415f2d39e211cb7755679a3249eb38130a9a46de6e9d"

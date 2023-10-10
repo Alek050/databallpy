@@ -49,6 +49,9 @@ isort = "^5.11.4"
 jupyter = "^1.0.0"
 line-profiler = "^4.0.2"
 black = "^23.9.1"
+myst-nb = "^0.17.2"
+sphinx = "5.3"
+autoapi = "^2.0.1"
 
 [tool.poetry.group.docs]
 optional = true
