@@ -1,4 +1,5 @@
-.. include:: readme_link.md
+.. include:: ../README.md
+   :parser: markdown
 
 .. toctree::
    :maxdepth: 1
