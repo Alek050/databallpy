@@ -1,5 +1,7 @@
-.. include:: ../README.md
-   :parser: myst_parser.sphinx_
+Readme File
+===========
+
+.. mdinclude:: ../README.md
 
 .. toctree::
    :maxdepth: 1
