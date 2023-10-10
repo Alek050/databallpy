@@ -1,7 +1,7 @@
 Welcome to DataBallPy documentation!
 ===========
-.. mdinclude:: https://raw.githubusercontent.com/Alek050/databallpy/main/README.md
-   
+.. include:: https://raw.githubusercontent.com/Alek050/databallpy/main/README.md
+
 .. toctree::
    :maxdepth: 1
 
