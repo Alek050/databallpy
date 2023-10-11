@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.4.0"
-description = "A package for loading, preprocessing, vizualising and synchronizing soccere event aand tracking data."
+version = "0.4.1"
+description = "A package for loading, preprocessing, vizualising and synchronizing soccere event and tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
     "Daan Grob <daaniogrob@gmail.com>",
@@ -49,12 +49,14 @@ isort = "^5.11.4"
 jupyter = "^1.0.0"
 line-profiler = "^4.0.2"
 black = "^23.9.1"
+sphinx = "^7.2.6"
+nbsphinx = "^0.9.3"
+myst-parser = "^2.0.0"
 
 [tool.poetry.group.docs]
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-myst-nb = "^0.17.1"
 sphinx-autoapi = "^2.0.1"
 sphinx-rtd-theme = "^1.1.1"
 
