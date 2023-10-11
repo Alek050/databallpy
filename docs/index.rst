@@ -1,2 +1,3 @@
 .. include:: ../README.md
-   :parser: markdown
+   :parser: myst_parser.sphinx_
+
