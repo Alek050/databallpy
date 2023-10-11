@@ -141,8 +141,9 @@ def _get_tracking_data(
     }
 
     if verbose:
-        print("Writing lines to dataframe:")
-        lines = tqdm(lines)
+        lines = tqdm(
+            lines, desc="Writing lines to dataframe", unit=" lines", leave=False
+        )
 
     for idx, line in enumerate(lines):
         frame, players_info, ball_info = line.split(":")

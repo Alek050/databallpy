@@ -1,19 +1,25 @@
+
+<div align="center">
+  <img src="https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34" alt="Logo">
+</div>
+
+
 # databallpy
 
-A package for loading, preprocessing, vizualising and synchronizing soccer event- and tracking data.
 
-This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data.
+A package for loading, synchronizing, and analyzing your soccer event- and tracking data.
 
-### Changelog V0.4.0 (21/09/2023)
+This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data. The main feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article](https://kwiatkowski.io/sync.soccer), to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
 
-- Added databallpy_events to get a unified type of event data
-- Added individual player possessions (Adrienko et al., 2016)
-- Added pressure feature (Herrold et al., 2022)
-- Added differentiate features with filters
-- Optimized loading in tracab tracking data
-- In quality checks, fixed some minor bugs.
+## Changelog V0.4.1 (10/10/2023)
 
-### Planned changes
+- Fixed bugs with reading in tracab data in special cases
+- Fixed bus with reading in opta data in special cases
+- Added tracking data passes features
+- Added tracking data shot features
+- optimized performance of processing data
+
+## Planned changes
 
 - Adding different filters to filter the tracking data
 - Adding more features (if you have any ideas/requests, please open an issue!)
@@ -105,14 +111,15 @@ Tracking data providers:
 
 Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.
 
-#### Maintainers & owners
+## Maintainers & owners
 
 - [Alek050](https://github.com/Alek050/)
 - [DaanGro](https://github.com/DaanGro/)
 
-#### Contributors
+## Contributors
 
 - [rdghe](https://github.com/rdghe/)
+- [swopper050](https://github.com/Swopper050)
 
 ## License
 
@@ -124,6 +131,7 @@ Although we think this package helps when starting to analyse soccer data, other
 - [kloppy](https://github.com/PySport/kloppy)
 - [floodlight](https://github.com/floodlight-sports/floodlight)
 - [codeball](https://github.com/metrica-sports/codeball)
+- [socceraction](https://github.com/ML-KULeuven/socceraction)
 
 And for a more specific toturials on how to get started with soccer data"
 - [Friends of Tracking](https://github.com/Friends-of-Tracking-Data-FoTD)

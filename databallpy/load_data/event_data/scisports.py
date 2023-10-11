@@ -698,8 +698,6 @@ def _get_pass_instances(event_data: pd.DataFrame) -> dict:
             player_id=pass_.player_id,
             end_x=np.nan,
             end_y=np.nan,
-            length=np.nan,
-            angle=np.nan,
             pass_type=passes_map[pass_.scisports_event],
             set_piece=set_piece_map[pass_.set_piece],
         )
@@ -918,6 +916,11 @@ def _handle_scisports_data(
         scisports_event_data = _update_scisports_event_data_with_metadata(
             scisports_event_data, tracking_metadata
         )
+    else:
+        raise ValueError(
+            "No metadata provided. Either event_metadata or tracking_metadata"
+            " should be provided."
+        )
 
     if tracking_data is not None:
         if event_metadata is not None:
@@ -982,9 +985,9 @@ def _handle_scisports_data(
                 home_team_name=tracking_metadata.home_team_name,
             )
 
-    if databallpy_events is None or len(databallpy_events) == 0:
-        databallpy_events = _get_databallpy_events_scisports(
-            tracking_data, tracking_metadata, scisports_event_data, verbose
-        )
+        if databallpy_events is None or len(databallpy_events) == 0:
+            databallpy_events = _get_databallpy_events_scisports(
+                tracking_data, tracking_metadata, scisports_event_data, verbose
+            )
 
     return scisports_event_data, databallpy_events, tracking_data

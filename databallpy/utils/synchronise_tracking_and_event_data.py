@@ -1,4 +1,4 @@
-import datetime as dt
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from databallpy.utils.utils import MISSING_INT
 
 
 def synchronise_tracking_and_event_data(
-    match, n_batches_per_half: int = 100, verbose: bool = True
+    match, n_batches: int = 100, verbose: bool = True
 ):
     """Function that synchronises tracking and event data using Needleman-Wunsch
        algorithmn. Based on: https://kwiatkowski.io/sync.soccer. The similarity
@@ -20,7 +20,7 @@ def synchronise_tracking_and_event_data(
 
     Args:
         match (Match): Match object
-        n_batches_per_half (int): the number of batches that are created per half.
+        n_batches (int): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = 100
         verbose (bool, optional): Wheter or not to print info about the progress
@@ -39,163 +39,52 @@ def synchronise_tracking_and_event_data(
     tracking_data = match.tracking_data
     event_data = match.event_data
 
-    # precompute ball acceleration
-    if "ball_velocity" not in tracking_data.columns:
-        tracking_data = _differentiate(
-            df=tracking_data,
-            max_val=50,
-            new_name="velocity",
-            metric="",  # differentiate the x and y values
-            frame_rate=match.frame_rate,
-            filter_type=None,
-            column_ids=["ball"],
-        )
-    if "ball_acceleration" not in tracking_data.columns:
-        tracking_data = _differentiate(
-            df=tracking_data,
-            new_name="acceleration",
-            metric="v",  # differentiate the vx and vy values
-            frame_rate=match.frame_rate,
-            filter_type="savitzky_golay",
-            max_val=150,
-            column_ids=["ball"],
-        )
-    # take the square root to decrease the quadratic effect of the data
-    tracking_data["ball_acceleration_sqrt"] = np.sqrt(
-        tracking_data["ball_acceleration"]
+    tracking_data = pre_compute_synchronisation_variables(
+        tracking_data, match.frame_rate, match.pitch_dimensions, match.periods
     )
-
-    # pre compute ball moving vector - ball goal vector angle
-    goal_angle = get_smallest_angle(
-        (
-            match.tracking_data.loc[1:, ["ball_x", "ball_y"]]
-            - match.tracking_data[["ball_x", "ball_y"]][:-1].values
-        ).values,
-        np.array([match.pitch_dimensions[0] / 2, 0])
-        - match.tracking_data[["ball_x", "ball_y"]][:-1].values,
-        angle_format="radian",
-    )
-    tracking_data["goal_angle_home_team"] = np.concatenate([goal_angle, [np.nan]])
-
-    goal_angle = get_smallest_angle(
-        (
-            match.tracking_data.loc[1:, ["ball_x", "ball_y"]]
-            - match.tracking_data[["ball_x", "ball_y"]][:-1].values
-        ).values,
-        np.array([-match.pitch_dimensions[0] / 2, 0])
-        - match.tracking_data[["ball_x", "ball_y"]][:-1].values,
-        angle_format="radian",
-    )
-
-    tracking_data["goal_angle_away_team"] = np.concatenate([goal_angle, [np.nan]])
-
-    # add datetime objects to tracking_data
-    start_datetime_period = {}
-    start_frame_period = {}
-
-    for _, row in match.periods.iterrows():
-        start_datetime_period[row["period"]] = row["start_datetime_td"]
-        start_frame_period[row["period"]] = row["start_frame"]
-
-    valid_start_frame_periods = np.array(
-        [
-            start_frame_period[p] if p != MISSING_INT else np.nan
-            for p in tracking_data["period"]
-        ]
-    )
-
-    datetime_values = pd.Series(
-        [
-            start_datetime_period[p] if p != MISSING_INT else pd.to_datetime("NaT")
-            for p in tracking_data["period"]
-        ]
-    ) + pd.to_timedelta(
-        (tracking_data["frame"] - valid_start_frame_periods) / match.frame_rate * 1000,
-        "milliseconds",
-    )
-
-    # Combine the calculated values into a DataFrame
-    new_columns = {
-        "datetime": datetime_values,
-        "databallpy_event": None,
-        "event_id": MISSING_INT,
-    }
-
-    tracking_data = pd.concat([tracking_data, pd.DataFrame(new_columns)], axis=1)
-
     event_data["tracking_frame"] = MISSING_INT
 
     mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
     event_data_to_sync = event_data[mask_events_to_sync].copy()
 
-    periods_played = match.periods[match.periods["start_frame"] > 0]["period"].values
-
-    for p in periods_played:
-        # create batches to loop over
-        start_batch_frame = match.periods.loc[
-            match.periods["period"] == p, "start_frame"
-        ].iloc[0]
-        start_batch_datetime = start_datetime_period[p] + dt.timedelta(
-            milliseconds=int(
-                (start_batch_frame - start_frame_period[p]) / match.frame_rate * 1000
-            )
+    if not (match.tracking_timestamp_is_precise & match.event_timestamp_is_precise):
+        event_data_to_sync = align_event_data_datetime(
+            event_data_to_sync, tracking_data
         )
-        delta = (
-            match.periods.loc[match.periods["period"] == p, "end_frame"].iloc[0]
-            - start_batch_frame
+
+    if n_batches == "smart":
+        end_datetimes = create_smart_batches(tracking_data)
+    else:
+        end_datetimes = create_batches(
+            n_batches,
+            tracking_data,
         )
-        end_batches_frames = np.floor(
-            np.arange(
-                delta / n_batches_per_half,
-                delta + delta / n_batches_per_half,
-                delta / n_batches_per_half,
-            )
-            + start_batch_frame
+
+    if verbose:
+        end_datetimes = tqdm(
+            end_datetimes,
+            desc="Syncing event and tracking data",
+            unit="batches",
+            leave=False,
         )
-        end_batches_datetime = [
-            start_datetime_period[int(p)]
-            + dt.timedelta(
-                milliseconds=int(
-                    (x - start_frame_period[int(p)]) / match.frame_rate * 1000
-                )
-            )
-            for x in end_batches_frames
-        ]
 
-        tracking_data_period = tracking_data[tracking_data["period"] == p]
-        event_data_period = event_data_to_sync[
-            event_data_to_sync["period_id"] == p
-        ].copy()
-        start_events = ["pass", "shot"]
-        datetime_first_event = event_data_period[
-            event_data_period["databallpy_event"].isin(start_events)
-        ].iloc[0]["datetime"]
-        datetime_first_tracking_frame = tracking_data_period[
-            tracking_data_period["ball_status"] == "alive"
-        ].iloc[0]["datetime"]
-        diff_datetime = datetime_first_event - datetime_first_tracking_frame
-        event_data_period["datetime"] -= diff_datetime
+    # loop over batches
+    batch_first_datetime = tracking_data["datetime"].iloc[0]
+    for batch_end_datetime in end_datetimes:
+        # create batches
+        event_mask = event_data_to_sync["datetime"].between(
+            batch_first_datetime, batch_end_datetime, inclusive="left"
+        )
+        tracking_mask = tracking_data["datetime"].between(
+            batch_first_datetime, batch_end_datetime, inclusive="left"
+        )
+        tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
+        event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
 
-        if verbose:
-            print(f"Syncing period {p}...")
-            zip_batches = tqdm(
-                zip(end_batches_frames, end_batches_datetime),
-                total=len(end_batches_frames),
-            )
-        else:
-            zip_batches = zip(end_batches_frames, end_batches_datetime)
-        for end_batch_frame, end_batch_datetime in zip_batches:
-            tracking_batch = tracking_data_period[
-                (tracking_data_period["frame"] <= end_batch_frame)
-                & (tracking_data_period["frame"] >= start_batch_frame)
-            ].reset_index(drop=False)
-            event_batch = event_data_period[
-                (event_data_period["datetime"] >= start_batch_datetime)
-                & (event_data_period["datetime"] <= end_batch_datetime)
-            ].reset_index(drop=False)
-
+        if len(event_batch) > 0:
             sim_mat = _create_sim_mat(tracking_batch, event_batch, match)
             event_frame_dict = _needleman_wunsch(sim_mat)
+            # assign events to tracking data frames
             for event, frame in event_frame_dict.items():
                 event_id = int(event_batch.loc[event, "event_id"])
                 event_type = event_batch.loc[event, "databallpy_event"]
@@ -205,14 +94,10 @@ def synchronise_tracking_and_event_data(
                 tracking_data.loc[tracking_frame, "event_id"] = event_id
                 event_data.loc[event_index, "tracking_frame"] = tracking_frame
 
-            start_batch_frame = tracking_data_period.loc[tracking_frame, "frame"]
-            start_batch_datetime = event_data_period[
-                event_data_period["event_id"] == event_id
-            ]["datetime"].iloc[0]
+        batch_first_datetime = batch_end_datetime
 
     tracking_data.drop(
         [
-            "datetime",
             "ball_acceleration_sqrt",
             "goal_angle_home_team",
             "goal_angle_away_team",
@@ -401,3 +286,278 @@ def _needleman_wunsch(
         event_frame_dict[events[i] - 1] = frames[i] - 1
 
     return event_frame_dict
+
+
+def pre_compute_synchronisation_variables(
+    tracking_data: pd.DataFrame,
+    frame_rate: int,
+    pitch_dimensions: tuple,
+    periods: pd.DataFrame,
+) -> pd.DataFrame:
+    """Function that precomputes variables that are used in the synchronisation.
+    The following variables are computed: ball_velocity, ball_acceleration,
+    ball_acceleration_sqrt, goal_angle_home_team, goal_angle_away_team, and
+    datetime.
+
+    Args:
+        tracking_data (pd.DataFrame): Tracking data of the match
+        frame_rate (int): Frame rate of the tracking_data
+        pitch_dimensions (tuple): Tuple containing the pitch dimensions
+        periods (pd.DataFrame): Periods of the match, with corresponding datetime
+            objects.
+
+    Returns:
+        pd.DataFrame: Tracking data with the precomputed variables.
+    """
+    # precompute ball acceleration
+    if "ball_velocity" not in tracking_data.columns:
+        tracking_data = _differentiate(
+            df=tracking_data,
+            max_val=50,
+            new_name="velocity",
+            metric="",  # differentiate the x and y values
+            frame_rate=frame_rate,
+            filter_type=None,
+            column_ids=["ball"],
+        )
+    if "ball_acceleration" not in tracking_data.columns:
+        tracking_data = _differentiate(
+            df=tracking_data,
+            new_name="acceleration",
+            metric="v",  # differentiate the vx and vy values
+            frame_rate=frame_rate,
+            filter_type="savitzky_golay",
+            max_val=150,
+            column_ids=["ball"],
+        )
+    # take the square root to decrease the quadratic effect of the data
+    tracking_data["ball_acceleration_sqrt"] = np.sqrt(
+        tracking_data["ball_acceleration"]
+    )
+
+    # pre compute ball moving vector - ball goal vector angle
+    goal_angle = get_smallest_angle(
+        (
+            tracking_data.loc[1:, ["ball_x", "ball_y"]]
+            - tracking_data[["ball_x", "ball_y"]][:-1].values
+        ).values,
+        np.array([pitch_dimensions[0] / 2, 0])
+        - tracking_data[["ball_x", "ball_y"]][:-1].values,
+        angle_format="radian",
+    )
+    tracking_data["goal_angle_home_team"] = np.concatenate([goal_angle, [np.nan]])
+
+    goal_angle = get_smallest_angle(
+        (
+            tracking_data.loc[1:, ["ball_x", "ball_y"]]
+            - tracking_data[["ball_x", "ball_y"]][:-1].values
+        ).values,
+        np.array([pitch_dimensions[0] / 2, 0])
+        - tracking_data[["ball_x", "ball_y"]][:-1].values,
+        angle_format="radian",
+    )
+
+    tracking_data["goal_angle_away_team"] = np.concatenate([goal_angle, [np.nan]])
+
+    # add datetime objects to tracking_data
+    start_datetime_period = {}
+    start_frame_period = {}
+
+    for _, row in periods.iterrows():
+        start_datetime_period[row["period"]] = row["start_datetime_td"]
+        start_frame_period[row["period"]] = row["start_frame"]
+
+    valid_start_frame_periods = np.array(
+        [
+            start_frame_period[p] if p != MISSING_INT else np.nan
+            for p in tracking_data["period"]
+        ]
+    )
+
+    datetime_values = pd.Series(
+        [
+            start_datetime_period[p] if p != MISSING_INT else pd.to_datetime("NaT")
+            for p in tracking_data["period"]
+        ]
+    ) + pd.to_timedelta(
+        (tracking_data["frame"] - valid_start_frame_periods) / frame_rate * 1000,
+        "milliseconds",
+    )
+
+    # Combine the calculated values into a DataFrame
+    new_columns = {
+        "datetime": datetime_values,
+        "databallpy_event": None,
+        "event_id": MISSING_INT,
+    }
+
+    tracking_data = pd.concat([tracking_data, pd.DataFrame(new_columns)], axis=1)
+
+    return tracking_data
+
+
+def create_batches(
+    n_batches: int,
+    tracking_data: pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+    """Function that creates batches to loop over. The batches are created based on
+    the number of batches per half. The first batch starts at the first frame of the
+    period. The last batch ends at the last frame of the period. The batches are
+    created in such a way that the last frame of the batch is always a frame that
+    contains tracking data.
+
+    Args:
+        n_batches_per_half (int):  the number of batches that are created per half.
+        tracking_data (pd.DataFrame): Tracking data of the match
+
+    Returns:
+        list: The end datetimes of the batches.
+    """
+    len_periods = {
+        period_id: len(tracking_data[tracking_data["period"] == period_id])
+        for period_id in tracking_data["period"].unique()
+    }
+    len_periods = {
+        period_id: len_period
+        for period_id, len_period in len_periods.items()
+        if period_id != MISSING_INT
+    }
+    tot_len = sum(len_periods.values())
+    n_batches_per_period = {
+        period_id: int(np.ceil(len_period / tot_len * n_batches))
+        for period_id, len_period in len_periods.items()
+    }
+
+    end_datetimes_total = []
+    for period_id, n_batches_period in n_batches_per_period.items():
+        tracking_data_p = tracking_data[tracking_data["period"] == period_id]
+
+        first_valid_frame_index = tracking_data_p[
+            tracking_data_p["ball_status"] == "alive"
+        ].index[0]
+        last_valid_frame_index = tracking_data_p[
+            tracking_data_p["ball_status"] == "alive"
+        ].index[-1]
+
+        # find the indexes where the batches end
+        end_frames = np.floor(
+            np.arange(
+                first_valid_frame_index,
+                last_valid_frame_index,
+                (last_valid_frame_index - first_valid_frame_index) / n_batches_period,
+            )
+        ).astype(int)
+
+        # drop the first datetime, is not a end datetime, and add the last
+        end_frames = end_frames[1:]
+        end_frames = np.concatenate([end_frames, np.array([last_valid_frame_index])])
+        # find the datetimes where the batches end
+
+        end_datetimes = [tracking_data_p.loc[x, "datetime"] for x in end_frames]
+        end_datetimes_total += end_datetimes
+
+    return end_datetimes_total
+
+
+def create_smart_batches(tracking_data: pd.DataFrame) -> list:
+    """Function that creates batches to loop over. The batches are created based on
+    active periods of play. For every active period of play, it is checked when the
+    last period of play ended. The split of the batches is chosen in such a way that
+    it is exactly between two periods of active play. For example, if the first
+    period of play ends at 10 seconds and the second period of play starts at 20
+    seconds, the split is chosen at 15 seconds.
+
+    Note: this method is optimised for events that are in active play, other events,
+    such as yellow cards might not be perfectly synced.
+
+
+    Args:
+        tracking_data (pd.DataFrame): Tracking data of the match
+
+    Returns:
+        List: List containing the end datetimes of the batches.
+    """
+
+    first_valid_frame_index = tracking_data[
+        tracking_data["ball_status"] == "alive"
+    ].index[0]
+    last_valid_frame_index = tracking_data[
+        tracking_data["ball_status"] == "alive"
+    ].index[-1]
+
+    # find all the indexes where the ball switches from alive to dead
+    # this is the last frame that the ball is alive in a batch
+    end_alive_idxs = np.where(
+        (tracking_data.iloc[:-1]["ball_status"] == "alive").values
+        & (tracking_data.iloc[1:]["ball_status"] == "dead").values
+    )[0]
+    if last_valid_frame_index not in end_alive_idxs:
+        end_alive_idxs = np.concatenate(
+            [end_alive_idxs, np.array([last_valid_frame_index])]
+        )
+
+    # find all the indexes where the ball switches from dead to alive
+    # this is the first frame that the ball is alive in a batch
+    start_alive_idxs = (
+        np.where(
+            (tracking_data.iloc[:-1]["ball_status"] == "dead").values
+            & (tracking_data.iloc[1:]["ball_status"] == "alive").values
+        )[0]
+        + 1
+    )
+    if first_valid_frame_index not in start_alive_idxs:
+        start_alive_idxs = np.concatenate(
+            [np.array([first_valid_frame_index]), start_alive_idxs]
+        )
+
+    # create batches to loop over
+    last_end_dt = None
+    end_datetimes = []
+    for start_idx, end_idx in zip(start_alive_idxs, end_alive_idxs):
+        start_dt = tracking_data.iloc[start_idx]["datetime"]
+        end_dt = tracking_data.iloc[end_idx,]["datetime"]
+
+        if last_end_dt is not None:
+            difference = start_dt - last_end_dt
+            last_end_dt + difference / 2
+            end_datetimes.append(last_end_dt + difference / 2)
+
+        last_end_dt = end_dt
+
+    # add last datetime with some room for the last events
+    end_datetimes.append(last_end_dt + pd.to_timedelta(3, unit="s"))
+
+    return end_datetimes
+
+
+def align_event_data_datetime(
+    event_data: pd.DataFrame, tracking_data: pd.DataFrame
+) -> pd.DataFrame:
+    """Function that aligns the datetimes of the event data and tracking data. This
+    is done by substracting the difference between the first event and the first
+    tracking frame from all event datetimes.
+
+    Args:
+        event_data (pd.DataFrame): Event data of the match that needs to be synced
+        tracking_data (pd.DataFrame): Tracking data of the match
+
+    Returns:
+        pd.DataFrame: Event data with aligned datetimes
+
+    """
+    start_events = ["pass", "shot"]
+
+    for period in tracking_data["period"].unique():
+        tracking_data_p = tracking_data[tracking_data["period"] == period]
+        event_data_p = event_data[event_data["period_id"] == period]
+
+        datetime_first_event = event_data_p[
+            event_data_p["databallpy_event"].isin(start_events)
+        ].iloc[0]["datetime"]
+        datetime_first_tracking_frame = tracking_data_p[
+            tracking_data_p["ball_status"] == "alive"
+        ].iloc[0]["datetime"]
+        diff_datetime = datetime_first_event - datetime_first_tracking_frame
+        event_data.loc[event_data_p.index, "datetime"] -= diff_datetime
+
+    return event_data

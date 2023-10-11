@@ -455,8 +455,7 @@ def save_match_clip(
     # Generate movie with variable info
     with writer.saving(fig, video_loc, 100):
         if verbose:
-            print("Making match clip...")
-            indexes = tqdm(td.index)
+            indexes = tqdm(td.index, desc="Making match clip", leave=False)
         else:
             indexes = td.index
         for _, idx in enumerate(indexes):

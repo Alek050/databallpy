@@ -160,6 +160,8 @@ class TestGetMatch(unittest.TestCase):
             shot_events=SHOT_EVENTS_OPTA_TRACAB,
             dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB,
             pass_events=PASS_EVENTS_OPTA_TRACAB,
+            _tracking_timestamp_is_precise=True,
+            _event_timestamp_is_precise=True,
         )
 
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -203,6 +205,8 @@ class TestGetMatch(unittest.TestCase):
             pass_events=PASS_EVENTS_METRICA,
             shot_events=SHOT_EVENTS_METRICA,
             dribble_events=DRIBBLE_EVENTS_METRICA,
+            _tracking_timestamp_is_precise=True,
+            _event_timestamp_is_precise=True,
         )
 
         self.td_inmotio_loc = "tests/test_data/inmotio_td_test.txt"
@@ -308,6 +312,7 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=self.md_instat.away_team_name,
             away_players=self.expected_away_players_inmotio_instat,
             country=self.md_instat.country,
+            _tracking_timestamp_is_precise=False,
         )
         self.expected_match_inmotio_instat.event_data["team_id"] = [
             "T-0001",
@@ -345,6 +350,7 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=MD_TRACAB.away_team_name,
             away_players=MD_TRACAB.away_players,
             country=MD_TRACAB.country,
+            _tracking_timestamp_is_precise=True,
         )
 
         self.expected_match_opta = Match(
@@ -369,7 +375,31 @@ class TestGetMatch(unittest.TestCase):
             shot_events=SHOT_EVENTS_OPTA,
             dribble_events=DRIBBLE_EVENTS_OPTA,
             pass_events=PASS_EVENTS_OPTA,
+            _event_timestamp_is_precise=True,
         )
+
+    def test_get_match_wrong_inputs(self):
+        with self.assertRaises(ValueError):
+            get_match(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
+
+        with self.assertRaises(ValueError):
+            get_match(
+                event_data_loc=self.ed_opta_loc, event_metadata_loc=self.md_opta_loc
+            )
+
+        with self.assertRaises(ValueError):
+            get_match(event_metadata_loc=self.md_opta_loc)
+
+        with self.assertRaises(ValueError):
+            get_match(
+                tracking_data_loc=self.td_tracab_loc,
+                tracking_metadata_loc=self.md_tracab_loc,
+            )
+
+        with self.assertRaises(ValueError):
+            get_match(
+                tracking_data_loc=self.td_tracab_loc, tracking_data_provider="tracab"
+            )
 
     def test_get_match_opta_tracab(self):
         match = get_match(
@@ -489,7 +519,9 @@ class TestGetMatch(unittest.TestCase):
         pd.testing.assert_frame_equal(
             match.periods, self.expected_match_metrica.periods
         )
-        assert match == self.expected_match_metrica
+        expected_match = self.expected_match_metrica.copy()
+        expected_match.allow_synchronise_tracking_and_event_data = True
+        assert match == expected_match
 
     def test_get_saved_match(self):
         expected_match = self.expected_match_metrica

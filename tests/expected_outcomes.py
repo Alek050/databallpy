@@ -302,12 +302,6 @@ SHOT_EVENTS_OPTA = {
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=MISSING_INT,
-        ball_goal_distance=np.nan,
-        ball_gk_distance=np.nan,
-        shot_angle=np.nan,
-        gk_angle=np.nan,
-        pressure_on_ball=np.nan,
-        n_obstructive_players=MISSING_INT,
     ),
     2512690516: ShotEvent(
         event_id=2512690516,
@@ -330,12 +324,6 @@ SHOT_EVENTS_OPTA = {
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=22,
-        ball_goal_distance=np.nan,
-        ball_gk_distance=np.nan,
-        shot_angle=np.nan,
-        gk_angle=np.nan,
-        pressure_on_ball=np.nan,
-        n_obstructive_players=MISSING_INT,
     ),
     2512690517: ShotEvent(
         event_id=2512690517,
@@ -358,12 +346,6 @@ SHOT_EVENTS_OPTA = {
         first_touch=False,
         created_oppertunity="regular_play",
         related_event_id=MISSING_INT,
-        ball_goal_distance=np.nan,
-        ball_gk_distance=np.nan,
-        shot_angle=np.nan,
-        gk_angle=np.nan,
-        pressure_on_ball=np.nan,
-        n_obstructive_players=MISSING_INT,
     ),
 }
 
@@ -425,8 +407,6 @@ PASS_EVENTS_OPTA = {
         end_y=np.nan,
         pass_type="not_specified",
         set_piece="kick_off",
-        length=np.nan,
-        angle=np.nan,
     ),
     2499594243: PassEvent(
         event_id=2499594243,
@@ -446,8 +426,6 @@ PASS_EVENTS_OPTA = {
         end_y=(57.5 / 100 * 68 - 34) * -1,
         pass_type="long_ball",
         set_piece="no_set_piece",
-        length=np.nan,
-        angle=np.nan,
     ),
 }
 

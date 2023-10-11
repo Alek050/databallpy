@@ -472,7 +472,7 @@ def _load_event_data(
             if event_type_id == 16:
                 for qualifier in event.find_all("Q"):
                     if (
-                        qualifier.attrs["qualifier_id"] == "280"
+                        qualifier.attrs["qualifier_id"] == str(OWN_GOAL_QUALIFIER)
                         and qualifier.attrs["value"] == "OWN_GOAL"
                     ):
                         event_name = "own goal"
@@ -667,7 +667,11 @@ def _make_shot_event_instance(
         and shot_outcome != "goal"
     ):
         shot_outcome = "blocked"
-    elif event.find("Q", {"qualifier_id": str(OWN_GOAL_QUALIFIER)}) is not None:
+    elif (
+        event.find("Q", {"qualifier_id": str(OWN_GOAL_QUALIFIER)}) is not None
+        and event.find("Q", {"qualifier_id": str(OWN_GOAL_QUALIFIER)}).attrs["value"]
+        == "OWN_GOAL"
+    ):
         shot_outcome = "own_goal"
 
     if shot_outcome in ["goal", "miss_on_target", "own_goal"]:

@@ -5,7 +5,6 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Project information -----------------------------------------------------
-
 project = u"databallpy"
 copyright = u"2023, Alexander Oonk & Daan Grob"
 author = u"Alexander Oonk & Daan Grob"
@@ -16,10 +15,10 @@ author = u"Alexander Oonk & Daan Grob"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "myst_nb",
-    "autoapi.extension",
+    "nbsphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "myst_parser",
 ]
 autoapi_dirs = ["../databallpy"]
 
@@ -36,3 +35,11 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "sphinx_rtd_theme"
 
 nb_execution_timeout = 120
+
+# -- Extension configuration -------------------------------------------------
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'markdown',
+    '.md': 'markdown',
+}
+
