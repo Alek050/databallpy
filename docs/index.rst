@@ -9,11 +9,13 @@ package provides a set of tools to visualize and analyze the data.
 
 
 .. include:: readme_link.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :maxdepth: 1
    :caption: Table of Contents
 
+   readme_link.md
    example.ipynb
    changelog.md
    conduct.md
