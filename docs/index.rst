@@ -8,7 +8,7 @@
    :maxdepth: 1
    :caption: Table of Contents
 
-   example.ipynb
+   example
    changelog.md
    conduct.md
    contributing.md
