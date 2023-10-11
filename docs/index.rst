@@ -8,7 +8,6 @@
    :maxdepth: 1
    :caption: Table of Contents
 
-   readme_link.md
    example.ipynb
    changelog.md
    conduct.md
