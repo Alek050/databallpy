@@ -106,5 +106,6 @@ def _get_matchtime(
         matchtime_list.extend(["Penalty Shootout"] * frame_rate)
 
     matchtime_list = matchtime_list[: len(df)]
-
-    return matchtime_list
+    len_diff = len(timestamp_column) - len(matchtime_list)
+    to_add = [None] * len_diff
+    return to_add + matchtime_list

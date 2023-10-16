@@ -7,7 +7,8 @@ from tqdm import tqdm
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.utils import MISSING_INT
-
+from databallpy.warnings import DataBallPyWarning
+import warnings
 
 def synchronise_tracking_and_event_data(
     match, n_batches: int = 100, verbose: bool = True
@@ -38,7 +39,6 @@ def synchronise_tracking_and_event_data(
 
     tracking_data = match.tracking_data
     event_data = match.event_data
-
     tracking_data = pre_compute_synchronisation_variables(
         tracking_data, match.frame_rate, match.pitch_dimensions, match.periods
     )
@@ -48,6 +48,22 @@ def synchronise_tracking_and_event_data(
     event_data_to_sync = event_data[mask_events_to_sync].copy()
 
     if not (match.tracking_timestamp_is_precise & match.event_timestamp_is_precise):
+        event_data_to_sync = align_event_data_datetime(
+            event_data_to_sync, tracking_data
+        )
+
+    # check if timestamps are less than hour apart to see if timestamp conversion went right
+    td_first_ts = tracking_data.iloc[0]["datetime"]
+    ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
+    if abs(td_first_ts - ed_first_ts) > pd.Timedelta(minutes=35):
+        warnings.warn(
+            message= "The tracking data and event data timestamps are more than an hour" 
+            " apart. Check if the timestamps are in the same timezone. Found tracking "
+            f"data timestamp: {td_first_ts}, found event data timestamp: "
+            f"{ed_first_ts}. We will allign the first tracking data timestamp with the"
+            " first event to correct for the differences in timestamp.",
+            category=DataBallPyWarning 
+        )
         event_data_to_sync = align_event_data_datetime(
             event_data_to_sync, tracking_data
         )
@@ -150,13 +166,15 @@ def _create_sim_mat(
 
         if not np.isnan(row.player_id) and row.player_id != MISSING_INT:
             column_id_player = match.player_id_to_column_id(player_id=row.player_id)
-            player_ball_diff = np.hypot(
-                tracking_batch["ball_x"].values
-                - tracking_batch[f"{column_id_player}_x"].values,
-                tracking_batch["ball_y"].values
-                - tracking_batch[f"{column_id_player}_y"].values,
-            )
-
+            if f"{column_id_player}_x" not in tracking_batch.columns:
+                player_ball_diff = [np.nan] * len(tracking_batch)
+            else:
+                player_ball_diff = np.hypot(
+                    tracking_batch["ball_x"].values
+                    - tracking_batch[f"{column_id_player}_x"].values,
+                    tracking_batch["ball_y"].values
+                    - tracking_batch[f"{column_id_player}_y"].values,
+                )
         else:
             player_ball_diff = [np.nan] * len(tracking_batch)
 
@@ -172,9 +190,12 @@ def _create_sim_mat(
             total_shape = (len(tracking_batch), 3)
 
         total = np.zeros(total_shape)
-        total[:, :3] = np.array(
-            [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff]
-        ).T
+        try:
+            total[:, :3] = np.array(
+                [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff]
+            ).T
+        except:
+            import pdb; pdb.set_trace()
 
         if row.databallpy_event in ["shot", "pass"]:
             total[:, 3] = 1 / tracking_batch["ball_acceleration_sqrt"].values.clip(
@@ -548,6 +569,8 @@ def align_event_data_datetime(
     start_events = ["pass", "shot"]
 
     for period in tracking_data["period"].unique():
+        if period == MISSING_INT:
+            continue
         tracking_data_p = tracking_data[tracking_data["period"] == period]
         event_data_p = event_data[event_data["period_id"] == period]
 
@@ -558,6 +581,9 @@ def align_event_data_datetime(
             tracking_data_p["ball_status"] == "alive"
         ].iloc[0]["datetime"]
         diff_datetime = datetime_first_event - datetime_first_tracking_frame
+        
         event_data.loc[event_data_p.index, "datetime"] -= diff_datetime
-
+        # add offset of 2 seconds to diff_datetime 
+        event_data.loc[event_data_p.index, "datetime"] += pd.to_timedelta(2, unit="seconds")
+        
     return event_data

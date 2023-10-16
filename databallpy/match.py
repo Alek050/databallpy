@@ -557,6 +557,11 @@ class Match:
             if n_tries == 3 and end_loc_diff > 10:
                 continue
             end_loc_td = end_loc_td.astype(float)
+            start_loc = tracking_data_frame[[f"{passer_column_id}_x", f"{passer_column_id}_y"]].values
+            distance = np.linalg.norm(end_loc_td - start_loc)
+            if distance < 1.0 or pd.isnull(distance):
+                # end location pass is too close
+                continue
 
             # find the proposed receiver of the pass
             if (
@@ -593,6 +598,7 @@ class Match:
                 )
                 dists = np.linalg.norm(end_loc_td - team_mate_locs, axis=1)
 
+
                 closest_player_idx = np.argmin(dists)
                 closest_player = team_mate_column_ids[closest_player_idx]
                 receiver_column_id = closest_player
@@ -606,7 +612,10 @@ class Match:
             opponent_column_ids = (
                 home_column_ids if team_side == "away" else away_column_ids
             )
-
+            
+            if pd.isnull(tracking_data_frame[[f"{passer_column_id}_x", f"{passer_column_id}_y"]]).any():
+                continue
+           
             pass_.add_tracking_data_features(
                 tracking_data_frame,
                 passer_column_id,
@@ -779,29 +788,52 @@ def check_inputs_match_object(match: Match):
                 f"tracking data provider should be a string, not a \
                     {type(match.tracking_data_provider)}"
             )
+        
+        # tracking data ball status
+        ball_status_value_counts = match.tracking_data["ball_status"].value_counts()
+        if len(ball_status_value_counts) != 2:
+            warnings.warn(
+                message="ball status should be divided over dead and alive, "
+                f"found value counts: {ball_status_value_counts}. Any further "
+                "function that uses the ball status, such as the synchronisation, "
+                "might not work anymore.",
+                category=DataBallPyWarning
+            )
+        else:
+            frames_alive = ball_status_value_counts["alive"]
+            minutes_alive = frames_alive / (match.frame_rate * 60)
+            if minutes_alive < 45:
+                warnings.warn(
+                    message=f"The ball status is alive for {round(minutes_alive, 2)}"
+                    " in the full match. ball status is uses for synchronisation "
+                    "check the quality of the data before synchronising event and "
+                    "tracking data.",
+                    category=DataBallPyWarning
+                )
 
         # check if the first frame is at (0, 0)
         ball_alive_mask = match.tracking_data["ball_status"] == "alive"
-        first_frame = match.tracking_data.loc[
-            ball_alive_mask, "ball_x"
-        ].first_valid_index()
-        if (
-            not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 5.0
-            or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
-        ):
-            x_start = match.tracking_data.loc[first_frame, "ball_x"]
-            y_start = match.tracking_data.loc[first_frame, "ball_y"]
-            warnings.warn(
-                DataBallPyWarning(
-                    "The middle point of the pitch should be (0, 0), "
-                    f"now the kick-off is at ({x_start}, {y_start}). "
-                    "Either the recording has started too late or the ball_status "
-                    "is not set to 'alive' in the beginning. Please check and change "
-                    "the tracking data if desired."
-                    "\n NOTE: The quality of the synchronisation of the tracking "
-                    "and event data might be affected."
+        if len(match.tracking_data.loc[ball_alive_mask]) > 0:
+            first_frame = match.tracking_data.loc[
+                ball_alive_mask, "ball_x"
+            ].first_valid_index()
+            if (
+                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 5.0
+                or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
+            ):
+                x_start = match.tracking_data.loc[first_frame, "ball_x"]
+                y_start = match.tracking_data.loc[first_frame, "ball_y"]
+                warnings.warn(
+                    DataBallPyWarning(
+                        "The middle point of the pitch should be (0, 0), "
+                        f"now the kick-off is at ({x_start}, {y_start}). "
+                        "Either the recording has started too late or the ball_status "
+                        "is not set to 'alive' in the beginning. Please check and change "
+                        "the tracking data if desired."
+                        "\n NOTE: The quality of the synchronisation of the tracking "
+                        "and event data might be affected."
+                    )
                 )
-            )
 
     # event_data
     if not isinstance(match.event_data, pd.DataFrame):

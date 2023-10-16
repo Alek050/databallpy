@@ -85,7 +85,6 @@ class PassEvent(BaseEvent):
 
         goal_loc = [pitch_dimensions[0] / 2.0, 0]
         passer_loc = frame[[f"{passer_column_id}_x", f"{passer_column_id}_y"]].values
-
         self.pass_length = np.linalg.norm(passer_loc - pass_end_location)
         self.forward_distance = pass_end_location[0] - passer_loc[0]
         self.passer_goal_distance = np.linalg.norm(passer_loc - goal_loc)
@@ -313,7 +312,10 @@ def get_opponents_in_passing_lane(
     ).tolist()
 
     # create an area and count the number of opponents in that area
-    area = Delaunay(np.array([plus_point1, plus_point2, minus_point1, minus_point2]))
+    try:
+        area = Delaunay(np.array([plus_point1, plus_point2, minus_point1, minus_point2]))
+    except:
+        import pdb; pdb.set_trace()
     selected_columns = [f"{x}_x" for x in opponent_column_ids] + [
         f"{x}_y" for x in opponent_column_ids
     ]
