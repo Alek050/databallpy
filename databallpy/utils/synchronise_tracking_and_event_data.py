@@ -1,3 +1,4 @@
+import warnings
 from typing import Tuple, Union
 
 import numpy as np
@@ -8,10 +9,13 @@ from databallpy.features.angle import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.utils import MISSING_INT
 from databallpy.warnings import DataBallPyWarning
-import warnings
+
 
 def synchronise_tracking_and_event_data(
-    match, n_batches: Union[int, str] = "smart", verbose: bool = True, offset: float = 1.0,
+    match,
+    n_batches: Union[int, str] = "smart",
+    verbose: bool = True,
+    offset: float = 1.0,
 ):
     """Function that synchronises tracking and event data using Needleman-Wunsch
        algorithmn. Based on: https://kwiatkowski.io/sync.soccer. The similarity
@@ -25,16 +29,16 @@ def synchronise_tracking_and_event_data(
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = "smart".
             If n_batches is set to "smart", the number of batches is chosen based on
-            the number of periods that the ball is set to alive. This way, the 
+            the number of periods that the ball is set to alive. This way, the
             transition of the similarity matrix is always between two periods of
             active play. This method is optimised for events that are in active play,
             other events, such as yellow cards might not be perfectly synced.
         verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
-        offset (float, optional): Offset in seconds that is added to the difference 
-            between the first event and the first tracking frame. This is done because 
-            this way the event is synced to the last frame the ball is close to a 
-            player. Which often corresponds with the event (pass and shots). 
+        offset (float, optional): Offset in seconds that is added to the difference
+            between the first event and the first tracking frame. This is done because
+            this way the event is synced to the last frame the ball is close to a
+            player. Which often corresponds with the event (pass and shots).
             Defaults to 1.0.
 
     Currently works for the following databallpy_events:
@@ -61,17 +65,18 @@ def synchronise_tracking_and_event_data(
             event_data_to_sync, tracking_data, offset=offset
         )
 
-    # check if timestamps are less than hour apart to see if timestamp conversion went right
+    # check if timestamps are less than hour apart to see if
+    # timestamp conversion went right
     td_first_ts = tracking_data.iloc[0]["datetime"]
     ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
     if abs(td_first_ts - ed_first_ts) > pd.Timedelta(minutes=35):
         warnings.warn(
-            message= "The tracking data and event data timestamps are more than 30 "
+            message="The tracking data and event data timestamps are more than 30 "
             "minutes apart. Check if the timestamps are in the same timezone. Found "
             f"tracking data timestamp: {td_first_ts}, found event data timestamp: "
             f"{ed_first_ts}. We will allign the first tracking data timestamp with the"
             " first event to correct for the differences in timestamp.",
-            category=DataBallPyWarning 
+            category=DataBallPyWarning,
         )
         event_data_to_sync = align_event_data_datetime(
             event_data_to_sync, tracking_data, offset=offset
@@ -568,10 +573,10 @@ def align_event_data_datetime(
     Args:
         event_data (pd.DataFrame): Event data of the match that needs to be synced
         tracking_data (pd.DataFrame): Tracking data of the match
-        offset (float, optional): Offset in seconds that is added to the difference 
-            between the first event and the first tracking frame. This is done because 
-            this way the event is synced to the last frame the ball is close to a 
-            player. Which often corresponds with the event (pass and shots). 
+        offset (float, optional): Offset in seconds that is added to the difference
+            between the first event and the first tracking frame. This is done because
+            this way the event is synced to the last frame the ball is close to a
+            player. Which often corresponds with the event (pass and shots).
             Defaults to 1.0.
 
     Returns:
@@ -593,10 +598,11 @@ def align_event_data_datetime(
             tracking_data_p["ball_status"] == "alive"
         ].iloc[0]["datetime"]
         diff_datetime = datetime_first_event - datetime_first_tracking_frame
-        
-        event_data.loc[event_data_p.index, "datetime"] -= diff_datetime
-        # add offset in seconds to diff_datetime 
-        event_data.loc[event_data_p.index, "datetime"] += pd.to_timedelta(np.max([0.0, offset]), unit="seconds")
-        
-    return event_data
 
+        event_data.loc[event_data_p.index, "datetime"] -= diff_datetime
+        # add offset in seconds to diff_datetime
+        event_data.loc[event_data_p.index, "datetime"] += pd.to_timedelta(
+            np.max([0.0, offset]), unit="seconds"
+        )
+
+    return event_data

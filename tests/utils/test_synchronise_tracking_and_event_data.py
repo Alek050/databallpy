@@ -4,16 +4,16 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.warnings import DataBallPyWarning
 from databallpy.get_match import get_match
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
+    align_event_data_datetime,
     create_smart_batches,
     pre_compute_synchronisation_variables,
-    align_event_data_datetime
 )
 from databallpy.utils.utils import MISSING_INT
+from databallpy.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     RES_SIM_MAT,
     RES_SIM_MAT_MISSING_PLAYER,
@@ -151,7 +151,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(match_to_sync.event_data, expected_event_data)
-    
+
     def test_synchronise_tracking_and_event_data_non_aligned_timestamps(self):
         expected_event_data = self.match_to_sync.event_data.copy()
         expected_tracking_data = self.match_to_sync.tracking_data.copy()
@@ -498,21 +498,22 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         res = create_smart_batches(tracking_data)
         assert all(res == expected_res)
-    
+
     def test_align_event_data_datetime(self):
         event_data = self.match_to_sync.event_data.copy()
         start_dt = event_data.loc[0, "datetime"]
         event_data["datetime"] = start_dt + pd.to_timedelta(1, unit="hours")
         tracking_data = self.match_to_sync.tracking_data.copy()
-        tracking_data["datetime"] = [start_dt + pd.to_timedelta(x, unit="seconds") for x in range(13)]
+        tracking_data["datetime"] = [
+            start_dt + pd.to_timedelta(x, unit="seconds") for x in range(13)
+        ]
         tracking_data.loc[tracking_data.index[-1], "period_id"] = MISSING_INT
 
         expected_event_data = event_data.copy()
         expected_event_data.loc[1:, "datetime"] -= pd.to_timedelta(1, unit="hours")
         expected_event_data.loc[1:, "datetime"] += pd.to_timedelta(1, unit="seconds")
 
-        res_event_data = align_event_data_datetime(event_data, tracking_data, offset=1.)
+        res_event_data = align_event_data_datetime(
+            event_data, tracking_data, offset=1.0
+        )
         pd.testing.assert_frame_equal(res_event_data, expected_event_data)
-
-
-

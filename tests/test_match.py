@@ -1173,8 +1173,8 @@ class TestMatch(unittest.TestCase):
 
         match.tracking_data["event_id"] = [np.nan, np.nan, 2499594225, np.nan, np.nan]
         match.tracking_data["databallpy_event"] = [None, None, "pass", None, None]
-        match.tracking_data["home_1_x"] = [-50., -50., -50., -50., -50.]
-        match.tracking_data["home_1_y"] = [0., 0., 0., 0., 0.]
+        match.tracking_data["home_1_x"] = [-50.0, -50.0, -50.0, -50.0, -50.0]
+        match.tracking_data["home_1_y"] = [0.0, 0.0, 0.0, 0.0, 0.0]
 
         # case 1
         match1 = match.copy()
@@ -1210,8 +1210,10 @@ class TestMatch(unittest.TestCase):
             "away_2",
         ]
         match2.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-        match2.tracking_data = match2.tracking_data.rename(columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"})
-        match2.tracking_data["away_1_x"] =  match2.tracking_data["away_1_x"]*-1
+        match2.tracking_data = match2.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match2.tracking_data["away_1_x"] = match2.tracking_data["away_1_x"] * -1
 
         match2.add_tracking_data_features_to_passes()
         called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
@@ -1260,9 +1262,10 @@ class TestMatch(unittest.TestCase):
         match4.pass_events[2499594243].end_x = 3.0
         match4.pass_events[2499594243].end_y = 0.0
         match4.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-        match4.tracking_data = match4.tracking_data.rename(columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"})
-        match4.tracking_data["away_1_x"] =  match4.tracking_data["away_1_x"]*-1
-
+        match4.tracking_data = match4.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match4.tracking_data["away_1_x"] = match4.tracking_data["away_1_x"] * -1
 
         match4.add_tracking_data_features_to_passes()
         called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
@@ -1294,8 +1297,10 @@ class TestMatch(unittest.TestCase):
         match5.pass_events[2499594243].end_y = 0.0
         match5.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
         match5.tracking_data["ball_x"] = np.nan
-        match5.tracking_data = match5.tracking_data.rename(columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"})
-        match5.tracking_data["away_1_x"] =  match5.tracking_data["away_1_x"]*-1
+        match5.tracking_data = match5.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match5.tracking_data["away_1_x"] = match5.tracking_data["away_1_x"] * -1
 
         mock_add_tracking_data_features.reset_mock()
         match5.add_tracking_data_features_to_passes()
@@ -1314,8 +1319,10 @@ class TestMatch(unittest.TestCase):
         match6.pass_events[2499594243].end_x = 3.0
         match6.pass_events[2499594243].end_y = 0.0
         match6.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-        match6.tracking_data = match6.tracking_data.rename(columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"})
-        match6.tracking_data["away_1_x"] =  [0, 0, 2.76, 0, 0] # too close to the ball
+        match6.tracking_data = match6.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match6.tracking_data["away_1_x"] = [0, 0, 2.76, 0, 0]  # too close to the ball
 
         mock_add_tracking_data_features.reset_mock()
         match6.add_tracking_data_features_to_passes()

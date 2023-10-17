@@ -156,15 +156,15 @@ class Match:
         away_text = f"{self.away_score} {self.away_team_name}"
         if "start_datetime_td" in self.periods.columns:
             date = str(
-                self.periods.loc[self.periods["period_id"] == 1, "start_datetime_td"].iloc[
-                    0
-                ]
+                self.periods.loc[
+                    self.periods["period_id"] == 1, "start_datetime_td"
+                ].iloc[0]
             )[:19]
         else:
             date = str(
-                self.periods.loc[self.periods["period_id"] == 1, "start_datetime_ed"].iloc[
-                    0
-                ]
+                self.periods.loc[
+                    self.periods["period_id"] == 1, "start_datetime_ed"
+                ].iloc[0]
             )[:19]
         return f"{home_text} - {away_text} {date}"
 
@@ -556,9 +556,11 @@ class Match:
                     end_loc_diff = 0.0
             if n_tries == 3 and end_loc_diff > 10:
                 continue
-            
+
             end_loc_td = end_loc_td.astype(float)
-            start_loc = tracking_data_frame[[f"{passer_column_id}_x", f"{passer_column_id}_y"]].values
+            start_loc = tracking_data_frame[
+                [f"{passer_column_id}_x", f"{passer_column_id}_y"]
+            ].values
             distance = np.linalg.norm(end_loc_td - start_loc)
             if distance < 1.0 or pd.isnull(distance):
                 # end location pass is too close
@@ -599,7 +601,6 @@ class Match:
                 )
                 dists = np.linalg.norm(end_loc_td - team_mate_locs, axis=1)
 
-
                 closest_player_idx = np.argmin(dists)
                 closest_player = team_mate_column_ids[closest_player_idx]
                 receiver_column_id = closest_player
@@ -609,12 +610,11 @@ class Match:
                 pass_.end_y = end_loc_td[1]
             else:
                 continue
-        
+
             opponent_column_ids = (
                 home_column_ids if team_side == "away" else away_column_ids
             )
-            
-        
+
             pass_.add_tracking_data_features(
                 tracking_data_frame,
                 passer_column_id,
@@ -627,7 +627,10 @@ class Match:
     @requires_tracking_data
     @requires_event_data
     def synchronise_tracking_and_event_data(
-        self, n_batches: Union[int, str] = "smart", verbose: bool = True, offset: int = 1.0
+        self,
+        n_batches: Union[int, str] = "smart",
+        verbose: bool = True,
+        offset: int = 1.0,
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
@@ -641,10 +644,10 @@ class Match:
                 based on the number of dead moments in the game.
             verbose (bool, optional): Wheter or not to print info about the progress
                 in the terminal. Defaults to True.
-            offset (float, optional): Offset in seconds that is added to the difference 
-                between the first event and the first tracking frame. This is done 
+            offset (float, optional): Offset in seconds that is added to the difference
+                between the first event and the first tracking frame. This is done
                 because this way the event is synced to the last frame the ball is close
-                to a player. Which often corresponds with the event (pass and shots). 
+                to a player. Which often corresponds with the event (pass and shots).
                 Defaults to 1.0.
 
         Currently works for the following databallpy events:
@@ -656,7 +659,9 @@ class Match:
                 "Synchronising tracking and event data is not allowed."
                 "The quality of the data is not good enough to ensure valid results."
             )
-        synchronise_tracking_and_event_data(self, n_batches=n_batches, verbose=verbose, offset=offset)
+        synchronise_tracking_and_event_data(
+            self, n_batches=n_batches, verbose=verbose, offset=offset
+        )
 
     def __eq__(self, other):
         if isinstance(other, Match):
@@ -792,7 +797,7 @@ def check_inputs_match_object(match: Match):
                 f"tracking data provider should be a string, not a \
                     {type(match.tracking_data_provider)}"
             )
-        
+
         # tracking data ball status
         ball_status_value_counts = match.tracking_data["ball_status"].value_counts()
         if len(ball_status_value_counts) != 2:
@@ -801,7 +806,7 @@ def check_inputs_match_object(match: Match):
                 f"found value counts: {ball_status_value_counts}. Any further "
                 "function that uses the ball status, such as the synchronisation, "
                 "might not work anymore.",
-                category=DataBallPyWarning
+                category=DataBallPyWarning,
             )
         else:
             frames_alive = ball_status_value_counts["alive"]
@@ -812,7 +817,7 @@ def check_inputs_match_object(match: Match):
                     " in the full match. ball status is uses for synchronisation "
                     "check the quality of the data before synchronising event and "
                     "tracking data.",
-                    category=DataBallPyWarning
+                    category=DataBallPyWarning,
                 )
 
         # check if the first frame is at (0, 0)
@@ -832,8 +837,8 @@ def check_inputs_match_object(match: Match):
                         "The middle point of the pitch should be (0, 0), "
                         f"now the kick-off is at ({x_start}, {y_start}). "
                         "Either the recording has started too late or the ball_status "
-                        "is not set to 'alive' in the beginning. Please check and change "
-                        "the tracking data if desired."
+                        "is not set to 'alive' in the beginning. Please check and "
+                        " change the tracking data if desired."
                         "\n NOTE: The quality of the synchronisation of the tracking "
                         "and event data might be affected."
                     )
@@ -900,7 +905,10 @@ def check_inputs_match_object(match: Match):
     if "period_id" not in match.periods.columns:
         raise ValueError("'period' should be one of the columns in period_frames")
     if any(
-        [x not in match.periods["period_id"].value_counts().index for x in [1, 2, 3, 4, 5]]
+        [
+            x not in match.periods["period_id"].value_counts().index
+            for x in [1, 2, 3, 4, 5]
+        ]
     ) or not all(match.periods["period_id"].value_counts() == 1):
         res = match.periods["period_id"]
         raise ValueError(

@@ -1,5 +1,6 @@
+import warnings
 from typing import Tuple
-from datetime import timezone
+
 import bs4
 import numpy as np
 import pandas as pd
@@ -9,9 +10,8 @@ from databallpy.load_data.event_data.dribble_event import DribbleEvent
 from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils.tz_modification import utc_to_local_datetime, convert_datetime
+from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT
-import warnings
 from databallpy.warnings import DataBallPyWarning
 
 EVENT_TYPE_IDS = {
@@ -296,15 +296,17 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     if not all([start_period_1, end_period_1, start_period_2, end_period_2]):
         if not soup.find("Date"):
             raise ValueError(
-                "The f7.xml opta file does not contain the start and end of period datetime"
+                "The f7.xml opta file does not contain the start "
+                "and end of period datetime"
             )
         else:
             start_date = pd.to_datetime(soup.find("Date").text)
             warnings.warn(
-                message="Using estimated date for event data since specific information is"
-                f" not provided in the f7 metadata. Estimated start of match = {start_date}",
-                category=DataBallPyWarning
-                )
+                message="Using estimated date for event data since specific information"
+                " is not provided in the f7 metadata. Estimated start of match"
+                f" = {start_date}",
+                category=DataBallPyWarning,
+            )
             start_date = pd.to_datetime(soup.find("Date").text, utc=True)
             start_period_1 = start_date
             start_period_2 = start_date + pd.to_timedelta(60, unit="minutes")
