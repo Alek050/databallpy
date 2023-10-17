@@ -58,7 +58,7 @@ class TestGetMatch(unittest.TestCase):
 
         self.expected_periods_tracab_opta = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_frame": [
                     1509993,
                     1509996,
@@ -136,7 +136,7 @@ class TestGetMatch(unittest.TestCase):
             }
         )
 
-        self.td_tracab["period"] = [1, 1, MISSING_INT, 2, 2]
+        self.td_tracab["period_id"] = [1, 1, MISSING_INT, 2, 2]
 
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
@@ -170,7 +170,7 @@ class TestGetMatch(unittest.TestCase):
         self.td_metrica, self.md_metrica = load_metrica_tracking_data(
             self.td_metrica_loc, self.md_metrica_loc
         )
-        self.td_metrica["period"] = [1, 1, 1, 2, 2, 2]
+        self.td_metrica["period_id"] = [1, 1, 1, 2, 2, 2]
         self.ed_metrica, md_metrica_ed, dbe_metrica = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
@@ -249,7 +249,7 @@ class TestGetMatch(unittest.TestCase):
 
         self.expected_periods_inmotio_instat = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_frame": [2, 5, MISSING_INT, MISSING_INT, MISSING_INT],
                 "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
                 "start_datetime_td": [

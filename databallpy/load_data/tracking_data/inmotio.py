@@ -66,11 +66,11 @@ def load_inmotio_tracking_data(
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
-    tracking_data["period"] = _add_periods_to_tracking_data(
+    tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
     )
     tracking_data["matchtime_td"] = _get_matchtime(
-        tracking_data["frame"], tracking_data["period"], metadata
+        tracking_data["frame"], tracking_data["period_id"], metadata
     )
 
     return tracking_data, metadata
@@ -202,7 +202,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     soup = BeautifulSoup(lines, "xml")
 
     periods_dict = {
-        "period": [1, 2, 3, 4, 5],
+        "period_id": [1, 2, 3, 4, 5],
         "start_frame": [MISSING_INT] * 5,
         "end_frame": [MISSING_INT] * 5,
         "start_datetime_td": [pd.to_datetime("NaT")] * 5,

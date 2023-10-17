@@ -285,7 +285,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     country = soup.find("Country").text
     # Obtain match start and end of period datetime
     periods = {
-        "period": [1, 2, 3, 4, 5],
+        "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [],
         "end_datetime_ed": [],
     }

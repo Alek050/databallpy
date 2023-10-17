@@ -323,13 +323,11 @@ def get_valid_gains(
     start_idxs_plus_1 = np.clip(possession_start_idxs + 1, 0, tracking_data.index[-1])
     end_idxs_minus_1 = np.clip(possession_end_idxs - 1, 0, tracking_data.index[-1])
 
-    try:
-        incomming_vectors = (
-            tracking_data.loc[start_idxs_plus_1, ["ball_x", "ball_y"]].values
-            - tracking_data.loc[possession_start_idxs, ["ball_x", "ball_y"]].values
-        )
-    except:
-        import pdb; pdb.set_trace()
+    incomming_vectors = (
+        tracking_data.loc[start_idxs_plus_1, ["ball_x", "ball_y"]].values
+        - tracking_data.loc[possession_start_idxs, ["ball_x", "ball_y"]].values
+    )
+
     outgoing_vectors = (
         tracking_data.loc[possession_end_idxs, ["ball_x", "ball_y"]].values
         - tracking_data.loc[end_idxs_minus_1, ["ball_x", "ball_y"]].values

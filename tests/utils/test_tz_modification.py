@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.errors import DataBallPyError
-from databallpy.utils.tz_modification import localize_datetime, utc_to_local_datetime
+from databallpy.utils.tz_modification import localize_datetime, utc_to_local_datetime, convert_datetime
 
 
 class TestTzModification(unittest.TestCase):
@@ -68,3 +68,25 @@ class TestTzModification(unittest.TestCase):
         data = "2023-05-01 20:00:00"
         with self.assertRaises(TypeError):
             utc_to_local_datetime(data, "Netherlands")
+    
+    def test_convert_datetime_all_null(self):
+        dates = pd.Series(np.array(["NaT", "NaT", "NaT"], dtype="datetime64[ns]"))
+        result = convert_datetime(dates, "Netherlands")
+        pd.testing.assert_series_equal(result, dates)
+    
+    def test_convert_datetime_no_timezone(self):
+        dates = pd.Series(pd.date_range("2023-05-01 20:00:00", periods=3, freq="d"))
+        result = convert_datetime(dates, "Netherlands")
+        dates = dates.dt.tz_localize("Europe/Amsterdam")
+        pd.testing.assert_series_equal(result, dates)
+    
+    def test_convert_datetime_with_timezone(self):
+        dates = pd.Series(pd.date_range("2023-05-01 20:00:00", periods=3, freq="d", tz="UTC"))
+        result = convert_datetime(dates, "Netherlands")
+        dates = dates.dt.tz_convert("Europe/Amsterdam")
+        pd.testing.assert_series_equal(result, dates)
+    
+    def test_convert_datetime_unknown_characteristic(self):
+        dates = pd.Series(pd.date_range("2023-05-01 20:00:00", periods=3, freq="d", tz="UTC"))
+        with self.assertRaises(DataBallPyError):
+            convert_datetime(dates, "Unknown_key")

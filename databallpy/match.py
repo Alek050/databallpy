@@ -156,13 +156,13 @@ class Match:
         away_text = f"{self.away_score} {self.away_team_name}"
         if "start_datetime_td" in self.periods.columns:
             date = str(
-                self.periods.loc[self.periods["period"] == 1, "start_datetime_td"].iloc[
+                self.periods.loc[self.periods["period_id"] == 1, "start_datetime_td"].iloc[
                     0
                 ]
             )[:19]
         else:
             date = str(
-                self.periods.loc[self.periods["period"] == 1, "start_datetime_ed"].iloc[
+                self.periods.loc[self.periods["period_id"] == 1, "start_datetime_ed"].iloc[
                     0
                 ]
             )[:19]
@@ -556,6 +556,7 @@ class Match:
                     end_loc_diff = 0.0
             if n_tries == 3 and end_loc_diff > 10:
                 continue
+            
             end_loc_td = end_loc_td.astype(float)
             start_loc = tracking_data_frame[[f"{passer_column_id}_x", f"{passer_column_id}_y"]].values
             distance = np.linalg.norm(end_loc_td - start_loc)
@@ -608,14 +609,12 @@ class Match:
                 pass_.end_y = end_loc_td[1]
             else:
                 continue
-
+        
             opponent_column_ids = (
                 home_column_ids if team_side == "away" else away_column_ids
             )
             
-            if pd.isnull(tracking_data_frame[[f"{passer_column_id}_x", f"{passer_column_id}_y"]]).any():
-                continue
-           
+        
             pass_.add_tracking_data_features(
                 tracking_data_frame,
                 passer_column_id,
@@ -628,7 +627,7 @@ class Match:
     @requires_tracking_data
     @requires_event_data
     def synchronise_tracking_and_event_data(
-        self, n_batches: Union[int, str] = "smart", verbose: bool = True
+        self, n_batches: Union[int, str] = "smart", verbose: bool = True, offset: int = 1.0
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
@@ -641,7 +640,12 @@ class Match:
                 Default = 'smart'. If 'smart', the number of batches is determined
                 based on the number of dead moments in the game.
             verbose (bool, optional): Wheter or not to print info about the progress
-            in the terminal. Defaults to True.
+                in the terminal. Defaults to True.
+            offset (float, optional): Offset in seconds that is added to the difference 
+                between the first event and the first tracking frame. This is done 
+                because this way the event is synced to the last frame the ball is close
+                to a player. Which often corresponds with the event (pass and shots). 
+                Defaults to 1.0.
 
         Currently works for the following databallpy events:
             'pass', 'shot', and 'dribble'
@@ -652,7 +656,7 @@ class Match:
                 "Synchronising tracking and event data is not allowed."
                 "The quality of the data is not good enough to ensure valid results."
             )
-        synchronise_tracking_and_event_data(self, n_batches=n_batches, verbose=verbose)
+        synchronise_tracking_and_event_data(self, n_batches=n_batches, verbose=verbose, offset=offset)
 
     def __eq__(self, other):
         if isinstance(other, Match):
@@ -893,12 +897,12 @@ def check_inputs_match_object(match: Match):
             f"periods_frames should be a pandas dataframe, not a \
                 {type(match.periods)}"
         )
-    if "period" not in match.periods.columns:
+    if "period_id" not in match.periods.columns:
         raise ValueError("'period' should be one of the columns in period_frames")
     if any(
-        [x not in match.periods["period"].value_counts().index for x in [1, 2, 3, 4, 5]]
-    ) or not all(match.periods["period"].value_counts() == 1):
-        res = match.periods["period"]
+        [x not in match.periods["period_id"].value_counts().index for x in [1, 2, 3, 4, 5]]
+    ) or not all(match.periods["period_id"].value_counts() == 1):
+        res = match.periods["period_id"]
         raise ValueError(
             f"'period' column in period_frames should contain only the values \
                 [1, 2, 3, 4, 5]. Now it's {res}"
@@ -987,7 +991,7 @@ def check_inputs_match_object(match: Match):
             ):
                 continue
             idx = match.tracking_data[match.tracking_data["frame"] == frame].index[0]
-            period = period_row["period"]
+            period = period_row["period_id"]
             home_x = [x for x in match.home_players_column_ids() if "_x" in x]
             away_x = [x for x in match.away_players_column_ids() if "_x" in x]
             if match.tracking_data.loc[idx, home_x].mean() > 0:

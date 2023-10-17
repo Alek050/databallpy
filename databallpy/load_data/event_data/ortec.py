@@ -85,7 +85,7 @@ def load_metadata(metadata_loc: str) -> pd.DataFrame:
     metadata_json = json.loads(data)
 
     periods = {
-        "period": [1, 2, 3, 4, 5],
+        "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [pd.to_datetime("NaT")] * 5,
         "end_datetime_ed": [pd.to_datetime("NaT")] * 5,
     }

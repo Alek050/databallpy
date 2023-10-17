@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ from databallpy.warnings import DataBallPyWarning
 import warnings
 
 def synchronise_tracking_and_event_data(
-    match, n_batches: int = 100, verbose: bool = True
+    match, n_batches: Union[int, str] = "smart", verbose: bool = True, offset: float = 1.0,
 ):
     """Function that synchronises tracking and event data using Needleman-Wunsch
        algorithmn. Based on: https://kwiatkowski.io/sync.soccer. The similarity
@@ -21,11 +21,21 @@ def synchronise_tracking_and_event_data(
 
     Args:
         match (Match): Match object
-        n_batches (int): the number of batches that are created.
+        n_batches (int, str): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
-            reduces the accuracy for events close to the splits. Default = 100
+            reduces the accuracy for events close to the splits. Default = "smart".
+            If n_batches is set to "smart", the number of batches is chosen based on
+            the number of periods that the ball is set to alive. This way, the 
+            transition of the similarity matrix is always between two periods of
+            active play. This method is optimised for events that are in active play,
+            other events, such as yellow cards might not be perfectly synced.
         verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
+        offset (float, optional): Offset in seconds that is added to the difference 
+            between the first event and the first tracking frame. This is done because 
+            this way the event is synced to the last frame the ball is close to a 
+            player. Which often corresponds with the event (pass and shots). 
+            Defaults to 1.0.
 
     Currently works for the following databallpy_events:
         'pass', 'shot', and 'dribble'
@@ -46,10 +56,9 @@ def synchronise_tracking_and_event_data(
 
     mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
     event_data_to_sync = event_data[mask_events_to_sync].copy()
-
     if not (match.tracking_timestamp_is_precise & match.event_timestamp_is_precise):
         event_data_to_sync = align_event_data_datetime(
-            event_data_to_sync, tracking_data
+            event_data_to_sync, tracking_data, offset=offset
         )
 
     # check if timestamps are less than hour apart to see if timestamp conversion went right
@@ -57,15 +66,15 @@ def synchronise_tracking_and_event_data(
     ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
     if abs(td_first_ts - ed_first_ts) > pd.Timedelta(minutes=35):
         warnings.warn(
-            message= "The tracking data and event data timestamps are more than an hour" 
-            " apart. Check if the timestamps are in the same timezone. Found tracking "
-            f"data timestamp: {td_first_ts}, found event data timestamp: "
+            message= "The tracking data and event data timestamps are more than 30 "
+            "minutes apart. Check if the timestamps are in the same timezone. Found "
+            f"tracking data timestamp: {td_first_ts}, found event data timestamp: "
             f"{ed_first_ts}. We will allign the first tracking data timestamp with the"
             " first event to correct for the differences in timestamp.",
             category=DataBallPyWarning 
         )
         event_data_to_sync = align_event_data_datetime(
-            event_data_to_sync, tracking_data
+            event_data_to_sync, tracking_data, offset=offset
         )
 
     if n_batches == "smart":
@@ -190,12 +199,10 @@ def _create_sim_mat(
             total_shape = (len(tracking_batch), 3)
 
         total = np.zeros(total_shape)
-        try:
-            total[:, :3] = np.array(
-                [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff]
-            ).T
-        except:
-            import pdb; pdb.set_trace()
+
+        total[:, :3] = np.array(
+            [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff]
+        ).T
 
         if row.databallpy_event in ["shot", "pass"]:
             total[:, 3] = 1 / tracking_batch["ball_acceleration_sqrt"].values.clip(
@@ -385,20 +392,20 @@ def pre_compute_synchronisation_variables(
     start_frame_period = {}
 
     for _, row in periods.iterrows():
-        start_datetime_period[row["period"]] = row["start_datetime_td"]
-        start_frame_period[row["period"]] = row["start_frame"]
+        start_datetime_period[row["period_id"]] = row["start_datetime_td"]
+        start_frame_period[row["period_id"]] = row["start_frame"]
 
     valid_start_frame_periods = np.array(
         [
             start_frame_period[p] if p != MISSING_INT else np.nan
-            for p in tracking_data["period"]
+            for p in tracking_data["period_id"]
         ]
     )
 
     datetime_values = pd.Series(
         [
             start_datetime_period[p] if p != MISSING_INT else pd.to_datetime("NaT")
-            for p in tracking_data["period"]
+            for p in tracking_data["period_id"]
         ]
     ) + pd.to_timedelta(
         (tracking_data["frame"] - valid_start_frame_periods) / frame_rate * 1000,
@@ -435,8 +442,8 @@ def create_batches(
         list: The end datetimes of the batches.
     """
     len_periods = {
-        period_id: len(tracking_data[tracking_data["period"] == period_id])
-        for period_id in tracking_data["period"].unique()
+        period_id: len(tracking_data[tracking_data["period_id"] == period_id])
+        for period_id in tracking_data["period_id"].unique()
     }
     len_periods = {
         period_id: len_period
@@ -451,7 +458,7 @@ def create_batches(
 
     end_datetimes_total = []
     for period_id, n_batches_period in n_batches_per_period.items():
-        tracking_data_p = tracking_data[tracking_data["period"] == period_id]
+        tracking_data_p = tracking_data[tracking_data["period_id"] == period_id]
 
         first_valid_frame_index = tracking_data_p[
             tracking_data_p["ball_status"] == "alive"
@@ -552,7 +559,7 @@ def create_smart_batches(tracking_data: pd.DataFrame) -> list:
 
 
 def align_event_data_datetime(
-    event_data: pd.DataFrame, tracking_data: pd.DataFrame
+    event_data: pd.DataFrame, tracking_data: pd.DataFrame, offset: float = 1.0
 ) -> pd.DataFrame:
     """Function that aligns the datetimes of the event data and tracking data. This
     is done by substracting the difference between the first event and the first
@@ -561,17 +568,22 @@ def align_event_data_datetime(
     Args:
         event_data (pd.DataFrame): Event data of the match that needs to be synced
         tracking_data (pd.DataFrame): Tracking data of the match
+        offset (float, optional): Offset in seconds that is added to the difference 
+            between the first event and the first tracking frame. This is done because 
+            this way the event is synced to the last frame the ball is close to a 
+            player. Which often corresponds with the event (pass and shots). 
+            Defaults to 1.0.
 
     Returns:
         pd.DataFrame: Event data with aligned datetimes
 
     """
-    start_events = ["pass", "shot"]
 
-    for period in tracking_data["period"].unique():
+    start_events = ["pass", "shot"]
+    for period in tracking_data["period_id"].unique():
         if period == MISSING_INT:
             continue
-        tracking_data_p = tracking_data[tracking_data["period"] == period]
+        tracking_data_p = tracking_data[tracking_data["period_id"] == period]
         event_data_p = event_data[event_data["period_id"] == period]
 
         datetime_first_event = event_data_p[
@@ -583,7 +595,8 @@ def align_event_data_datetime(
         diff_datetime = datetime_first_event - datetime_first_tracking_frame
         
         event_data.loc[event_data_p.index, "datetime"] -= diff_datetime
-        # add offset of 2 seconds to diff_datetime 
-        event_data.loc[event_data_p.index, "datetime"] += pd.to_timedelta(2, unit="seconds")
+        # add offset in seconds to diff_datetime 
+        event_data.loc[event_data_p.index, "datetime"] += pd.to_timedelta(np.max([0.0, offset]), unit="seconds")
         
     return event_data
+

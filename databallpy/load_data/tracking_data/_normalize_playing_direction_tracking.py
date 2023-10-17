@@ -1,5 +1,5 @@
 import pandas as pd
-from databallpy.utils.utils import MISSING_INT
+import numpy as np
 
 def _normalize_playing_direction_tracking(
     td: pd.DataFrame, periods: pd.DataFrame
@@ -25,8 +25,9 @@ def _normalize_playing_direction_tracking(
         if len(td[td["frame"] == period_row["start_frame"]].index) > 0:
             idx_start = td[td["frame"] >= period_row["start_frame"]].index[0]
             idx_end = td[td["frame"] <= period_row["end_frame"]].index[-1]
+            
+            frame = td.loc[idx_start, home_x]
 
-            if td.loc[idx_start, home_x].mean().mean() > 0:
+            if np.mean(frame)> 0:
                 td.loc[idx_start:idx_end, all_x_y] *= -1
-
     return td

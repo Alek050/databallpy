@@ -34,7 +34,7 @@ class TestInmotio(unittest.TestCase):
         tracking_data = _get_tracking_data(
             self.tracking_data_loc, self.expected_channels, [100.0, 50.0]
         )
-        expected_td = TD_INMOTIO.drop(["matchtime_td", "period"], axis=1)
+        expected_td = TD_INMOTIO.drop(["matchtime_td", "period_id"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     def test_load_tracking_data(self):

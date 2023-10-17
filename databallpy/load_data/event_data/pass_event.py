@@ -312,10 +312,9 @@ def get_opponents_in_passing_lane(
     ).tolist()
 
     # create an area and count the number of opponents in that area
-    try:
-        area = Delaunay(np.array([plus_point1, plus_point2, minus_point1, minus_point2]))
-    except:
-        import pdb; pdb.set_trace()
+    if pd.isnull([plus_point1, plus_point2, minus_point1, minus_point2]).any():
+        return np.nan
+    area = Delaunay(np.array([plus_point1, plus_point2, minus_point1, minus_point2]))
     selected_columns = [f"{x}_x" for x in opponent_column_ids] + [
         f"{x}_y" for x in opponent_column_ids
     ]

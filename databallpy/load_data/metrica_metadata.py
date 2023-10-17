@@ -94,7 +94,7 @@ def _get_metadata(
     datetime = pd.to_datetime(soup.find("Start").text, utc=True)
 
     periods_dict = {
-        "period": [],
+        "period_id": [],
         "start_frame": [],
         "end_frame": [],
     }
@@ -125,7 +125,7 @@ def _get_metadata(
         current_frame = _to_int(period_soup.find("Value").text)
 
         if "start" in name:
-            periods_dict["period"].append(period)
+            periods_dict["period_id"].append(period)
             periods_dict["start_frame"].append(current_frame)
             first_frame = periods_dict["start_frame"][0]
             if is_tracking_data:
@@ -169,7 +169,7 @@ def _get_metadata(
                 )
 
     # add fifth period
-    periods_dict["period"].append(5)
+    periods_dict["period_id"].append(5)
     periods_dict["start_frame"].append(MISSING_INT)
     periods_dict["end_frame"].append(MISSING_INT)
     if is_tracking_data:

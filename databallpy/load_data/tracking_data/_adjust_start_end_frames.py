@@ -20,6 +20,7 @@ def _adjust_start_end_frames(td:pd.DataFrame, metadata:Metadata) -> Metadata:
 
     home_players_x_columns = [x for x in td.columns if x[:4]=="home" and x[-2:] == "_x"]
     away_players_x_columns = [x for x in td.columns if x[:4]=="away" and x[-2:] == "_x"]
+
     for i, period_row in metadata.periods_frames.iterrows():
         if period_row["start_frame"] == MISSING_INT:
             continue
@@ -42,33 +43,56 @@ def _adjust_start_end_frames(td:pd.DataFrame, metadata:Metadata) -> Metadata:
 
 
         if adjust_start_frame:
-            new_start_frame = _find_new_start_frame(td, period_row["period"], home_players_x_columns, away_players_x_columns, metadata.frame_rate)
+            new_start_frame = _find_new_start_frame(td, period_row["period_id"], home_players_x_columns, away_players_x_columns, metadata.frame_rate)
             frame_diff = new_start_frame  - period_row["start_frame"]
             metadata.periods_frames.loc[i, "start_datetime_td"] += pd.to_timedelta(frame_diff/metadata.frame_rate, unit="s")
             metadata.periods_frames.loc[i, "start_frame"] = new_start_frame
-            mask_to_del = (td["frame"] < new_start_frame) & (td["period"] == period_row["period"])
-            td.loc[mask_to_del, "period"] = MISSING_INT
-            mask_to_add = (td["frame"] >= new_start_frame) & (td["period"] < period_row["period"] + 1) & (td["period"]!= MISSING_INT)
-            td.loc[mask_to_add, "period"] = period_row["period"]
+            mask_to_del = (td["frame"] < new_start_frame) & (td["period_id"] == period_row["period_id"])
+            td.loc[mask_to_del, "period_id"] = MISSING_INT
+            mask_to_add = (td["frame"] >= new_start_frame) & (td["period_id"] < period_row["period_id"] + 1) & (td["period_id"]!= MISSING_INT)
+            td.loc[mask_to_add, "period_id"] = period_row["period_id"]
 
         if adjust_end_frame:
             # this can only shorten the periods when tracking data stops earlier than
             # metadata implies that the match ends.
-            new_end_frame = td.loc[td["period"]==period_row["period"]].iloc[-1]["frame"]
+            new_end_frame = td.loc[td["period_id"]==period_row["period_id"]].iloc[-1]["frame"]
             metadata.periods_frames.loc[i, "end_frame"] = new_end_frame
             frame_diff = new_end_frame  - period_row["end_frame"]
             metadata.periods_frames.loc[i, "end_datetime_td"] += pd.to_timedelta(frame_diff/metadata.frame_rate, unit="s")
     
     # if match starts later than indicated in period one, delete all unescesary rows
-    mask = td["frame"] < metadata.periods_frames.loc[metadata.periods_frames["period"]==1, "start_frame"].iloc[0]
+    mask = td["frame"] < metadata.periods_frames.loc[metadata.periods_frames["period_id"]==1, "start_frame"].iloc[0]
     new_tracking_data = td[~mask]
     new_tracking_data.reset_index(drop=True, inplace=True)
     return new_tracking_data, metadata
  
 def _find_new_start_frame(td:pd.DataFrame, period_id:int, home_players_x_columns:list, away_players_x_columns:list, frame_rate:int) -> int:
+    """Function to find the new start frame of a period. This is done by looking at
+    the first frame of the period and checking if the ball is in the centre of the
+    pitch and if the home players are on the other side of the away players. If not,
+    the first frame is not the start of the period and the start frame is adjusted
+    accordingly. If the first frame is not the start of the period, the start frame
+    is adjusted by looking at the frames where the above mentioned conditions are met.
+    Next, we use the ball acceleration. The first frame where the ball acceleration is 
+    above 12.5 m/s/s is assumed to be the start of the period.
+
+    Args:
+        td (pd.DataFrame): tracking data of the match
+        period_id (int): period id of the period for which the start frame should be
+            found
+        home_players_x_columns (list): columns of the x positions of the home players
+        away_players_x_columns (list): columns of the x positions of the away players
+        frame_rate (int): frame rate of the tracking data
+
+    Raises:
+        DataBallPyError: if no tracking data is found for the period
+
+    Returns:
+        int: start frame of the period, potentially adjusted.
+    """
 
     # create window arround first time period id is initiated:
-    first_period_td = td[td["period"]==period_id]
+    first_period_td = td[td["period_id"]==period_id]
 
     if len(first_period_td) == 0:
         raise DataBallPyError (
@@ -107,25 +131,9 @@ def _find_new_start_frame(td:pd.DataFrame, period_id:int, home_players_x_columns
         # find the index where the ball acceleration is maximal, probably the moment
         # of the first pass
         valid_ball_acc = ball_x_acc.loc[valid_options.index]
-        acc_mask = valid_ball_acc > 0.5
+        acc_mask = valid_ball_acc > (12.5 / frame_rate)
         new_idx = valid_options[acc_mask].index[0] if len(valid_options[acc_mask]) > 0 else valid_options.index[0]
         return td.loc[new_idx, "frame"]
 
-        # new_start_frame = period_row["start_frame"]
-        # new_end_frame = period_row["end_frame"]
-
-        # period_td = td[td["period"] == period_row["period"]]
-        # # start frame to early or end frame to late:
-        # # check if start/end frame is in tracking data
-        # if len(td[td["frame"] == period_row["start_frame"]].index) == 0:
-        #     new_start_frame = period_td.iloc[0]["frame"]
-        # if len(td[td["frame"] == period_row["end_frame"]].index) == 0:
-        #     new_end_frame = period_td.iloc[-1]["frame"]
-        
-        # # start frame too late
-        # # To check if it is indeed the first frame, or the match has already started
-        # # ball should be visible at the centre of the pitch and at least 19 players visible
-        # import pdb; pdb.set_trace()
-        # mask = (period_td[["ball_x", "ball_y"]].abs() < 10).all(axis=1) & period_td[period_td.count() > 41]
         
 

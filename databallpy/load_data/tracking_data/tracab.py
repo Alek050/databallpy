@@ -46,14 +46,14 @@ def load_tracab_tracking_data(
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     metadata = _get_metadata(metadata_loc)
 
-    tracking_data["period"] = _add_periods_to_tracking_data(
+    tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
     )
    
     tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
 
     tracking_data["matchtime_td"] = _get_matchtime(
-        tracking_data["frame"], tracking_data["period"], metadata
+        tracking_data["frame"], tracking_data["period_id"], metadata
     )
 
     tracking_data = _normalize_playing_direction_tracking(
@@ -153,14 +153,14 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     date = pd.to_datetime(datetime_string[:10])
 
     frames_dict = {
-        "period": [],
+        "period_id": [],
         "start_frame": [],
         "end_frame": [],
         "start_datetime_td": [],
         "end_datetime_td": [],
     }
     for _, period in enumerate(soup.find_all("period")):
-        frames_dict["period"].append(int(period["iId"]))
+        frames_dict["period_id"].append(int(period["iId"]))
         start_frame = int(period["iStartFrame"])
         end_frame = int(period["iEndFrame"])
 

@@ -18,7 +18,7 @@ class TestGetMatchtime(unittest.TestCase):
             pitch_dimensions=[100.0, 50.0],
             periods_frames=pd.DataFrame(
                 {
-                    "period": [1, 2, 3, 4, 5],
+                    "period_id": [1, 2, 3, 4, 5],
                     "start_frame": [1509993, 1509997, 1510001, 1510005, 1510009],
                     "end_frame": [1509995, 1509999, 1510003, 1510007, 1510011],
                     "start_time": [np.nan, np.nan, np.nan, np.nan, np.nan],

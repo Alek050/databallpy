@@ -28,7 +28,7 @@ class TestNormalizePlayingDirection(unittest.TestCase):
 
         self.periods = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_frame": [10, 12, 14, MISSING_INT, MISSING_INT],
                 "end_frame": [11, 13, 15, MISSING_INT, MISSING_INT],
             }

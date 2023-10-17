@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from databallpy.warnings import DataBallPyWarning
 from databallpy.load_data.event_data.dribble_event import DribbleEvent
 from databallpy.load_data.event_data.opta import (
     _get_player_info,
@@ -32,6 +33,7 @@ class TestOpta(unittest.TestCase):
     def setUp(self):
         self.f7_loc = "tests/test_data/f7_test.xml"
         self.f7_loc_no_timestamps = "tests/test_data/f7_test_no_timestamps.xml"
+        self.f7_loc_no_timestamps_and_date = "tests/test_data/f7_test_no_timestamps_and_date.xml"
         self.f7_loc_multiple_matches = "tests/test_data/f7_test_multiple_matches.xml"
         self.f24_loc = "tests/test_data/f24_test.xml"
 
@@ -54,6 +56,14 @@ class TestOpta(unittest.TestCase):
             assert key in shot_events_opta.keys()
             assert event == shot_events_opta[key]
 
+    def test_load_event_data_pass(self):
+        event_data, metadata, dbp_events = load_opta_event_data(
+            self.f7_loc, "pass", pitch_dimensions=[10.0, 10.0]
+        )
+        assert metadata == MD_OPTA
+        pd.testing.assert_frame_equal(event_data, pd.DataFrame())
+        assert dbp_events == {}
+
     def test_load_metadata(self):
         metadata = _load_metadata(self.f7_loc, [10.0, 10.0])
         assert metadata == MD_OPTA
@@ -63,9 +73,21 @@ class TestOpta(unittest.TestCase):
         # the second match metadata is dropped
         assert metadata == MD_OPTA
 
-    def test_load_metadata_no_timestamps(self):
+    def test_load_metadata_no_timestamps_and_date(self):
         with self.assertRaises(ValueError):
-            _load_metadata(self.f7_loc_no_timestamps, [10.0, 10.0])
+            _load_metadata(self.f7_loc_no_timestamps_and_date, [10.0, 10.0])
+    
+    def test_load_metadata_no_timestamps(self):
+        with self.assertWarns(DataBallPyWarning):
+            metadata = _load_metadata(self.f7_loc_no_timestamps, [10.0, 10.0])
+        expected_md = MD_OPTA.copy()
+        pf = expected_md.periods_frames
+        pf.loc[0, "start_datetime_ed"] = pd.to_datetime("20230122T111500+0000", utc=True)
+        pf.loc[0, "end_datetime_ed"]= pd.to_datetime("20230122T120000+0000", utc=True)
+        pf.loc[1, "start_datetime_ed"] = pd.to_datetime("20230122T121500+0000", utc=True)
+        pf.loc[1, "end_datetime_ed"]= pd.to_datetime("20230122T130000+0000", utc=True)
+
+        assert metadata == expected_md
 
     def test_get_player_info(self):
         player_data = [
