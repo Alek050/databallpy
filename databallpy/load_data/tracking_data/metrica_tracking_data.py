@@ -69,11 +69,11 @@ def load_metrica_tracking_data(
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
-    tracking_data["period"] = _add_periods_to_tracking_data(
+    tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
     )
     tracking_data["matchtime_td"] = _get_matchtime(
-        tracking_data["frame"], tracking_data["period"], metadata
+        tracking_data["frame"], tracking_data["period_id"], metadata
     )
 
     return tracking_data, metadata

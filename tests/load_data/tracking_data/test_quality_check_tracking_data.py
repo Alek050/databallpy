@@ -55,7 +55,7 @@ class TestQualityCheckTrackingData(unittest.TestCase):
         )
 
         self.periods = pd.DataFrame(
-            {"period": [1], "start_frame": [0], "end_frame": [13]}
+            {"period_id": [1], "start_frame": [0], "end_frame": [13]}
         )
 
         self.valid_frames = pd.Series([False, False, True, False, True, True])

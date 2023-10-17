@@ -8,10 +8,12 @@ from databallpy.get_match import get_match
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
+    align_event_data_datetime,
     create_smart_batches,
     pre_compute_synchronisation_variables,
 )
 from databallpy.utils.utils import MISSING_INT
+from databallpy.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     RES_SIM_MAT,
     RES_SIM_MAT_MISSING_PLAYER,
@@ -58,7 +60,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
     def test_synchronise_tracking_and_event_data_normal_condition(self):
         expected_event_data = self.match_to_sync.event_data.copy()
         expected_tracking_data = self.match_to_sync.tracking_data.copy()
-        expected_tracking_data["period"] = [1] * 13
+        expected_tracking_data["period_id"] = [1] * 13
         expected_tracking_data["datetime"] = [
             pd.to_datetime("2023-01-22 16:46:39.720000+01:00").tz_convert(
                 "Europe/Amsterdam"
@@ -143,8 +145,107 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
         match_to_sync = self.match_to_sync.copy()
 
-        match_to_sync.synchronise_tracking_and_event_data(n_batches=2)
+        match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+        pd.testing.assert_frame_equal(
+            match_to_sync.tracking_data, expected_tracking_data
+        )
 
+        pd.testing.assert_frame_equal(match_to_sync.event_data, expected_event_data)
+
+    def test_synchronise_tracking_and_event_data_non_aligned_timestamps(self):
+        expected_event_data = self.match_to_sync.event_data.copy()
+        expected_tracking_data = self.match_to_sync.tracking_data.copy()
+        expected_tracking_data["period_id"] = [1] * 13
+        expected_tracking_data["datetime"] = [
+            pd.to_datetime("2023-01-22 16:46:39.720000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.760000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.800000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.840000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.880000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.920000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:39.960000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40+01:00").tz_convert("Europe/Amsterdam"),
+            pd.to_datetime("2023-01-22 16:46:40.040000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.080000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.120000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.160000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+            pd.to_datetime("2023-01-22 16:46:40.200000+01:00").tz_convert(
+                "Europe/Amsterdam"
+            ),
+        ]
+
+        expected_tracking_data["databallpy_event"] = [
+            "pass",
+            "pass",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "dribble",
+            None,
+            "shot",
+            None,
+        ]
+        expected_tracking_data["event_id"] = [
+            2499594225,
+            2499594243,
+            MISSING_INT,
+            MISSING_INT,
+            MISSING_INT,
+            MISSING_INT,
+            MISSING_INT,
+            MISSING_INT,
+            MISSING_INT,
+            2499594285,
+            MISSING_INT,
+            2499594291,
+            MISSING_INT,
+        ]
+
+        expected_event_data.loc[:, "tracking_frame"] = [
+            MISSING_INT,
+            MISSING_INT,
+            MISSING_INT,
+            0,
+            1,
+            MISSING_INT,
+            MISSING_INT,
+            9,
+            11,
+        ]
+        expected_event_data["datetime"] += pd.to_timedelta(1, unit="hours")
+        match_to_sync = self.match_to_sync.copy()
+        match_to_sync._tracking_timestamp_is_precise = True
+        match_to_sync._event_timestamp_is_precise = True
+        match_to_sync.event_data["datetime"] += pd.to_timedelta(1, unit="hours")
+
+        with self.assertWarns(DataBallPyWarning):
+            match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
         pd.testing.assert_frame_equal(
             match_to_sync.tracking_data, expected_tracking_data
         )
@@ -387,7 +488,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                     "2023-01-22 16:00:50",
                 ],
                 "ball_status": ["alive", "alive", "dead", "dead", "alive", "alive"],
-                "period": [1, 1, 1, 1, 1, 2],
+                "period_id": [1, 1, 1, 1, 1, 2],
             }
         )
 
@@ -397,3 +498,22 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         res = create_smart_batches(tracking_data)
         assert all(res == expected_res)
+
+    def test_align_event_data_datetime(self):
+        event_data = self.match_to_sync.event_data.copy()
+        start_dt = event_data.loc[0, "datetime"]
+        event_data["datetime"] = start_dt + pd.to_timedelta(1, unit="hours")
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        tracking_data["datetime"] = [
+            start_dt + pd.to_timedelta(x, unit="seconds") for x in range(13)
+        ]
+        tracking_data.loc[tracking_data.index[-1], "period_id"] = MISSING_INT
+
+        expected_event_data = event_data.copy()
+        expected_event_data.loc[1:, "datetime"] -= pd.to_timedelta(1, unit="hours")
+        expected_event_data.loc[1:, "datetime"] += pd.to_timedelta(1, unit="seconds")
+
+        res_event_data = align_event_data_datetime(
+            event_data, tracking_data, offset=1.0
+        )
+        pd.testing.assert_frame_equal(res_event_data, expected_event_data)

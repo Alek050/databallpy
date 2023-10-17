@@ -156,15 +156,15 @@ class Match:
         away_text = f"{self.away_score} {self.away_team_name}"
         if "start_datetime_td" in self.periods.columns:
             date = str(
-                self.periods.loc[self.periods["period"] == 1, "start_datetime_td"].iloc[
-                    0
-                ]
+                self.periods.loc[
+                    self.periods["period_id"] == 1, "start_datetime_td"
+                ].iloc[0]
             )[:19]
         else:
             date = str(
-                self.periods.loc[self.periods["period"] == 1, "start_datetime_ed"].iloc[
-                    0
-                ]
+                self.periods.loc[
+                    self.periods["period_id"] == 1, "start_datetime_ed"
+                ].iloc[0]
             )[:19]
         return f"{home_text} - {away_text} {date}"
 
@@ -556,7 +556,15 @@ class Match:
                     end_loc_diff = 0.0
             if n_tries == 3 and end_loc_diff > 10:
                 continue
+
             end_loc_td = end_loc_td.astype(float)
+            start_loc = tracking_data_frame[
+                [f"{passer_column_id}_x", f"{passer_column_id}_y"]
+            ].values
+            distance = np.linalg.norm(end_loc_td - start_loc)
+            if distance < 1.0 or pd.isnull(distance):
+                # end location pass is too close
+                continue
 
             # find the proposed receiver of the pass
             if (
@@ -619,7 +627,10 @@ class Match:
     @requires_tracking_data
     @requires_event_data
     def synchronise_tracking_and_event_data(
-        self, n_batches: Union[int, str] = "smart", verbose: bool = True
+        self,
+        n_batches: Union[int, str] = "smart",
+        verbose: bool = True,
+        offset: int = 1.0,
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
@@ -632,7 +643,12 @@ class Match:
                 Default = 'smart'. If 'smart', the number of batches is determined
                 based on the number of dead moments in the game.
             verbose (bool, optional): Wheter or not to print info about the progress
-            in the terminal. Defaults to True.
+                in the terminal. Defaults to True.
+            offset (float, optional): Offset in seconds that is added to the difference
+                between the first event and the first tracking frame. This is done
+                because this way the event is synced to the last frame the ball is close
+                to a player. Which often corresponds with the event (pass and shots).
+                Defaults to 1.0.
 
         Currently works for the following databallpy events:
             'pass', 'shot', and 'dribble'
@@ -643,7 +659,9 @@ class Match:
                 "Synchronising tracking and event data is not allowed."
                 "The quality of the data is not good enough to ensure valid results."
             )
-        synchronise_tracking_and_event_data(self, n_batches=n_batches, verbose=verbose)
+        synchronise_tracking_and_event_data(
+            self, n_batches=n_batches, verbose=verbose, offset=offset
+        )
 
     def __eq__(self, other):
         if isinstance(other, Match):
@@ -780,28 +798,51 @@ def check_inputs_match_object(match: Match):
                     {type(match.tracking_data_provider)}"
             )
 
+        # tracking data ball status
+        ball_status_value_counts = match.tracking_data["ball_status"].value_counts()
+        if len(ball_status_value_counts) != 2:
+            warnings.warn(
+                message="ball status should be divided over dead and alive, "
+                f"found value counts: {ball_status_value_counts}. Any further "
+                "function that uses the ball status, such as the synchronisation, "
+                "might not work anymore.",
+                category=DataBallPyWarning,
+            )
+        else:
+            frames_alive = ball_status_value_counts["alive"]
+            minutes_alive = frames_alive / (match.frame_rate * 60)
+            if minutes_alive < 45:
+                warnings.warn(
+                    message=f"The ball status is alive for {round(minutes_alive, 2)}"
+                    " in the full match. ball status is uses for synchronisation "
+                    "check the quality of the data before synchronising event and "
+                    "tracking data.",
+                    category=DataBallPyWarning,
+                )
+
         # check if the first frame is at (0, 0)
         ball_alive_mask = match.tracking_data["ball_status"] == "alive"
-        first_frame = match.tracking_data.loc[
-            ball_alive_mask, "ball_x"
-        ].first_valid_index()
-        if (
-            not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 5.0
-            or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
-        ):
-            x_start = match.tracking_data.loc[first_frame, "ball_x"]
-            y_start = match.tracking_data.loc[first_frame, "ball_y"]
-            warnings.warn(
-                DataBallPyWarning(
-                    "The middle point of the pitch should be (0, 0), "
-                    f"now the kick-off is at ({x_start}, {y_start}). "
-                    "Either the recording has started too late or the ball_status "
-                    "is not set to 'alive' in the beginning. Please check and change "
-                    "the tracking data if desired."
-                    "\n NOTE: The quality of the synchronisation of the tracking "
-                    "and event data might be affected."
+        if len(match.tracking_data.loc[ball_alive_mask]) > 0:
+            first_frame = match.tracking_data.loc[
+                ball_alive_mask, "ball_x"
+            ].first_valid_index()
+            if (
+                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 5.0
+                or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
+            ):
+                x_start = match.tracking_data.loc[first_frame, "ball_x"]
+                y_start = match.tracking_data.loc[first_frame, "ball_y"]
+                warnings.warn(
+                    DataBallPyWarning(
+                        "The middle point of the pitch should be (0, 0), "
+                        f"now the kick-off is at ({x_start}, {y_start}). "
+                        "Either the recording has started too late or the ball_status "
+                        "is not set to 'alive' in the beginning. Please check and "
+                        " change the tracking data if desired."
+                        "\n NOTE: The quality of the synchronisation of the tracking "
+                        "and event data might be affected."
+                    )
                 )
-            )
 
     # event_data
     if not isinstance(match.event_data, pd.DataFrame):
@@ -861,12 +902,15 @@ def check_inputs_match_object(match: Match):
             f"periods_frames should be a pandas dataframe, not a \
                 {type(match.periods)}"
         )
-    if "period" not in match.periods.columns:
+    if "period_id" not in match.periods.columns:
         raise ValueError("'period' should be one of the columns in period_frames")
     if any(
-        [x not in match.periods["period"].value_counts().index for x in [1, 2, 3, 4, 5]]
-    ) or not all(match.periods["period"].value_counts() == 1):
-        res = match.periods["period"]
+        [
+            x not in match.periods["period_id"].value_counts().index
+            for x in [1, 2, 3, 4, 5]
+        ]
+    ) or not all(match.periods["period_id"].value_counts() == 1):
+        res = match.periods["period_id"]
         raise ValueError(
             f"'period' column in period_frames should contain only the values \
                 [1, 2, 3, 4, 5]. Now it's {res}"
@@ -955,7 +999,7 @@ def check_inputs_match_object(match: Match):
             ):
                 continue
             idx = match.tracking_data[match.tracking_data["frame"] == frame].index[0]
-            period = period_row["period"]
+            period = period_row["period_id"]
             home_x = [x for x in match.home_players_column_ids() if "_x" in x]
             away_x = [x for x in match.away_players_column_ids() if "_x" in x]
             if match.tracking_data.loc[idx, home_x].mean() > 0:

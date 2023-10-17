@@ -58,15 +58,15 @@ class Metadata:
                 f"periods_frames should be a pandas dataframe, not a \
                     {type(self.periods_frames)}"
             )
-        if "period" not in self.periods_frames.columns:
+        if "period_id" not in self.periods_frames.columns:
             raise ValueError("'period' should be one of the columns in period_frames")
         if any(
             [
-                x not in self.periods_frames["period"].value_counts().index
+                x not in self.periods_frames["period_id"].value_counts().index
                 for x in [1, 2, 3, 4, 5]
             ]
-        ) or not all(self.periods_frames["period"].value_counts() == 1):
-            res = self.periods_frames["period"]
+        ) or not all(self.periods_frames["period_id"].value_counts() == 1):
+            res = self.periods_frames["period_id"]
             raise ValueError(
                 f"'period' column in period_frames should contain only the values \
                     [1, 2, 3, 4, 5]. Now it's {res}"

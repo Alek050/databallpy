@@ -384,3 +384,13 @@ class TestPassEvent(unittest.TestCase):
             angle=passing_lane_angle,
         )
         assert res2 == 2
+
+        res3 = get_opponents_in_passing_lane(
+            frame,
+            [np.nan, np.nan],
+            end_loc,
+            opponent_column_ids,
+            lane_size=passing_lane_width,
+            angle=passing_lane_angle,
+        )
+        assert pd.isnull(res3)

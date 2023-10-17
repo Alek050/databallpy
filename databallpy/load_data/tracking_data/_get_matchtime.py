@@ -54,12 +54,12 @@ def _get_matchtime(
     periods_frames = metadata.periods_frames
 
     period_start_dict = dict(
-        zip(periods_frames["period"], periods_frames["start_frame"])
+        zip(periods_frames["period_id"], periods_frames["start_frame"])
     )
 
     n_frames_period = dict(
         zip(
-            periods_frames["period"],
+            periods_frames["period_id"],
             periods_frames["end_frame"] - periods_frames["start_frame"],
         )
     )
@@ -74,7 +74,7 @@ def _get_matchtime(
     df = pd.DataFrame(
         {
             "seconds": seconds,
-            "period": period_column.values,
+            "period_id": period_column.values,
         }
     )
     start_m_dict = {1: 0, 2: 45, 3: 90, 4: 105}
@@ -83,17 +83,17 @@ def _get_matchtime(
     matchtime_list = []
     for p in [1, 2, 3, 4]:
         frame_end_current_p = periods_frames.loc[
-            periods_frames["period"] == p, "end_frame"
+            periods_frames["period_id"] == p, "end_frame"
         ].iloc[0]
         frame_start_next_p = periods_frames.loc[
-            periods_frames["period"] == p + 1, "start_frame"
+            periods_frames["period_id"] == p + 1, "start_frame"
         ].iloc[0]
         if frame_start_next_p > 0 and frame_end_current_p > 0:
             n_frames_break = frame_start_next_p - frame_end_current_p - 1
         else:
             n_frames_break = 0
         matchtime_list_period = []
-        for seconds in df[df["period"] == p]["seconds"].unique():
+        for seconds in df[df["period_id"] == p]["seconds"].unique():
             matchtime_list_period.extend(
                 [_to_matchtime(int(seconds), max_m_dict[p], start_m_dict[p])]
                 * frame_rate
@@ -102,9 +102,10 @@ def _get_matchtime(
         matchtime_list_period.extend(["Break"] * n_frames_break)
         matchtime_list.extend(matchtime_list_period)
 
-    for _ in df[df["period"] == 5]["seconds"].unique():
+    for _ in df[df["period_id"] == 5]["seconds"].unique():
         matchtime_list.extend(["Penalty Shootout"] * frame_rate)
 
     matchtime_list = matchtime_list[: len(df)]
-
-    return matchtime_list
+    len_diff = len(timestamp_column) - len(matchtime_list)
+    to_add = [None] * len_diff
+    return to_add + matchtime_list

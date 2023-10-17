@@ -82,3 +82,34 @@ def localize_datetime(
 
     localized = dt_series.copy()
     return localized.dt.tz_localize(CHARACTERISTIC_TIMEZONE[characteristic])
+
+
+def convert_datetime(dt_series: pd.Series, characteristic: str) -> pd.Series:
+    """Function to convert datetime series to local time. If not timezone is set, it
+    will localize the datetime series to the characteristic timezone. If a timezone is
+    set, it will convert the datetime series to the characteristic timezone.
+
+    Args:
+        dt_series (pd.Series): datetime series
+        characteristic (str): country or competition to convert to
+
+    Raises:
+        DataBallPyError: if the characteristic is not implemented
+
+    Returns:
+        pd.Series: converted datetime series
+    """
+    if pd.isnull(dt_series).all():
+        return dt_series
+
+    if dt_series.dt.tz is None:
+        return localize_datetime(dt_series, characteristic)
+
+    if characteristic not in CHARACTERISTIC_TIMEZONE:
+        raise DataBallPyError(
+            f"Country or competition {characteristic} is not implemented. Please open\
+    an issue with this error on our github page to get it added in our next version."
+        )
+
+    localized = dt_series.copy()
+    return localized.dt.tz_convert(CHARACTERISTIC_TIMEZONE[characteristic])

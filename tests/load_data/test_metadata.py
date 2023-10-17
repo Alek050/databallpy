@@ -11,7 +11,7 @@ class TestMetadata(unittest.TestCase):
         self.pitch_dimensions = [100.0, 50.0]
         self.periods_frames = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_datetime_ed": [
                     pd.to_datetime("2023-01-22T12:18:32.000", utc=True),
                     pd.to_datetime("2023-01-22T13:21:13.000", utc=True),
@@ -202,7 +202,7 @@ class TestMetadata(unittest.TestCase):
             Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
-                periods_frames=pd.DataFrame({"period": [0, 1, 2, 3, 4]}),
+                periods_frames=pd.DataFrame({"period_id": [0, 1, 2, 3, 4]}),
                 frame_rate=self.frame_rate,
                 home_team_id=self.home_team_id,
                 home_team_name=self.home_team_name,
@@ -221,7 +221,7 @@ class TestMetadata(unittest.TestCase):
             Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
-                periods_frames=pd.DataFrame({"period": [1, 1, 2, 3, 4, 5]}),
+                periods_frames=pd.DataFrame({"period_id": [1, 1, 2, 3, 4, 5]}),
                 frame_rate=self.frame_rate,
                 home_team_id=self.home_team_id,
                 home_team_name=self.home_team_name,

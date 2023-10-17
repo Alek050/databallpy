@@ -1,3 +1,4 @@
+import warnings
 from typing import Tuple
 
 import bs4
@@ -9,8 +10,9 @@ from databallpy.load_data.event_data.dribble_event import DribbleEvent
 from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.shot_event import ShotEvent
 from databallpy.load_data.metadata import Metadata
-from databallpy.utils.tz_modification import utc_to_local_datetime
+from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT
+from databallpy.warnings import DataBallPyWarning
 
 EVENT_TYPE_IDS = {
     1: "pass",
@@ -270,6 +272,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     file = open(f7_loc, "r")
     lines = file.read()
     soup = BeautifulSoup(lines, "xml")
+    file.close()
 
     if len(soup.find_all("SoccerDocument")) > 1:
         # Multiple matches found in f7.xml file
@@ -282,7 +285,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     country = soup.find("Country").text
     # Obtain match start and end of period datetime
     periods = {
-        "period": [1, 2, 3, 4, 5],
+        "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [],
         "end_datetime_ed": [],
     }
@@ -291,15 +294,36 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     start_period_2 = soup.find("Stat", attrs={"Type": "second_half_start"})
     end_period_2 = soup.find("Stat", attrs={"Type": "second_half_stop"})
     if not all([start_period_1, end_period_1, start_period_2, end_period_2]):
-        file.close()
-        raise ValueError(
-            "The f7.xml opta file does not contain the start and end of period datetime"
-        )
+        if not soup.find("Date"):
+            raise ValueError(
+                "The f7.xml opta file does not contain the start "
+                "and end of period datetime"
+            )
+        else:
+            start_date = pd.to_datetime(soup.find("Date").text)
+            warnings.warn(
+                message="Using estimated date for event data since specific information"
+                " is not provided in the f7 metadata. Estimated start of match"
+                f" = {start_date}",
+                category=DataBallPyWarning,
+            )
+            start_date = pd.to_datetime(soup.find("Date").text, utc=True)
+            start_period_1 = start_date
+            start_period_2 = start_date + pd.to_timedelta(60, unit="minutes")
+            end_period_1 = start_date + pd.to_timedelta(45, unit="minutes")
+            end_period_2 = start_date + pd.to_timedelta(105, unit="minutes")
+
+    else:
+        start_period_1 = pd.to_datetime(start_period_1.contents[0], utc=True)
+        start_period_2 = pd.to_datetime(start_period_2.contents[0], utc=True)
+        end_period_1 = pd.to_datetime(end_period_1.contents[0], utc=True)
+        end_period_2 = pd.to_datetime(end_period_2.contents[0], utc=True)
+
     for start, end in zip(
         [start_period_1, start_period_2], [end_period_1, end_period_2]
     ):
-        periods["start_datetime_ed"].append(pd.to_datetime(start.contents[0], utc=True))
-        periods["end_datetime_ed"].append(pd.to_datetime(end.contents[0], utc=True))
+        periods["start_datetime_ed"].append(start)
+        periods["end_datetime_ed"].append(end)
     for _ in range(3):
         periods["start_datetime_ed"].append(pd.to_datetime("NaT", utc=True))
         periods["end_datetime_ed"].append(pd.to_datetime("NaT", utc=True))
@@ -351,8 +375,6 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
 
         player_info = _get_player_info(players_data, players_names)
         teams_player_info[team_info["side"]] = player_info
-
-    file.close()
 
     metadata = Metadata(
         match_id=match_id,
@@ -497,10 +519,11 @@ def _load_event_data(
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
 
+        # if not utc, set to london since opta is located in England
         datetime = (
             pd.to_datetime(event.attrs["timestamp_utc"], utc=True)
             if "timestamp_utc" in event.attrs.keys()
-            else pd.to_datetime(event.attrs["timestamp"], utc=True)
+            else pd.to_datetime(event.attrs["timestamp"]).tz_localize("Europe/London")
         )
         result_dict["datetime"].append(datetime)
 
@@ -537,7 +560,7 @@ def _load_event_data(
         event_data["opta_event"].isin(["miss", "post", "attempt saved"]), "outcome"
     ] = 0
     event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
-    event_data["datetime"] = utc_to_local_datetime(event_data["datetime"], country)
+    event_data["datetime"] = convert_datetime(event_data["datetime"], country)
 
     # reassign the outcome of passes that result in a shot that is scored to 'assist'
     pass_events = _update_pass_outcome(event_data, shot_events, pass_events)
