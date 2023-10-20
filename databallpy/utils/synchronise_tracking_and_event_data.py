@@ -69,11 +69,11 @@ def synchronise_tracking_and_event_data(
     # timestamp conversion went right
     td_first_ts = tracking_data.iloc[0]["datetime"]
     ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
-    if abs(td_first_ts - ed_first_ts) > pd.Timedelta(minutes=35):
+    if abs(td_first_ts - ed_first_ts) > pd.Timedelta(seconds=4):
+        diff = abs(td_first_ts - ed_first_ts)
         warnings.warn(
-            message="The tracking data and event data timestamps are more than 30 "
-            "minutes apart. Check if the timestamps are in the same timezone. Found "
-            f"tracking data timestamp: {td_first_ts}, found event data timestamp: "
+            message=f"The tracking data and event data timestamps are {diff} "
+            f"apart: tracking data timestamp: {td_first_ts}; event data timestamp: "
             f"{ed_first_ts}. We will allign the first tracking data timestamp with the"
             " first event to correct for the differences in timestamp.",
             category=DataBallPyWarning,
