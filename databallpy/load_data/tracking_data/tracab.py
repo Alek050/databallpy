@@ -56,9 +56,10 @@ def load_tracab_tracking_data(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
 
-    tracking_data = _normalize_playing_direction_tracking(
+    tracking_data, changed_periods = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
+    metadata.periods_changed_playing_direction = changed_periods
 
     return tracking_data, metadata
 

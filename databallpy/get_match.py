@@ -266,6 +266,7 @@ def get_match(
         _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
         if uses_event_data
         else False,
+        _periods_changed_playing_direction=tracking_metadata.periods_changed_playing_direction
     )
 
     return match

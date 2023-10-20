@@ -131,6 +131,7 @@ class Match:
     # synchronisation of the tracking and event data
     _tracking_timestamp_is_precise: bool = False
     _event_timestamp_is_precise: bool = False
+    _periods_changed_playing_direction: List[int] = None
 
     def __repr__(self):
         return "databallpy.match.Match object: " + self.name

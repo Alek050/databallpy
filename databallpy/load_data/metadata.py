@@ -26,6 +26,7 @@ class Metadata:
     away_formation: str
 
     country: str
+    periods_changed_playing_direction: list = None
 
     def __post_init__(self):
         # match id
