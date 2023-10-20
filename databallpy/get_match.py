@@ -282,6 +282,8 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     Returns:
         Match: All information about the match
     """
+    if name[-7:] == ".pickle":
+        name = name[:-7]
     with open(os.path.join(path, name + ".pickle"), "rb") as f:
         match = pickle.load(f)
     return match
