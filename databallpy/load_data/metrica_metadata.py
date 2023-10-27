@@ -263,6 +263,7 @@ def _get_metadata(
         away_score=teams_info["away"]["score"],
         away_formation=teams_info["away"]["formation"],
         country="",
+        periods_changed_playing_direction=None,
     )
     return metadata
 

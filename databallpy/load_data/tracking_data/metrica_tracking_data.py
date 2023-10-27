@@ -61,9 +61,11 @@ def load_metrica_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )
 
-    tracking_data = _normalize_playing_direction_tracking(
+    tracking_data, changed_periods = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
+    metadata.periods_changed_playing_direction = changed_periods
+
     tracking_data["datetime"] = _add_datetime(
         tracking_data["frame"],
         metadata.frame_rate,

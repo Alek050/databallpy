@@ -14,7 +14,8 @@ from tests.expected_outcomes import MD_METRICA_TD, TD_CHANNELS_METRICA
 class TestMetricaMetadata(unittest.TestCase):
     def setUp(self):
         self.md_loc = "tests/test_data/metrica_metadata_test.xml"
-        self.expected_metadata = MD_METRICA_TD
+        self.expected_metadata = MD_METRICA_TD.copy()
+        self.expected_metadata.periods_changed_playing_direction = None
         self.expected_td_channels = TD_CHANNELS_METRICA
 
     def test_get_metadata(self):

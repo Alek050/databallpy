@@ -24,7 +24,9 @@ class TestInmotio(unittest.TestCase):
 
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_loc)
-        assert metadata == MD_INMOTIO
+        expected_metadata = MD_INMOTIO.copy()
+        expected_metadata.periods_changed_playing_direction = None
+        assert metadata == expected_metadata
 
     def test_get_td_channels(self):
         channels = _get_td_channels(self.metadata_loc, MD_INMOTIO)
@@ -42,7 +44,7 @@ class TestInmotio(unittest.TestCase):
             self.tracking_data_loc, self.metadata_loc, verbose=False
         )
         expected_tracking_data = TD_INMOTIO.iloc[1:, :].reset_index(drop=True)
-        expected_tracking_data = _normalize_playing_direction_tracking(
+        expected_tracking_data, changed_periods = _normalize_playing_direction_tracking(
             expected_tracking_data, MD_INMOTIO.periods_frames
         )
         assert metadata == MD_INMOTIO

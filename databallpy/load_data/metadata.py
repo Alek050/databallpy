@@ -26,6 +26,7 @@ class Metadata:
     away_formation: str
 
     country: str
+    periods_changed_playing_direction: list = None
 
     def __post_init__(self):
         # match id
@@ -190,6 +191,10 @@ class Metadata:
                 else pd.isnull(other.away_score),
                 self.away_formation == other.away_formation,
                 self.country == other.country,
+                self.periods_changed_playing_direction
+                == other.periods_changed_playing_direction
+                if self.periods_changed_playing_direction is not None
+                else other.periods_changed_playing_direction is None,
             ]
             return all(result)
         else:
@@ -212,4 +217,9 @@ class Metadata:
             away_score=self.away_score,
             away_formation=self.away_formation,
             country=self.country,
+            periods_changed_playing_direction=list(
+                self.periods_changed_playing_direction
+            )
+            if self.periods_changed_playing_direction is not None
+            else None,
         )

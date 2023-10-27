@@ -18,7 +18,9 @@ class TestTracab(unittest.TestCase):
 
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_loc)
-        assert metadata == MD_TRACAB
+        expected_metadata = MD_TRACAB.copy()
+        expected_metadata.periods_changed_playing_direction = None
+        assert metadata == expected_metadata
 
     def test_get_tracking_data(self):
         tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=False)

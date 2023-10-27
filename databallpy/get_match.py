@@ -208,6 +208,10 @@ def get_match(
         )
         allow_synchronise = False if not uses_event_data else allow_synchronise
 
+    changed_periods = None
+    if uses_tracking_data:
+        changed_periods = tracking_metadata.periods_changed_playing_direction
+
     match = Match(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
         tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
@@ -264,6 +268,7 @@ def get_match(
         _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
         if uses_event_data
         else False,
+        _periods_changed_playing_direction=changed_periods,
     )
 
     return match
@@ -432,6 +437,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         else {},
         _tracking_timestamp_is_precise=True,
         _event_timestamp_is_precise=True,
+        _periods_changed_playing_direction=metadata.periods_changed_playing_direction,
     )
     return match
 
