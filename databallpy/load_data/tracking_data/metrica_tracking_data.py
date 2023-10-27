@@ -13,18 +13,13 @@ from databallpy.load_data.metrica_metadata import (
     _get_td_channels,
     _update_metadata,
 )
-from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
+from databallpy.load_data.tracking_data.utils import (
     _add_ball_data_to_dict,
-)
-from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
+    _add_datetime,
     _add_periods_to_tracking_data,
-)
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
-)
-from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
-from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _get_matchtime,
+    _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.utils import _to_int
@@ -68,6 +63,11 @@ def load_metrica_tracking_data(
 
     tracking_data = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
+    )
+    tracking_data["datetime"] = _add_datetime(
+        tracking_data["frame"],
+        metadata.frame_rate,
+        metadata.periods_frames["start_datetime_td"].iloc[0],
     )
     tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames

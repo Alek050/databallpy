@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._get_matchtime import (
+from databallpy.load_data.tracking_data.utils._get_matchtime import (
     _get_matchtime,
     _to_matchtime,
 )

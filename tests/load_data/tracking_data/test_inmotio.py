@@ -3,15 +3,15 @@ import unittest
 import pandas as pd
 from bs4 import BeautifulSoup
 
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
-    _normalize_playing_direction_tracking,
-)
 from databallpy.load_data.tracking_data.inmotio import (
     _get_metadata,
     _get_player_data,
     _get_td_channels,
     _get_tracking_data,
     load_inmotio_tracking_data,
+)
+from databallpy.load_data.tracking_data.utils import (
+    _normalize_playing_direction_tracking,
 )
 from tests.expected_outcomes import MD_INMOTIO, TD_INMOTIO
 
@@ -34,7 +34,7 @@ class TestInmotio(unittest.TestCase):
         tracking_data = _get_tracking_data(
             self.tracking_data_loc, self.expected_channels, [100.0, 50.0]
         )
-        expected_td = TD_INMOTIO.drop(["matchtime_td", "period_id"], axis=1)
+        expected_td = TD_INMOTIO.drop(["matchtime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     def test_load_tracking_data(self):

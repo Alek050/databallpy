@@ -14,15 +14,13 @@ from databallpy.load_data.event_data.ortec import load_ortec_event_data
 from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.scisports import _handle_scisports_data
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._quality_check_tracking_data import (
-    _quality_check_tracking_data,
-)
 from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
+from databallpy.load_data.tracking_data.utils import _quality_check_tracking_data
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.utils import MISSING_INT
