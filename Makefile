@@ -26,7 +26,7 @@ help:
 	@echo
 
 deps:
-	poetry install --with docs
+	poetry install --with docs,developing
 
 format:
 	poetry run isort --filter-files $(LINT_FILES)
