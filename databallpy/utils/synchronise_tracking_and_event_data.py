@@ -329,8 +329,7 @@ def pre_compute_synchronisation_variables(
 ) -> pd.DataFrame:
     """Function that precomputes variables that are used in the synchronisation.
     The following variables are computed: ball_velocity, ball_acceleration,
-    ball_acceleration_sqrt, goal_angle_home_team, goal_angle_away_team, and
-    datetime.
+    ball_acceleration_sqrt, goal_angle_home_team, and goal_angle_away_team.
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the match
@@ -392,39 +391,15 @@ def pre_compute_synchronisation_variables(
 
     tracking_data["goal_angle_away_team"] = np.concatenate([goal_angle, [np.nan]])
 
-    # add datetime objects to tracking_data
-    start_datetime_period = {}
-    start_frame_period = {}
-
-    for _, row in periods.iterrows():
-        start_datetime_period[row["period_id"]] = row["start_datetime_td"]
-        start_frame_period[row["period_id"]] = row["start_frame"]
-
-    valid_start_frame_periods = np.array(
-        [
-            start_frame_period[p] if p != MISSING_INT else np.nan
-            for p in tracking_data["period_id"]
-        ]
-    )
-
-    datetime_values = pd.Series(
-        [
-            start_datetime_period[p] if p != MISSING_INT else pd.to_datetime("NaT")
-            for p in tracking_data["period_id"]
-        ]
-    ) + pd.to_timedelta(
-        (tracking_data["frame"] - valid_start_frame_periods) / frame_rate * 1000,
-        "milliseconds",
-    )
-
     # Combine the calculated values into a DataFrame
     new_columns = {
-        "datetime": datetime_values,
         "databallpy_event": None,
         "event_id": MISSING_INT,
     }
 
-    tracking_data = pd.concat([tracking_data, pd.DataFrame(new_columns)], axis=1)
+    tracking_data = pd.concat(
+        [tracking_data, pd.DataFrame(new_columns, index=tracking_data.index)], axis=1
+    )
 
     return tracking_data
 

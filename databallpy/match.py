@@ -848,6 +848,18 @@ def check_inputs_match_object(match: Match):
                     )
                 )
 
+        # check if there is a valid datetime object
+        if "datetime" not in match.tracking_data.columns:
+            raise ValueError("datetime column should be in tracking data")
+        if not pd.api.types.is_datetime64_any_dtype(match.tracking_data["datetime"]):
+            raise TypeError(
+                f"datetime column in tracking data should be a datetime dtype, not a \
+                    {type(match.tracking_data['datetime'])}"
+            )
+        # also make sure it is tz sensitive
+        if match.tracking_data["datetime"].dt.tz is None:
+            raise ValueError("datetime column in tracking data should have a timezone")
+
     # event_data
     if not isinstance(match.event_data, pd.DataFrame):
         raise TypeError(

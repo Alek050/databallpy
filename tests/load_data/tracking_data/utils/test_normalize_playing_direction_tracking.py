@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+from databallpy.load_data.tracking_data.utils import (
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.utils import MISSING_INT
