@@ -43,7 +43,6 @@ pandas = "^2.1.0"
 optional = true
 
 [tool.poetry.group.developing.dependencies]
-pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
 flake8 = "^6.0.0"
 isort = "^5.11.4"
