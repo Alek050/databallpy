@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   buld-and-test:
     # Set up operating system
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     # Define job steps
     steps:

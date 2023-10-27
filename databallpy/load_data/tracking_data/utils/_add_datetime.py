@@ -27,8 +27,8 @@ def _add_datetime(
     # if diff in minutes < 10, assume it is a timestamp
     if abs(dt_start_match_minutes - frames_minutes) <= 10:
         date = dt_start_match.date()
-        date = datetime.datetime.combine(date, datetime.time(0, 0, 0)).astimezone(
-            dt_start_match.tzinfo
+        date = datetime.datetime.combine(
+            date, datetime.time(0, 0, 0), tzinfo=dt_start_match.tzinfo
         )
         return frames.apply(
             lambda timestamp: date

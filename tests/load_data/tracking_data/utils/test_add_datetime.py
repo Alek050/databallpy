@@ -12,10 +12,8 @@ class TestAddDatetime(unittest.TestCase):
             [90000, 90001, 90002, 90003, 90004, 90005, 90006, 90007, 90008, 90009]
         )
         self.frame_rate = 10
-        self.date_time = (
-            pd.to_datetime("2020-01-01 02:31:00")
-            .tz_localize("Europe/Amsterdam")
-            .to_pydatetime()
+        self.date_time = pd.to_datetime("2020-01-01 02:31:00").tz_localize(
+            "Europe/Amsterdam"
         )
 
     def test_add_datetime_no_timestamp(self):
@@ -30,5 +28,4 @@ class TestAddDatetime(unittest.TestCase):
         expected = pd.to_datetime("2020-01-01 00:00:00").tz_localize(
             "Europe/Amsterdam"
         ) + pd.to_timedelta(self.frames_ts / self.frame_rate, unit="seconds")
-
         pd.testing.assert_series_equal(res, expected)
