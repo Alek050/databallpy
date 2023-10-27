@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
+from databallpy.load_data.tracking_data.utils._add_periods_to_tracking_data import (
     _add_periods_to_tracking_data,
 )
 from tests.expected_outcomes import MD_METRICA_TD, TD_METRICA
@@ -10,9 +10,9 @@ from tests.expected_outcomes import MD_METRICA_TD, TD_METRICA
 
 class TestAddPeriodsToTrackingData(unittest.TestCase):
     def test_add_periods_to_tracking_data(self):
-        input = TD_METRICA.drop(["period"], axis=1)
+        input = TD_METRICA.drop(["period_id"], axis=1).copy()
         res = input
-        res["period"] = _add_periods_to_tracking_data(
+        res["period_id"] = _add_periods_to_tracking_data(
             input["frame"], MD_METRICA_TD.periods_frames
         )
 
@@ -32,9 +32,9 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
                 "away_34_y",
                 "away_35_x",
                 "away_35_y",
-                "period",
+                "datetime",
+                "period_id",
                 "matchtime_td",
             ]
         )
-
         pd.testing.assert_frame_equal(res, TD_METRICA)

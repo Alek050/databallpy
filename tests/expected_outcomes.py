@@ -63,7 +63,16 @@ TD_TRACAB = pd.DataFrame(
             np.nan,
             -13.18,
         ],
-        "period": [1, 1, MISSING_INT, 2, 2],
+        "period_id": [1, 1, MISSING_INT, 2, 2],
+        "datetime": pd.to_datetime(
+            [
+                "2023-01-14 16:46:39.720000",
+                "2023-01-14 16:46:39.760000",
+                "2023-01-14 16:46:39.800000",
+                "2023-01-14 16:46:39.840000",
+                "2023-01-14 16:46:39.880000",
+            ]
+        ).tz_localize("Europe/Amsterdam"),
         "matchtime_td": [
             "00:00",
             "00:00",
@@ -80,7 +89,7 @@ MD_TRACAB = Metadata(
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
-            "period": [1, 2, 3, 4, 5],
+            "period_id": [1, 2, 3, 4, 5],
             "start_frame": [1509993, 1509996, MISSING_INT, MISSING_INT, MISSING_INT],
             "end_frame": [1509994, 1509997, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_td": [
@@ -133,6 +142,7 @@ MD_TRACAB = Metadata(
         }
     ),
     country="",
+    periods_changed_playing_direction=[],
 )
 ED_OPTA = pd.DataFrame(
     {
@@ -446,7 +456,7 @@ MD_OPTA = Metadata(
     pitch_dimensions=[10.0, 10.0],
     periods_frames=pd.DataFrame(
         {
-            "period": [1, 2, 3, 4, 5],
+            "period_id": [1, 2, 3, 4, 5],
             "start_datetime_ed": [
                 pd.to_datetime("2023-01-22T12:18:32.000").tz_localize(
                     "Europe/Amsterdam"
@@ -519,7 +529,18 @@ TD_METRICA = pd.DataFrame(
         "away_34_y": [-5, 20, 10, np.nan, 5, 0],
         "away_35_x": [np.nan, np.nan, np.nan, np.nan, 10, 20],
         "away_35_y": [np.nan, np.nan, np.nan, np.nan, 5, 0],
-        "period": [1, 1, 1, 2, 2, 2],
+        "datetime": pd.to_datetime(
+            [
+                "2019-02-21T03:30:07.000",
+                "2019-02-21T03:30:07.500",
+                "2019-02-21T03:30:08.000",
+                "2019-02-21T03:30:08.500",
+                "2019-02-21T03:30:09.000",
+                "2019-02-21T03:30:09.500",
+            ],
+            utc=True,
+        ),
+        "period_id": [1, 1, 1, 2, 2, 2],
         "matchtime_td": ["00:00", "00:00", "00:01", "45:00", "45:00", "45:01"],
     }
 )
@@ -666,7 +687,7 @@ MD_METRICA_TD = Metadata(
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
-            "period": [1, 2, 3, 4, 5],
+            "period_id": [1, 2, 3, 4, 5],
             "start_frame": [1, 4, MISSING_INT, MISSING_INT, MISSING_INT],
             "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_td": [
@@ -719,6 +740,7 @@ MD_METRICA_TD = Metadata(
     away_formation="0001",
     away_score=2,
     country="",
+    periods_changed_playing_direction=[],
 )
 
 
@@ -727,7 +749,7 @@ MD_METRICA_ED = Metadata(
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
-            "period": [1, 2, 3, 4, 5],
+            "period_id": [1, 2, 3, 4, 5],
             "start_frame": [1, 4, MISSING_INT, MISSING_INT, MISSING_INT],
             "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_ed": [
@@ -809,7 +831,17 @@ TD_INMOTIO = pd.DataFrame(
         "away_1_y": [0.5, 1.5, 2.5, np.nan, -0.2, -1.2],
         "away_2_x": [23.3, 23.3, 25.3, np.nan, -20.0, np.nan],
         "away_2_y": [5.9, 6.9, 5.9, np.nan, -5.0, np.nan],
-        "period": [MISSING_INT, 1, 1, MISSING_INT, 2, 2],
+        "datetime": pd.to_datetime(
+            [
+                "2023-01-01T20:00:00.000",
+                "2023-01-01T20:00:00.000",
+                "2023-01-01T20:00:00.040",
+                "2023-01-01T20:00:00.080",
+                "2023-01-01T20:00:00.120",
+                "2023-01-01T20:00:00.160",
+            ]
+        ).tz_localize("Europe/Amsterdam"),
+        "period_id": [MISSING_INT, 1, 1, MISSING_INT, 2, 2],
         "matchtime_td": ["", "00:00", "00:00", "Break", "45:00", "45:00"],
     }
 )
@@ -819,7 +851,7 @@ MD_INMOTIO = Metadata(
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
-            "period": [1, 2, 3, 4, 5],
+            "period_id": [1, 2, 3, 4, 5],
             "start_frame": [2, 5, MISSING_INT, MISSING_INT, MISSING_INT],
             "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
             "start_datetime_td": [
@@ -876,6 +908,7 @@ MD_INMOTIO = Metadata(
     away_formation="",
     away_score=1,
     country="",
+    periods_changed_playing_direction=[2],
 )
 
 MD_INSTAT = Metadata(
@@ -883,7 +916,7 @@ MD_INSTAT = Metadata(
     pitch_dimensions=[np.nan, np.nan],
     periods_frames=pd.DataFrame(
         {
-            "period": [1, 2, 3, 4, 5],
+            "period_id": [1, 2, 3, 4, 5],
             "start_datetime_ed": [
                 pd.to_datetime("2023-01-01 20:00:00").tz_localize("Europe/Amsterdam"),
                 pd.to_datetime("NaT"),

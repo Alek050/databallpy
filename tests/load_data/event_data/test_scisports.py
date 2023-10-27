@@ -369,7 +369,7 @@ class TestScisports(unittest.TestCase):
     def test_update_scisports_event_data_with_metadata(self):
         period_frames = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_datetime_ed": [
                     "2021-01-05 06:00:00",
                     "2021-01-05 07:00:00",

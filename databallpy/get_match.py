@@ -14,15 +14,13 @@ from databallpy.load_data.event_data.ortec import load_ortec_event_data
 from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.scisports import _handle_scisports_data
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._quality_check_tracking_data import (
-    _quality_check_tracking_data,
-)
 from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
+from databallpy.load_data.tracking_data.utils import _quality_check_tracking_data
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.utils import MISSING_INT
@@ -210,6 +208,10 @@ def get_match(
         )
         allow_synchronise = False if not uses_event_data else allow_synchronise
 
+    changed_periods = None
+    if uses_tracking_data:
+        changed_periods = tracking_metadata.periods_changed_playing_direction
+
     match = Match(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
         tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
@@ -266,6 +268,7 @@ def get_match(
         _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
         if uses_event_data
         else False,
+        _periods_changed_playing_direction=changed_periods,
     )
 
     return match
@@ -282,6 +285,8 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     Returns:
         Match: All information about the match
     """
+    if name[-7:] == ".pickle":
+        name = name[:-7]
     with open(os.path.join(path, name + ".pickle"), "rb") as f:
         match = pickle.load(f)
     return match
@@ -432,6 +437,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         else {},
         _tracking_timestamp_is_precise=True,
         _event_timestamp_is_precise=True,
+        _periods_changed_playing_direction=metadata.periods_changed_playing_direction,
     )
     return match
 

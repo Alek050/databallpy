@@ -8,18 +8,13 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
+from databallpy.load_data.tracking_data.utils import (
     _add_ball_data_to_dict,
-)
-from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
+    _add_datetime,
     _add_periods_to_tracking_data,
-)
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
-)
-from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
-from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _get_matchtime,
+    _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.tz_modification import utc_to_local_datetime
@@ -63,14 +58,21 @@ def load_inmotio_tracking_data(
     tracking_data = tracking_data[
         (tracking_data["frame"] >= first_frame) & (tracking_data["frame"] <= last_frame)
     ].reset_index(drop=True)
-    tracking_data = _normalize_playing_direction_tracking(
+
+    tracking_data["datetime"] = _add_datetime(
+        tracking_data["frame"],
+        metadata.frame_rate,
+        metadata.periods_frames["start_datetime_td"].iloc[0],
+    )
+    tracking_data, changed_periods = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
-    tracking_data["period"] = _add_periods_to_tracking_data(
+    metadata.periods_changed_playing_direction = changed_periods
+    tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
     )
     tracking_data["matchtime_td"] = _get_matchtime(
-        tracking_data["frame"], tracking_data["period"], metadata
+        tracking_data["frame"], tracking_data["period_id"], metadata
     )
 
     return tracking_data, metadata
@@ -202,7 +204,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     soup = BeautifulSoup(lines, "xml")
 
     periods_dict = {
-        "period": [1, 2, 3, 4, 5],
+        "period_id": [1, 2, 3, 4, 5],
         "start_frame": [MISSING_INT] * 5,
         "end_frame": [MISSING_INT] * 5,
         "start_datetime_td": [pd.to_datetime("NaT")] * 5,

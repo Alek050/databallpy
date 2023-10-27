@@ -86,7 +86,7 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     match_info = metadata_json["data"]["match_info"][0]
     country = match_info["tournament_name"].split(".")[0]
     periods = {
-        "period": [1, 2, 3, 4, 5],
+        "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [pd.to_datetime("NaT", utc=True)] * 5,
         "end_datetime_ed": [pd.to_datetime("NaT", utc=True)] * 5,
     }

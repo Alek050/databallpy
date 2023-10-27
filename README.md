@@ -11,13 +11,20 @@ A package for loading, synchronizing, and analyzing your soccer event- and track
 
 This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data. The main feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article](https://kwiatkowski.io/sync.soccer), to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
 
-## Changelog V0.4.1 (10/10/2023)
+## V0.4.2 (27/10/2023)
 
-- Fixed bugs with reading in tracab data in special cases
-- Fixed bus with reading in opta data in special cases
-- Added tracking data passes features
-- Added tracking data shot features
-- optimized performance of processing data
+- fixed bug in get_valid_gains (player possessions)
+- Changed 'period' to 'period_id' in all tracking and event dataframes
+- Solved bug with reading in timestamps for Opta
+- Made get_opponents_in_passing_lane more robust.
+- Made function to automatically check if the proposed start and end frames are reliable, adjusts it if this is not the case
+- Fixed bug in normalize_playing_direction
+- Added an offset to the alignment in datetimes between tracking and event data
+- Added extra sanity checks for the ball status of the tracking data
+- Set "smart" as default for synchronising the tracking and event data
+- Added check if datetime of tracking and event data are not close enough
+- Added extra tests for the code
+- Added extra metadata to the Match object on which periods the player positions were normalized
 
 ## Planned changes
 
@@ -58,7 +65,7 @@ $ match.tracking_data # pandas dataframe with tracking data of the match
 $ match.event_data # pandas dataframe with event data of the match
 ```
 
-See [the documentation](https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/match/index.html) of the `Match` object and the [example usage](https://databallpy.readthedocs.io/en/latest/example.html) for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Match` object.
+See [the documentation](https://databallpy.readthedocs.io/en/latest/) of the `Match` object and the [example usage](https://databallpy.readthedocs.io/en/latest/example.html) for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Match` object.
 
 ## Synchronization of tracking and event data
 
@@ -91,7 +98,7 @@ https://user-images.githubusercontent.com/49450063/224564913-4091faf7-f6ef-4429-
 
 ## Documentation
 
-The official documentation can be found [here](https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/index.html).
+The official documentation can be found [here](https://databallpy.readthedocs.io/en/latest/).
 
 ## Providers
 

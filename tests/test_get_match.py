@@ -58,7 +58,7 @@ class TestGetMatch(unittest.TestCase):
 
         self.expected_periods_tracab_opta = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_frame": [
                     1509993,
                     1509996,
@@ -136,7 +136,7 @@ class TestGetMatch(unittest.TestCase):
             }
         )
 
-        self.td_tracab["period"] = [1, 1, MISSING_INT, 2, 2]
+        self.td_tracab["period_id"] = [1, 1, MISSING_INT, 2, 2]
 
         self.expected_match_tracab_opta = Match(
             tracking_data=self.td_tracab,
@@ -162,6 +162,7 @@ class TestGetMatch(unittest.TestCase):
             pass_events=PASS_EVENTS_OPTA_TRACAB,
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
+            _periods_changed_playing_direction=[],
         )
 
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -170,7 +171,7 @@ class TestGetMatch(unittest.TestCase):
         self.td_metrica, self.md_metrica = load_metrica_tracking_data(
             self.td_metrica_loc, self.md_metrica_loc
         )
-        self.td_metrica["period"] = [1, 1, 1, 2, 2, 2]
+        self.td_metrica["period_id"] = [1, 1, 1, 2, 2, 2]
         self.ed_metrica, md_metrica_ed, dbe_metrica = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
@@ -207,6 +208,7 @@ class TestGetMatch(unittest.TestCase):
             dribble_events=DRIBBLE_EVENTS_METRICA,
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
+            _periods_changed_playing_direction=[],
         )
 
         self.td_inmotio_loc = "tests/test_data/inmotio_td_test.txt"
@@ -249,7 +251,7 @@ class TestGetMatch(unittest.TestCase):
 
         self.expected_periods_inmotio_instat = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_frame": [2, 5, MISSING_INT, MISSING_INT, MISSING_INT],
                 "end_frame": [3, 6, MISSING_INT, MISSING_INT, MISSING_INT],
                 "start_datetime_td": [
@@ -313,6 +315,7 @@ class TestGetMatch(unittest.TestCase):
             away_players=self.expected_away_players_inmotio_instat,
             country=self.md_instat.country,
             _tracking_timestamp_is_precise=False,
+            _periods_changed_playing_direction=[],
         )
         self.expected_match_inmotio_instat.event_data["team_id"] = [
             "T-0001",
@@ -320,6 +323,7 @@ class TestGetMatch(unittest.TestCase):
             "T-0002",
             None,
         ]
+        self.expected_match_inmotio_instat._periods_changed_playing_direction = [2]
 
         self.match_to_sync = get_match(
             tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
@@ -351,6 +355,7 @@ class TestGetMatch(unittest.TestCase):
             away_players=MD_TRACAB.away_players,
             country=MD_TRACAB.country,
             _tracking_timestamp_is_precise=True,
+            _periods_changed_playing_direction=[],
         )
 
         self.expected_match_opta = Match(
@@ -520,6 +525,7 @@ class TestGetMatch(unittest.TestCase):
             match.periods, self.expected_match_metrica.periods
         )
         expected_match = self.expected_match_metrica.copy()
+        expected_match._periods_changed_playing_direction = []
         expected_match.allow_synchronise_tracking_and_event_data = True
         assert match == expected_match
 

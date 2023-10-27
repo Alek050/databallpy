@@ -7,18 +7,14 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._add_ball_data_to_dict import (
+from databallpy.load_data.tracking_data.utils import (
     _add_ball_data_to_dict,
-)
-from databallpy.load_data.tracking_data._add_periods_to_tracking_data import (
+    _add_datetime,
     _add_periods_to_tracking_data,
-)
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
-)
-from databallpy.load_data.tracking_data._get_matchtime import _get_matchtime
-from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+    _adjust_start_end_frames,
+    _get_matchtime,
+    _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.tz_modification import localize_datetime
@@ -43,15 +39,25 @@ def load_tracab_tracking_data(
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     metadata = _get_metadata(metadata_loc)
 
-    tracking_data["period"] = _add_periods_to_tracking_data(
+    tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
     )
-    tracking_data["matchtime_td"] = _get_matchtime(
-        tracking_data["frame"], tracking_data["period"], metadata
+
+    tracking_data["datetime"] = _add_datetime(
+        tracking_data["frame"],
+        metadata.frame_rate,
+        metadata.periods_frames["start_datetime_td"].iloc[0],
     )
-    tracking_data = _normalize_playing_direction_tracking(
+    tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
+
+    tracking_data["matchtime_td"] = _get_matchtime(
+        tracking_data["frame"], tracking_data["period_id"], metadata
+    )
+
+    tracking_data, changed_periods = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
+    metadata.periods_changed_playing_direction = changed_periods
 
     return tracking_data, metadata
 
@@ -119,9 +125,7 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
 
     mask = df.columns.str.contains("_x|_y|_z")
     df.loc[:, mask] = np.round(df.loc[:, mask] / 100, 3)  # change cm to m
-
     df = _insert_missing_rows(df, "frame")
-
     return df
 
 
@@ -148,25 +152,33 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     date = pd.to_datetime(datetime_string[:10])
 
     frames_dict = {
-        "period": [],
+        "period_id": [],
         "start_frame": [],
         "end_frame": [],
         "start_datetime_td": [],
         "end_datetime_td": [],
     }
     for _, period in enumerate(soup.find_all("period")):
-        frames_dict["period"].append(int(period["iId"]))
+        frames_dict["period_id"].append(int(period["iId"]))
         start_frame = int(period["iStartFrame"])
         end_frame = int(period["iEndFrame"])
 
         if start_frame != 0:
             frames_dict["start_frame"].append(start_frame)
             frames_dict["end_frame"].append(end_frame)
+            start_frame_corrected = start_frame % (frame_rate * 60 * 60 * 24)
+            end_frame_corrected = end_frame % (frame_rate * 60 * 60 * 24)
             frames_dict["start_datetime_td"].append(
-                date + dt.timedelta(milliseconds=int((start_frame / frame_rate) * 1000))
+                date
+                + dt.timedelta(
+                    milliseconds=int((start_frame_corrected / frame_rate) * 1000)
+                )
             )
             frames_dict["end_datetime_td"].append(
-                date + dt.timedelta(milliseconds=int((end_frame / frame_rate) * 1000))
+                date
+                + dt.timedelta(
+                    milliseconds=int((end_frame_corrected / frame_rate) * 1000)
+                )
             )
         else:
             frames_dict["start_frame"].append(MISSING_INT)
@@ -183,7 +195,6 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     df_frames["end_datetime_td"] = localize_datetime(
         df_frames["end_datetime_td"], "Netherlands"
     )
-
     home_team = soup.find("HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)

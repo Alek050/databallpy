@@ -3,7 +3,9 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.load_data.tracking_data._insert_missing_rows import _insert_missing_rows
+from databallpy.load_data.tracking_data.utils._insert_missing_rows import (
+    _insert_missing_rows,
+)
 from databallpy.utils.utils import MISSING_INT
 
 

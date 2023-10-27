@@ -18,11 +18,13 @@ class TestTracab(unittest.TestCase):
 
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_loc)
-        assert metadata == MD_TRACAB
+        expected_metadata = MD_TRACAB.copy()
+        expected_metadata.periods_changed_playing_direction = None
+        assert metadata == expected_metadata
 
     def test_get_tracking_data(self):
         tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=False)
-        expected_td = TD_TRACAB.drop(["matchtime_td", "period"], axis=1)
+        expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     def test_load_tracking_data(self):

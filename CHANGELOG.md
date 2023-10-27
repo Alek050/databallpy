@@ -39,13 +39,28 @@
 - Optimized loading in tracab tracking data
 - In quality checks, fixed some minor bugs.
 
-### V0.4.1 (10/10/2023)
+## V0.4.1 (10/10/2023)
 
 - Fixed bugs with reading in tracab data in special cases
 - Fixed bus with reading in opta data in special cases
 - Added tracking data passes features
 - Added tracking data shot features
 - optimized performance of processing data
+
+## V0.4.2 (27/10/2023)
+
+- fixed bug in get_valid_gains (player possessions)
+- Changed 'period' to 'period_id' in all tracking and event dataframes
+- Solved bug with reading in timestamps for Opta
+- Made get_opponents_in_passing_lane more robust.
+- Made function to automatically check if the proposed start and end frames are reliable, adjusts it if this is not the case
+- Fixed bug in normalize_playing_direction
+- Added an offset to the alignment in datetimes between tracking and event data
+- Added extra sanity checks for the ball status of the tracking data
+- Set "smart" as default for synchronising the tracking and event data
+- Added check if datetime of tracking and event data are not close enough
+- Added extra tests for the code
+- Added extra metadata to the Match object on which periods the player positions were normalized
 
 
 

@@ -19,7 +19,7 @@ class TestOrtec(unittest.TestCase):
         self.meta_data_loc = "tests/test_data/ortec_metadata_test.json"
         periods = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_datetime_ed": pd.to_datetime(
                     [
                         "2023-09-03 20:00:00+02:00",
