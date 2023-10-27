@@ -162,7 +162,7 @@ class TestAdjustStartEndFrames(unittest.TestCase):
             away_formation="1433",
             away_score=0,
             country="Netherlands",
-            periods_changed_playing_direction=[]
+            periods_changed_playing_direction=[],
         )
 
     def test_adjust_start_end_frames_no_adjustment(self):

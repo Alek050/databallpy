@@ -58,7 +58,7 @@ def load_inmotio_tracking_data(
     tracking_data = tracking_data[
         (tracking_data["frame"] >= first_frame) & (tracking_data["frame"] <= last_frame)
     ].reset_index(drop=True)
-    
+
     tracking_data["datetime"] = _add_datetime(
         tracking_data["frame"],
         metadata.frame_rate,

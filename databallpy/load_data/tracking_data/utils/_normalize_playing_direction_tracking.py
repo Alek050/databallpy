@@ -1,6 +1,7 @@
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Tuple
 
 
 def _normalize_playing_direction_tracking(
@@ -14,10 +15,10 @@ def _normalize_playing_direction_tracking(
         periods (pd.DataFrame): description of the start and end frames of the periods
 
     Returns:
-        Tuple[pd.DataFrame, list]: tracking data of the match, normalized in x and y direction in
-        such a way that the home team is represented of playing from left to right
-        for the full match. The period ids of the periods in which the playing direction
-        changed are returned as well.
+        Tuple[pd.DataFrame, list]: tracking data of the match, normalized in x and y
+        direction in such a way that the home team is represented of playing from left
+        to right for the full match. The period ids of the periods in which the
+        playing direction changed are returned as well.
     """
 
     home_x = [x for x in td.columns if "_x" in x and "home" in x]

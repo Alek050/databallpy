@@ -51,7 +51,9 @@ class TestNormalizePlayingDirection(unittest.TestCase):
             }
         )
 
-        res_td, res_periods = _normalize_playing_direction_tracking(self.td, self.periods)
+        res_td, res_periods = _normalize_playing_direction_tracking(
+            self.td, self.periods
+        )
 
         pd.testing.assert_frame_equal(res_td, expected)
         assert res_periods == [2]

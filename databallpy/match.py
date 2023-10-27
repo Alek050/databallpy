@@ -710,7 +710,10 @@ class Match:
                 self._tracking_timestamp_is_precise
                 == other._tracking_timestamp_is_precise,
                 self._event_timestamp_is_precise == other._event_timestamp_is_precise,
-                self._periods_changed_playing_direction == other._periods_changed_playing_direction if not pd.isnull(self._periods_changed_playing_direction) else pd.isnull(other._periods_changed_playing_direction),
+                self._periods_changed_playing_direction
+                == other._periods_changed_playing_direction
+                if not pd.isnull(self._periods_changed_playing_direction)
+                else pd.isnull(other._periods_changed_playing_direction),
                 self._is_synchronised == other._is_synchronised,
             ]
             return all(result)
@@ -752,7 +755,11 @@ class Match:
             _tracking_timestamp_is_precise=self._tracking_timestamp_is_precise,
             _event_timestamp_is_precise=self._event_timestamp_is_precise,
             _is_synchronised=self._is_synchronised,
-            _periods_changed_playing_direction=list(self._periods_changed_playing_direction) if self._periods_changed_playing_direction is not None else None,
+            _periods_changed_playing_direction=list(
+                self._periods_changed_playing_direction
+            )
+            if self._periods_changed_playing_direction is not None
+            else None,
         )
 
     def save_match(
