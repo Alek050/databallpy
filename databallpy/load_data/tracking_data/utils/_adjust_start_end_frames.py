@@ -56,11 +56,11 @@ def _adjust_start_end_frames(td: pd.DataFrame, metadata: Metadata) -> Metadata:
                 away_players_x_columns,
                 metadata.frame_rate,
             )
-            frame_diff = new_start_frame - period_row["start_frame"]
-            metadata.periods_frames.loc[i, "start_datetime_td"] += pd.to_timedelta(
-                frame_diff / metadata.frame_rate, unit="s"
-            )
+
+            new_start_dt = td.loc[td["frame"] == new_start_frame, "datetime"].iloc[0]
+            metadata.periods_frames.loc[i, "start_datetime_td"] = new_start_dt
             metadata.periods_frames.loc[i, "start_frame"] = new_start_frame
+
             mask_to_del = (td["frame"] < new_start_frame) & (
                 td["period_id"] == period_row["period_id"]
             )
@@ -79,10 +79,8 @@ def _adjust_start_end_frames(td: pd.DataFrame, metadata: Metadata) -> Metadata:
                 "frame"
             ]
             metadata.periods_frames.loc[i, "end_frame"] = new_end_frame
-            frame_diff = new_end_frame - period_row["end_frame"]
-            metadata.periods_frames.loc[i, "end_datetime_td"] += pd.to_timedelta(
-                frame_diff / metadata.frame_rate, unit="s"
-            )
+            new_end_dt = td.loc[td["frame"] == new_end_frame, "datetime"].iloc[0]
+            metadata.periods_frames.loc[i, "end_datetime_td"] = new_end_dt
 
     # if match starts later than indicated in period one, delete all unescesary rows
     mask = (

@@ -19,7 +19,7 @@ class TestMetricaTrackingData(unittest.TestCase):
 
     def test_get_tracking_data(self):
         expected = TD_METRICA.copy()
-        expected.drop(["matchtime_td", "period_id"], axis=1, inplace=True)
+        expected.drop(["matchtime_td", "period_id", "datetime"], axis=1, inplace=True)
         res = _get_tracking_data(
             self.td_loc, TD_CHANNELS_METRICA, [100.0, 50.0], verbose=False
         )
@@ -29,6 +29,7 @@ class TestMetricaTrackingData(unittest.TestCase):
         res_td, res_md = load_metrica_tracking_data(
             self.td_loc, self.md_loc, verbose=False
         )
+
         pd.testing.assert_frame_equal(res_td, TD_METRICA)
         pd.testing.assert_frame_equal(
             res_md.periods_frames, MD_METRICA_TD.periods_frames

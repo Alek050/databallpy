@@ -5,7 +5,7 @@ import pandas as pd
 
 from databallpy.errors import DataBallPyError
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._adjust_start_end_frames import (
+from databallpy.load_data.tracking_data.utils._adjust_start_end_frames import (
     _adjust_start_end_frames,
     _find_new_start_frame,
 )
@@ -65,6 +65,20 @@ class TestAdjustStartEndFrames(unittest.TestCase):
                 "ball_x": [-10, 0, 0, 0, 0, 0, 0, 0, 0],
                 "ball_y": [0, 0, 0, 0, 0, 0, 0, 0, 0],
                 "ball_z": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "datetime": pd.to_datetime(
+                    [
+                        "2020-01-01 00:00:00",
+                        "2020-01-01 00:00:01",
+                        "2020-01-01 00:00:02",
+                        "2020-01-01 00:00:03",
+                        "2020-01-01 00:00:04",
+                        "2020-01-01 00:00:05",
+                        "2020-01-01 00:00:06",
+                        "2020-01-01 00:00:07",
+                        "2020-01-01 00:00:08",
+                    ],
+                    utc=True,
+                ),
             }
         )
         self.home_players_x_columns = [f"home_{x}_x" for x in range(1, 12)]
@@ -171,8 +185,8 @@ class TestAdjustStartEndFrames(unittest.TestCase):
 
         expected_md = self.metadata.copy()
         expected_md.periods_frames.loc[0, "start_frame"] = 3
-        expected_md.periods_frames.loc[0, "start_datetime_td"] += pd.to_timedelta(
-            1 / self.frame_rate, unit="s"
+        expected_md.periods_frames.loc[0, "start_datetime_td"] = pd.to_datetime(
+            "2020-01-01 00:00:02", utc=True
         )
         pd.testing.assert_frame_equal(res_td, expected_td)
         self.assertEqual(res_md, expected_md)
@@ -188,10 +202,9 @@ class TestAdjustStartEndFrames(unittest.TestCase):
 
         expected_md = self.metadata.copy()
         expected_md.periods_frames.loc[0, "start_frame"] = 2
-        expected_md.periods_frames.loc[0, "start_datetime_td"] -= pd.to_timedelta(
-            10 / self.frame_rate, unit="s"
+        expected_md.periods_frames.loc[0, "start_datetime_td"] = pd.to_datetime(
+            "2020-01-01 00:00:01", utc=True
         )
-
         pd.testing.assert_frame_equal(res_td, expected_td)
         self.assertEqual(res_md, expected_md)
 
@@ -204,8 +217,8 @@ class TestAdjustStartEndFrames(unittest.TestCase):
         expected_td = self.td.copy().loc[1:].reset_index(drop=True)
         expected_md = self.metadata.copy()
         expected_md.periods_frames.loc[0, "end_frame"] = 9
-        expected_md.periods_frames.loc[0, "end_datetime_td"] -= pd.to_timedelta(
-            3 / self.frame_rate, unit="s"
+        expected_md.periods_frames.loc[0, "end_datetime_td"] = pd.to_datetime(
+            "2020-01-01 00:00:08", utc=True
         )
 
         pd.testing.assert_frame_equal(res_td, expected_td)

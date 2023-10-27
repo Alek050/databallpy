@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from databallpy.load_data.tracking_data._add_player_tracking_data_to_dict import (
+from databallpy.load_data.tracking_data.utils._add_player_tracking_data_to_dict import (
     _add_player_tracking_data_to_dict,
 )
 
