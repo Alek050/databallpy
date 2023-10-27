@@ -5,14 +5,14 @@ on: [push, pull_request]
 jobs:
   buld-and-test:
     # Set up operating system
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     # Define job steps
     steps:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: "==3.11"
+          python-version: ">=3.10.1"
 
       - name: setup
         uses: actions/checkout@v2
