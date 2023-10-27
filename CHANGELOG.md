@@ -47,7 +47,7 @@
 - Added tracking data shot features
 - optimized performance of processing data
 
-## V0.4.2
+## V0.4.2 (27/10/2023)
 
 - fixed bug in get_valid_gains (player possessions)
 - Changed 'period' to 'period_id' in all tracking and event dataframes
@@ -60,6 +60,7 @@
 - Set "smart" as default for synchronising the tracking and event data
 - Added check if datetime of tracking and event data are not close enough
 - Added extra tests for the code
+- Added extra metadata to the Match object on which periods the player positions were normalized
 
 
 
