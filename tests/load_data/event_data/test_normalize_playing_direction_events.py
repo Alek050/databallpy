@@ -48,6 +48,6 @@ class TestNormalizePlayingDirection(unittest.TestCase):
             }
         )
 
-        res = _normalize_playing_direction_events(self.event_data, 33, 12)
+        res_ed = _normalize_playing_direction_events(self.event_data, 33, 12)
 
-        pd.testing.assert_frame_equal(res, expected)
+        pd.testing.assert_frame_equal(res_ed, expected)

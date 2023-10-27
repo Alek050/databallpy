@@ -133,6 +133,7 @@ MD_TRACAB = Metadata(
         }
     ),
     country="",
+    periods_changed_playing_direction=[],
 )
 ED_OPTA = pd.DataFrame(
     {
@@ -719,6 +720,7 @@ MD_METRICA_TD = Metadata(
     away_formation="0001",
     away_score=2,
     country="",
+    periods_changed_playing_direction=[],
 )
 
 
@@ -876,6 +878,7 @@ MD_INMOTIO = Metadata(
     away_formation="",
     away_score=1,
     country="",
+    periods_changed_playing_direction=[2],
 )
 
 MD_INSTAT = Metadata(
