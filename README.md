@@ -11,8 +11,8 @@
 [docs-url]: https://datataball.readthedocs.io/en/latest/?badge=latest
 [cicd-image]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml/badge.svg
 [cicd-url]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml
-[codecov-image]: https://codecov.io/gh/alek050/databallpy/branch/develop/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/alek050/datballpy
+[codecov-image]: https://codecov.io/gh/Alek050/databallpy/graph/badge.svg?token=MBI3380I0H
+[codecov-url]: https://codecov.io/gh/Alek050/datballpy
 
 [floodlight-url]:https://github.com/floodlight-sports/floodlight
 [kloppy-url]:https://github.com/PySport/kloppy
