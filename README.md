@@ -3,6 +3,27 @@
   <img src="https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34" alt="Logo">
 </div>
 
+[version-image]: https://img.shields.io/pypi/v/databallpy?color=006666
+[version-url]: https://pypi.org/project/databallpy/
+[python-image]: https://img.shields.io/pypi/pyversions/databallpy?color=006666
+[python-url]: https://pypi.org/project/databallpy/
+[docs-image]: https://readthedocs.org/projects/databallpy/badge/?version=latest
+[docs-url]: https://datataball.readthedocs.io/en/latest/?badge=latest
+[tutorial-url]: https://databallpy.readthedocs.io/en/latest/example.html
+
+[cicd-image]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml/badge.svg
+[cicd-url]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml
+
+[codecov-image]: https://codecov.io/gh/floodlight-sports/floodlight/branch/develop/graph/badge.svg?token=RLY582UBC6
+[codecov-url]: https://codecov.io/gh/floodlight-sports/floodlight
+
+
+[![Latest Version][version-image]][version-url]
+[![Python Version][python-image]][python-url]
+[![Documentation Status][docs-image]][docs-url]
+[![CI/CD Status][cicd-image]][cicd-url]
+[![Codecov][codecov-image]][codecov-url]
+
 
 # databallpy
 
