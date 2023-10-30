@@ -10,12 +10,13 @@
 [docs-image]: https://readthedocs.org/projects/databallpy/badge/?version=latest
 [docs-url]: https://datataball.readthedocs.io/en/latest/?badge=latest
 [tutorial-url]: https://databallpy.readthedocs.io/en/latest/example.html
-
 [cicd-image]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml/badge.svg
 [cicd-url]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml
 
 [codecov-image]: https://codecov.io/gh/floodlight-sports/floodlight/branch/develop/graph/badge.svg?token=RLY582UBC6
 [codecov-url]: https://codecov.io/gh/floodlight-sports/floodlight
+
+[floodlight-url]:https://github.com/floodlight-sports/floodlight
 
 
 [![Latest Version][version-image]][version-url]
@@ -25,12 +26,12 @@
 [![Codecov][codecov-image]][codecov-url]
 
 
-# databallpy
+# DataBallPy
 
 
 A package for loading, synchronizing, and analyzing your soccer event- and tracking data.
 
-This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight](https://github.com/floodlight-sports/floodlight), already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data. The main feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article](https://kwiatkowski.io/sync.soccer), to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
+This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy](https://github.com/PySport/kloppy) and [floodlight][floodlight-url], already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data. The main feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article](https://kwiatkowski.io/sync.soccer), to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
 
 ## V0.4.2 (27/10/2023)
 
