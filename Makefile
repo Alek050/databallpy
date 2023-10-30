@@ -1,8 +1,7 @@
 LINT_FILES = tests/ databallpy/
 TEST_PATH = tests/
 PYTEST = poetry run pytest $(TEST_PATH) --pythonwarnings=once
-PYTEST_ARGS_COV = --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
-
+PYTEST_ARGS_COV = --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
 
 define echotask
 	@tput setaf 6
