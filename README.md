@@ -19,11 +19,13 @@
 [soccer-sync-url]: https://kwiatkowski.io/sync.soccer
 [example-url]: https://databallpy.readthedocs.io/en/latest/example.html
 
-[![Latest Version][version-image]][version-url]
-[![Python Version][python-image]][python-url]
-[![Documentation Status][docs-image]][docs-url]
-[![CI/CD Status][cicd-image]][cicd-url]
-[![Codecov][codecov-image]][codecov-url]
+<div align="center">
+  [![Latest Version][version-image]][version-url]
+  [![Python Version][python-image]][python-url]
+  [![Documentation Status][docs-image]][docs-url]
+  [![CI/CD Status][cicd-image]][cicd-url]
+  [![Codecov][codecov-image]][codecov-url]
+</div>
 
 
 # DataBallPy
