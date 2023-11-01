@@ -48,10 +48,7 @@ flake8 = "^6.0.0"
 isort = "^5.11.4"
 jupyter = "^1.0.0"
 black = "^23.9.1"
-seaborn = "^0.12.2"
-sphinx = "^7.2.6"
-nbsphinx = "^0.9.3"
-myst-parser = "^2.0.0"
+scikit-learn = "^1.3.2"
 
 [tool.poetry.group.docs]
 optional = true
@@ -59,16 +56,15 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 sphinx-autoapi = "^2.0.1"
 sphinx-rtd-theme = "^1.1.1"
+sphinx = "^7.2.6"
+nbsphinx = "^0.9.3"
+myst-parser = "^2.0.0"
 
 [tool.poetry.group.profiling]
 optional = true
 
 [tool.poetry.group.profiling.dependencies]
 line-profiler = "^4.1.1"
-
-
-[tool.poetry.group.dev.dependencies]
-scikit-learn = "^1.3.2"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
