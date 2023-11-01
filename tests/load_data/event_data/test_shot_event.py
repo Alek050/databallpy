@@ -343,6 +343,50 @@ class TestShotEvent(unittest.TestCase):
                 created_oppertunity="regular_play",
                 related_event_id="123",
             )
+        # td_vars float
+        with self.assertRaises(TypeError):
+            ShotEvent(
+                event_id=2512690515,
+                period_id=1,
+                minutes=9,
+                seconds=17,
+                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+                start_x=50.0,
+                start_y=20.0,
+                team_id=123,
+                z_target=15.0,
+                y_target=3.5,
+                player_id=45849,
+                shot_outcome="own_goal",
+                body_part="head",
+                type_of_play="corner_kick",
+                first_touch=False,
+                created_oppertunity="regular_play",
+                related_event_id=123,
+                ball_goal_distance=10,
+            )
+        # td_vars int
+        with self.assertRaises(TypeError):
+            ShotEvent(
+                event_id=2512690515,
+                period_id=1,
+                minutes=9,
+                seconds=17,
+                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+                start_x=50.0,
+                start_y=20.0,
+                team_id=123,
+                z_target=15.0,
+                y_target=3.5,
+                player_id=45849,
+                shot_outcome="own_goal",
+                body_part="head",
+                type_of_play="corner_kick",
+                first_touch=False,
+                created_oppertunity="regular_play",
+                related_event_id=123,
+                n_obstructive_defenders=1.5,
+            )
 
     def test_shot_event_eq(self):
         assert self.shot_event == self.shot_event
@@ -366,9 +410,8 @@ class TestShotEvent(unittest.TestCase):
             column_id="home_1",
             gk_column_id="away_1",
         )
-        goal_middle_vec = [50, 0]
-        ball_goal_vec = [50, 0]
-        goal_gk_vec = [40, -10]
+        ball_left_post_vec = [50, 7.32 / 2]
+        ball_right_post_vec = [50, -7.32 / 2]
 
         self.assertAlmostEqual(
             shot_event.ball_goal_distance, np.sqrt(50**2), places=4
@@ -378,15 +421,22 @@ class TestShotEvent(unittest.TestCase):
         )
         self.assertAlmostEqual(
             shot_event.shot_angle,
-            get_smallest_angle(goal_middle_vec, ball_goal_vec),
+            get_smallest_angle(
+                ball_left_post_vec, ball_right_post_vec, angle_format="degree"
+            ),
             places=4,
         )
+
         self.assertAlmostEqual(
-            shot_event.gk_angle,
-            get_smallest_angle(ball_goal_vec, goal_gk_vec),
+            shot_event.gk_optimal_loc_distance,
+            10.0,
             places=4,
         )
         self.assertEqual(shot_event.n_obstructive_players, 1)
+        self.assertEqual(shot_event.n_obstructive_defenders, 1)
+        self.assertAlmostEqual(
+            shot_event.goal_gk_distance, np.sqrt(40**2 + 10**2), places=4
+        )
 
     def test_shot_event_copy(self):
         shot_event_copy = self.shot_event.copy()

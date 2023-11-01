@@ -116,6 +116,77 @@ class TestMatch(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data.drop(
+                    columns=["datetime"]
+                ),
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+            )
+
+        with self.assertRaises(TypeError):
+            td = self.expected_match_tracab_opta.tracking_data.copy()
+            td["datetime"] = td["datetime"].astype(str)
+            Match(
+                tracking_data=td,
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+            )
+        with self.assertRaises(ValueError):
+            td = self.expected_match_tracab_opta.tracking_data.copy()
+            td["datetime"] = td["datetime"].dt.tz_localize(None)
+            Match(
+                tracking_data=td,
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
                 tracking_data=pd.DataFrame(
                     {"frame": [1], "home_1_x": [12], "ball_z": [13]}
                 ),
@@ -424,7 +495,7 @@ class TestMatch(unittest.TestCase):
                 event_data=self.expected_match_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
-                periods=pd.DataFrame({"period": [0, 1, 2, 3, 4]}),
+                periods=pd.DataFrame({"period_id": [0, 1, 2, 3, 4]}),
                 frame_rate=self.expected_match_tracab_opta.frame_rate,
                 home_team_id=self.expected_match_tracab_opta.home_team_id,
                 home_formation=self.expected_match_tracab_opta.home_formation,
@@ -446,7 +517,7 @@ class TestMatch(unittest.TestCase):
                 event_data=self.expected_match_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
-                periods=pd.DataFrame({"period": [1, 1, 2, 3, 4, 5]}),
+                periods=pd.DataFrame({"period_idw": [1, 1, 2, 3, 4, 5]}),
                 frame_rate=self.expected_match_tracab_opta.frame_rate,
                 home_team_id=self.expected_match_tracab_opta.home_team_id,
                 home_formation=self.expected_match_tracab_opta.home_formation,
@@ -892,7 +963,7 @@ class TestMatch(unittest.TestCase):
             match.preprocessing_status
             == "Preprocessing status:\n\tis_synchronised = False"
         )
-        match.synchronise_tracking_and_event_data(n_batches_per_half=1)
+        match.synchronise_tracking_and_event_data(n_batches=2)
         assert match.is_synchronised is True
         assert (
             match.preprocessing_status
@@ -903,7 +974,7 @@ class TestMatch(unittest.TestCase):
         match = self.match_to_sync.copy()
         match.allow_synchronise_tracking_and_event_data = False
         with self.assertRaises(DataBallPyError):
-            match.synchronise_tracking_and_event_data(n_batches_per_half=1)
+            match.synchronise_tracking_and_event_data(n_batches=2)
 
     def test__repr__(self):
         assert (
@@ -1055,9 +1126,11 @@ class TestMatch(unittest.TestCase):
                 "ball_goal_distance": [np.nan, np.nan, np.nan],
                 "ball_gk_distance": [np.nan, np.nan, np.nan],
                 "shot_angle": [np.nan, np.nan, np.nan],
-                "gk_angle": [np.nan, np.nan, np.nan],
+                "gk_optimal_loc_distance": [np.nan, np.nan, np.nan],
                 "pressure_on_ball": [np.nan, np.nan, np.nan],
                 "n_obstructive_players": [MISSING_INT, MISSING_INT, MISSING_INT],
+                "n_obstructive_defenders": [MISSING_INT, MISSING_INT, MISSING_INT],
+                "goal_gk_distance": [np.nan, np.nan, np.nan],
             }
         )
         match = self.expected_match_tracab_opta.copy()
@@ -1145,6 +1218,187 @@ class TestMatch(unittest.TestCase):
             match._is_synchronised = False
             match.add_tracking_data_features_to_shots()
 
+    @patch(
+        "databallpy.load_data.event_data.pass_event."
+        "PassEvent.add_tracking_data_features"
+    )
+    def test_match_add_tracking_data_features_to_passes(
+        self, mock_add_tracking_data_features
+    ):
+        mock_add_tracking_data_features.return_value = "Return value"
+
+        match = self.expected_match_tracab_opta.copy()
+        match._is_synchronised = True
+
+        # no player_possession column
+        with self.assertRaises(DataBallPyError):
+            match.add_tracking_data_features_to_passes()
+
+        match.tracking_data["player_possession"] = None
+        match._is_synchronised = False
+        # tracking data not synchronised
+        with self.assertRaises(DataBallPyError):
+            match.add_tracking_data_features_to_passes()
+
+        match._is_synchronised = True
+
+        match.tracking_data["event_id"] = [np.nan, np.nan, 2499594225, np.nan, np.nan]
+        match.tracking_data["databallpy_event"] = [None, None, "pass", None, None]
+        match.tracking_data["home_1_x"] = [-50.0, -50.0, -50.0, -50.0, -50.0]
+        match.tracking_data["home_1_y"] = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+        # case 1
+        match1 = match.copy()
+        match1.pass_events = {2499594225: match.pass_events[2499594225]}
+
+        match1.add_tracking_data_features_to_passes()
+
+        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
+        called_td_frame = called_args[0]
+        called_passer_column_id = called_args[1]
+        called_receiver_column_id = called_args[2]
+        called_end_loc_td = called_args[3]
+        called_pitch_dimensions = called_args[4]
+        called_opponent_column_ids = called_args[5]
+
+        pd.testing.assert_series_equal(called_td_frame, match1.tracking_data.iloc[2])
+        assert called_passer_column_id == "home_1"
+        assert called_receiver_column_id == "home_34"
+        np.testing.assert_array_equal(called_end_loc_td, np.array([2.76, -0.70]))
+        assert called_pitch_dimensions == match1.pitch_dimensions
+        assert called_opponent_column_ids == ["away_17"]
+
+        # # case 2
+        match2 = match.copy()
+        match2.pass_events = {2499594243: match.pass_events[2499594243]}
+        match2.pass_events[2499594243].end_x = 3.0
+        match2.pass_events[2499594243].end_y = 0.0
+        match2.tracking_data["player_possession"] = [
+            np.nan,
+            np.nan,
+            "away_1",
+            np.nan,
+            "away_2",
+        ]
+        match2.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
+        match2.tracking_data = match2.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match2.tracking_data["away_1_x"] = match2.tracking_data["away_1_x"] * -1
+
+        match2.add_tracking_data_features_to_passes()
+        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
+        called_td_frame = called_args[0]
+        called_passer_column_id = called_args[1]
+        called_receiver_column_id = called_args[2]
+        called_end_loc_td = called_args[3]
+        called_pitch_dimensions = called_args[4]
+        called_opponent_column_ids = called_args[5]
+
+        pd.testing.assert_series_equal(called_td_frame, match2.tracking_data.iloc[2])
+        assert called_passer_column_id == "away_1"
+        assert called_receiver_column_id == "away_2"
+        np.testing.assert_array_equal(called_end_loc_td, np.array([2.76, -0.70]))
+        assert called_pitch_dimensions == match2.pitch_dimensions
+        assert called_opponent_column_ids == ["home_34"]
+
+        # # case 3 end loc diff too big
+        match3 = match.copy()
+        match3.pass_events = {2499594243: match.pass_events[2499594243]}
+        match3.pass_events[2499594243].end_x = 30.0
+        match3.pass_events[2499594243].end_y = 50.0
+        match3.tracking_data["player_possession"] = [
+            np.nan,
+            np.nan,
+            "away_1",
+            np.nan,
+            "away_2",
+        ]
+        match3.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
+
+        mock_add_tracking_data_features.reset_mock()
+        match3.add_tracking_data_features_to_passes()
+        mock_add_tracking_data_features.assert_not_called()
+
+        # case 4
+        match4 = match.copy()
+        match4.tracking_data["player_possession"] = [
+            np.nan,
+            np.nan,
+            "away_1",
+            np.nan,
+            "away_1",
+        ]
+        match4.pass_events = {2499594243: match.pass_events[2499594243]}
+        match4.pass_events[2499594243].end_x = 3.0
+        match4.pass_events[2499594243].end_y = 0.0
+        match4.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
+        match4.tracking_data = match4.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match4.tracking_data["away_1_x"] = match4.tracking_data["away_1_x"] * -1
+
+        match4.add_tracking_data_features_to_passes()
+        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
+        called_td_frame = called_args[0]
+        called_passer_column_id = called_args[1]
+        called_receiver_column_id = called_args[2]
+        called_end_loc_td = called_args[3]
+        called_pitch_dimensions = called_args[4]
+        called_opponent_column_ids = called_args[5]
+
+        pd.testing.assert_series_equal(called_td_frame, match4.tracking_data.iloc[2])
+        assert called_passer_column_id == "away_1"
+        assert called_receiver_column_id == "away_17"
+        np.testing.assert_array_equal(called_end_loc_td, np.array([2.76, -0.70]))
+        assert called_pitch_dimensions == match4.pitch_dimensions
+        assert called_opponent_column_ids == ["home_34"]
+
+        # case 5
+        match5 = match.copy()
+        match5.tracking_data["player_possession"] = [
+            np.nan,
+            np.nan,
+            "away_1",
+            np.nan,
+            "away_1",
+        ]
+        match5.pass_events = {2499594243: match.pass_events[2499594243]}
+        match5.pass_events[2499594243].end_x = 3.0
+        match5.pass_events[2499594243].end_y = 0.0
+        match5.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
+        match5.tracking_data["ball_x"] = np.nan
+        match5.tracking_data = match5.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match5.tracking_data["away_1_x"] = match5.tracking_data["away_1_x"] * -1
+
+        mock_add_tracking_data_features.reset_mock()
+        match5.add_tracking_data_features_to_passes()
+        mock_add_tracking_data_features.assert_not_called()
+
+        # case 6, end loc to close too start loc of pass
+        match6 = match.copy()
+        match6.tracking_data["player_possession"] = [
+            np.nan,
+            np.nan,
+            "away_1",
+            np.nan,
+            "away_1",
+        ]
+        match6.pass_events = {2499594243: match.pass_events[2499594243]}
+        match6.pass_events[2499594243].end_x = 3.0
+        match6.pass_events[2499594243].end_y = 0.0
+        match6.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
+        match6.tracking_data = match6.tracking_data.rename(
+            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
+        )
+        match6.tracking_data["away_1_x"] = [0, 0, 2.76, 0, 0]  # too close to the ball
+
+        mock_add_tracking_data_features.reset_mock()
+        match6.add_tracking_data_features_to_passes()
+        mock_add_tracking_data_features.assert_not_called()
+
     def test_match_dribbles_df_without_td_features(self):
         expected_df = pd.DataFrame(
             {
@@ -1219,13 +1473,9 @@ class TestMatch(unittest.TestCase):
                     PASS_EVENTS_OPTA_TRACAB[2499594225].end_y,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].end_y,
                 ],
-                "length": [
-                    PASS_EVENTS_OPTA_TRACAB[2499594225].length,
-                    PASS_EVENTS_OPTA_TRACAB[2499594243].length,
-                ],
-                "angle": [
-                    PASS_EVENTS_OPTA_TRACAB[2499594225].angle,
-                    PASS_EVENTS_OPTA_TRACAB[2499594243].angle,
+                "pass_length": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].pass_length,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].pass_length,
                 ],
                 "pass_type": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].pass_type,
@@ -1234,6 +1484,34 @@ class TestMatch(unittest.TestCase):
                 "set_piece": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].set_piece,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].set_piece,
+                ],
+                "forward_distance": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].forward_distance,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].forward_distance,
+                ],
+                "passer_goal_distance": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].passer_goal_distance,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].passer_goal_distance,
+                ],
+                "pass_end_loc_goal_distance": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].pass_end_loc_goal_distance,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].pass_end_loc_goal_distance,
+                ],
+                "opponents_in_passing_lane": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].opponents_in_passing_lane,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].opponents_in_passing_lane,
+                ],
+                "pressure_on_passer": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].pressure_on_passer,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].pressure_on_passer,
+                ],
+                "pressure_on_receiver": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].pressure_on_receiver,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].pressure_on_receiver,
+                ],
+                "pass_goal_angle": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].pass_goal_angle,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].pass_goal_angle,
                 ],
             }
         )

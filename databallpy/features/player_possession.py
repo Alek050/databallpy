@@ -320,13 +320,14 @@ def get_valid_gains(
     """
     # check for every possession if the ball angle changes above threshold from first
     # to last frame of the proposed possession
-    start_idxs_plus_1 = np.clip(possession_start_idxs + 1, 0, len(tracking_data))
-    end_idxs_minus_1 = np.clip(possession_end_idxs - 1, 0, len(tracking_data))
+    start_idxs_plus_1 = np.clip(possession_start_idxs + 1, 0, tracking_data.index[-1])
+    end_idxs_minus_1 = np.clip(possession_end_idxs - 1, 0, tracking_data.index[-1])
 
     incomming_vectors = (
         tracking_data.loc[start_idxs_plus_1, ["ball_x", "ball_y"]].values
         - tracking_data.loc[possession_start_idxs, ["ball_x", "ball_y"]].values
     )
+
     outgoing_vectors = (
         tracking_data.loc[possession_end_idxs, ["ball_x", "ball_y"]].values
         - tracking_data.loc[end_idxs_minus_1, ["ball_x", "ball_y"]].values

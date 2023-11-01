@@ -14,15 +14,13 @@ from databallpy.load_data.event_data.ortec import load_ortec_event_data
 from databallpy.load_data.event_data.pass_event import PassEvent
 from databallpy.load_data.event_data.scisports import _handle_scisports_data
 from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data._quality_check_tracking_data import (
-    _quality_check_tracking_data,
-)
 from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
 from databallpy.load_data.tracking_data.metrica_tracking_data import (
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
 )
 from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
+from databallpy.load_data.tracking_data.utils import _quality_check_tracking_data
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.utils import MISSING_INT
@@ -65,9 +63,44 @@ def get_match(
     Returns:
         (Match): a Match object with all information available of the match.
     """
+
+    if (event_data_loc or _extra_event_data_loc) and event_metadata_loc is None:
+        raise ValueError(
+            "Please provide an event metadata location when providing an event"
+            " data location"
+        )
+    elif (event_data_loc or _extra_event_data_loc) and event_data_provider is None:
+        raise ValueError(
+            "Please provide an event data provider when providing an event"
+            " data location"
+        )
+    elif event_metadata_loc and event_data_provider is None:
+        raise ValueError(
+            "Please provide an event data provider when providing an event"
+            " metadata location"
+        )
+    elif tracking_data_loc and tracking_data_provider is None:
+        raise ValueError(
+            "Please provide a tracking data provider when providing a tracking"
+            " data location"
+        )
+    elif tracking_data_loc and tracking_metadata_loc is None:
+        raise ValueError(
+            "Please provide a tracking metadata location when providing a tracking"
+            " data location"
+        )
+
     uses_tracking_data = False
     uses_event_data = False
     uses_event_metadata = False
+
+    tracking_precise_timestamps = {"tracab": True, "metrica": True, "inmotio": False}
+    event_precise_timestamps = {
+        "opta": True,
+        "metrica": True,
+        "instat": False,
+        "ortec": True,
+    }
 
     # Check if tracking data should be loaded
     if tracking_data_loc and tracking_metadata_loc and tracking_data_provider:
@@ -175,6 +208,10 @@ def get_match(
         )
         allow_synchronise = False if not uses_event_data else allow_synchronise
 
+    changed_periods = None
+    if uses_tracking_data:
+        changed_periods = tracking_metadata.periods_changed_playing_direction
+
     match = Match(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
         tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
@@ -223,6 +260,15 @@ def get_match(
         if "pass_events" in databallpy_events.keys()
         else {},
         extra_data=extra_data if "extra_data" in vars() else None,
+        _tracking_timestamp_is_precise=tracking_precise_timestamps[
+            tracking_data_provider
+        ]
+        if uses_tracking_data
+        else False,
+        _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
+        if uses_event_data
+        else False,
+        _periods_changed_playing_direction=changed_periods,
     )
 
     return match
@@ -239,7 +285,7 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     Returns:
         Match: All information about the match
     """
-    if name.endswith(".pickle"):
+    if name[-7:] == ".pickle":
         name = name[:-7]
     with open(os.path.join(path, name + ".pickle"), "rb") as f:
         match = pickle.load(f)
@@ -389,6 +435,9 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         pass_events=databallpy_events["pass_events"]
         if "pass_events" in databallpy_events.keys()
         else {},
+        _tracking_timestamp_is_precise=True,
+        _event_timestamp_is_precise=True,
+        _periods_changed_playing_direction=metadata.periods_changed_playing_direction,
     )
     return match
 

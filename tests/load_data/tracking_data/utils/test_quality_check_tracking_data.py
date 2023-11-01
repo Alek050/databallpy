@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.load_data.tracking_data._quality_check_tracking_data import (
+from databallpy.load_data.tracking_data.utils._quality_check_tracking_data import (
     _check_ball_velocity,
     _check_missing_ball_data,
     _check_missing_player_data,
@@ -55,7 +55,7 @@ class TestQualityCheckTrackingData(unittest.TestCase):
         )
 
         self.periods = pd.DataFrame(
-            {"period": [1], "start_frame": [0], "end_frame": [13]}
+            {"period_id": [1], "start_frame": [0], "end_frame": [13]}
         )
 
         self.valid_frames = pd.Series([False, False, True, False, True, True])

@@ -77,10 +77,10 @@ def load_metrica_event_data(
 
     # add datetime based on frame numbers
     first_frame = metadata.periods_frames.loc[
-        metadata.periods_frames["period"] == 1, "start_frame"
+        metadata.periods_frames["period_id"] == 1, "start_frame"
     ].iloc[0]
     start_time = metadata.periods_frames.loc[
-        metadata.periods_frames["period"] == 1, "start_datetime_ed"
+        metadata.periods_frames["period_id"] == 1, "start_datetime_ed"
     ].iloc[0]
     frame_rate = metadata.frame_rate
     rel_timedelta = [

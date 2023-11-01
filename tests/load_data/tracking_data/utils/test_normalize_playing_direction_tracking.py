@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from databallpy.load_data.tracking_data._normalize_playing_direction_tracking import (
+from databallpy.load_data.tracking_data.utils import (
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.utils import MISSING_INT
@@ -28,7 +28,7 @@ class TestNormalizePlayingDirection(unittest.TestCase):
 
         self.periods = pd.DataFrame(
             {
-                "period": [1, 2, 3, 4, 5],
+                "period_id": [1, 2, 3, 4, 5],
                 "start_frame": [10, 12, 14, MISSING_INT, MISSING_INT],
                 "end_frame": [11, 13, 15, MISSING_INT, MISSING_INT],
             }
@@ -51,6 +51,9 @@ class TestNormalizePlayingDirection(unittest.TestCase):
             }
         )
 
-        res = _normalize_playing_direction_tracking(self.td, self.periods)
+        res_td, res_periods = _normalize_playing_direction_tracking(
+            self.td, self.periods
+        )
 
-        pd.testing.assert_frame_equal(res, expected)
+        pd.testing.assert_frame_equal(res_td, expected)
+        assert res_periods == [2]
