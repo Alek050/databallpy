@@ -287,6 +287,7 @@ class Match:
                 "goal_gk_distance": [
                     shot.goal_gk_distance for shot in self.shot_events.values()
                 ],
+                "xG": [shot.xG for shot in self.shot_events.values()],
             }
             self._shots_df = pd.DataFrame(res_dict)
         return self._shots_df
@@ -1011,13 +1012,13 @@ def check_inputs_match_object(match: Match):
                         ['id', 'full_name', 'shirt_num'], {col} is missing."
                 )
 
-        # check for direction of play
+         # check for direction of play
         for _, period_row in match.periods.iterrows():
             if "start_frame" not in period_row.index:
                 continue
             frame = period_row["start_frame"]
             if (
-                len(match.tracking_data[match.tracking_data["frame"] >= frame].index)
+                len(match.tracking_data[match.tracking_data["frame"] == frame].index)
                 == 0
             ):
                 continue
@@ -1025,17 +1026,22 @@ def check_inputs_match_object(match: Match):
             period = period_row["period_id"]
             home_x = [x for x in match.home_players_column_ids() if "_x" in x]
             away_x = [x for x in match.away_players_column_ids() if "_x" in x]
-            if match.tracking_data.loc[idx, home_x].mean() -  match.tracking_data.loc[idx, home_x].mean() > 0:
-                centroid_x_home = match.tracking_data.loc[idx, home_x].mean()
-                centroid_x_away = match.tracking_data.loc[idx, away_x].mean()
+            if match.tracking_data.loc[idx, home_x].mean() > 0:
+                centroid_x = match.tracking_data.loc[idx, home_x].mean()
                 raise DataBallPyError(
                     "The home team should be represented as playing from left to "
                     f"right the whole match. At the start of period {period} the x "
-                    f"centroid of the home team is {centroid_x_home}."
+                    f"centroid of the home team is {centroid_x}."
+                )
+
+            if match.tracking_data.loc[idx, away_x].mean() < 0:
+                centroid_x = match.tracking_data.loc[idx, away_x].mean()
+                raise DataBallPyError(
                     "The away team should be represented as playingfrom right to "
                     f"left the whole match. At the start  of period {period} the x "
-                    f"centroid ofthe away team is {centroid_x_away}."
+                    f"centroid ofthe away team is {centroid_x}."
                 )
+
 
         # check databallpy_events
         databallpy_events = [match.dribble_events, match.shot_events, match.pass_events]

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
+import joblib
 
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
@@ -91,6 +92,7 @@ class ShotEvent(BaseEvent):
     n_obstructive_players: int = MISSING_INT
     n_obstructive_defenders: int = MISSING_INT
     goal_gk_distance: float = np.nan
+    xG: float = np.nan
 
     def __post_init__(self):
         super().__post_init__()
@@ -181,6 +183,28 @@ class ShotEvent(BaseEvent):
         self.n_obstructive_defenders = n_obstructive_defenders
         self.goal_gk_distance = np.linalg.norm(goal_xy - gk_xy)
 
+        self.add_xG()
+    
+    def add_xG(self):
+        """Add xG to the shot event. This function calculates the xG of the shot.
+        A notebook on how th xG models were created can be found in the notebooks
+        folder.
+        """
+        if self.type_of_play == "penalty":
+            self.xG = 0.79
+        elif self.type_of_play == "free_kick":
+            pipeline = joblib.load("databallpy/models/xG_free_kick_pipeline.pkl")
+            self.xG = pipeline.predict_proba([np.array([[self.ball_goal_distance, self.shot_angle]])])[0, 1]
+        elif self.type_of_play in ["regular_play", "corner_kick", "crossed_free_kick", "counter_attack"]:
+            if "foot" in self.body_part:
+                pipeline = joblib.load("databallpy/models/xG_by_foot_pipeline.pkl")
+                self.xG = pipeline.predict_proba([np.array([[self.ball_goal_distance, self.shot_angle]])])[0, 1]
+            else: 
+                pipeline = joblib.load("databallpy/models/xG_by_head_pipeline.pkl")
+                self.xG = pipeline.predict_proba([np.array([[self.ball_goal_distance, self.shot_angle]])])[0, 1]
+        else:
+            self.xG = np.nan
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ShotEvent):
             return False
@@ -227,6 +251,7 @@ class ShotEvent(BaseEvent):
             self.goal_gk_distance == other.goal_gk_distance
             if not pd.isnull(self.goal_gk_distance)
             else pd.isnull(other.goal_gk_distance),
+            self.xG == other.xG if not pd.isnull(self.xG) else pd.isnull(other.xG),
         ]
         return all(result)
 
@@ -257,6 +282,7 @@ class ShotEvent(BaseEvent):
             n_obstructive_players=self.n_obstructive_players,
             n_obstructive_defenders=self.n_obstructive_defenders,
             goal_gk_distance=self.goal_gk_distance,
+            xG=self.xG,
         )
 
     def _check_datatypes(self):
