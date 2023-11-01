@@ -1,10 +1,10 @@
 import math
 from dataclasses import dataclass
 
+import joblib
 import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
-import joblib
 
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
@@ -183,27 +183,41 @@ class ShotEvent(BaseEvent):
         self.n_obstructive_defenders = n_obstructive_defenders
         self.goal_gk_distance = np.linalg.norm(goal_xy - gk_xy)
 
-        self.add_xG()
-    
-    def add_xG(self):
-        """Add xG to the shot event. This function calculates the xG of the shot.
+        self.xG = self.get_xG()
+
+    def get_xG(self):
+        """Get xG of the shot event. This function calculates the xG of the shot.
         A notebook on how th xG models were created can be found in the notebooks
         folder.
         """
+        if pd.isnull(self.ball_goal_distance) or pd.isnull(self.shot_angle):
+            return np.nan
+
         if self.type_of_play == "penalty":
-            self.xG = 0.79
+            return 0.79
         elif self.type_of_play == "free_kick":
             pipeline = joblib.load("databallpy/models/xG_free_kick_pipeline.pkl")
-            self.xG = pipeline.predict_proba([np.array([[self.ball_goal_distance, self.shot_angle]])])[0, 1]
-        elif self.type_of_play in ["regular_play", "corner_kick", "crossed_free_kick", "counter_attack"]:
+            return pipeline.predict_proba(
+                np.array([[self.ball_goal_distance, self.shot_angle]])
+            )[0, 1]
+        elif self.type_of_play in [
+            "regular_play",
+            "corner_kick",
+            "crossed_free_kick",
+            "counter_attack",
+        ]:
             if "foot" in self.body_part:
                 pipeline = joblib.load("databallpy/models/xG_by_foot_pipeline.pkl")
-                self.xG = pipeline.predict_proba([np.array([[self.ball_goal_distance, self.shot_angle]])])[0, 1]
-            else: 
+                return pipeline.predict_proba(
+                    np.array([[self.ball_goal_distance, self.shot_angle]])
+                )[0, 1]
+            else:
                 pipeline = joblib.load("databallpy/models/xG_by_head_pipeline.pkl")
-                self.xG = pipeline.predict_proba([np.array([[self.ball_goal_distance, self.shot_angle]])])[0, 1]
-        else:
-            self.xG = np.nan
+                return pipeline.predict_proba(
+                    np.array([[self.ball_goal_distance, self.shot_angle]])
+                )[0, 1]
+
+        return np.nan
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ShotEvent):

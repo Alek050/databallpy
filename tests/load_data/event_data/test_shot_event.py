@@ -441,3 +441,35 @@ class TestShotEvent(unittest.TestCase):
     def test_shot_event_copy(self):
         shot_event_copy = self.shot_event.copy()
         assert shot_event_copy == self.shot_event
+
+    def test_get_xG_valid(self):
+        shot_event = self.shot_event.copy()
+        shot_event.ball_goal_distance = 18.0
+        shot_event.shot_angle = 20
+        shot_event.body_part = "left_foot"
+        shot_event.type_of_play = "penalty"
+        res_penalty = shot_event.get_xG()
+
+        shot_event.type_of_play = "free_kick"
+        res_free_kick = shot_event.get_xG()
+
+        shot_event.type_of_play = "corner_kick"
+        res_reg_foot = shot_event.get_xG()
+
+        shot_event.body_part = "head"
+        res_head = shot_event.get_xG()
+
+        assert res_penalty == 0.79
+        assert 0.3 > res_free_kick > res_reg_foot > res_head > 0.0
+
+    def test_get_xG_invalid(self):
+        shot_event = self.shot_event.copy()
+        shot_event.ball_goal_distance = np.nan
+        shot_event.shot_angle = 20
+        shot_event.body_part = "left_foot"
+        shot_event.type_of_play = "penalty"
+        assert pd.isnull(shot_event.get_xG())
+
+        shot_event.ball_goal_distance = 18.0
+        shot_event.type_of_play = "wrong_type_of_play"
+        assert pd.isnull(shot_event.get_xG())

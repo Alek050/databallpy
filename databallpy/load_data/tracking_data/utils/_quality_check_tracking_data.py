@@ -229,13 +229,11 @@ def _check_player_velocity(
     )
 
     mask_no_break = [False] * len(tracking_data)
-    first_frame = max(periods.loc[0, "start_frame"], tracking_data.iloc[0]["frame"])
+    first_frame = periods.loc[0, "start_frame"]
     for _, row in periods.iterrows():
         if row["start_frame"] != MISSING_INT:
-            start_frame = row["start_frame"]
-            end_frame = row["end_frame"]
-            p_start = tracking_data[tracking_data["frame"] >= start_frame].iloc[0]["frame"] - first_frame
-            p_end = tracking_data[tracking_data["frame"] <= end_frame].iloc[-1]["frame"] - first_frame
+            p_start = row["start_frame"] - first_frame
+            p_end = row["end_frame"] - first_frame
             mask_no_break[p_start:p_end] = [True] * (p_end - p_start)
 
     percentages_valid_frames = []

@@ -1012,7 +1012,7 @@ def check_inputs_match_object(match: Match):
                         ['id', 'full_name', 'shirt_num'], {col} is missing."
                 )
 
-         # check for direction of play
+        # check for direction of play
         for _, period_row in match.periods.iterrows():
             if "start_frame" not in period_row.index:
                 continue
@@ -1041,7 +1041,6 @@ def check_inputs_match_object(match: Match):
                     f"left the whole match. At the start  of period {period} the x "
                     f"centroid ofthe away team is {centroid_x}."
                 )
-
 
         # check databallpy_events
         databallpy_events = [match.dribble_events, match.shot_events, match.pass_events]

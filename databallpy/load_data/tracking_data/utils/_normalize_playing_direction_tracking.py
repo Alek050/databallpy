@@ -22,7 +22,6 @@ def _normalize_playing_direction_tracking(
     """
 
     home_x = [x for x in td.columns if "_x" in x and "home" in x]
-    away_x = [x for x in td.columns if "_x" in x and "away" in x]
     all_x_y = [x for x in td.columns if "_x" in x or "_y" in x]
     changed_periods = []
     for _, period_row in periods.iterrows():
