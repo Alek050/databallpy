@@ -223,6 +223,7 @@ def _create_sim_mat(
         mask = np.isnan(total).all(axis=1)
         if total[mask].shape[0] > 0:
             total[mask] = np.nanmax(total)
+
         sim_mat[:, i] = np.nanmean(total, axis=1)
     # replace nan values with highest value, the algorithm will not assign these
     sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat)

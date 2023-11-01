@@ -1131,6 +1131,7 @@ class TestMatch(unittest.TestCase):
                 "n_obstructive_players": [MISSING_INT, MISSING_INT, MISSING_INT],
                 "n_obstructive_defenders": [MISSING_INT, MISSING_INT, MISSING_INT],
                 "goal_gk_distance": [np.nan, np.nan, np.nan],
+                "xG": [np.nan, np.nan, np.nan],
             }
         )
         match = self.expected_match_tracab_opta.copy()
