@@ -162,19 +162,21 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
 
     """
     initial_columns = tracking_data.columns
-    tracking_data = _differentiate(
-        tracking_data,
-        new_name="velocity",
-        metric="",
-        frame_rate=framerate,
-        filter_type=None,
-        column_ids=["ball"],
-    )
+    if "ball_velocity" not in tracking_data.columns:
+        tracking_data = _differentiate(
+            tracking_data,
+            new_name="velocity",
+            metric="",
+            frame_rate=framerate,
+            filter_type=None,
+            column_ids=["ball"],
+        )
     velocity_ball = tracking_data["ball_velocity"]
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
         tracking_data["matchtime_td"] != "Break"
     )
     valid_frames = velocity_ball[mask_ball_alive][1:] < 50
+
     sum_valid_frames = sum(valid_frames)
     n_total_frames = len(valid_frames)
 

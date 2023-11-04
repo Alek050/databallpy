@@ -574,7 +574,7 @@ def _get_databallpy_events_scisports(
     databallpy_events["dribble_events"] = _get_dribble_instances(event_data=event_data)
     databallpy_events["pass_events"] = _get_pass_instances(event_data=event_data)
 
-    return databallpy_events
+    return databallpy_events, tracking_data, event_data
 
 
 def _get_shot_instances(event_data: pd.DataFrame) -> dict:
@@ -823,6 +823,9 @@ def _update_scisports_event_data_with_metadata(
         player_id_mask
     ].apply(get_player_name, axis=1)
 
+    event_data["player_id"] = (
+        event_data["player_id"].fillna(MISSING_INT).astype("int64")
+    )
     return event_data
 
 
@@ -986,7 +989,11 @@ def _handle_scisports_data(
             )
 
         if databallpy_events is None or len(databallpy_events) == 0:
-            databallpy_events = _get_databallpy_events_scisports(
+            (
+                databallpy_events,
+                tracking_data,
+                scisports_event_data,
+            ) = _get_databallpy_events_scisports(
                 tracking_data, tracking_metadata, scisports_event_data, verbose
             )
 

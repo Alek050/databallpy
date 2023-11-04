@@ -463,13 +463,13 @@ class TestScisports(unittest.TestCase):
             22222,
         ]
         expected_event_data["player_id"] = [
-            201.0,
-            208.0,
-            211.0,
-            202.0,
-            203.0,
-            203.0,
-            203.0,
+            201,
+            208,
+            211,
+            202,
+            203,
+            203,
+            203,
         ]
 
         names_map = {

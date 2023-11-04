@@ -67,7 +67,9 @@ def synchronise_tracking_and_event_data(
 
     # check if timestamps are less than hour apart to see if
     # timestamp conversion went right
-    td_first_ts = tracking_data.iloc[0]["datetime"]
+    td_first_ts = tracking_data.loc[
+        tracking_data["ball_status"] == "alive", "datetime"
+    ].iloc[0]
     ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
     if abs(td_first_ts - ed_first_ts) > pd.Timedelta(seconds=4):
         diff = abs(td_first_ts - ed_first_ts)

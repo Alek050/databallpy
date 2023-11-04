@@ -471,5 +471,5 @@ class TestShotEvent(unittest.TestCase):
         assert pd.isnull(shot_event.get_xG())
 
         shot_event.ball_goal_distance = 18.0
-        shot_event.type_of_play = "wrong_type_of_play"
-        assert pd.isnull(shot_event.get_xG())
+        shot_event.type_of_play = "unknown_type_of_play"
+        assert round(shot_event.get_xG(), 4) == 0.0805
