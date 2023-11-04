@@ -287,6 +287,7 @@ class Match:
                 "goal_gk_distance": [
                     shot.goal_gk_distance for shot in self.shot_events.values()
                 ],
+                "xG": [shot.xG for shot in self.shot_events.values()],
             }
             self._shots_df = pd.DataFrame(res_dict)
         return self._shots_df

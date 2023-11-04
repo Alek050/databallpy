@@ -62,6 +62,8 @@
 - Added extra tests for the code
 - Added extra metadata to the Match object on which periods the player positions were normalized
 
+## V0.4.3 #####
 
+- Added simple expected goals (xG) model
 
 

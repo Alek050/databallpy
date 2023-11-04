@@ -9,7 +9,10 @@
    :caption: Table of Contents
 
    example
+   simple_xG_models
    changelog.md
    conduct.md
    contributing.md
+
+   
 
