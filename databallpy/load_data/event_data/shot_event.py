@@ -200,24 +200,25 @@ class ShotEvent(BaseEvent):
             return pipeline.predict_proba(
                 np.array([[self.ball_goal_distance, self.shot_angle]])
             )[0, 1]
-        elif self.type_of_play in [
-            "regular_play",
-            "corner_kick",
-            "crossed_free_kick",
-            "counter_attack",
-        ]:
-            if "foot" in self.body_part:
-                pipeline = joblib.load("databallpy/models/xG_by_foot_pipeline.pkl")
-                return pipeline.predict_proba(
-                    np.array([[self.ball_goal_distance, self.shot_angle]])
-                )[0, 1]
-            else:
-                pipeline = joblib.load("databallpy/models/xG_by_head_pipeline.pkl")
-                return pipeline.predict_proba(
-                    np.array([[self.ball_goal_distance, self.shot_angle]])
-                )[0, 1]
-
-        return np.nan
+        elif (
+            self.type_of_play
+            in [
+                "regular_play",
+                "corner_kick",
+                "crossed_free_kick",
+                "counter_attack",
+            ]
+            and "foot" not in self.body_part
+        ):
+            pipeline = joblib.load("databallpy/models/xG_by_head_pipeline.pkl")
+            return pipeline.predict_proba(
+                np.array([[self.ball_goal_distance, self.shot_angle]])
+            )[0, 1]
+        else:  # take most general model, shot by foot
+            pipeline = joblib.load("databallpy/models/xG_by_foot_pipeline.pkl")
+            return pipeline.predict_proba(
+                np.array([[self.ball_goal_distance, self.shot_angle]])
+            )[0, 1]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ShotEvent):
