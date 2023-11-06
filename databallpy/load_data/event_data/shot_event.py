@@ -1,4 +1,5 @@
 import math
+import os
 from dataclasses import dataclass
 
 import joblib
@@ -190,13 +191,15 @@ class ShotEvent(BaseEvent):
         A notebook on how th xG models were created can be found in the notebooks
         folder.
         """
+
+        path = os.path.join(os.path.dirname(__file__), "..", "..", "models")
         if pd.isnull(self.ball_goal_distance) or pd.isnull(self.shot_angle):
             return np.nan
 
         if self.type_of_play == "penalty":
             return 0.79
         elif self.type_of_play == "free_kick":
-            pipeline = joblib.load("databallpy/models/xG_free_kick_pipeline.pkl")
+            pipeline = joblib.load(f"{path}/xG_free_kick_pipeline.pkl")
             return pipeline.predict_proba(
                 np.array([[self.ball_goal_distance, self.shot_angle]])
             )[0, 1]
@@ -210,12 +213,12 @@ class ShotEvent(BaseEvent):
             ]
             and "foot" not in self.body_part
         ):
-            pipeline = joblib.load("databallpy/models/xG_by_head_pipeline.pkl")
+            pipeline = joblib.load(f"{path}/xG_by_head_pipeline.pkl")
             return pipeline.predict_proba(
                 np.array([[self.ball_goal_distance, self.shot_angle]])
             )[0, 1]
         else:  # take most general model, shot by foot
-            pipeline = joblib.load("databallpy/models/xG_by_foot_pipeline.pkl")
+            pipeline = joblib.load(f"{path}/xG_by_foot_pipeline.pkl")
             return pipeline.predict_proba(
                 np.array([[self.ball_goal_distance, self.shot_angle]])
             )[0, 1]
