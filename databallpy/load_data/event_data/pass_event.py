@@ -7,6 +7,7 @@ from scipy.spatial import Delaunay
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
 from databallpy.load_data.event_data.base_event import BaseEvent
+from databallpy.utils.utils import ratio_player_gaussian_in_shape
 
 
 @dataclass
@@ -321,6 +322,5 @@ def get_opponents_in_passing_lane(
     opponent_locs = frame[selected_columns].values
     opponent_locs = opponent_locs.reshape(2, -1).T
 
-    tot_defs = (area.find_simplex(opponent_locs) >= 0).sum()
-
+    tot_defs = ratio_player_gaussian_in_shape(opponent_locs, area, y_diameter=0.7, x_diameter=0.6)
     return tot_defs

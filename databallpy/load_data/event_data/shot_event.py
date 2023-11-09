@@ -9,7 +9,7 @@ from scipy.spatial import Delaunay
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
 from databallpy.load_data.event_data.base_event import BaseEvent
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.utils import MISSING_INT, ratio_player_gaussian_in_shape
 
 
 @dataclass
@@ -85,12 +85,11 @@ class ShotEvent(BaseEvent):
 
     # tracking data variables
     ball_goal_distance: float = np.nan
-    ball_gk_distance: float = np.nan
     shot_angle: float = np.nan
     gk_optimal_loc_distance: float = np.nan
     pressure_on_ball: float = np.nan
-    n_obstructive_players: int = MISSING_INT
-    n_obstructive_defenders: int = MISSING_INT
+    n_obstructive_teammates: float = np.nan
+    n_obstructive_defenders: float = np.nan
     goal_gk_distance: float = np.nan
     xG: float = np.nan
 
@@ -151,23 +150,24 @@ class ShotEvent(BaseEvent):
             for x in tracking_data_frame.index
             if ("_x" in x and "ball" not in x and x != f"{column_id}_x")
         ]
-        x_vals = tracking_data_frame[[f"{x}_x" for x in players_column_ids]].values
-        y_vals = tracking_data_frame[[f"{x}_y" for x in players_column_ids]].values
-        players_xy = np.array([x_vals, y_vals]).T
-        n_obstructive_players = (triangle.find_simplex(players_xy) >= 0).sum()
+        team_column_ids = [x for x in players_column_ids if team_side in x]
+        x_vals = tracking_data_frame[[f"{x}_x" for x in team_column_ids]].values
+        y_vals = tracking_data_frame[[f"{x}_y" for x in team_column_ids]].values
+        teammates_xy = np.array([x_vals, y_vals]).T
+        n_obstructive_teammates = ratio_player_gaussian_in_shape(teammates_xy, triangle, x_diameter=0.6, y_diameter=0.6)
 
         opponent_column_ids = [x for x in players_column_ids if team_side not in x]
         x_vals = tracking_data_frame[[f"{x}_x" for x in opponent_column_ids]].values
         y_vals = tracking_data_frame[[f"{x}_y" for x in opponent_column_ids]].values
         opponent_xy = np.array([x_vals, y_vals]).T
-        n_obstructive_defenders = (triangle.find_simplex(opponent_xy) >= 0).sum()
+        n_obstructive_defenders = ratio_player_gaussian_in_shape(opponent_xy, triangle, x_diameter=0.6, y_diameter=1.0)
 
         # add variables
         self.ball_goal_distance = math.dist(ball_xy, goal_xy)
-        self.ball_gk_distance = math.dist(ball_xy, gk_xy)
         self.shot_angle = get_smallest_angle(
             ball_left_post_vector, ball_right_post_vector, angle_format="degree"
         )
+        import pdb; pdb.set_trace()
         self.gk_optimal_loc_distance = np.linalg.norm(
             np.cross(goal_xy - ball_xy, ball_xy - gk_xy)
         ) / np.linalg.norm(goal_xy - ball_xy)
@@ -179,7 +179,7 @@ class ShotEvent(BaseEvent):
             d_back=3.0,
             q=1.75,
         )
-        self.n_obstructive_players = n_obstructive_players
+        self.n_obstructive_teammates = n_obstructive_teammates
         self.n_obstructive_defenders = n_obstructive_defenders
         self.goal_gk_distance = np.linalg.norm(goal_xy - gk_xy)
 
@@ -246,9 +246,6 @@ class ShotEvent(BaseEvent):
             if not pd.isnull(self.created_oppertunity)
             else pd.isnull(other.created_oppertunity),
             self.related_event_id == other.related_event_id,
-            self.ball_gk_distance == other.ball_gk_distance
-            if not pd.isnull(self.ball_gk_distance)
-            else pd.isnull(other.ball_gk_distance),
             self.ball_goal_distance == other.ball_goal_distance
             if not pd.isnull(self.ball_goal_distance)
             else pd.isnull(other.ball_goal_distance),
@@ -261,8 +258,12 @@ class ShotEvent(BaseEvent):
             self.pressure_on_ball == other.pressure_on_ball
             if not pd.isnull(self.pressure_on_ball)
             else pd.isnull(other.pressure_on_ball),
-            self.n_obstructive_players == other.n_obstructive_players,
-            self.n_obstructive_defenders == other.n_obstructive_defenders,
+            self.n_obstructive_teammates == other.n_obstructive_teammates
+            if not pd.isnull(self.n_obstructive_teammates)
+            else pd.isnull(other.n_obstructive_teammates),
+            self.n_obstructive_defenders == other.n_obstructive_defenders
+            if not pd.isnull(self.n_obstructive_defenders)
+            else pd.isnull(other.n_obstructive_defenders),
             self.goal_gk_distance == other.goal_gk_distance
             if not pd.isnull(self.goal_gk_distance)
             else pd.isnull(other.goal_gk_distance),
@@ -289,12 +290,11 @@ class ShotEvent(BaseEvent):
             first_touch=self.first_touch,
             created_oppertunity=self.created_oppertunity,
             related_event_id=self.related_event_id,
-            ball_gk_distance=self.ball_gk_distance,
             ball_goal_distance=self.ball_goal_distance,
             shot_angle=self.shot_angle,
             gk_optimal_loc_distance=self.gk_optimal_loc_distance,
             pressure_on_ball=self.pressure_on_ball,
-            n_obstructive_players=self.n_obstructive_players,
+            n_obstructive_players=self.n_obstructive_teammates,
             n_obstructive_defenders=self.n_obstructive_defenders,
             goal_gk_distance=self.goal_gk_distance,
             xG=self.xG,
@@ -380,27 +380,23 @@ class ShotEvent(BaseEvent):
         for name, td_var in zip(
             [
                 "ball_goal_distance",
-                "ball_gk_distance",
                 "shot_angle",
                 "gk_optimal_loc_distance",
                 "pressure_on_ball",
                 "goal_gk_distance",
+                "n_obstructive_defenders",
+                "n_obstructive_teammates"
             ],
             [
                 self.ball_goal_distance,
-                self.ball_gk_distance,
                 self.shot_angle,
                 self.gk_optimal_loc_distance,
                 self.pressure_on_ball,
                 self.goal_gk_distance,
+                self.n_obstructive_defenders,
+                self.n_obstructive_teammates
             ],
         ):
             if not isinstance(td_var, (float)):
                 raise TypeError(f"{name} should be float, got {type(td_var)}")
 
-        for name, td_var in zip(
-            ["n_obstructive_players", "n_obstructive_defenders"],
-            [self.n_obstructive_players, self.n_obstructive_defenders],
-        ):
-            if not isinstance(td_var, (int)):
-                raise TypeError(f"{name} should be int, got {type(td_var)}")

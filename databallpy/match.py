@@ -268,9 +268,6 @@ class Match:
                 "ball_goal_distance": [
                     shot.ball_goal_distance for shot in self.shot_events.values()
                 ],
-                "ball_gk_distance": [
-                    shot.ball_gk_distance for shot in self.shot_events.values()
-                ],
                 "shot_angle": [shot.shot_angle for shot in self.shot_events.values()],
                 "gk_optimal_loc_distance": [
                     shot.gk_optimal_loc_distance for shot in self.shot_events.values()
@@ -278,8 +275,8 @@ class Match:
                 "pressure_on_ball": [
                     shot.pressure_on_ball for shot in self.shot_events.values()
                 ],
-                "n_obstructive_players": [
-                    shot.n_obstructive_players for shot in self.shot_events.values()
+                "n_obstructive_teammates": [
+                    shot.n_obstructive_teammates for shot in self.shot_events.values()
                 ],
                 "n_obstructive_defenders": [
                     shot.n_obstructive_defenders for shot in self.shot_events.values()
