@@ -798,9 +798,13 @@ def _update_scisports_event_data_with_metadata(
             ]["full_name"].iloc[0]
         return current_player_name
 
-    team_id_mask = scisports_event_data["team"] == metadata.home_team_name
+    team_id_mask = scisports_event_data["team"].apply(
+        lambda team: metadata.home_team_name in team
+    )
     event_data.loc[team_id_mask, "team_id"] = metadata.home_team_id
-    team_id_mask = scisports_event_data["team"] == metadata.away_team_name
+    team_id_mask = scisports_event_data["team"].apply(
+        lambda team: metadata.away_team_name in team
+    )
     event_data.loc[team_id_mask, "team_id"] = metadata.away_team_id
 
     player_id_mask = scisports_event_data["jersey_number"].isin(
