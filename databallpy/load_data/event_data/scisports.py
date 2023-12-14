@@ -968,12 +968,14 @@ def _handle_scisports_data(
                 scisports_event_data["team_id"] = scisports_event_data[
                     "team_id"
                 ].replace({event_home_team_id: tracking_home_team_id})
+                event_metadata.home_team_id = tracking_home_team_id
             if not event_metadata.away_team_id == tracking_metadata.away_team_id:
                 event_away_team_id = event_metadata.away_team_id
                 tracking_away_team_id = tracking_metadata.away_team_id
                 scisports_event_data["team_id"] = scisports_event_data[
                     "team_id"
                 ].replace({event_away_team_id: tracking_away_team_id})
+                event_metadata.away_team_id = tracking_away_team_id
 
             if str(scisports_event_data["team_id"].dtype) == "float64":
                 scisports_event_data["team_id"] = scisports_event_data[
