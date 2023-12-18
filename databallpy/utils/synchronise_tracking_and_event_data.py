@@ -8,7 +8,7 @@ from tqdm import tqdm
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.utils import MISSING_INT
-from databallpy.warnings import DataBallPyWarning
+from databallpy.utils.warnings import DataBallPyWarning
 
 
 def synchronise_tracking_and_event_data(

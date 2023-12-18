@@ -9,15 +9,13 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from databallpy.errors import DataBallPyError
-from databallpy.load_data.event_data.dribble_event import DribbleEvent
-from databallpy.load_data.event_data.pass_event import PassEvent
-from databallpy.load_data.event_data.shot_event import ShotEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.synchronise_tracking_and_event_data import (
     synchronise_tracking_and_event_data,
 )
 from databallpy.utils.utils import MISSING_INT, get_next_possession_frame
-from databallpy.warnings import DataBallPyWarning
+from databallpy.utils.warnings import DataBallPyWarning
 
 
 def requires_tracking_data(func):

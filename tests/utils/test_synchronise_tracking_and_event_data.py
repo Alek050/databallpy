@@ -13,7 +13,7 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     pre_compute_synchronisation_variables,
 )
 from databallpy.utils.utils import MISSING_INT
-from databallpy.warnings import DataBallPyWarning
+from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     RES_SIM_MAT,
     RES_SIM_MAT_MISSING_PLAYER,

@@ -4,23 +4,25 @@ from typing import Tuple
 
 import pandas as pd
 
-from databallpy.load_data.event_data.instat import load_instat_event_data
-from databallpy.load_data.event_data.metrica_event_data import (
+from databallpy.data_parsers import Metadata
+from databallpy.data_parsers.event_data_parsers import (
+    _handle_scisports_data,
+    load_instat_event_data,
     load_metrica_event_data,
     load_metrica_open_event_data,
+    load_opta_event_data,
+    load_ortec_event_data,
 )
-from databallpy.load_data.event_data.opta import load_opta_event_data
-from databallpy.load_data.event_data.ortec import load_ortec_event_data
-from databallpy.load_data.event_data.pass_event import PassEvent
-from databallpy.load_data.event_data.scisports import _handle_scisports_data
-from databallpy.load_data.metadata import Metadata
-from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
-from databallpy.load_data.tracking_data.metrica_tracking_data import (
+from databallpy.data_parsers.tracking_data_parsers import (
+    load_inmotio_tracking_data,
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
+    load_tracab_tracking_data,
 )
-from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
-from databallpy.load_data.tracking_data.utils import _quality_check_tracking_data
+from databallpy.data_parsers.tracking_data_parsers.utils import (
+    _quality_check_tracking_data,
+)
+from databallpy.events import PassEvent
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.utils import MISSING_INT

@@ -3,10 +3,8 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 
-from databallpy.load_data.event_data.dribble_event import DribbleEvent
-from databallpy.load_data.event_data.pass_event import PassEvent
-from databallpy.load_data.event_data.shot_event import ShotEvent
-from databallpy.load_data.metadata import Metadata
+from databallpy.data_parsers.metadata import Metadata
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.utils import MISSING_INT
 
 TD_TRACAB = pd.DataFrame(

@@ -1,6 +1,6 @@
 from difflib import SequenceMatcher
 
-from databallpy.load_data.metadata import Metadata
+from databallpy.data_parsers.metadata import Metadata
 
 
 def get_matching_full_name(full_name: str, options: list) -> str:
