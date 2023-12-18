@@ -3,7 +3,7 @@ from typing import Tuple
 
 import pandas as pd
 
-from databallpy.errors import DataBallPyError
+from databallpy.utils.errors import DataBallPyError
 
 CHARACTERISTIC_TIMEZONE = {
     "Netherlands": "Europe/Amsterdam",

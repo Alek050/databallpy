@@ -5,11 +5,11 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from databallpy.errors import DataBallPyError
 from databallpy.get_match import get_match
 from databallpy.match import Match
+from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.utils import MISSING_INT
-from databallpy.warnings import DataBallPyWarning
+from databallpy.utils.warnings import DataBallPyWarning
 from expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
     PASS_EVENTS_OPTA_TRACAB,
@@ -1140,10 +1140,7 @@ class TestMatch(unittest.TestCase):
         shots_df = self.expected_match_tracab_opta.shots_df
         pd.testing.assert_frame_equal(shots_df, expected_df)
 
-    @patch(
-        "databallpy.load_data.event_data.shot_event."
-        "ShotEvent.add_tracking_data_features"
-    )
+    @patch("databallpy.events.shot_event." "ShotEvent.add_tracking_data_features")
     def test_match_shots_df_tracking_data_features(
         self, mock_add_tracking_data_features
     ):
@@ -1219,10 +1216,7 @@ class TestMatch(unittest.TestCase):
             match._is_synchronised = False
             match.add_tracking_data_features_to_shots()
 
-    @patch(
-        "databallpy.load_data.event_data.pass_event."
-        "PassEvent.add_tracking_data_features"
-    )
+    @patch("databallpy.events.pass_event." "PassEvent.add_tracking_data_features")
     def test_match_add_tracking_data_features_to_passes(
         self, mock_add_tracking_data_features
     ):

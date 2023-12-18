@@ -4,18 +4,26 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 
-from databallpy.get_match import get_match, get_open_match, get_saved_match
-from databallpy.load_data.event_data.instat import load_instat_event_data
-from databallpy.load_data.event_data.metrica_event_data import load_metrica_event_data
-from databallpy.load_data.event_data.opta import load_opta_event_data
-from databallpy.load_data.tracking_data.inmotio import load_inmotio_tracking_data
-from databallpy.load_data.tracking_data.metrica_tracking_data import (
+from databallpy.data_parsers.event_data_parsers.instat_parser import (
+    load_instat_event_data,
+)
+from databallpy.data_parsers.event_data_parsers.metrica_event_data_parser import (
+    load_metrica_event_data,
+)
+from databallpy.data_parsers.event_data_parsers.opta_parser import load_opta_event_data
+from databallpy.data_parsers.tracking_data_parsers.inmotio_parser import (
+    load_inmotio_tracking_data,
+)
+from databallpy.data_parsers.tracking_data_parsers.metrica_tracking_data_parser import (
     load_metrica_tracking_data,
 )
-from databallpy.load_data.tracking_data.tracab import load_tracab_tracking_data
+from databallpy.data_parsers.tracking_data_parsers.tracab_parser import (
+    load_tracab_tracking_data,
+)
+from databallpy.get_match import get_match, get_open_match, get_saved_match
 from databallpy.match import Match
 from databallpy.utils.utils import MISSING_INT
-from databallpy.warnings import DataBallPyWarning
+from databallpy.utils.warnings import DataBallPyWarning
 from expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
