@@ -441,6 +441,7 @@ class Match:
                     )
                     & (self.away_players["position"] == "goalkeeper")
                 )
+
                 gk_column_id = (
                     f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
                 )
@@ -740,13 +741,13 @@ class Match:
             away_score=self.away_score,
             away_team_name=self.away_team_name,
             away_players=self.away_players.copy(),
-            shot_events=self.shot_events.copy(),
+            shot_events={x: y.copy() for x, y in self.shot_events.items()},
             _shots_df=self._shots_df.copy() if self._shots_df is not None else None,
-            dribble_events=self.dribble_events.copy(),
+            dribble_events={x: y.copy() for x, y in self.dribble_events.items()},
             _dribbles_df=self._dribbles_df.copy()
             if self._dribbles_df is not None
             else None,
-            pass_events=self.pass_events.copy(),
+            pass_events={x: y.copy() for x, y in self.pass_events.items()},
             _passes_df=self._passes_df.copy() if self._passes_df is not None else None,
             country=self.country,
             allow_synchronise_tracking_and_event_data=allow_sync,

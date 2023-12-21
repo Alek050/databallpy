@@ -288,14 +288,20 @@ class TestGetMatch(unittest.TestCase):
                     pd.to_datetime("2023-01-01 20:00:00").tz_localize(
                         "Europe/Amsterdam"
                     ),
-                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-01-01 21:00:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_ed": [
-                    pd.to_datetime("NaT"),
-                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-01-01 20:45:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
+                    pd.to_datetime("2023-01-01 21:45:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
