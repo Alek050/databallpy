@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 from typing import Union
-
+from databallpy.utils.errors import DataBallPyError
 import numpy as np
 import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
@@ -15,7 +15,14 @@ def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
     unique identifier as well as all teams. Furthermore, it will replace all player
     jersey numbers with a counter from 1 to n_players in that team. Finally, it will
     replace all datetime objects to datetime.time objects so that every match starts at
-    00:00:00.
+    1980 15:00:00.
+
+    Since soccer data often has names and teams that are known, a hash is not enough.
+    Therefore, we gather the name/team name and add 8 bytes of random data (salt). After
+    that, we hash the result. This way, we can still check if two names are the same,
+    but the hash is not the same as the name. For every name/ team name, the first 8
+    characters of the hash are used as pseudonym. For players, the pseudonym is
+    'P-' + pseudonym. For teams, the pseudonym is 'T-' + pseudonym.
 
     Args:
         match (Match): match to anonymise
@@ -25,20 +32,20 @@ def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
 
     Returns:
         Match: anonymised match
+    
+    Raises:
+        DataBallPyError: if keys_df does not have 1 of the obligated column name "name",
+            "pseudonym", "salt", "original_id".
+        DataBallPyError: if keys_df has more than 4 columns
     """
 
-    assert "name" in keys_df.columns, "keys_df does not contain a 'name' column"
-    assert (
-        "pseudonym" in keys_df.columns
-    ), "keys_df does not contain a 'pseudonym' column"
-    assert "salt" in keys_df.columns, "keys_df does not contain a 'salt' column"
-    assert (
-        "original_id" in keys_df.columns
-    ), "keys_df does not contain a 'original_id' column"
-    assert (
-        len(keys_df.columns) == 4
-    ), "keys_df contains more columns than 'name', 'pseudonym',"
-    " `original_id`, and 'salt'"
+    for col in ["name", "pseudonym", "salt", "original_id"]:
+        if not col in keys_df.columns:
+            raise DataBallPyError(f"keys_df does not contain a {col} column, this is mandatory!" )
+    
+    if len(keys_df.columns) > 4:
+        raise DataBallPyError("keys_df is not allowed to have more than 4 columns")
+
     match = match.copy()
     match, keys_df = anonymise_players(match, keys_df)
     match, keys_df = anonymise_teams(match, keys_df)
@@ -50,7 +57,7 @@ def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
 
 def add_new_pseudonym(
     keys: pd.DataFrame, key_type: str, name: str, old_id: Union[int, str]
-) -> str:
+) -> pd.DataFrame:
     """Function to create a new key for a specific key type. The function will create a
     new key that does not yet exist in the keys dataframe. It will also check if the
     key_type is valid. key_type can be one of the following: player, team. If not,
@@ -71,8 +78,7 @@ def add_new_pseudonym(
         old_id union(int, str): original id of the player/team to anonymise
 
     Returns:
-        tuple: string with new key of 10 characters. Team keys start with 'T-' and
-            player keys start with 'P-' and the potentially updated keys dataframe.
+        pd.DataFrame: The potentially updated keys dataframe.
 
     Raises:
         ValueError: if key_type is not one of the following: player, team
@@ -80,11 +86,13 @@ def add_new_pseudonym(
 
     # Check if key_type is valid
     if key_type not in ["player", "team"]:
-        raise (
-            ValueError,
+        raise ValueError(
             "key_type must be one of the following: 'player'"
             f" or 'team', not {key_type}",
         )
+
+    if old_id in keys["original_id"].values:
+        return keys
 
     salt = secrets.token_hex(8)
     hash = hashlib.sha256((name + salt).encode()).hexdigest()
@@ -110,7 +118,7 @@ def add_new_pseudonym(
         ignore_index=True,
         sort=True,
     )
-    return pseudonym, keys
+    return keys
 
 
 def get_player_mappings(
@@ -146,13 +154,12 @@ def get_player_mappings(
             original_player_name = row["full_name"]
             original_id = row["id"]
             if original_id not in keys["original_id"].values:
-                pseudonym, keys = add_new_pseudonym(
+                keys = add_new_pseudonym(
                     keys, "player", original_player_name, original_id
                 )
-            else:
-                pseudonym = keys.loc[
-                    keys["original_id"] == original_id, "pseudonym"
-                ].values[0]
+            pseudonym = keys.loc[
+                keys["original_id"] == original_id, "pseudonym"
+            ].values[0]
 
             player_id_map[original_id] = pseudonym
             player_name_map[original_player_name] = f"{side}_{counter}"
@@ -209,17 +216,31 @@ def anonymise_players(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataF
         away_players_jersey_map
     )
 
+    # update tracking data
     if len(match.tracking_data) > 0:
         match.tracking_data = rename_tracking_data_columns(
-            match.tracking_data, home_players_jersey_map, away_players_jersey_map
+            match.tracking_data, home_players_jersey_map, "home"
         )
-
+        match.tracking_data = rename_tracking_data_columns(
+            match.tracking_data, away_players_jersey_map, "away"
+        )
+    
+    # update event data
     if len(match.event_data) > 0:
         match.event_data["player_name"] = match.event_data["player_name"].map(
             player_name_map
         )
         match.event_data["player_id"] = match.event_data["player_id"].map(player_id_map)
+        if "to_player_name" in match.event_data.columns:
+            match.event_data["to_player_name"] = match.event_data["to_player_name"].map(
+                player_name_map
+            )
+        if "to_player_id" in match.event_data.columns:
+            match.event_data["to_player_id"] = match.event_data["to_player_id"].map(
+                player_id_map
+            )
 
+        # update databallpy events
         for event in (
             list(match.shot_events.values())
             + list(match.pass_events.values())
@@ -243,41 +264,36 @@ def anonymise_players(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataF
 
 def rename_tracking_data_columns(
     tracking_data: pd.DataFrame,
-    home_players_jersey_map: dict,
-    away_players_jersey_map: dict,
+    jersey_map: dict,
+    side: str,
 ) -> pd.DataFrame:
     """Function to rename the columns in the tracking data. The function will rename
     all player columns.
 
     Args:
         tracking_data (pd.DataFrame): tracking data to rename columns for
-        home_players_jersey_map (dict): dictionary containing the mapping from original
-            jersey numbers to new jersey numbers for the home team.
-        away_players_jersey_map (dict): dictionary containing the mapping from original
-            jersey numbers to new jersey numbers for the away team.
+        jersey_map (dict): dictionary containing the mapping from original
+            jersey numbers to new jersey numbers for one team.
+        side (str): either "home" or "away", indicating which team the mapping is for
 
     Returns:
         pd.DataFrame: tracking data with renamed columns
     """
 
     col_rename_mappings = {}
-    for side, players in zip(
-        ["home", "away"], [home_players_jersey_map, away_players_jersey_map]
-    ):
-        side_columns = [col for col in tracking_data.columns if col.startswith(side)]
-        for col in side_columns:
-            jersey_number = int(col.split("_")[1])
+    side_columns = [col for col in tracking_data.columns if col.startswith(side)]
+    for col in side_columns:
+        jersey_number = int(col.split("_")[1])
 
-            if jersey_number not in players.keys():
-                raise (
-                    ValueError,
-                    "Something went wrong when anonymising the data."
-                    f"Jersey number {jersey_number} from the {side} team does not "
-                    "have a anonymised jersey number in the mapping.",
-                )
+        if jersey_number not in jersey_map.keys():
+            raise ValueError(
+                "Something went wrong when anonymising the data."
+                f"Jersey number {jersey_number} from the {side} team does not "
+                "have a anonymised jersey number in the mapping.",
+            )
 
-            affix = col.split("_")[2]
-            col_rename_mappings[col] = f"{side}_{players[jersey_number]}_{affix}"
+        affix = col.split("_")[2]
+        col_rename_mappings[col] = f"{side}_{jersey_map[jersey_number]}_{affix}"
 
     tracking_data = tracking_data.rename(columns=col_rename_mappings)
     return tracking_data
@@ -311,13 +327,13 @@ def get_team_mappings(
         [home_team_name, away_team_name], [home_team_id, away_team_id]
     ):
         if original_team_name not in keys["name"].values:
-            pseudonym, keys = add_new_pseudonym(
+            keys = add_new_pseudonym(
                 keys, "team", original_team_name, original_team_id
             )
-        else:
-            pseudonym = keys.loc[
-                keys["name"] == original_team_name, "pseudonym"
-            ].values[0]
+
+        pseudonym = keys.loc[
+            keys["name"] == original_team_name, "pseudonym"
+        ].values[0]
 
         team_id_map[original_team_id] = pseudonym
         team_name_map[original_team_name] = pseudonym
@@ -465,7 +481,7 @@ def anonymise_datetime(
         if match._is_synchronised:
             match.event_data["tracking_frame"] = match.event_data["tracking_frame"].map(
                 frame_map
-            )
+            ).fillna(MISSING_INT).astype(int)
 
         for event in (
             list(match.shot_events.values())

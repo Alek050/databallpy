@@ -795,6 +795,7 @@ def check_inputs_match_object(match: Match):
         raise TypeError(
             f"tracking data should be a pandas df, not a {type(match.tracking_data)}"
         )
+
     if len(match.tracking_data) > 0:
         for col in ["frame", "ball_x", "ball_y"]:
             if col not in match.tracking_data.columns.to_list():
