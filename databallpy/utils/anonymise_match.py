@@ -11,7 +11,11 @@ from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.utils import MISSING_INT
 
 
-def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
+def anonymise_match(
+    match: Match,
+    keys_df: pd.DataFrame,
+    base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True),
+) -> Match:
     """Function to anonymise a match. The function will replace all player names with a
     unique identifier as well as all teams. Furthermore, it will replace all player
     jersey numbers with a counter from 1 to n_players in that team. Finally, it will
@@ -30,15 +34,22 @@ def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
         keys_df (pd.DataFrame): df containing the keys for known players and teams. If
             new player of team is found, a random key will be generated and added to
             this df.
+        base_time (Timestamp, optional): The base timestamp to which to set the
+            start of the match datetime.
+            Defaults to pd.to_datetime("1980-1-1 15:00:00", utc=True).
 
     Returns:
         Match: anonymised match
 
     Raises:
+        ValueError: if base_time is not a timezone aware timestamp
         DataBallPyError: if keys_df does not have 1 of the obligated column name "name",
             "pseudonym", "salt", "original_id".
         DataBallPyError: if keys_df has more than 4 columns
     """
+
+    if not base_time.tz:
+        raise ValueError("base_time must be a timezone aware timestamp")
 
     for col in ["name", "pseudonym", "salt", "original_id"]:
         if col not in keys_df.columns:
@@ -52,7 +63,7 @@ def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
     match = match.copy()
     match, keys_df = anonymise_players(match, keys_df)
     match, keys_df = anonymise_teams(match, keys_df)
-    match = anonymise_datetime(match)
+    match = anonymise_datetime(match, base_time)
 
     # Return match
     return match, keys_df
@@ -369,15 +380,14 @@ def anonymise_teams(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataFra
     match.home_team_name = team_name_map[match.home_team_name]
     match.away_team_name = team_name_map[match.away_team_name]
 
-    for event in (
-        list(match.shot_events.values())
-        + list(match.pass_events.values())
-        + list(match.dribble_events.values())
-    ):
-        event.team_id = team_id_map[event.team_id]
-
-    # Replace team ids with pseudonyms
     if len(match.event_data) > 0:
+        for event in (
+            list(match.shot_events.values())
+            + list(match.pass_events.values())
+            + list(match.dribble_events.values())
+        ):
+            event.team_id = team_id_map[event.team_id]
+
         match.event_data["team_id"] = match.event_data["team_id"].map(team_id_map)
         if match._passes_df is not None:
             match.passes_df["team_id"] = match.passes_df["team_id"].map(team_id_map)

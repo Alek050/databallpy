@@ -59,7 +59,11 @@ class TestAnonymiseMatch(unittest.TestCase):
         mock_an_players.return_value = ("an_players_match", "an_players_keys")
         mock_an_dt.return_value = "an_datetimes_match"
 
-        res_match, res_keys = anonymise_match(self.match.copy(), self.keys.copy())
+        res_match, res_keys = anonymise_match(
+            self.match.copy(),
+            self.keys.copy(),
+            pd.to_datetime("2020-1-1 13:00:00", utc=True),
+        )
         assert res_match == "an_datetimes_match"
         assert res_keys == "an_teams_keys"
 
@@ -76,8 +80,10 @@ class TestAnonymiseMatch(unittest.TestCase):
         assert called_args_teams[1] == "an_players_keys"
 
         called_args_dt = mock_an_dt.call_args_list[0][0]
-        assert len(called_args_dt) == 1
+        assert len(mock_an_dt.call_args_list) == 1
+        assert len(called_args_dt) == 2
         assert called_args_dt[0] == "an_teams_match"
+        assert called_args_dt[1] == pd.to_datetime("2020-1-1 13:00:00", utc=True)
 
     def test_anonymise_match_errors(self):
         with self.assertRaises(DataBallPyError):
@@ -87,6 +93,11 @@ class TestAnonymiseMatch(unittest.TestCase):
             keys = self.keys.copy()
             keys["new_col"] = 1
             anonymise_match(self.match.copy(), keys)
+
+        with self.assertRaises(ValueError):
+            anonymise_match(
+                self.match.copy(), self.keys.copy(), pd.to_datetime("2020-1-1 13:00:00")
+            )
 
     def test_add_new_pseudonym_wrong_key(self):
         with self.assertRaises(ValueError):
