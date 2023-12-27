@@ -712,7 +712,7 @@ class Match:
                 self._event_timestamp_is_precise == other._event_timestamp_is_precise,
                 self._periods_changed_playing_direction
                 == other._periods_changed_playing_direction
-                if not pd.isnull(self._periods_changed_playing_direction)
+                if not isinstance(self._periods_changed_playing_direction, type(None))
                 else pd.isnull(other._periods_changed_playing_direction),
                 self._is_synchronised == other._is_synchronised,
             ]
