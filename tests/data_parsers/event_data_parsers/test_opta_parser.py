@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.event_data_parsers.opta_parser import (
     _get_player_info,
+    _get_valid_opta_datetime,
     _load_event_data,
     _load_metadata,
     _make_dribble_event_instance,
@@ -185,7 +186,7 @@ class TestOptaParser(unittest.TestCase):
             period_id=1,
             minutes=0,
             seconds=31,
-            datetime=pd.to_datetime("2023-04-07T19:02:07.364", utc=True),
+            datetime=pd.to_datetime("2023-04-07T18:02:07.364", utc=True),
             start_x=-4.0279999,
             start_y=-29.852,
             team_id=325,
@@ -223,7 +224,7 @@ class TestOptaParser(unittest.TestCase):
             period_id=1,
             minutes=0,
             seconds=31,
-            datetime=pd.to_datetime("2023-04-07T19:02:07.364", utc=True),
+            datetime=pd.to_datetime("2023-04-07T18:02:07.364", utc=True),
             start_x=4.0279999,
             start_y=29.852,
             team_id=325,
@@ -333,3 +334,61 @@ class TestOptaParser(unittest.TestCase):
         for key, event in res_passes.items():
             assert key in expected_passes.keys()
             assert event == expected_passes[key]
+
+    def test_get_valid_opta_datetime(self):
+        event_xml = """
+            <Event event_id="15" id="2529877443" last_modified="2023-04-08T02:39:48"
+                   min="0" outcome="1" period_id="1" player_id="223345" sec="31"
+                   team_id="325" timestamp="2023-04-07T19:02:07.364"
+                   timestamp_utc="2023-04-07T18:02:07.364" type_id="16"
+                   version="1680917987858" x="46.2" y="6.1">
+                <Q id="4171346209" qualifier_id="464"/>
+                <Q id="4170359433" qualifier_id="233" value="34"/>
+                <Q id="4170356073" qualifier_id="286"/>
+                <Q id="4170356071" qualifier_id="56" value="Back"/>
+                <Q id="4170356075" qualifier_id="102" value="22.8"/>
+                <Q id="4170356077" qualifier_id="103" value="7.2"/>
+                <Q id="4170356079" qualifier_id="20"/>
+            </Event>
+            """
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+        res_dt = _get_valid_opta_datetime(event)
+        assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)
+
+        event_xml = """
+            <Event event_id="15" id="2529877443" last_modified="2023-04-08T02:39:48"
+                   min="0" outcome="1" period_id="1" player_id="223345" sec="31"
+                   team_id="325" timestamp="2023-04-07T19:02:07.364Z"
+                   type_id="16"
+                   version="1680917987858" x="46.2" y="6.1">
+                <Q id="4171346209" qualifier_id="464"/>
+                <Q id="4170359433" qualifier_id="233" value="34"/>
+                <Q id="4170356073" qualifier_id="286"/>
+                <Q id="4170356071" qualifier_id="56" value="Back"/>
+                <Q id="4170356075" qualifier_id="102" value="22.8"/>
+                <Q id="4170356077" qualifier_id="103" value="7.2"/>
+                <Q id="4170356079" qualifier_id="20"/>
+            </Event>
+            """
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+        res_dt = _get_valid_opta_datetime(event)
+        assert res_dt == pd.to_datetime("2023-04-07T19:02:07.364", utc=True)
+
+        event_xml = """
+            <Event event_id="15" id="2529877443" last_modified="2023-04-08T02:39:48"
+                   min="0" outcome="1" period_id="1" player_id="223345" sec="31"
+                   team_id="325" timestamp="2023-04-07T19:02:07.364"
+                   type_id="16"
+                   version="1680917987858" x="46.2" y="6.1">
+                <Q id="4171346209" qualifier_id="464"/>
+                <Q id="4170359433" qualifier_id="233" value="34"/>
+                <Q id="4170356073" qualifier_id="286"/>
+                <Q id="4170356071" qualifier_id="56" value="Back"/>
+                <Q id="4170356075" qualifier_id="102" value="22.8"/>
+                <Q id="4170356077" qualifier_id="103" value="7.2"/>
+                <Q id="4170356079" qualifier_id="20"/>
+            </Event>
+            """
+        event = BeautifulSoup(event_xml, "xml").find("Event")
+        res_dt = _get_valid_opta_datetime(event)
+        assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)

@@ -5,6 +5,7 @@ import bs4
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
+from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
@@ -517,12 +518,7 @@ def _load_event_data(
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
 
-        # if not utc, set to london since opta is located in England
-        datetime = (
-            pd.to_datetime(event.attrs["timestamp_utc"], utc=True)
-            if "timestamp_utc" in event.attrs.keys()
-            else pd.to_datetime(event.attrs["timestamp"]).tz_localize("Europe/London")
-        )
+        datetime = _get_valid_opta_datetime(event)
         result_dict["datetime"].append(datetime)
 
         # get extra information for databallpy events
@@ -653,7 +649,7 @@ def _make_pass_instance(
         period_id=int(event.attrs["period_id"]),
         minutes=int(event.attrs["min"]),
         seconds=int(event.attrs["sec"]),
-        datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
+        datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
         outcome=outcome,
@@ -766,7 +762,7 @@ def _make_shot_event_instance(
         period_id=int(event.attrs["period_id"]),
         minutes=int(event.attrs["min"]),
         seconds=int(event.attrs["sec"]),
-        datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
+        datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
         team_id=int(event.attrs["team_id"]),
@@ -827,7 +823,7 @@ def _make_dribble_event_instance(
         period_id=int(event.attrs["period_id"]),
         minutes=int(event.attrs["min"]),
         seconds=int(event.attrs["sec"]),
-        datetime=pd.to_datetime(event.attrs["timestamp"], utc=True),
+        datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
         team_id=int(event.attrs["team_id"]),
@@ -838,6 +834,30 @@ def _make_dribble_event_instance(
     )
 
     return dribble_event
+
+
+def _get_valid_opta_datetime(event: bs4.element.Tag) -> Timestamp:
+    """Function that reads in a event element, and returns a
+    timestamp in UTC.
+
+    Args:
+        event (bs4.element.Tag): the event
+
+    Returns:
+        Timestamp: the utc timestamp object of the event
+    """
+
+    if "timestamp_utc" in event.attrs.keys():
+        return pd.to_datetime(event.attrs["timestamp_utc"], utc=True)
+    elif event.attrs["timestamp"][-1] == "Z":
+        return pd.to_datetime(event.attrs["timestamp"], utc=True)
+    else:
+        # opta headquarters is situated in london
+        return (
+            pd.to_datetime(event.attrs["timestamp"])
+            .tz_localize("Europe/London")
+            .tz_convert("UTC")
+        )
 
 
 def _rescale_opta_dimensions(

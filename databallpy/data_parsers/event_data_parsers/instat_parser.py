@@ -95,6 +95,16 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     periods["start_datetime_ed"][0] = pd.to_datetime(
         match_info["match_date"], utc=True
     ) - dt.timedelta(hours=3)
+    periods["end_datetime_ed"][0] = periods["start_datetime_ed"][0] + dt.timedelta(
+        minutes=45
+    )
+    periods["start_datetime_ed"][1] = periods["start_datetime_ed"][0] + dt.timedelta(
+        hours=1
+    )
+    periods["end_datetime_ed"][1] = periods["start_datetime_ed"][0] + dt.timedelta(
+        minutes=45, hours=1
+    )
+
     periods = pd.DataFrame(periods)
 
     # set time to local time

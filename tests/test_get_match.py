@@ -4,20 +4,14 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 
-from databallpy.data_parsers.event_data_parsers.instat_parser import (
+from databallpy.data_parsers.event_data_parsers import (
     load_instat_event_data,
-)
-from databallpy.data_parsers.event_data_parsers.metrica_event_data_parser import (
     load_metrica_event_data,
+    load_opta_event_data,
 )
-from databallpy.data_parsers.event_data_parsers.opta_parser import load_opta_event_data
-from databallpy.data_parsers.tracking_data_parsers.inmotio_parser import (
+from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
-)
-from databallpy.data_parsers.tracking_data_parsers.metrica_tracking_data_parser import (
     load_metrica_tracking_data,
-)
-from databallpy.data_parsers.tracking_data_parsers.tracab_parser import (
     load_tracab_tracking_data,
 )
 from databallpy.get_match import get_match, get_open_match, get_saved_match
@@ -288,14 +282,20 @@ class TestGetMatch(unittest.TestCase):
                     pd.to_datetime("2023-01-01 20:00:00").tz_localize(
                         "Europe/Amsterdam"
                     ),
-                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-01-01 21:00:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
                 "end_datetime_ed": [
-                    pd.to_datetime("NaT"),
-                    pd.to_datetime("NaT"),
+                    pd.to_datetime("2023-01-01 20:45:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
+                    pd.to_datetime("2023-01-01 21:45:00").tz_localize(
+                        "Europe/Amsterdam"
+                    ),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),

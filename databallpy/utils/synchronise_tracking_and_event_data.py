@@ -180,7 +180,7 @@ def _create_sim_mat(
     for row in event_batch.itertuples():
         i = row.Index
 
-        if not np.isnan(row.player_id) and row.player_id != MISSING_INT:
+        if not pd.isnull(row.player_id) and row.player_id != MISSING_INT:
             column_id_player = match.player_id_to_column_id(player_id=row.player_id)
             if f"{column_id_player}_x" not in tracking_batch.columns:
                 player_ball_diff = [np.nan] * len(tracking_batch)
