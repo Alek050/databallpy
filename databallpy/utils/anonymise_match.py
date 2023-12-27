@@ -1,12 +1,13 @@
 import hashlib
 import secrets
 from typing import Union
-from databallpy.utils.errors import DataBallPyError
+
 import numpy as np
 import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.match import Match
+from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.utils import MISSING_INT
 
 
@@ -32,7 +33,7 @@ def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
 
     Returns:
         Match: anonymised match
-    
+
     Raises:
         DataBallPyError: if keys_df does not have 1 of the obligated column name "name",
             "pseudonym", "salt", "original_id".
@@ -40,9 +41,11 @@ def anonymise_match(match: Match, keys_df: pd.DataFrame) -> Match:
     """
 
     for col in ["name", "pseudonym", "salt", "original_id"]:
-        if not col in keys_df.columns:
-            raise DataBallPyError(f"keys_df does not contain a {col} column, this is mandatory!" )
-    
+        if col not in keys_df.columns:
+            raise DataBallPyError(
+                f"keys_df does not contain a {col} column, this is mandatory!"
+            )
+
     if len(keys_df.columns) > 4:
         raise DataBallPyError("keys_df is not allowed to have more than 4 columns")
 
@@ -224,7 +227,7 @@ def anonymise_players(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataF
         match.tracking_data = rename_tracking_data_columns(
             match.tracking_data, away_players_jersey_map, "away"
         )
-    
+
     # update event data
     if len(match.event_data) > 0:
         match.event_data["player_name"] = match.event_data["player_name"].map(
@@ -327,13 +330,9 @@ def get_team_mappings(
         [home_team_name, away_team_name], [home_team_id, away_team_id]
     ):
         if original_team_name not in keys["name"].values:
-            keys = add_new_pseudonym(
-                keys, "team", original_team_name, original_team_id
-            )
+            keys = add_new_pseudonym(keys, "team", original_team_name, original_team_id)
 
-        pseudonym = keys.loc[
-            keys["name"] == original_team_name, "pseudonym"
-        ].values[0]
+        pseudonym = keys.loc[keys["name"] == original_team_name, "pseudonym"].values[0]
 
         team_id_map[original_team_id] = pseudonym
         team_name_map[original_team_name] = pseudonym
@@ -479,9 +478,12 @@ def anonymise_datetime(
         )
 
         if match._is_synchronised:
-            match.event_data["tracking_frame"] = match.event_data["tracking_frame"].map(
-                frame_map
-            ).fillna(MISSING_INT).astype(int)
+            match.event_data["tracking_frame"] = (
+                match.event_data["tracking_frame"]
+                .map(frame_map)
+                .fillna(MISSING_INT)
+                .astype(int)
+            )
 
         for event in (
             list(match.shot_events.values())

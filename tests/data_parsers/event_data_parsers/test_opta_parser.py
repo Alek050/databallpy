@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.event_data_parsers.opta_parser import (
     _get_player_info,
+    _get_valid_opta_datetime,
     _load_event_data,
     _load_metadata,
     _make_dribble_event_instance,
@@ -14,7 +15,6 @@ from databallpy.data_parsers.event_data_parsers.opta_parser import (
     _rescale_opta_dimensions,
     _update_pass_outcome,
     load_opta_event_data,
-    _get_valid_opta_datetime
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.utils import MISSING_INT
@@ -334,7 +334,7 @@ class TestOptaParser(unittest.TestCase):
         for key, event in res_passes.items():
             assert key in expected_passes.keys()
             assert event == expected_passes[key]
-    
+
     def test_get_valid_opta_datetime(self):
         event_xml = """
             <Event event_id="15" id="2529877443" last_modified="2023-04-08T02:39:48"
@@ -371,7 +371,7 @@ class TestOptaParser(unittest.TestCase):
             </Event>
             """
         event = BeautifulSoup(event_xml, "xml").find("Event")
-        res_dt = _get_valid_opta_datetime   (event)
+        res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T19:02:07.364", utc=True)
 
         event_xml = """
@@ -392,4 +392,3 @@ class TestOptaParser(unittest.TestCase):
         event = BeautifulSoup(event_xml, "xml").find("Event")
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)
-

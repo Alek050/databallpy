@@ -7,15 +7,13 @@ import pandas as pd
 from databallpy.data_parsers.event_data_parsers import (
     load_instat_event_data,
     load_metrica_event_data,
-    load_opta_event_data
+    load_opta_event_data,
 )
-
 from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
     load_metrica_tracking_data,
     load_tracab_tracking_data,
 )
-
 from databallpy.get_match import get_match, get_open_match, get_saved_match
 from databallpy.match import Match
 from databallpy.utils.utils import MISSING_INT

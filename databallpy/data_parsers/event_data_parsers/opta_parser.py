@@ -835,8 +835,9 @@ def _make_dribble_event_instance(
 
     return dribble_event
 
-def _get_valid_opta_datetime(event:bs4.element.Tag) -> Timestamp:
-    """Function that reads in a event element, and returns a 
+
+def _get_valid_opta_datetime(event: bs4.element.Tag) -> Timestamp:
+    """Function that reads in a event element, and returns a
     timestamp in UTC.
 
     Args:
@@ -845,14 +846,18 @@ def _get_valid_opta_datetime(event:bs4.element.Tag) -> Timestamp:
     Returns:
         Timestamp: the utc timestamp object of the event
     """
-    
+
     if "timestamp_utc" in event.attrs.keys():
         return pd.to_datetime(event.attrs["timestamp_utc"], utc=True)
-    elif event.attrs["timestamp"][-1]== "Z":
+    elif event.attrs["timestamp"][-1] == "Z":
         return pd.to_datetime(event.attrs["timestamp"], utc=True)
     else:
         # opta headquarters is situated in london
-        return pd.to_datetime(event.attrs["timestamp"]).tz_localize("Europe/London").tz_convert("UTC")
+        return (
+            pd.to_datetime(event.attrs["timestamp"])
+            .tz_localize("Europe/London")
+            .tz_convert("UTC")
+        )
 
 
 def _rescale_opta_dimensions(
