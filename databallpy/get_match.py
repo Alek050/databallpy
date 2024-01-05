@@ -27,6 +27,9 @@ from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.utils import MISSING_INT
 
+from databallpy.logging import create_logger
+
+LOGGER = create_logger(__name__)
 
 def get_match(
     tracking_data_loc: str = None,
@@ -65,28 +68,33 @@ def get_match(
     Returns:
         (Match): a Match object with all information available of the match.
     """
-
+    LOGGER.info("Trying to load a new match in get_match()")
     if (event_data_loc or _extra_event_data_loc) and event_metadata_loc is None:
+        LOGGER.error("Event metadata location is None while event data location is not")
         raise ValueError(
             "Please provide an event metadata location when providing an event"
             " data location"
         )
     elif (event_data_loc or _extra_event_data_loc) and event_data_provider is None:
+        LOGGER.error("Event data provider is None while event data location is not")
         raise ValueError(
             "Please provide an event data provider when providing an event"
             " data location"
         )
     elif event_metadata_loc and event_data_provider is None:
+        LOGGER.error("Event data provider is None while event metadata location is not")
         raise ValueError(
             "Please provide an event data provider when providing an event"
             " metadata location"
         )
     elif tracking_data_loc and tracking_data_provider is None:
+        LOGGER.error("Tracking data provider is None while tracking data location is not")
         raise ValueError(
             "Please provide a tracking data provider when providing a tracking"
             " data location"
         )
     elif tracking_data_loc and tracking_metadata_loc is None:
+        LOGGER.error("Tracking metadata location is None while tracking data location is not")
         raise ValueError(
             "Please provide a tracking metadata location when providing a tracking"
             " data location"
@@ -106,25 +114,35 @@ def get_match(
 
     # Check if tracking data should be loaded
     if tracking_data_loc and tracking_metadata_loc and tracking_data_provider:
-        tracking_data, tracking_metadata = load_tracking_data(
-            tracking_data_loc=tracking_data_loc,
-            tracking_metadata_loc=tracking_metadata_loc,
-            tracking_data_provider=tracking_data_provider,
-            verbose=verbose,
-        )
-        databallpy_events = {}
-        uses_tracking_data = True
+        LOGGER.info(f"Loading tracking data from {tracking_data_provider}")
+        try:
+            tracking_data, tracking_metadata = load_tracking_data(
+                tracking_data_loc=tracking_data_loc,
+                tracking_metadata_loc=tracking_metadata_loc,
+                tracking_data_provider=tracking_data_provider,
+                verbose=verbose,
+            )
+            databallpy_events = {}
+            uses_tracking_data = True
+        except Exception as e:
+            LOGGER.exception(f"Loading tracking data failed with error: {e}")
+            raise e
 
     # Check if event data should be loaded
     if event_data_loc and event_metadata_loc and event_data_provider:
-        event_data, event_metadata, databallpy_events = load_event_data(
-            event_data_loc=event_data_loc,
-            event_metadata_loc=event_metadata_loc,
-            event_data_provider=event_data_provider,
-        )
-        if event_data is not None and len(event_data) > 0:
-            uses_event_data = True
-        uses_event_metadata = True
+        LOGGER.info(f"Loading event data from {event_data_provider}")
+        try:
+            event_data, event_metadata, databallpy_events = load_event_data(
+                event_data_loc=event_data_loc,
+                event_metadata_loc=event_metadata_loc,
+                event_data_provider=event_data_provider,
+            )
+            if event_data is not None and len(event_data) > 0:
+                uses_event_data = True
+            uses_event_metadata = True
+        except Exception as e:
+            LOGGER.exception(f"Loading event data failed with error: {e}")
+            raise e
 
     # temporary, in the case of ortec, we only have metadata
     if event_metadata_loc and event_data_provider == "ortec":
@@ -158,9 +176,10 @@ def get_match(
         )
 
     if not uses_event_data and not uses_tracking_data:
+        LOGGER.error("Neither event nor tracking data loaded.")
         raise ValueError("No data loaded, please provide data locations and providers")
 
-    # extra checks when using event data
+    # set variables to create match object
     if uses_event_data:
         if "scisports_event_data" in vars():
             extra_data = (
@@ -183,7 +202,9 @@ def get_match(
         pitch_dimensions = tracking_metadata.pitch_dimensions
 
     # extra checks when using both tracking and event data
+    LOGGER.info("Combining info from tracking and event data")
     if uses_tracking_data and uses_event_metadata:
+        
         periods = merge_metadata_periods(
             tracking_metadata.periods_frames, event_metadata.periods_frames
         )
@@ -205,6 +226,7 @@ def get_match(
     # check quality of tracking data
     allow_synchronise = False
     if check_quality and uses_tracking_data:
+        LOGGER.info("Checking quality of tracking data")
         allow_synchronise = _quality_check_tracking_data(
             tracking_data, tracking_metadata.frame_rate, periods
         )
@@ -214,6 +236,7 @@ def get_match(
     if uses_tracking_data:
         changed_periods = tracking_metadata.periods_changed_playing_direction
 
+    LOGGER.info("Creating match object")
     match = Match(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
         tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
@@ -272,7 +295,7 @@ def get_match(
         else False,
         _periods_changed_playing_direction=changed_periods,
     )
-
+    LOGGER.info("Succesfully created match object")
     return match
 
 
