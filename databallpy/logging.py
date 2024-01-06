@@ -21,8 +21,9 @@ def create_logger(name:str) -> logging.Logger:
     user_config.read(user_config_path)
 
     log_format = user_config.get('logging', 'format', fallback=base_config.get('logging', 'format'))
+    log_level = user_config.get("logging", "log_level", fallback=base_config.get("logging", "log_level"))
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(log_level)
     logger.propagate = False
 
     formatter = logging.Formatter(fmt=log_format, datefmt="%Y-%m-%d %H:%M:%S")
