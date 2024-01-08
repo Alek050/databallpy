@@ -9,6 +9,10 @@ import pandas as pd
 from tqdm import tqdm
 
 from databallpy.match import Match
+from databallpy.utils.errors import DataBallPyError
+from databallpy.logging import create_logger
+
+LOGGER = create_logger(__name__)
 
 
 def requires_ffmpeg(func):
@@ -22,9 +26,13 @@ def requires_ffmpeg(func):
                 stderr=subprocess.PIPE,
             )
         except FileNotFoundError:
+            LOGGER.critical(
+                "Could not find the subprocess ffmpeg. Make sure ffmpeg is installed"
+                " globally on you device and added to your python path."
+                )
             raise FileNotFoundError(
-                "It seems like ffmpeg is not added to your python path, please install\
-                     add ffmpeg to you python path to use this code."
+                "It seems like ffmpeg is not added to your python path, please install"
+                "add ffmpeg to you python path to use this code."
             )
 
         return func(*args, **kwargs)
@@ -52,187 +60,192 @@ def plot_soccer_pitch(
     Returns:
         Tuple[plt.figure, plt.axes]: figure and axes with the pitch depicted on it
     """
+    LOGGER.info("Trying to plot soccer pitch")
+    try:
+        fig, ax = plt.subplots(figsize=(12, 8))
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+        # Set pitch and line colors
+        ax.set_facecolor(pitch_color)
+        if pitch_color not in ["white", "w"]:
+            lc = "whitesmoke"  # line color
+            pc = "w"  # 'spot' colors
+        else:
+            lc = "k"
+            pc = "k"
 
-    # Set pitch and line colors
-    ax.set_facecolor(pitch_color)
-    if pitch_color not in ["white", "w"]:
-        lc = "whitesmoke"  # line color
-        pc = "w"  # 'spot' colors
-    else:
-        lc = "k"
-        pc = "k"
+        # All dimensions in meters
+        border_dimen = (3, 3)  # include a border arround of the field of width 3m
+        half_pitch_length = field_dimen[0] / 2.0  # length of half pitch
+        half_pitch_width = field_dimen[1] / 2.0  # width of half pitch
 
-    # All dimensions in meters
-    border_dimen = (3, 3)  # include a border arround of the field of width 3m
-    half_pitch_length = field_dimen[0] / 2.0  # length of half pitch
-    half_pitch_width = field_dimen[1] / 2.0  # width of half pitch
+        # Soccer field dimensions are in yards, so we need to convert them to meters
+        meters_per_yard = 0.9144  # unit conversion from yards to meters
+        goal_line_width = 8 * meters_per_yard
+        box_width = 20 * meters_per_yard
+        box_length = 6 * meters_per_yard
+        area_width = 44 * meters_per_yard
+        area_length = 18 * meters_per_yard
+        penalty_spot = 12 * meters_per_yard
+        corner_radius = 1 * meters_per_yard
+        D_length = 8 * meters_per_yard
+        D_radius = 10 * meters_per_yard
+        D_pos = 12 * meters_per_yard
+        centre_circle_radius = 10 * meters_per_yard
 
-    # Soccer field dimensions are in yards, so we need to convert them to meters
-    meters_per_yard = 0.9144  # unit conversion from yards to meters
-    goal_line_width = 8 * meters_per_yard
-    box_width = 20 * meters_per_yard
-    box_length = 6 * meters_per_yard
-    area_width = 44 * meters_per_yard
-    area_length = 18 * meters_per_yard
-    penalty_spot = 12 * meters_per_yard
-    corner_radius = 1 * meters_per_yard
-    D_length = 8 * meters_per_yard
-    D_radius = 10 * meters_per_yard
-    D_pos = 12 * meters_per_yard
-    centre_circle_radius = 10 * meters_per_yard
+        zorder = -2
 
-    zorder = -2
-
-    # Plot half way line
-    ax.plot(
-        [0, 0],
-        [-half_pitch_width, half_pitch_width],
-        lc,
-        linewidth=linewidth,
-        zorder=zorder,
-    )
-    ax.scatter(
-        0.0, 0.0, marker="o", facecolor=lc, linewidth=0, s=markersize, zorder=zorder
-    )
-    # Plot center circle
-    y = np.linspace(-1, 1, 150) * centre_circle_radius
-    x = np.sqrt(centre_circle_radius**2 - y**2)
-    ax.plot(x, y, lc, linewidth=linewidth, zorder=zorder)
-    ax.plot(-x, y, lc, linewidth=linewidth, zorder=zorder)
-
-    signs = [-1, 1]
-    for s in signs:  # plots each line seperately
-        # Plot pitch boundary
+        # Plot half way line
         ax.plot(
-            [-half_pitch_length, half_pitch_length],
-            [s * half_pitch_width, s * half_pitch_width],
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-        ax.plot(
-            [s * half_pitch_length, s * half_pitch_length],
+            [0, 0],
             [-half_pitch_width, half_pitch_width],
             lc,
             linewidth=linewidth,
             zorder=zorder,
         )
-
-        # Goal posts & line
-        ax.plot(
-            [s * half_pitch_length, s * half_pitch_length],
-            [-goal_line_width / 2.0, goal_line_width / 2.0],
-            pc + "s",
-            markersize=6 * markersize / 20.0,
-            linewidth=linewidth,
-            zorder=zorder - 1,
-        )
-
-        # 6 yard box
-        ax.plot(
-            [s * half_pitch_length, s * half_pitch_length - s * box_length],
-            [box_width / 2.0, box_width / 2.0],
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-        ax.plot(
-            [s * half_pitch_length, s * half_pitch_length - s * box_length],
-            [-box_width / 2.0, -box_width / 2.0],
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-        ax.plot(
-            [
-                s * half_pitch_length - s * box_length,
-                s * half_pitch_length - s * box_length,
-            ],
-            [-box_width / 2.0, box_width / 2.0],
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-
-        # Penalty area
-        ax.plot(
-            [s * half_pitch_length, s * half_pitch_length - s * area_length],
-            [area_width / 2.0, area_width / 2.0],
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-        ax.plot(
-            [s * half_pitch_length, s * half_pitch_length - s * area_length],
-            [-area_width / 2.0, -area_width / 2.0],
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-        ax.plot(
-            [
-                s * half_pitch_length - s * area_length,
-                s * half_pitch_length - s * area_length,
-            ],
-            [-area_width / 2.0, area_width / 2.0],
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-
-        # Penalty spot
         ax.scatter(
-            s * half_pitch_length - s * penalty_spot,
-            0.0,
-            marker="o",
-            facecolor=lc,
-            linewidth=0,
-            s=markersize,
-            zorder=zorder,
+            0.0, 0.0, marker="o", facecolor=lc, linewidth=0, s=markersize, zorder=zorder
         )
+        # Plot center circle
+        y = np.linspace(-1, 1, 150) * centre_circle_radius
+        x = np.sqrt(centre_circle_radius**2 - y**2)
+        ax.plot(x, y, lc, linewidth=linewidth, zorder=zorder)
+        ax.plot(-x, y, lc, linewidth=linewidth, zorder=zorder)
 
-        # Corner flags
-        y = np.linspace(0, 1, 50) * corner_radius
-        x = np.sqrt(corner_radius**2 - y**2)
-        ax.plot(
-            s * half_pitch_length - s * x,
-            -half_pitch_width + y,
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
-        ax.plot(
-            s * half_pitch_length - s * x,
-            half_pitch_width - y,
-            lc,
-            linewidth=linewidth,
-            zorder=zorder,
-        )
+        signs = [-1, 1]
+        for s in signs:  # plots each line seperately
+            # Plot pitch boundary
+            ax.plot(
+                [-half_pitch_length, half_pitch_length],
+                [s * half_pitch_width, s * half_pitch_width],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+            ax.plot(
+                [s * half_pitch_length, s * half_pitch_length],
+                [-half_pitch_width, half_pitch_width],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
 
-        # Draw the half circles by the box: the D
-        y = (
-            np.linspace(-1, 1, 50) * D_length
-        )  # D_length is the chord of the circle that defines the D
-        x = np.sqrt(D_radius**2 - y**2) + D_pos
-        ax.plot(
-            s * half_pitch_length - s * x, y, lc, linewidth=linewidth, zorder=zorder
-        )
+            # Goal posts & line
+            ax.plot(
+                [s * half_pitch_length, s * half_pitch_length],
+                [-goal_line_width / 2.0, goal_line_width / 2.0],
+                pc + "s",
+                markersize=6 * markersize / 20.0,
+                linewidth=linewidth,
+                zorder=zorder - 1,
+            )
 
-    # remove axis labels and ticks
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.set_xticks([])
-    ax.set_yticks([])
-    # set axis limits
-    xmax = field_dimen[0] / 2.0 + border_dimen[0]
-    ymax = field_dimen[1] / 2.0 + border_dimen[1]
-    ax.set_xlim([-xmax, xmax])
-    ax.set_ylim([-ymax, ymax])
-    ax.set_axisbelow(True)
+            # 6 yard box
+            ax.plot(
+                [s * half_pitch_length, s * half_pitch_length - s * box_length],
+                [box_width / 2.0, box_width / 2.0],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+            ax.plot(
+                [s * half_pitch_length, s * half_pitch_length - s * box_length],
+                [-box_width / 2.0, -box_width / 2.0],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+            ax.plot(
+                [
+                    s * half_pitch_length - s * box_length,
+                    s * half_pitch_length - s * box_length,
+                ],
+                [-box_width / 2.0, box_width / 2.0],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
 
-    return fig, ax
+            # Penalty area
+            ax.plot(
+                [s * half_pitch_length, s * half_pitch_length - s * area_length],
+                [area_width / 2.0, area_width / 2.0],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+            ax.plot(
+                [s * half_pitch_length, s * half_pitch_length - s * area_length],
+                [-area_width / 2.0, -area_width / 2.0],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+            ax.plot(
+                [
+                    s * half_pitch_length - s * area_length,
+                    s * half_pitch_length - s * area_length,
+                ],
+                [-area_width / 2.0, area_width / 2.0],
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+
+            # Penalty spot
+            ax.scatter(
+                s * half_pitch_length - s * penalty_spot,
+                0.0,
+                marker="o",
+                facecolor=lc,
+                linewidth=0,
+                s=markersize,
+                zorder=zorder,
+            )
+
+            # Corner flags
+            y = np.linspace(0, 1, 50) * corner_radius
+            x = np.sqrt(corner_radius**2 - y**2)
+            ax.plot(
+                s * half_pitch_length - s * x,
+                -half_pitch_width + y,
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+            ax.plot(
+                s * half_pitch_length - s * x,
+                half_pitch_width - y,
+                lc,
+                linewidth=linewidth,
+                zorder=zorder,
+            )
+
+            # Draw the half circles by the box: the D
+            y = (
+                np.linspace(-1, 1, 50) * D_length
+            )  # D_length is the chord of the circle that defines the D
+            x = np.sqrt(D_radius**2 - y**2) + D_pos
+            ax.plot(
+                s * half_pitch_length - s * x, y, lc, linewidth=linewidth, zorder=zorder
+            )
+
+        # remove axis labels and ticks
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        # set axis limits
+        xmax = field_dimen[0] / 2.0 + border_dimen[0]
+        ymax = field_dimen[1] / 2.0 + border_dimen[1]
+        ax.set_xlim([-xmax, xmax])
+        ax.set_ylim([-ymax, ymax])
+        ax.set_axisbelow(True)
+
+        LOGGER.info("Succesfully plotted pitch")
+        return fig, ax
+    except Exception as e:
+        LOGGER.exception(f"Found an unexpected exception in plot_soccer_pitch(): \n{e}")
+        raise e
 
 
 def plot_events(
@@ -270,95 +283,119 @@ def plot_events(
         Tuple[plt.figure, plt.axes]: figure and axes with the pitch and events depicted
         on it.
     """
-    event_data = match.event_data
+    LOGGER.info(f"Trying to plot {events} in plot_events().")
+    try:
+        event_data = match.event_data
 
-    if len(events) > 0:
-        assert all([x in match.event_data["databallpy_event"].unique() for x in events])
-        event_data = event_data.loc[event_data["databallpy_event"].isin(events)]
-    if outcome is not None:
-        assert outcome in [0, 1]
-        event_data = event_data.loc[event_data["outcome"] == outcome]
-    if len(player_ids) > 0:
-        assert all(x in match.event_data["player_id"].unique() for x in player_ids)
-        event_data = event_data.loc[event_data["player_id"].isin(player_ids)]
-    if team_id:
-        assert team_id in [match.home_team_id, match.away_team_id]
-        event_data = event_data.loc[event_data["team_id"] == team_id]
+        if not isinstance(events, (list, np.ndarray)):
+            message = f"'events' should be a list, not a {type(events)}"
+            LOGGER.error(message)
+            raise TypeError(message)
+        if len(events) > 0:
+            for wrong_event in [event for event in events if event not in event_data["databallpy_event"].unique()]:
+                message = f"{wrong_event} is not a valid event in the databallpy_events, "
+                f"choose from {event_data['databallpy_event'].unique()}"
+                LOGGER.error(message)
+                raise ValueError(message)
+            event_data = event_data.loc[event_data["databallpy_event"].isin(events)]
+        if outcome is not None:
+            if not outcome in [0, 1]:
+                message = f"'outcome' should be either 0 or 1, not {outcome}"
+                LOGGER.error(message)
+                raise ValueError(message)
+            event_data = event_data.loc[event_data["outcome"] == outcome]
+        if len(player_ids) > 0:
+            for wrong_id in [x for x in player_ids if x not in event_data["player_id"].unique()]:
+                message = f"'{wrong_id}' is not found in event_data.player_id, can not show events."
+                LOGGER.error(message)
+                raise ValueError(message)
+            event_data = event_data.loc[event_data["player_id"].isin(player_ids)]
+        if team_id:
+            if team_id not in [match.home_team_id, match.away_team_id]:
+                message = f"'{team_id}' is not the id of either teams, can not plot events."
+                LOGGER.error(message)
+                raise ValueError(message)
+            event_data = event_data.loc[event_data["team_id"] == team_id]
 
-    if len(event_data) == 0:
-        print(
-            "No events could be found that match your\
-            requirements, please try again."
-        )
-        return None, None
-    else:
-        print(f"Found {len(event_data)} matching events")
-
-    fig, ax = plot_soccer_pitch(
-        field_dimen=match.pitch_dimensions, pitch_color=pitch_color
-    )
-    if title:
-        ax.set_title(title)
-
-    # Set match name
-    ax.text(
-        match.pitch_dimensions[0] / -2.0 + 2,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.home_team_name,
-        fontsize=14,
-        c=team_colors[0],
-        zorder=2.5,
-    )
-    ax.text(
-        match.pitch_dimensions[0] / 2.0 - 15,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.away_team_name,
-        fontsize=14,
-        c=team_colors[1],
-        zorder=2.5,
-    )
-
-    # Check if color_by_col is specified and is a valid column name
-    if color_by_col:
-        assert color_by_col in match.event_data.columns
-
-        # Color events by team if the specified column is "team_id"
-        if color_by_col == "team_id":
-            for id, c, team_name in zip(
-                [match.home_team_id, match.away_team_id],
-                team_colors,
-                [match.home_team_name, match.away_team_name],
-            ):
-                temp_events = event_data[event_data[color_by_col] == id]
-                ax.scatter(
-                    temp_events["start_x"],
-                    temp_events["start_y"],
-                    marker="x",
-                    label=team_name,
-                    c=c,
-                    zorder=2.5,
-                )
-
-        # Color events by unique values in the specified column
+        if len(event_data) == 0:
+            LOGGER.info("No matching events were found, returning None in plot_events().")
+            print(
+                "No events could be found that match your"
+                "requirements, please try again."
+            )
+            return None, None
         else:
-            for value in event_data[color_by_col].unique():
-                temp_events = event_data[event_data[color_by_col] == value]
-                ax.scatter(
-                    temp_events["start_x"],
-                    temp_events["start_y"],
-                    marker="x",
-                    label=value,
-                    zorder=2.5,
-                )
+            print(f"Found {len(event_data)} matching events")
 
-        # Add legend to the plot
-        plt.legend(loc="upper center")
+        fig, ax = plot_soccer_pitch(
+            field_dimen=match.pitch_dimensions, pitch_color=pitch_color
+        )
+        if title:
+            ax.set_title(title)
 
-    # If color_by_col is not specified, color events using default settings
-    else:
-        ax.scatter(event_data["start_x"], event_data["start_y"], marker="x", zorder=2.5)
+        # Set match name
+        ax.text(
+            match.pitch_dimensions[0] / -2.0 + 2,
+            match.pitch_dimensions[1] / 2.0 + 1.0,
+            match.home_team_name,
+            fontsize=14,
+            c=team_colors[0],
+            zorder=2.5,
+        )
+        ax.text(
+            match.pitch_dimensions[0] / 2.0 - 15,
+            match.pitch_dimensions[1] / 2.0 + 1.0,
+            match.away_team_name,
+            fontsize=14,
+            c=team_colors[1],
+            zorder=2.5,
+        )
 
-    return fig, ax
+        # Check if color_by_col is specified and is a valid column name
+        if color_by_col:
+            assert color_by_col in match.event_data.columns
+
+            # Color events by team if the specified column is "team_id"
+            if color_by_col == "team_id":
+                for id, c, team_name in zip(
+                    [match.home_team_id, match.away_team_id],
+                    team_colors,
+                    [match.home_team_name, match.away_team_name],
+                ):
+                    temp_events = event_data[event_data[color_by_col] == id]
+                    ax.scatter(
+                        temp_events["start_x"],
+                        temp_events["start_y"],
+                        marker="x",
+                        label=team_name,
+                        c=c,
+                        zorder=2.5,
+                    )
+
+            # Color events by unique values in the specified column
+            else:
+                for value in event_data[color_by_col].unique():
+                    temp_events = event_data[event_data[color_by_col] == value]
+                    ax.scatter(
+                        temp_events["start_x"],
+                        temp_events["start_y"],
+                        marker="x",
+                        label=value,
+                        zorder=2.5,
+                    )
+
+            # Add legend to the plot
+            plt.legend(loc="upper center")
+
+        # If color_by_col is not specified, color events using default settings
+        else:
+            ax.scatter(event_data["start_x"], event_data["start_y"], marker="x", zorder=2.5)
+
+        LOGGER.info("Successfully plotted events in plot_events().")
+        return fig, ax
+    except Exception as e:
+        LOGGER.exception(f"Found unexpected exception in plot_events(): \n{e}")
+        raise e
 
 
 @requires_ffmpeg
@@ -401,182 +438,187 @@ def save_match_clip(
         verbose (bool, optional): Whether or not to print info in the terminal on the
             progress
     """
+    LOGGER.info(f"Trying to create save a match clip '{title}' in save_match_clip().")
+    try:
+        td = match.tracking_data.loc[start_idx:end_idx]
+        td_ht = td[[x for x in match.home_players_column_ids() if "_x" in x or "_y" in x]]
+        td_at = td[[x for x in match.away_players_column_ids() if "_x" in x or "_y" in x]]
 
-    td = match.tracking_data.loc[start_idx:end_idx]
-    td_ht = td[[x for x in match.home_players_column_ids() if "_x" in x or "_y" in x]]
-    td_at = td[[x for x in match.away_players_column_ids() if "_x" in x or "_y" in x]]
+        if variable_of_interest is not None:
+            if not (variable_of_interest.index == td.index).all():
+                message = "index of the variable_of_interest should be equal to the index "
+                "of the start_idx:end_idx."
+                LOGGER.error(message)
+                raise DataBallPyError(message)
+        if player_possession_column is not None:
+            if not player_possession_column in match.tracking_data.columns:
+                message = f"Column {player_possession_column} not found in match.tracking_data.columns"
+                LOGGER.error(message)
+                raise DataBallPyError(message)
 
-    if variable_of_interest is not None:
-        assert (
-            variable_of_interest.index == td.index
-        ).all(), (
-            "Index of variable of interest and of the tracking data should be alike!"
+        if len(events) > 0:
+            if not match.is_synchronised:
+                message = "Match needs to be synchronised to add events."
+                LOGGER.error(message)
+                raise DataBallPyError(message)
+
+        animation_metadata = {
+            "title": title,
+            "artist": "Matplotlib",
+            "comment": "Made with DataballPy",
+        }
+        writer = animation.FFMpegWriter(fps=match.frame_rate, metadata=animation_metadata)
+        video_loc = f"{save_folder}/{title}.mp4"
+
+        fig, ax = plot_soccer_pitch(
+            field_dimen=match.pitch_dimensions, pitch_color=pitch_color
         )
 
-    if player_possession_column is not None:
-        assert (
-            player_possession_column in match.tracking_data.columns
-        ), f"Column {player_possession_column} not found in match.tracking_data.columns"
+        # Set match name, non variable over time
+        ax.text(
+            match.pitch_dimensions[0] / -2.0 + 2,
+            match.pitch_dimensions[1] / 2.0 + 1.0,
+            match.home_team_name,
+            fontsize=14,
+            color=team_colors[0],
+        )
+        ax.text(
+            match.pitch_dimensions[0] / 2.0 - 15,
+            match.pitch_dimensions[1] / 2.0 + 1.0,
+            match.away_team_name,
+            fontsize=14,
+            color=team_colors[1],
+        )
 
-    if len(events) > 0:
-        assert (
-            "databallpy_event" in match.tracking_data.columns
-        ), "No event column found in match.tracking_data.columns, did you synchronize\
-            event and tracking data?"
+        # Generate movie with variable info
+        with writer.saving(fig, video_loc, 100):
+            if verbose:
+                indexes = tqdm(td.index, desc="Making match clip", leave=False)
+            else:
+                indexes = td.index
+            for _, idx in enumerate(indexes):
+                variable_fig_objs = []
 
-    animation_metadata = {
-        "title": title,
-        "artist": "Matplotlib",
-        "comment": "Made with DataballPy",
-    }
-    writer = animation.FFMpegWriter(fps=match.frame_rate, metadata=animation_metadata)
-    video_loc = f"{save_folder}/{title}.mp4"
-
-    fig, ax = plot_soccer_pitch(
-        field_dimen=match.pitch_dimensions, pitch_color=pitch_color
-    )
-
-    # Set match name, non variable over time
-    ax.text(
-        match.pitch_dimensions[0] / -2.0 + 2,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.home_team_name,
-        fontsize=14,
-        color=team_colors[0],
-    )
-    ax.text(
-        match.pitch_dimensions[0] / 2.0 - 15,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.away_team_name,
-        fontsize=14,
-        color=team_colors[1],
-    )
-
-    # Generate movie with variable info
-    with writer.saving(fig, video_loc, 100):
-        if verbose:
-            indexes = tqdm(td.index, desc="Making match clip", leave=False)
-        else:
-            indexes = td.index
-        for _, idx in enumerate(indexes):
-            variable_fig_objs = []
-
-            # Scatter plot the teams
-            for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
-                x_cols = [x for x in td_team.index if x[-2:] == "_x"]
-                y_cols = [y for y in td_team.index if y[-2:] == "_y"]
-                fig_obj = ax.scatter(
-                    td_team[x_cols], td_team[y_cols], c=c, alpha=0.7, s=90, zorder=2.5
-                )
-                variable_fig_objs.append(fig_obj)
-
-                # Add shirt number to every dot
-                for x, y in zip(x_cols, y_cols):
-                    if pd.isnull(td_team[x]):
-                        # Player not on the pitch currently
-                        continue
-
-                    # Slightly different place needed if the number has a len of 2
-                    correction = 0.5 if len(x.split("_")[1]) == 1 else 0.8
-                    fig_obj = ax.text(
-                        td_team[x] - correction,
-                        td_team[y] - 0.5,
-                        x.split("_")[1],  # the shirt number
-                        fontsize=9,
-                        c="white",
-                        zorder=3.0,
+                # Scatter plot the teams
+                for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
+                    x_cols = [x for x in td_team.index if x[-2:] == "_x"]
+                    y_cols = [y for y in td_team.index if y[-2:] == "_y"]
+                    fig_obj = ax.scatter(
+                        td_team[x_cols], td_team[y_cols], c=c, alpha=0.7, s=90, zorder=2.5
                     )
                     variable_fig_objs.append(fig_obj)
 
-            # Plot the ball
-            fig_obj = ax.scatter(
-                td.loc[idx, "ball_x"], td.loc[idx, "ball_y"], c="black"
-            )
-            variable_fig_objs.append(fig_obj)
+                    # Add shirt number to every dot
+                    for x, y in zip(x_cols, y_cols):
+                        if pd.isnull(td_team[x]):
+                            # Player not on the pitch currently
+                            continue
 
-            # Add time info
-            fig_obj = ax.text(
-                -20.5,
-                match.pitch_dimensions[1] / 2.0 + 1.0,
-                td.loc[idx, "matchtime_td"],
-                c="k",
-                fontsize=14,
-            )
-            variable_fig_objs.append(fig_obj)
+                        # Slightly different place needed if the number has a len of 2
+                        correction = 0.5 if len(x.split("_")[1]) == 1 else 0.8
+                        fig_obj = ax.text(
+                            td_team[x] - correction,
+                            td_team[y] - 0.5,
+                            x.split("_")[1],  # the shirt number
+                            fontsize=9,
+                            c="white",
+                            zorder=3.0,
+                        )
+                        variable_fig_objs.append(fig_obj)
 
-            # Add variable of interest
-            if variable_of_interest is not None:
+                # Plot the ball
+                fig_obj = ax.scatter(
+                    td.loc[idx, "ball_x"], td.loc[idx, "ball_y"], c="black"
+                )
+                variable_fig_objs.append(fig_obj)
+
+                # Add time info
                 fig_obj = ax.text(
-                    -7,
+                    -20.5,
                     match.pitch_dimensions[1] / 2.0 + 1.0,
-                    str(variable_of_interest[idx]),
+                    td.loc[idx, "matchtime_td"],
+                    c="k",
                     fontsize=14,
                 )
                 variable_fig_objs.append(fig_obj)
 
-            # add player possessions
-            if player_possession_column is not None:
-                column_id = match.tracking_data.loc[idx, player_possession_column]
-                if not pd.isnull(column_id):
-                    circle = plt.Circle(
-                        (
-                            match.tracking_data.loc[idx, f"{column_id}_x"],
-                            match.tracking_data.loc[idx, f"{column_id}_y"],
-                        ),
-                        radius=1,
-                        color="gold",
-                        fill=False,
-                    )
-                    fig_obj = ax.add_artist(circle)
-                    variable_fig_objs.append(fig_obj)
-
-            # Add events
-            # Note: this should be last in this function since it assumes that all
-            # other info is already plotted in the axes
-            if len(events) > 0:
-                if td.loc[idx, "databallpy_event"] in events:
-                    event = (
-                        match.event_data[
-                            match.event_data["event_id"] == td.loc[idx, "event_id"]
-                        ]
-                        .iloc[0]
-                        .T
-                    )
-
-                    player_name = event["player_name"]
-                    event_name = event["databallpy_event"]
-
-                    # Add event text
+                # Add variable of interest
+                if variable_of_interest is not None:
                     fig_obj = ax.text(
-                        5,
-                        match.pitch_dimensions[1] / 2.0 + 1,
-                        f"{player_name}: {event_name}",
+                        -7,
+                        match.pitch_dimensions[1] / 2.0 + 1.0,
+                        str(variable_of_interest[idx]),
                         fontsize=14,
                     )
                     variable_fig_objs.append(fig_obj)
 
-                    # Highligh location on the pitch of the event
-                    fig_obj = ax.scatter(
-                        event["start_x"],
-                        event["start_y"],
-                        color="red",
-                        marker="x",
-                        s=50,
-                    )
-                    variable_fig_objs.append(fig_obj)
+                # add player possessions
+                if player_possession_column is not None:
+                    column_id = match.tracking_data.loc[idx, player_possession_column]
+                    if not pd.isnull(column_id):
+                        circle = plt.Circle(
+                            (
+                                match.tracking_data.loc[idx, f"{column_id}_x"],
+                                match.tracking_data.loc[idx, f"{column_id}_y"],
+                            ),
+                            radius=1,
+                            color="gold",
+                            fill=False,
+                        )
+                        fig_obj = ax.add_artist(circle)
+                        variable_fig_objs.append(fig_obj)
 
-                    # Grap frame match.frame_rate times to 'pause' the video at
-                    # this moment
-                    for _ in range(match.frame_rate):
-                        writer.grab_frame()
+                # Add events
+                # Note: this should be last in this function since it assumes that all
+                # other info is already plotted in the axes
+                if len(events) > 0:
+                    if td.loc[idx, "databallpy_event"] in events:
+                        event = (
+                            match.event_data[
+                                match.event_data["event_id"] == td.loc[idx, "event_id"]
+                            ]
+                            .iloc[0]
+                            .T
+                        )
 
-            # Save current frame
-            writer.grab_frame()
+                        player_name = event["player_name"]
+                        event_name = event["databallpy_event"]
 
-            # Delete all variable axis objects
-            for fig_obj in variable_fig_objs:
-                fig_obj.remove()
+                        # Add event text
+                        fig_obj = ax.text(
+                            5,
+                            match.pitch_dimensions[1] / 2.0 + 1,
+                            f"{player_name}: {event_name}",
+                            fontsize=14,
+                        )
+                        variable_fig_objs.append(fig_obj)
 
-    # Close figure
-    plt.clf()
-    plt.close(fig)
+                        # Highligh location on the pitch of the event
+                        fig_obj = ax.scatter(
+                            event["start_x"],
+                            event["start_y"],
+                            color="red",
+                            marker="x",
+                            s=50,
+                        )
+                        variable_fig_objs.append(fig_obj)
+
+                        # Grap frame match.frame_rate times to 'pause' the video at
+                        # this moment
+                        for _ in range(match.frame_rate):
+                            writer.grab_frame()
+
+                # Save current frame
+                writer.grab_frame()
+
+                # Delete all variable axis objects
+                for fig_obj in variable_fig_objs:
+                    fig_obj.remove()
+
+        # Close figure
+        plt.clf()
+        plt.close(fig)
+        LOGGER.info(f"Succesfully created new saved match clip: {title} in {save_folder}.")
+    except Exception as e:
+        LOGGER.exception(f"Found an unexpected exception in save_match_clip(): \n{e}")
+        raise e

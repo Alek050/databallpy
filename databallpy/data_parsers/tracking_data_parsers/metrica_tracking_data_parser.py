@@ -23,6 +23,9 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.utils import _to_int
+from databallpy.logging import create_logger
+
+LOGGER = create_logger(__name__)
 
 
 def load_metrica_tracking_data(
@@ -43,23 +46,38 @@ def load_metrica_tracking_data(
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
 
+    LOGGER.info("Trying to load metrica tracking data.")
     if isinstance(tracking_data_loc, str):
-        assert os.path.exists(tracking_data_loc)
-        assert os.path.exists(metadata_loc)
+        if not os.path.exists(tracking_data_loc):
+            message = f"Could not find {tracking_data_loc}"
+            LOGGER.error(message)
+            raise FileNotFoundError(message)
+        if not os.path.exists(metadata_loc):
+            message = f"Could not find {metadata_loc}"
+            LOGGER.error(message)
+            raise FileNotFoundError(message)
     elif isinstance(tracking_data_loc, io.StringIO):
+        LOGGER.info(
+            "Tracking_data_loc is an io.StringIO. Expecting it to be the raw data, "
+            "not the location of the file with the tracking data."
+            )
         pass
     else:
-        raise TypeError(
-            "tracking_data_loc must be either a str or a StringIO object,"
-            f" not a {type(tracking_data_loc)}"
-        )
+        message = ("tracking_data_loc must be either a str or a StringIO object,"
+            f" not a {type(tracking_data_loc)}")
+        LOGGER.error(message)
+        raise TypeError(message)
 
     metadata = _get_metadata(metadata_loc)
+    LOGGER.info("Successfully loaded metrica metadata.")
     td_channels = _get_td_channels(metadata_loc, metadata)
+    LOGGER.info("Successfully loaded metrica tracking data channels.")
     metadata = _update_metadata(td_channels, metadata)
+    LOGGER.info("Successfully updated metrica metadata based on tracking data channels.")
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )
+    LOGGER.info("Successfully loaded metrica tracking data.")
 
     tracking_data, changed_periods = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
@@ -77,7 +95,7 @@ def load_metrica_tracking_data(
     tracking_data["matchtime_td"] = _get_matchtime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
-
+    LOGGER.info("Successfully post-processed metrica tracking data.")
     return tracking_data, metadata
 
 

@@ -304,7 +304,7 @@ def get_match(
         LOGGER.info(f"Succesfully created match object: {match.name}")
         return match
     except Exception as e:
-        LOGGER.exception(f"Found a unexpected exception in get_match(): {e}")
+        LOGGER.exception(f"Found a unexpected exception in get_match(): \n{e}")
         raise e
 
 
@@ -455,66 +455,70 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         Match: All information about the match
     """
     LOGGER.info("Trying to load open match in get_open_match()")
-    provider_options = ["metrica"]
-    if not provider in [provider_options]:
-        LOGGER.error(
-            f"{provider} is not a valid provider for the get_open_match() function"
-            )
-        raise ValueError(
-            f"Open match provider should be in {provider_options}, not {provider}."
-            )
+    try:
+        provider_options = ["metrica"]
+        if not provider in [provider_options]:
+            LOGGER.error(
+                f"{provider} is not a valid provider for the get_open_match() function"
+                )
+            raise ValueError(
+                f"Open match provider should be in {provider_options}, not {provider}."
+                )
 
-    if provider == "metrica":
-        tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
-        event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
+        if provider == "metrica":
+            tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
+            event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
-    periods_cols = ed_metadata.periods_frames.columns.difference(
-        metadata.periods_frames.columns
-    ).to_list()
-    periods_cols.sort(reverse=True)
-    merged_periods = pd.concat(
-        (
-            metadata.periods_frames,
-            ed_metadata.periods_frames[periods_cols],
-        ),
-        axis=1,
-    )
+        periods_cols = ed_metadata.periods_frames.columns.difference(
+            metadata.periods_frames.columns
+        ).to_list()
+        periods_cols.sort(reverse=True)
+        merged_periods = pd.concat(
+            (
+                metadata.periods_frames,
+                ed_metadata.periods_frames[periods_cols],
+            ),
+            axis=1,
+        )
 
-    match = Match(
-        tracking_data=tracking_data,
-        tracking_data_provider=provider,
-        event_data=event_data,
-        event_data_provider=provider,
-        pitch_dimensions=metadata.pitch_dimensions,
-        periods=merged_periods,
-        frame_rate=metadata.frame_rate,
-        home_team_id=metadata.home_team_id,
-        home_formation=metadata.home_formation,
-        home_score=metadata.home_score,
-        home_team_name=metadata.home_team_name,
-        home_players=metadata.home_players,
-        away_team_id=metadata.away_team_id,
-        away_formation=metadata.away_formation,
-        away_score=metadata.away_score,
-        away_team_name=metadata.away_team_name,
-        away_players=metadata.away_players,
-        country="",
-        allow_synchronise_tracking_and_event_data=True,
-        shot_events=databallpy_events["shot_events"]
-        if "shot_events" in databallpy_events.keys()
-        else {},
-        dribble_events=databallpy_events["dribble_events"]
-        if "dribble_events" in databallpy_events.keys()
-        else {},
-        pass_events=databallpy_events["pass_events"]
-        if "pass_events" in databallpy_events.keys()
-        else {},
-        _tracking_timestamp_is_precise=True,
-        _event_timestamp_is_precise=True,
-        _periods_changed_playing_direction=metadata.periods_changed_playing_direction,
-    )
-    LOGGER.info(f"Successfully loaded open match {match.name}")
-    return match
+        match = Match(
+            tracking_data=tracking_data,
+            tracking_data_provider=provider,
+            event_data=event_data,
+            event_data_provider=provider,
+            pitch_dimensions=metadata.pitch_dimensions,
+            periods=merged_periods,
+            frame_rate=metadata.frame_rate,
+            home_team_id=metadata.home_team_id,
+            home_formation=metadata.home_formation,
+            home_score=metadata.home_score,
+            home_team_name=metadata.home_team_name,
+            home_players=metadata.home_players,
+            away_team_id=metadata.away_team_id,
+            away_formation=metadata.away_formation,
+            away_score=metadata.away_score,
+            away_team_name=metadata.away_team_name,
+            away_players=metadata.away_players,
+            country="",
+            allow_synchronise_tracking_and_event_data=True,
+            shot_events=databallpy_events["shot_events"]
+            if "shot_events" in databallpy_events.keys()
+            else {},
+            dribble_events=databallpy_events["dribble_events"]
+            if "dribble_events" in databallpy_events.keys()
+            else {},
+            pass_events=databallpy_events["pass_events"]
+            if "pass_events" in databallpy_events.keys()
+            else {},
+            _tracking_timestamp_is_precise=True,
+            _event_timestamp_is_precise=True,
+            _periods_changed_playing_direction=metadata.periods_changed_playing_direction,
+        )
+        LOGGER.info(f"Successfully loaded open match {match.name}")
+        return match
+    except Exception as e:
+        LOGGER.exception(f"Found a unexpected exception in get_open_match(): \n{e}")
+        raise e
 
 
 def merge_metadata_periods(

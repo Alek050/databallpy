@@ -19,7 +19,9 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 )
 from databallpy.utils.tz_modification import utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
+from databallpy.logging import create_logger
 
+LOGGER = create_logger(__name__)
 
 def load_inmotio_tracking_data(
     tracking_data_loc: str, metadata_loc: str, verbose: bool = True
@@ -38,19 +40,29 @@ def load_inmotio_tracking_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
+    LOGGER.info("Trying to laod inmotio tracking data.")
     if isinstance(tracking_data_loc, str):
-        assert os.path.exists(tracking_data_loc)
-        assert os.path.exists(metadata_loc)
+        if not os.path.exists(tracking_data_loc):
+            message = f"Could not find {tracking_data_loc}"
+            LOGGER.error(message)
+            raise FileNotFoundError(message)
+        if not os.path.exists(metadata_loc):
+            message = f"Could not find {metadata_loc}"
+            LOGGER.error(message)
+            raise FileNotFoundError(message)
     else:
-        raise TypeError(
-            f"tracking_data_loc must be  a str, not a {type(tracking_data_loc)}"
-        )
+        message = f"tracking_data_loc must be  a str, not a {type(tracking_data_loc)}"
+        LOGGER.error(message)
+        raise TypeError(message)
 
     metadata = _get_metadata(metadata_loc)
+    LOGGER.info("Successfully loaded instat metadata.")
     td_channels = _get_td_channels(metadata_loc, metadata)
+    LOGGER.info("Successfully loaded instat tracking data channels.")
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose
     )
+    LOGGER.info("Successfully loaded instat tracking data.")
     first_frame = metadata.periods_frames[metadata.periods_frames["start_frame"] > 0][
         "start_frame"
     ].min()
@@ -74,7 +86,7 @@ def load_inmotio_tracking_data(
     tracking_data["matchtime_td"] = _get_matchtime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
-
+    LOGGER.info("Successfully post-processed the instat tracking data.")
     return tracking_data, metadata
 
 
