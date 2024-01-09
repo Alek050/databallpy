@@ -5,9 +5,10 @@ import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
-from databallpy.logging import create_logger
+from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
+
 
 def get_individual_player_possessions_and_duels(
     tracking_data: pd.DataFrame,
@@ -65,7 +66,9 @@ def get_individual_player_possessions_and_duels(
                 column_ids=["ball"],
             )
 
-        distances_df = get_distance_between_ball_and_players(tracking_data).fillna(np.inf)
+        distances_df = get_distance_between_ball_and_players(tracking_data).fillna(
+            np.inf
+        )
         pz_initial = get_initial_possessions(
             tracking_data, distances_df, pz_radius=pz_radius, min_frames=min_frames
         )
@@ -74,7 +77,8 @@ def get_individual_player_possessions_and_duels(
         player_possession = pd.Series(index=tracking_data.index, dtype="object")
         player_possession[:] = None
 
-        # Find intervals of player possessions, can also include intervals with None values.
+        # Find intervals of player possessions, can also include intervals
+        # with None values.
         shifting_idxs = np.where(pz_initial.values[:-1] != pz_initial.values[1:])[0]
         shifting_idxs = np.concatenate([[-1], shifting_idxs, [len(pz_initial) - 1]])
         possession_start_idxs = shifting_idxs[:-1] + 1
@@ -122,7 +126,9 @@ def get_individual_player_possessions_and_duels(
                 # update last_valid_idx
                 last_valid_idx = lost_possession_idx
 
-                player_possession[start_idx : lost_possession_idx + 1] = player_column_id
+                player_possession[
+                    start_idx : lost_possession_idx + 1
+                ] = player_column_id
 
         # Lastly, only apply when ball status is alive
         alive_mask = tracking_data["ball_status"] == "alive"
@@ -131,7 +137,10 @@ def get_individual_player_possessions_and_duels(
 
         return player_possession, duels
     except Exception as e:
-        LOGGER.exception(f"Found unexpected exception in get_individual_player_possessions_and_duels(): \n{e}")
+        LOGGER.exception(
+            "Found unexpected exception in "
+            f"get_individual_player_possessions_and_duels(): \n{e}"
+        )
         raise e
 
 

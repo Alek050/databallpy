@@ -37,11 +37,11 @@ class TestInmotioParser(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             load_inmotio_tracking_data(
                 self.tracking_data_loc[:-3], self.metadata_loc, verbose=False
-                )
+            )
         with self.assertRaises(FileNotFoundError):
             load_inmotio_tracking_data(
                 self.tracking_data_loc, self.metadata_loc + ".xml", verbose=False
-                )
+            )
 
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_loc)

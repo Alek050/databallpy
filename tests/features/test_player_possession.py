@@ -283,11 +283,8 @@ class TestPlayerPossession(unittest.TestCase):
             self.duels,
         )
         np.testing.assert_allclose(valid_gains, np.array([True, False]))
-    
+
     def test_get_individual_player_possessions_and_duels_wrong_input(self):
         td = self.tracking_data_full.copy()
         with self.assertRaises(ValueError):
-            get_individual_player_possessions_and_duels(
-                td, -1.5, bv_threshold=3
-            )
-
+            get_individual_player_possessions_and_duels(td, -1.5, bv_threshold=3)

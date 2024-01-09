@@ -5,9 +5,10 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
-from databallpy.logging import create_logger
+from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
+
 
 def get_pressure_on_player(
     td_frame: pd.Series,
@@ -64,7 +65,9 @@ def get_pressure_on_player(
             L = calculate_L(d_back, d_front, z)
 
             current_pressure = (
-                pd.to_numeric((1 - player_opponent_distance / L), errors="coerce").clip(0)
+                pd.to_numeric((1 - player_opponent_distance / L), errors="coerce").clip(
+                    0
+                )
                 ** q
                 * 100
             )
@@ -74,7 +77,9 @@ def get_pressure_on_player(
 
         return tot_pressure
     except Exception as e:
-        LOGGER.exception(f"Found unexpected exception in get_pressure_on_player(): \n{e}")
+        LOGGER.exception(
+            f"Found unexpected exception in get_pressure_on_player(): \n{e}"
+        )
         raise e
 
 

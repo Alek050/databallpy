@@ -96,7 +96,7 @@ class TestPressure(unittest.TestCase):
         expected = 3.1046
         res = calculate_L(d_back=3.0, d_front=5.0, z=0.2)
         self.assertAlmostEqual(res, expected, places=4)
-    
+
     def test_get_pressure_on_player_wrong_input(self):
         with self.assertRaises(TypeError):
             get_pressure_on_player(
@@ -107,4 +107,3 @@ class TestPressure(unittest.TestCase):
                 d_back=3.0,
                 q=1.75,
             )
-

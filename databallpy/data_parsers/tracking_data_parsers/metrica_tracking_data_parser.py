@@ -22,8 +22,8 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import _to_int
-from databallpy.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
@@ -60,11 +60,13 @@ def load_metrica_tracking_data(
         LOGGER.info(
             "Tracking_data_loc is an io.StringIO. Expecting it to be the raw data, "
             "not the location of the file with the tracking data."
-            )
+        )
         pass
     else:
-        message = ("tracking_data_loc must be either a str or a StringIO object,"
-            f" not a {type(tracking_data_loc)}")
+        message = (
+            "tracking_data_loc must be either a str or a StringIO object,"
+            f" not a {type(tracking_data_loc)}"
+        )
         LOGGER.error(message)
         raise TypeError(message)
 
@@ -73,7 +75,9 @@ def load_metrica_tracking_data(
     td_channels = _get_td_channels(metadata_loc, metadata)
     LOGGER.info("Successfully loaded metrica tracking data channels.")
     metadata = _update_metadata(td_channels, metadata)
-    LOGGER.info("Successfully updated metrica metadata based on tracking data channels.")
+    LOGGER.info(
+        "Successfully updated metrica metadata based on tracking data channels."
+    )
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )

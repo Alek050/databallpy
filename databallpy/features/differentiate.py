@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 
 from databallpy.utils.filters import filter_data
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT
 
-from databallpy.logging import create_logger
-
 LOGGER = create_logger(__name__)
+
 
 def get_velocity(
     df: pd.DataFrame,

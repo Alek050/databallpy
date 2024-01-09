@@ -11,14 +11,15 @@ from tqdm import tqdm
 
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.errors import DataBallPyError
+from databallpy.utils.logging import create_logger
 from databallpy.utils.synchronise_tracking_and_event_data import (
     synchronise_tracking_and_event_data,
 )
 from databallpy.utils.utils import MISSING_INT, get_next_possession_frame
 from databallpy.utils.warnings import DataBallPyWarning
-from databallpy.logging import create_logger
 
 LOGGER = create_logger(__name__)
+
 
 def requires_tracking_data(func):
     @wraps(func)
@@ -173,11 +174,19 @@ class Match:
 
     @requires_tracking_data
     def home_players_column_ids(self) -> List[str]:
-        return [id[:-2] for id in self.tracking_data.columns if id[:4] == "home" and id[-2:] == "_x"]
+        return [
+            id[:-2]
+            for id in self.tracking_data.columns
+            if id[:4] == "home" and id[-2:] == "_x"
+        ]
 
     @requires_tracking_data
     def away_players_column_ids(self) -> List[str]:
-        return [id[:-2] for id in self.tracking_data.columns if id[:4] == "away" and id[-2:] == "_x"]
+        return [
+            id[:-2]
+            for id in self.tracking_data.columns
+            if id[:4] == "away" and id[-2:] == "_x"
+        ]
 
     @requires_tracking_data
     def player_column_id_to_full_name(self, column_id: str) -> str:
@@ -226,9 +235,8 @@ class Match:
             LOGGER.error(
                 f"Player_id {player_id} is not in either one of the teams, could not "
                 "obtain column id of player in match.player_id_to_column_id()."
-                )
+            )
             raise ValueError(f"{player_id} is not in either one of the teams")
-
 
     @property
     @requires_event_data
@@ -298,7 +306,9 @@ class Match:
                 "xG": [shot.xG for shot in self.shot_events.values()],
             }
             self._shots_df = pd.DataFrame(res_dict)
-            LOGGER.info("Successfully created match._shots_df dataframe in match.shots_df")
+            LOGGER.info(
+                "Successfully created match._shots_df dataframe in match.shots_df"
+            )
         LOGGER.info("Returning the pre-loaded match._shots_df in match.shots_df")
         return self._shots_df
 
@@ -311,7 +321,9 @@ class Match:
             pd.DataFrame: DataFrame with all information of the dribbles in the match"""
 
         if self._dribbles_df is None:
-            LOGGER.info("Creating the match._dribbles_df dataframe in match.dribbles_df")
+            LOGGER.info(
+                "Creating the match._dribbles_df dataframe in match.dribbles_df"
+            )
             res_dict = {
                 "event_id": [
                     dribble.event_id for dribble in self.dribble_events.values()
@@ -354,7 +366,9 @@ class Match:
                 ],
             }
             self._dribbles_df = pd.DataFrame(res_dict)
-            LOGGER.info("Successfully created match._dribbles_df dataframe in match.dribbles_df")
+            LOGGER.info(
+                "Successfully created match._dribbles_df dataframe in match.dribbles_df"
+            )
         LOGGER.info("Returning the pre-loaded match._dribbles_df in match.dribbles_df")
         return self._dribbles_df
 
@@ -411,7 +425,9 @@ class Match:
                 ],
             }
             self._passes_df = pd.DataFrame(res_dict)
-            LOGGER.info("Successfully created match._passes_df dataframe in match.passes_df")
+            LOGGER.info(
+                "Successfully created match._passes_df dataframe in match.passes_df"
+            )
         LOGGER.info("Returning the pre-loaded match._passes_df in match.passes_df")
         return self._passes_df
 
@@ -430,7 +446,7 @@ class Match:
             LOGGER.error(
                 "Tracking and event data should be synced before adding tracking data"
                 " features to the shot events."
-                )
+            )
             raise DataBallPyError(
                 "Tracking and event data are not synchronised yet. Please run the"
                 " synchronise_tracking_and_event_data() method first"
@@ -691,7 +707,7 @@ class Match:
             message = (
                 "Synchronising tracking and event data is not allowed. The quality "
                 "checks of the tracking data showed that the quality was poor."
-                )
+            )
             LOGGER.error(message)
             raise DataBallPyError(message)
         synchronise_tracking_and_event_data(
@@ -828,7 +844,9 @@ def check_inputs_match_object(match: Match):
     LOGGER.info("Checking the inputs of the match object")
     # tracking_data
     if not isinstance(match.tracking_data, pd.DataFrame):
-        message =  f"tracking data should be a pandas df, not a {type(match.tracking_data)}"
+        message = (
+            f"tracking data should be a pandas df, not a {type(match.tracking_data)}"
+        )
         LOGGER.error(message)
         raise TypeError(message)
 
@@ -900,10 +918,7 @@ def check_inputs_match_object(match: Match):
                     "and event data might be affected."
                 )
                 LOGGER.warning(message)
-                warnings.warn(
-                    message=message,
-                    category=DataBallPyWarning
-                )
+                warnings.warn(message=message, category=DataBallPyWarning)
 
         # check if there is a valid datetime object
         if not pd.api.types.is_datetime64_any_dtype(match.tracking_data["datetime"]):
@@ -1022,9 +1037,7 @@ def check_inputs_match_object(match: Match):
     # frame_rate
     if not pd.isnull(match.frame_rate) and not match.frame_rate == MISSING_INT:
         if not isinstance(match.frame_rate, int):
-            message = (
-                f"frame_rate should be an integer, not a {type(match.frame_rate)}"
-            )
+            message = f"frame_rate should be an integer, not a {type(match.frame_rate)}"
             LOGGER.error(message)
             raise TypeError(message)
         if match.frame_rate < 1:
@@ -1057,9 +1070,7 @@ def check_inputs_match_object(match: Match):
     for team, score in zip(["home", "away"], [match.home_score, match.away_score]):
         if not pd.isnull(score) and not score == MISSING_INT:
             if not isinstance(score, int):
-                message = (
-                    f"{team} team score should be an integer, not a {type(score)}"
-                )
+                message = f"{team} team score should be an integer, not a {type(score)}"
                 LOGGER.error(message)
                 raise TypeError(message)
             if score < 0:
@@ -1072,9 +1083,7 @@ def check_inputs_match_object(match: Match):
         ["home", "away"], [match.home_formation, match.away_formation]
     ):
         if not isinstance(form, str):
-            message = (
-                f"{team} team formation should be a string, not a {type(form)}"
-            )
+            message = f"{team} team formation should be a string, not a {type(form)}"
             LOGGER.error(message)
             raise TypeError(message)
         if len(form) > 5:
@@ -1131,14 +1140,13 @@ def check_inputs_match_object(match: Match):
 
             if match.tracking_data.loc[idx, away_x].mean() < 0:
                 centroid_x = match.tracking_data.loc[idx, away_x].mean()
-                message = (     
+                message = (
                     "The away team should be represented as playingfrom right to "
                     f"left the whole match. At the start  of period {period} the x "
                     f"centroid ofthe away team is {centroid_x}."
                 )
                 LOGGER.error(message)
                 raise DataBallPyError(message)
-                    
 
         # check databallpy_events
         databallpy_events = [match.dribble_events, match.shot_events, match.pass_events]

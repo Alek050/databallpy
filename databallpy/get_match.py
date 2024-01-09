@@ -25,11 +25,11 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 from databallpy.events import PassEvent
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT
 
-from databallpy.logging import create_logger
-
 LOGGER = create_logger(__name__)
+
 
 def get_match(
     tracking_data_loc: str = None,
@@ -72,14 +72,16 @@ def get_match(
         LOGGER.info(
             "Trying to load a new match in get_match();"
             f"\n\tTracking data loc: {str(tracking_data_loc)}"
-            f"\n\tTracking data provider: {str(tracking_data_provider)}" 
+            f"\n\tTracking data provider: {str(tracking_data_provider)}"
             f"\n\tEvent data loc: {str(event_data_loc)}"
             f"\n\tEven data provider: {str(event_data_provider)}"
             f"\n\tCheck quality: {str(check_quality)}"
             f"\n\tVerbose: {str(verbose)}"
-            )
+        )
         if (event_data_loc or _extra_event_data_loc) and event_metadata_loc is None:
-            LOGGER.error("Event metadata location is None while event data location is not")
+            LOGGER.error(
+                "Event metadata location is None while event data location is not"
+            )
             raise ValueError(
                 "Please provide an event metadata location when providing an event"
                 " data location"
@@ -91,19 +93,25 @@ def get_match(
                 " data location"
             )
         elif event_metadata_loc and event_data_provider is None:
-            LOGGER.error("Event data provider is None while event metadata location is not")
+            LOGGER.error(
+                "Event data provider is None while event metadata location is not"
+            )
             raise ValueError(
                 "Please provide an event data provider when providing an event"
                 " metadata location"
             )
         elif tracking_data_loc and tracking_data_provider is None:
-            LOGGER.error("Tracking data provider is None while tracking data location is not")
+            LOGGER.error(
+                "Tracking data provider is None while tracking data location is not"
+            )
             raise ValueError(
                 "Please provide a tracking data provider when providing a tracking"
                 " data location"
             )
         elif tracking_data_loc and tracking_metadata_loc is None:
-            LOGGER.error("Tracking metadata location is None while tracking data location is not")
+            LOGGER.error(
+                "Tracking metadata location is None while tracking data location is not"
+            )
             raise ValueError(
                 "Please provide a tracking metadata location when providing a tracking"
                 " data location"
@@ -113,7 +121,11 @@ def get_match(
         uses_event_data = False
         uses_event_metadata = False
 
-        tracking_precise_timestamps = {"tracab": True, "metrica": True, "inmotio": False}
+        tracking_precise_timestamps = {
+            "tracab": True,
+            "metrica": True,
+            "inmotio": False,
+        }
         event_precise_timestamps = {
             "opta": True,
             "metrica": True,
@@ -122,10 +134,10 @@ def get_match(
         }
 
         LOGGER.info(
-            f"Succesfully passed input checks. Attempting to load the base data "
-            "(get_match())."
-            )
-        
+            "Succesfully passed input checks. Attempting to load the base "
+            "data (get_match())."
+        )
+
         # Check if tracking data should be loaded
         if tracking_data_loc and tracking_metadata_loc and tracking_data_provider:
             tracking_data, tracking_metadata = load_tracking_data(
@@ -161,7 +173,11 @@ def get_match(
             _extra_event_data_loc is not None
             and "scisportsevents xml v2" in _extra_event_data_loc.lower()
         ):
-            scisports_event_data, databallpy_events, tracking_data = _handle_scisports_data(
+            (
+                scisports_event_data,
+                databallpy_events,
+                tracking_data,
+            ) = _handle_scisports_data(
                 scisports_ed_loc=_extra_event_data_loc,
                 tracking_data=tracking_data if uses_tracking_data else None,
                 event_metadata=event_metadata if uses_event_metadata else None,
@@ -180,12 +196,14 @@ def get_match(
 
         if not uses_event_data and not uses_tracking_data:
             LOGGER.error("Neither event nor tracking data was loaded.")
-            raise ValueError("No data loaded, please provide data locations and providers")
+            raise ValueError(
+                "No data loaded, please provide data locations and providers"
+            )
 
         LOGGER.info(
-        f"Loaded data in get_match():\n\tTracking data: {str(uses_tracking_data)}"
-        f"\n\tEvent data: {str(uses_event_data)}"
-            )
+            f"Loaded data in get_match():\n\tTracking data: {str(uses_tracking_data)}"
+            f"\n\tEvent data: {str(uses_event_data)}"
+        )
         # set variables to create match object
         if uses_event_data:
             if "scisports_event_data" in vars():
@@ -211,7 +229,6 @@ def get_match(
         # extra checks when using both tracking and event data
         LOGGER.info("Combining info from tracking and event data in get_match()")
         if uses_tracking_data and uses_event_metadata:
-            
             periods = merge_metadata_periods(
                 tracking_metadata.periods_frames, event_metadata.periods_frames
             )
@@ -245,12 +262,16 @@ def get_match(
         LOGGER.info("Creating match object in get_match()")
         match = Match(
             tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
-            tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
+            tracking_data_provider=tracking_data_provider
+            if uses_tracking_data
+            else None,
             event_data=event_data if uses_event_data else pd.DataFrame(),
             event_data_provider=event_data_provider if uses_event_data else None,
             pitch_dimensions=pitch_dimensions,
             periods=periods,
-            frame_rate=tracking_metadata.frame_rate if uses_tracking_data else MISSING_INT,
+            frame_rate=tracking_metadata.frame_rate
+            if uses_tracking_data
+            else MISSING_INT,
             home_team_id=event_metadata.home_team_id
             if uses_event_metadata
             else tracking_metadata.home_team_id,
@@ -320,24 +341,30 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
         Match: All information about the match
     """
     LOGGER.info(f"Trying to load saved match: {name} in get_saved_match()")
-    
-    loc = os.path.join(path, name + ".pickle") if not name[-7:] == ".pickle" else os.path.join(path, name)
+
+    loc = (
+        os.path.join(path, name + ".pickle")
+        if not name[-7:] == ".pickle"
+        else os.path.join(path, name)
+    )
     if not os.path.exists(loc):
         LOGGER.error(f"Can not load {loc} because it does not exist.")
-        raise FileNotFoundError(f"Could not find {loc}. Set the `path` variable"
-                                " to specify the right directory of the saved match.")
+        raise FileNotFoundError(
+            f"Could not find {loc}. Set the `path` variable"
+            " to specify the right directory of the saved match."
+        )
     with open(loc, "rb") as f:
         match = pickle.load(f)
-    
+
     if not isinstance(match, Match):
         LOGGER.critical(
             f"Loaded pickle file was not a match object but a {type(match)}. "
             "Check if this is not a Virus! (get_saved_match())"
-            )
+        )
         raise TypeError(
             f"Expected a databallpy.Match object, but loaded a {type(match)}."
             " Insert the location of a match object to load a match."
-            )
+        )
     LOGGER.info(f"Succesfully loaded match {match.name}")
     return match
 
@@ -362,14 +389,14 @@ def load_tracking_data(
     """
     LOGGER.info("Trying to load tracking in load_tracking_data()")
 
-    if not tracking_data_provider in ["tracab", "metrica", "inmotio"]:
+    if tracking_data_provider not in ["tracab", "metrica", "inmotio"]:
         LOGGER.error(
             f"Found invalid tracking data provider: {tracking_data_provider} in "
             "load_tracking_data()."
-            )
+        )
         raise ValueError(
-            "We do not support '{tracking_data_provider}' as tracking data provider yet, "
-            "please open an issue in our Github repository."
+            "We do not support '{tracking_data_provider}' as tracking data provider yet"
+            ", please open an issue in our Github repository."
         )
 
     # Get tracking data and tracking metadata
@@ -390,8 +417,9 @@ def load_tracking_data(
             verbose=verbose,
         )
     LOGGER.info(
-        f"Successfully loaded {tracking_data_provider} tracking data in load_tracking_data()"
-        )
+        f"Successfully loaded {tracking_data_provider} "
+        "tracking data in load_tracking_data()"
+    )
     return tracking_data, tracking_metadata
 
 
@@ -410,14 +438,14 @@ def load_event_data(
     """
 
     LOGGER.info("Trying to load event data in load_event_data()")
-    if not event_data_provider in ["opta", "metrica","instat"]:
+    if event_data_provider not in ["opta", "metrica", "instat"]:
         LOGGER.error(
             f"Found invalid tracking data provider: {event_data_provider} in "
             "load_tracking_data()."
-            )
+        )
         raise ValueError(
             f"We do not support '{event_data_provider}' as event data provider yet, "
-             "please open an issue in our Github repository."
+            "please open an issue in our Github repository."
         )
 
     # Get event data and event metadata
@@ -436,7 +464,7 @@ def load_event_data(
         )
     LOGGER.info(
         f"Successfully loaded {event_data_provider} tracking data in load_event_data()"
-        )
+    )
     return event_data, event_metadata, databallpy_events
 
 
@@ -455,13 +483,13 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
     LOGGER.info("Trying to load open match in get_open_match()")
     try:
         provider_options = ["metrica"]
-        if not provider in provider_options:
+        if provider not in provider_options:
             LOGGER.error(
                 f"{provider} is not a valid provider for the get_open_match() function"
-                )
+            )
             raise ValueError(
                 f"Open match provider should be in {provider_options}, not {provider}."
-                )
+            )
 
         if provider == "metrica":
             tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
@@ -510,7 +538,9 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
             else {},
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
-            _periods_changed_playing_direction=metadata.periods_changed_playing_direction,
+            _periods_changed_playing_direction=(
+                metadata.periods_changed_playing_direction
+            ),
         )
         LOGGER.info(f"Successfully loaded open match {match.name}")
         return match
@@ -567,7 +597,7 @@ def rescale_event_data(
     LOGGER.info(
         "Trying to rescale the event data based on the tracking data in "
         "rescale_event_data()."
-        )
+    )
     if (
         tracking_pitch_dimensions == event_pitch_dimensions
         or pd.isnull(event_pitch_dimensions).any()
@@ -594,12 +624,11 @@ def rescale_event_data(
                 if isinstance(event, PassEvent):
                     event.end_x *= x_correction
                     event.end_y *= y_correction
-    
 
     LOGGER.info(
         "Successfully rescaled the pitch dimensions of the event data in "
         "rescale_event_data()."
-        )
+    )
     return event_data, databallpy_events
 
 
@@ -673,7 +702,7 @@ def align_player_and_team_ids(
 
     LOGGER.info(
         "Successfully aligned player and team ids in align_player_and_team_ids()"
-        )
+    )
     return event_data, event_metadata
 
 

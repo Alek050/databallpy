@@ -3,11 +3,11 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT
 
-from databallpy.logging import create_logger
+LOGGER = create_logger(__name__)
 
-LOGGER  = create_logger(__name__)
 
 @dataclass
 class Metadata:
@@ -101,7 +101,9 @@ class Metadata:
         # frame_rate
         if not pd.isnull(self.frame_rate) and not self.frame_rate == MISSING_INT:
             if not isinstance(self.frame_rate, int):
-                message = f"frame_rate should be an integer, not a {type(self.frame_rate)}"
+                message = (
+                    f"frame_rate should be an integer, not a {type(self.frame_rate)}"
+                )
                 LOGGER.error(message)
                 raise TypeError(message)
             if self.frame_rate < 1:
@@ -138,7 +140,9 @@ class Metadata:
         for team, score in zip(["home", "away"], [self.home_score, self.away_score]):
             if not pd.isnull(score) and not score == MISSING_INT:
                 if not isinstance(score, int):
-                    message = f"{team} team score should be an integer, not a {type(score)}"
+                    message = (
+                        f"{team} team score should be an integer, not a {type(score)}"
+                    )
                     LOGGER.error(message)
                     raise TypeError(message)
                 if score < 0:
@@ -152,7 +156,9 @@ class Metadata:
         ):
             if not pd.isnull(form):
                 if not isinstance(form, str):
-                    message =  f"{team} team formation should be a string, not a {type(form)}"
+                    message = (
+                        f"{team} team formation should be a string, not a {type(form)}"
+                    )
                     LOGGER.error(message)
                     raise TypeError(message)
                 if len(form) > 5:
@@ -189,7 +195,7 @@ class Metadata:
             message = f"country should be a string, not a {type(self.country)}"
             LOGGER.error(message)
             raise TypeError(message)
-        
+
     LOGGER.info("Passed all Metadata input checks.")
 
     def __eq__(self, other):

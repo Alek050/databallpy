@@ -64,12 +64,10 @@ class TestOptaParser(unittest.TestCase):
         assert metadata == MD_OPTA
         pd.testing.assert_frame_equal(event_data, pd.DataFrame())
         assert dbp_events == {}
-    
+
     def test_load_opta_event_data_errors(self):
         with self.assertRaises(TypeError):
-            load_opta_event_data(
-                3, self.f24_loc, pitch_dimensions=[10.0, 10.0]
-            )
+            load_opta_event_data(3, self.f24_loc, pitch_dimensions=[10.0, 10.0])
         with self.assertRaises(TypeError):
             load_opta_event_data(
                 self.f7_loc, [self.f24_loc], pitch_dimensions=[10.0, 10.0]

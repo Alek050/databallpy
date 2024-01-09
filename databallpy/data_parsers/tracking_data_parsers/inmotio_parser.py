@@ -17,11 +17,12 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
-from databallpy.logging import create_logger
 
 LOGGER = create_logger(__name__)
+
 
 def load_inmotio_tracking_data(
     tracking_data_loc: str, metadata_loc: str, verbose: bool = True

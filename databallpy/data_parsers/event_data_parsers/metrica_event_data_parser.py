@@ -19,8 +19,8 @@ from databallpy.data_parsers.metrica_metadata_parser import (
     _update_metadata,
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
-from databallpy.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
@@ -61,7 +61,7 @@ def load_metrica_event_data(
         LOGGER.info(
             "event_data_loc has a '{' in it. Expecting it to be the json file"
             " with the event data, not the location of the event data .json."
-            )
+        )
         pass
     else:
         message = (

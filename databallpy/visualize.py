@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from databallpy.match import Match
 from databallpy.utils.errors import DataBallPyError
-from databallpy.logging import create_logger
+from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
@@ -29,7 +29,7 @@ def requires_ffmpeg(func):
             LOGGER.critical(
                 "Could not find the subprocess ffmpeg. Make sure ffmpeg is installed"
                 " globally on you device and added to your python path."
-                )
+            )
             raise e
 
         return func(*args, **kwargs)
@@ -289,34 +289,49 @@ def plot_events(
             LOGGER.error(message)
             raise TypeError(message)
         if len(events) > 0:
-            for wrong_event in [event for event in events if event not in event_data["databallpy_event"].unique()]:
-                message = f"{wrong_event} is not a valid event in the databallpy_events, "
+            for wrong_event in [
+                event
+                for event in events
+                if event not in event_data["databallpy_event"].unique()
+            ]:
+                message = (
+                    f"{wrong_event} is not a valid event in the databallpy_events, "
+                )
                 f"choose from {event_data['databallpy_event'].unique()}"
                 LOGGER.error(message)
                 raise ValueError(message)
             mask = (mask) & (event_data["databallpy_event"].isin(events))
         if outcome is not None:
-            if not outcome in [0, 1]:
+            if outcome not in [0, 1]:
                 message = f"'outcome' should be either 0 or 1, not {outcome}"
                 LOGGER.error(message)
                 raise ValueError(message)
             mask = (mask) & (event_data["outcome"] == outcome)
         if len(player_ids) > 0:
-            for wrong_id in [x for x in player_ids if x not in event_data["player_id"].unique()]:
-                message = f"'{wrong_id}' is not found in event_data.player_id, can not show events."
+            for wrong_id in [
+                x for x in player_ids if x not in event_data["player_id"].unique()
+            ]:
+                message = (
+                    f"'{wrong_id}' is not found in event_data.player_id, can not "
+                    "show events."
+                )
                 LOGGER.error(message)
                 raise ValueError(message)
             mask = (mask) & (event_data["player_id"].isin(player_ids))
         if team_id:
             if team_id not in [match.home_team_id, match.away_team_id]:
-                message = f"'{team_id}' is not the id of either teams, can not plot events."
+                message = (
+                    f"'{team_id}' is not the id of either teams, can not plot events."
+                )
                 LOGGER.error(message)
                 raise ValueError(message)
             mask = mask & (event_data["team_id"] == team_id)
 
         event_data = event_data.loc[mask]
         if len(event_data) == 0:
-            LOGGER.info("No matching events were found, returning None in plot_events().")
+            LOGGER.info(
+                "No matching events were found, returning None in plot_events()."
+            )
             print(
                 "No events could be found that match your"
                 "requirements, please try again."
@@ -388,7 +403,9 @@ def plot_events(
 
         # If color_by_col is not specified, color events using default settings
         else:
-            ax.scatter(event_data["start_x"], event_data["start_y"], marker="x", zorder=2.5)
+            ax.scatter(
+                event_data["start_x"], event_data["start_y"], marker="x", zorder=2.5
+            )
 
         LOGGER.info("Successfully plotted events in plot_events().")
         return fig, ax
@@ -440,9 +457,16 @@ def save_match_clip(
     LOGGER.info(f"Trying to create save a match clip '{title}' in save_match_clip().")
     try:
         td = match.tracking_data.loc[start_idx:end_idx]
-        td_ht = td[[x for x in match.home_players_column_ids() if "_x" in x or "_y" in x]]
-        td_at = td[[x for x in match.away_players_column_ids() if "_x" in x or "_y" in x]]
-
+        td_ht = td[
+            np.array(
+                [[x + "_x", x + "_y"] for x in match.home_players_column_ids()]
+            ).reshape(1, -1)[0]
+        ]
+        td_at = td[
+            np.array(
+                [[x + "_x", x + "_y"] for x in match.away_players_column_ids()]
+            ).reshape(1, -1)[0]
+        ]
         if variable_of_interest is not None:
             if not (variable_of_interest.index == td.index).all():
                 message = (
@@ -452,8 +476,11 @@ def save_match_clip(
                 LOGGER.error(message)
                 raise DataBallPyError(message)
         if player_possession_column is not None:
-            if not player_possession_column in match.tracking_data.columns:
-                message = f"Column {player_possession_column} not found in match.tracking_data.columns"
+            if player_possession_column not in match.tracking_data.columns:
+                message = (
+                    f"Column {player_possession_column} not found in "
+                    "match.tracking_data.columns"
+                )
                 LOGGER.error(message)
                 raise DataBallPyError(message)
 
@@ -468,7 +495,9 @@ def save_match_clip(
             "artist": "Matplotlib",
             "comment": "Made with DataballPy",
         }
-        writer = animation.FFMpegWriter(fps=match.frame_rate, metadata=animation_metadata)
+        writer = animation.FFMpegWriter(
+            fps=match.frame_rate, metadata=animation_metadata
+        )
         video_loc = f"{save_folder}/{title}.mp4"
 
         fig, ax = plot_soccer_pitch(
@@ -505,7 +534,12 @@ def save_match_clip(
                     x_cols = [x for x in td_team.index if x[-2:] == "_x"]
                     y_cols = [y for y in td_team.index if y[-2:] == "_y"]
                     fig_obj = ax.scatter(
-                        td_team[x_cols], td_team[y_cols], c=c, alpha=0.7, s=90, zorder=2.5
+                        td_team[x_cols],
+                        td_team[y_cols],
+                        c=c,
+                        alpha=0.7,
+                        s=90,
+                        zorder=2.5,
                     )
                     variable_fig_objs.append(fig_obj)
 
@@ -619,7 +653,9 @@ def save_match_clip(
         # Close figure
         plt.clf()
         plt.close(fig)
-        LOGGER.info(f"Succesfully created new saved match clip: {title} in {save_folder}.")
+        LOGGER.info(
+            f"Succesfully created new saved match clip: {title} in {save_folder}."
+        )
     except Exception as e:
         LOGGER.exception(f"Found an unexpected exception in save_match_clip(): \n{e}")
         raise e

@@ -9,10 +9,10 @@ from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
-from databallpy.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
@@ -203,13 +203,15 @@ def load_opta_event_data(
         raise TypeError(message)
 
     if not f7_loc[-4:] == ".xml":
-        message = f"f7 opta file should by of .xml format, not {f7_loc.split(".")[-1]}"
+        message = f"f7 opta file should by of .xml format, not {f7_loc.split('.')[-1]}"
         LOGGER.error(message)
         raise ValueError(message)
-    
+
     if not f24_loc == "pass":
         if not f24_loc[-4:] == ".xml":
-            message = f"f24 opta file should be of .xml format, not {f24_loc.split(".")[-1]}"
+            message = (
+                f"f24 opta file should be of .xml format, not {f24_loc.split('.')[-1]}"
+            )
             LOGGER.error(message)
             raise ValueError(message)
 

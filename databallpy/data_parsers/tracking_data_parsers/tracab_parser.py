@@ -1,11 +1,11 @@
 import datetime as dt
+import os
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-import os
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.tracking_data_parsers.utils import (
@@ -18,11 +18,12 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import localize_datetime
 from databallpy.utils.utils import MISSING_INT
-from databallpy.logging import create_logger
 
 LOGGER = create_logger(__name__)
+
 
 def load_tracab_tracking_data(
     tracab_loc: str, metadata_loc: str, verbose: bool = True
@@ -48,7 +49,7 @@ def load_tracab_tracking_data(
         message = f"Could not find {metadata_loc}."
         LOGGER.error(message)
         raise FileNotFoundError(message)
-    
+
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     LOGGER.info("Successfully loaded the Tracab tracking data.")
     metadata = _get_metadata(metadata_loc)

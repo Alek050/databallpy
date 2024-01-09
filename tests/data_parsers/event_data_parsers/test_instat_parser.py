@@ -27,18 +27,22 @@ class TestInstatParser(unittest.TestCase):
 
     def test_load_instat_event_data_errors(self):
         with self.assertRaises(TypeError):
-            load_instat_event_data(event_data_loc=3, metadata_loc=self.instat_metadata_loc)
+            load_instat_event_data(
+                event_data_loc=3, metadata_loc=self.instat_metadata_loc
+            )
         with self.assertRaises(TypeError):
-            load_instat_event_data(event_data_loc=self.instat_event_data_loc, metadata_loc=[self.instat_metadata_loc])
+            load_instat_event_data(
+                event_data_loc=self.instat_event_data_loc,
+                metadata_loc=[self.instat_metadata_loc],
+            )
         with self.assertRaises(ValueError):
             load_instat_event_data(
-            self.instat_event_data_loc[:-4], self.instat_metadata_loc
-        )
+                self.instat_event_data_loc[:-4], self.instat_metadata_loc
+            )
         with self.assertRaises(ValueError):
             load_instat_event_data(
-            self.instat_event_data_loc, self.instat_metadata_loc + ".xml"
-        )
-            
+                self.instat_event_data_loc, self.instat_metadata_loc + ".xml"
+            )
 
     def test_load_metadata(self):
         metadata = _load_metadata(self.instat_metadata_loc)

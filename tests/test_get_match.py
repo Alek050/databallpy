@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import Mock, patch
 
 import pandas as pd
-import pickle
 
 from databallpy.data_parsers.event_data_parsers import (
     load_instat_event_data,
@@ -553,8 +552,8 @@ class TestGetMatch(unittest.TestCase):
             get_saved_match(name="test_match2", path="tests/test_data")
         with self.assertRaises(TypeError):
             get_saved_match(
-                name="not_a_match_but_a_list.pickle",
-                path="tests/test_data")
+                name="not_a_match_but_a_list.pickle", path="tests/test_data"
+            )
 
     def test_get_match_call_quality_check(self):
         # does not check functionality since the tracking data is not valid

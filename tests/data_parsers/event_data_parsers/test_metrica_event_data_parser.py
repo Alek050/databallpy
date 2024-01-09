@@ -52,7 +52,6 @@ class TestMetricaEventDataParser(unittest.TestCase):
         ed = _get_event_data(self.ed_loc)
         pd.testing.assert_frame_equal(ed, expected_event_data)
 
-
     @patch(
         "requests.get",
         side_effect=[Mock(text=ED_METRICA_RAW), Mock(text=MD_METRICA_RAW)],

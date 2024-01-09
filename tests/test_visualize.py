@@ -3,9 +3,9 @@ import unittest
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from databallpy.utils.errors import DataBallPyError
 
 from databallpy.get_match import get_match
+from databallpy.utils.errors import DataBallPyError
 from databallpy.visualize import (
     plot_events,
     plot_soccer_pitch,
@@ -46,6 +46,9 @@ class TestVisualize(unittest.TestCase):
         self.assertEqual(len(ax.lines), 27)
         self.assertEqual(len(ax.collections), 3)
 
+        with self.assertRaises(ValueError):
+            plot_soccer_pitch(pitch_color="invalid_color")
+
     def test_plot_events(self):
         match = self.match.copy()
 
@@ -68,7 +71,7 @@ class TestVisualize(unittest.TestCase):
         self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "TeamOne")
         self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "TeamTwo")
         self.assertEqual(len(ax.collections), 5)
-        
+
         fig, ax = plot_events(
             match,
             events=["pass", "dribble"],
@@ -117,6 +120,18 @@ class TestVisualize(unittest.TestCase):
         self.assertEqual(ax.get_title(), "My Test Plot3")
         self.assertEqual(len(ax.collections), 4)
 
+    def test_plot_events_wrong_input(self):
+        with self.assertRaises(TypeError):
+            plot_events(self.match.copy(), events="passes")
+        with self.assertRaises(ValueError):
+            plot_events(self.match.copy(), events=["tackle"])
+        with self.assertRaises(ValueError):
+            plot_events(self.match.copy(), outcome="false")
+        with self.assertRaises(ValueError):
+            plot_events(self.match.copy(), player_ids=[1, 2])
+        with self.assertRaises(ValueError):
+            plot_events(self.match.copy(), team_id="12345678")
+
     def test_save_match_clip(self):
         match = self.match.copy()
         match.tracking_data["player_possession"] = [
@@ -156,7 +171,8 @@ class TestVisualize(unittest.TestCase):
                 player_possession_column="unknown_column",
             )
 
-        assert not os.path.exists("tests/test_data/test_clip.mp4")
+        if os.path.exists("tests/test_data/test_clip.mp4"):
+            os.remove("tests/test_data/test_clip.mp4")
 
         save_match_clip(
             match,
@@ -190,7 +206,8 @@ class TestVisualize(unittest.TestCase):
             "shot",
         ]
 
-        assert not os.path.exists("tests/test_data/test_match_with_events.mp4")
+        if os.path.exists("tests/test_data/test_match_with_events.mp4"):
+            os.remove("tests/test_data/test_match_with_events.mp4")
 
         save_match_clip(
             synced_match,

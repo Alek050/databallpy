@@ -1,6 +1,6 @@
 import numpy as np
 
-from databallpy.logging import create_logger
+from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
@@ -17,8 +17,12 @@ def get_smallest_angle(a_vec: np.ndarray, b_vec: np.ndarray, angle_format="radia
 
     try:
         for input_list in [a_vec, b_vec]:
-            if not isinstance(input_list, list) and not isinstance(input_list, np.ndarray):
-                raise TypeError(f"Input must be a numpy array, not a {type(input_list)}")
+            if not isinstance(input_list, list) and not isinstance(
+                input_list, np.ndarray
+            ):
+                raise TypeError(
+                    f"Input must be a numpy array, not a {type(input_list)}"
+                )
 
         a_vec = (
             np.array(a_vec).astype("float64")

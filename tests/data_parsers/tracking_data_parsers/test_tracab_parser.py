@@ -22,7 +22,7 @@ class TestTracabParser(unittest.TestCase):
         )
         assert metadata == MD_TRACAB
         pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
-    
+
     def test_load_tracab_tracking_data_errors(self):
         with self.assertRaises(FileNotFoundError):
             load_tracab_tracking_data(
@@ -32,8 +32,7 @@ class TestTracabParser(unittest.TestCase):
             load_tracab_tracking_data(
                 self.tracking_data_loc, self.metadata_loc + ".sml", verbose=False
             )
-    
-    
+
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_loc)
         expected_metadata = MD_TRACAB.copy()
