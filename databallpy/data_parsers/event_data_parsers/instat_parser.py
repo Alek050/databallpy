@@ -62,7 +62,7 @@ def load_instat_event_data(
         message = f"metadata_loc should be a string, not a {type(metadata_loc)}"
         LOGGER.error(message)
         raise TypeError(message)
-    if not event_data_loc[:-5] == ".json":
+    if not event_data_loc[-5:] == ".json":
         message = "instat event file should by of .json format"
         LOGGER.error(message)
         raise ValueError(message)

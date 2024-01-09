@@ -25,15 +25,12 @@ def requires_ffmpeg(func):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-        except FileNotFoundError:
+        except Exception as e:
             LOGGER.critical(
                 "Could not find the subprocess ffmpeg. Make sure ffmpeg is installed"
                 " globally on you device and added to your python path."
                 )
-            raise FileNotFoundError(
-                "It seems like ffmpeg is not added to your python path, please install"
-                "add ffmpeg to you python path to use this code."
-            )
+            raise e
 
         return func(*args, **kwargs)
 
@@ -286,7 +283,7 @@ def plot_events(
     LOGGER.info(f"Trying to plot {events} in plot_events().")
     try:
         event_data = match.event_data
-
+        mask = pd.Series(True, index=event_data.index)
         if not isinstance(events, (list, np.ndarray)):
             message = f"'events' should be a list, not a {type(events)}"
             LOGGER.error(message)
@@ -297,26 +294,27 @@ def plot_events(
                 f"choose from {event_data['databallpy_event'].unique()}"
                 LOGGER.error(message)
                 raise ValueError(message)
-            event_data = event_data.loc[event_data["databallpy_event"].isin(events)]
+            mask = (mask) & (event_data["databallpy_event"].isin(events))
         if outcome is not None:
             if not outcome in [0, 1]:
                 message = f"'outcome' should be either 0 or 1, not {outcome}"
                 LOGGER.error(message)
                 raise ValueError(message)
-            event_data = event_data.loc[event_data["outcome"] == outcome]
+            mask = (mask) & (event_data["outcome"] == outcome)
         if len(player_ids) > 0:
             for wrong_id in [x for x in player_ids if x not in event_data["player_id"].unique()]:
                 message = f"'{wrong_id}' is not found in event_data.player_id, can not show events."
                 LOGGER.error(message)
                 raise ValueError(message)
-            event_data = event_data.loc[event_data["player_id"].isin(player_ids)]
+            mask = (mask) & (event_data["player_id"].isin(player_ids))
         if team_id:
             if team_id not in [match.home_team_id, match.away_team_id]:
                 message = f"'{team_id}' is not the id of either teams, can not plot events."
                 LOGGER.error(message)
                 raise ValueError(message)
-            event_data = event_data.loc[event_data["team_id"] == team_id]
+            mask = mask & (event_data["team_id"] == team_id)
 
+        event_data = event_data.loc[mask]
         if len(event_data) == 0:
             LOGGER.info("No matching events were found, returning None in plot_events().")
             print(
@@ -325,6 +323,7 @@ def plot_events(
             )
             return None, None
         else:
+            LOGGER.info(f"Found {len(event_data)} matching events in plot_events().")
             print(f"Found {len(event_data)} matching events")
 
         fig, ax = plot_soccer_pitch(
@@ -446,8 +445,10 @@ def save_match_clip(
 
         if variable_of_interest is not None:
             if not (variable_of_interest.index == td.index).all():
-                message = "index of the variable_of_interest should be equal to the index "
-                "of the start_idx:end_idx."
+                message = (
+                    "index of the variable_of_interest should be equal to the index "
+                    "of the start_idx:end_idx."
+                )
                 LOGGER.error(message)
                 raise DataBallPyError(message)
         if player_possession_column is not None:

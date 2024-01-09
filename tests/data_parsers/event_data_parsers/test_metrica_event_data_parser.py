@@ -24,6 +24,23 @@ class TestMetricaEventDataParser(unittest.TestCase):
         self.md_loc = "tests/test_data/metrica_metadata_test.xml"
         self.ed_loc = "tests/test_data/metrica_event_data_test.json"
 
+    def test_load_metrica_event_data(self):
+        ed, md, dbpe = load_metrica_event_data(self.ed_loc, self.md_loc)
+        assert md == MD_METRICA_ED
+        pd.testing.assert_frame_equal(ed, ED_METRICA)
+        assert dbpe["shot_events"] == SHOT_EVENTS_METRICA
+        assert dbpe["pass_events"] == PASS_EVENTS_METRICA
+        assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
+
+        with self.assertRaises(TypeError):
+            load_metrica_event_data(22, self.md_loc)
+
+    def test_load_metrica_event_data_errors(self):
+        with self.assertRaises(FileNotFoundError):
+            load_metrica_event_data(self.ed_loc[3:], self.md_loc)
+        with self.assertRaises(FileNotFoundError):
+            load_metrica_event_data(self.ed_loc, self.md_loc[1:])
+
     def test_get_event_data(self):
         expected_event_data = ED_METRICA.copy()
         for col in ["end_x", "start_x"]:
@@ -35,16 +52,6 @@ class TestMetricaEventDataParser(unittest.TestCase):
         ed = _get_event_data(self.ed_loc)
         pd.testing.assert_frame_equal(ed, expected_event_data)
 
-    def test_load_metrica_event_data(self):
-        ed, md, dbpe = load_metrica_event_data(self.ed_loc, self.md_loc)
-        assert md == MD_METRICA_ED
-        pd.testing.assert_frame_equal(ed, ED_METRICA)
-        assert dbpe["shot_events"] == SHOT_EVENTS_METRICA
-        assert dbpe["pass_events"] == PASS_EVENTS_METRICA
-        assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
-
-        with self.assertRaises(TypeError):
-            load_metrica_event_data(22, self.md_loc)
 
     @patch(
         "requests.get",

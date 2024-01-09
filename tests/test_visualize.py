@@ -3,6 +3,7 @@ import unittest
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from databallpy.utils.errors import DataBallPyError
 
 from databallpy.get_match import get_match
 from databallpy.visualize import (
@@ -67,7 +68,7 @@ class TestVisualize(unittest.TestCase):
         self.assertEqual(ax.get_legend().get_texts()[0].get_text(), "TeamOne")
         self.assertEqual(ax.get_legend().get_texts()[1].get_text(), "TeamTwo")
         self.assertEqual(len(ax.collections), 5)
-
+        
         fig, ax = plot_events(
             match,
             events=["pass", "dribble"],
@@ -126,7 +127,7 @@ class TestVisualize(unittest.TestCase):
             "away_17",
         ]
         series = pd.Series([22, 23, 25], index=[1, 2, 3])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(DataBallPyError):
             save_match_clip(
                 match,
                 1,
@@ -135,7 +136,7 @@ class TestVisualize(unittest.TestCase):
                 title="test_clip",
                 events=["pass"],
             )
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(DataBallPyError):
             save_match_clip(
                 match,
                 0,
@@ -144,7 +145,7 @@ class TestVisualize(unittest.TestCase):
                 title="test_clip",
                 variable_of_interest=series,
             )
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(DataBallPyError):
             save_match_clip(
                 match,
                 1,

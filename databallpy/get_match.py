@@ -321,14 +321,12 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     """
     LOGGER.info(f"Trying to load saved match: {name} in get_saved_match()")
     
-    if name[-7:] == ".pickle":
-        name = name[:-7]
-    loc = os.path.join(path, name + ".pickle")
+    loc = os.path.join(path, name + ".pickle") if not name[-7:] == ".pickle" else os.path.join(path, name)
     if not os.path.exists(loc):
         LOGGER.error(f"Can not load {loc} because it does not exist.")
         raise FileNotFoundError(f"Could not find {loc}. Set the `path` variable"
                                 " to specify the right directory of the saved match.")
-    with open(os.path.join(path, name + ".pickle"), "rb") as f:
+    with open(loc, "rb") as f:
         match = pickle.load(f)
     
     if not isinstance(match, Match):
@@ -457,7 +455,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
     LOGGER.info("Trying to load open match in get_open_match()")
     try:
         provider_options = ["metrica"]
-        if not provider in [provider_options]:
+        if not provider in provider_options:
             LOGGER.error(
                 f"{provider} is not a valid provider for the get_open_match() function"
                 )

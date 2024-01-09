@@ -53,6 +53,8 @@ def get_individual_player_possessions_and_duels(
         time.
     """
     try:
+        if not frame_rate > 0:
+            raise ValueError(f"frame rate should be above 0, not {frame_rate}")
         if "ball_velocity" not in tracking_data.columns:
             tracking_data = _differentiate(
                 tracking_data,

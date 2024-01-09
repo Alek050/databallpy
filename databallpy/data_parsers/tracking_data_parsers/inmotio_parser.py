@@ -40,7 +40,7 @@ def load_inmotio_tracking_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
-    LOGGER.info("Trying to laod inmotio tracking data.")
+    LOGGER.info("Trying to load inmotio tracking data.")
     if isinstance(tracking_data_loc, str):
         if not os.path.exists(tracking_data_loc):
             message = f"Could not find {tracking_data_loc}"

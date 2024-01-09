@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import pandas as pd
+import pickle
 
 from databallpy.data_parsers.event_data_parsers import (
     load_instat_event_data,
@@ -174,7 +175,7 @@ class TestGetMatch(unittest.TestCase):
             self.td_metrica_loc, self.md_metrica_loc
         )
         self.td_metrica["period_id"] = [1, 1, 1, 2, 2, 2]
-        self.ed_metrica, md_metrica_ed, dbe_metrica = load_metrica_event_data(
+        self.ed_metrica, md_metrica_ed, _ = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
         )
 
@@ -457,7 +458,7 @@ class TestGetMatch(unittest.TestCase):
         assert match == self.expected_match_tracab
 
     def test_get_match_wrong_provider(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             get_match(
                 tracking_data_loc=self.td_tracab_loc,
                 tracking_metadata_loc=self.md_tracab_loc,
@@ -468,7 +469,7 @@ class TestGetMatch(unittest.TestCase):
                 check_quality=False,
             )
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             get_match(
                 tracking_data_loc=self.td_tracab_loc,
                 tracking_metadata_loc=self.md_tracab_loc,
@@ -537,12 +538,23 @@ class TestGetMatch(unittest.TestCase):
         expected_match.allow_synchronise_tracking_and_event_data = True
         assert match == expected_match
 
+        with self.assertRaises(ValueError):
+            get_open_match(provider="tracab")
+
     def test_get_saved_match(self):
         expected_match = self.expected_match_metrica
         expected_match.save_match(name="test_match", path="tests/test_data")
         saved_match = get_saved_match(name="test_match", path="tests/test_data")
         assert expected_match == saved_match
         assert saved_match != self.expected_match_tracab_opta
+
+    def test_get_saved_match_errors(self):
+        with self.assertRaises(FileNotFoundError):
+            get_saved_match(name="test_match2", path="tests/test_data")
+        with self.assertRaises(TypeError):
+            get_saved_match(
+                name="not_a_match_but_a_list.pickle",
+                path="tests/test_data")
 
     def test_get_match_call_quality_check(self):
         # does not check functionality since the tracking data is not valid

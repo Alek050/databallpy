@@ -173,11 +173,11 @@ class Match:
 
     @requires_tracking_data
     def home_players_column_ids(self) -> List[str]:
-        return [id[:-2] for id in self.tracking_data.columns if "home" in id and id[:-2] == "_x"]
+        return [id[:-2] for id in self.tracking_data.columns if id[:4] == "home" and id[-2:] == "_x"]
 
     @requires_tracking_data
     def away_players_column_ids(self) -> List[str]:
-        return [id[:-2] for id in self.tracking_data.columns if "away" in id and id[:-2] == "_x"]
+        return [id[:-2] for id in self.tracking_data.columns if id[:4] == "away" and id[-2:] == "_x"]
 
     @requires_tracking_data
     def player_column_id_to_full_name(self, column_id: str) -> str:
@@ -1117,8 +1117,8 @@ def check_inputs_match_object(match: Match):
                 continue
             idx = match.tracking_data[match.tracking_data["frame"] == frame].index[0]
             period = period_row["period_id"]
-            home_x = [x for x in match.home_players_column_ids() if "_x" in x]
-            away_x = [x for x in match.away_players_column_ids() if "_x" in x]
+            home_x = [x + "_x" for x in match.home_players_column_ids()]
+            away_x = [x + "_x" for x in match.away_players_column_ids()]
             if match.tracking_data.loc[idx, home_x].mean() > 0:
                 centroid_x = match.tracking_data.loc[idx, home_x].mean()
                 message = (

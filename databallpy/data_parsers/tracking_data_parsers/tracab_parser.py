@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+import os
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.tracking_data_parsers.utils import (
@@ -38,6 +39,16 @@ def load_tracab_tracking_data(
         Tuple[pd.DataFrame, Metadata], the tracking data and metadata class
     """
     LOGGER.info("Trying to load Tracab tracking data")
+
+    if not os.path.exists(tracab_loc):
+        message = f"Could not find {tracab_loc}."
+        LOGGER.error(message)
+        raise FileNotFoundError(message)
+    if not os.path.exists(metadata_loc):
+        message = f"Could not find {metadata_loc}."
+        LOGGER.error(message)
+        raise FileNotFoundError(message)
+    
     tracking_data = _get_tracking_data(tracab_loc, verbose)
     LOGGER.info("Successfully loaded the Tracab tracking data.")
     metadata = _get_metadata(metadata_loc)
