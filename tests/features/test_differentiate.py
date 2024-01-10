@@ -102,3 +102,17 @@ class TestDifferentiate(unittest.TestCase):
             }
         )
         pd.testing.assert_frame_equal(output, expected_output)
+
+    def test_differentiate_wrong_input(self):
+        with self.assertRaises(KeyError):
+            _differentiate(
+                self.input.copy(),
+                new_name="velocity",
+                metric="a",
+                frame_rate=self.framerate,
+                filter_type="savitzky_golay",
+                window=2,
+                max_val=MISSING_INT,
+                poly_order=1,
+                column_ids=["ball"],
+            )

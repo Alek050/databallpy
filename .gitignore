@@ -146,3 +146,6 @@ test.py
 data/
 .vscode/
 
+# config files
+databallpy_config.ini
+

@@ -18,9 +18,30 @@ from tests.expected_outcomes import MD_INMOTIO, TD_INMOTIO
 
 class TestInmotioParser(unittest.TestCase):
     def setUp(self):
-        self.tracking_data_loc = r"tests/test_data/inmotio_td_test.txt"
-        self.metadata_loc = r"tests/test_data/inmotio_metadata_test.xml"
+        self.tracking_data_loc = "tests/test_data/inmotio_td_test.txt"
+        self.metadata_loc = "tests/test_data/inmotio_metadata_test.xml"
         self.expected_channels = ["home_1", "home_2", "away_1", "away_2"]
+
+    def test_load_inmotio_tracking_data(self):
+        tracking_data, metadata = load_inmotio_tracking_data(
+            self.tracking_data_loc, self.metadata_loc, verbose=False
+        )
+        expected_tracking_data = TD_INMOTIO.iloc[1:, :].reset_index(drop=True)
+        expected_tracking_data, changed_periods = _normalize_playing_direction_tracking(
+            expected_tracking_data, MD_INMOTIO.periods_frames
+        )
+        assert metadata == MD_INMOTIO
+        pd.testing.assert_frame_equal(tracking_data, expected_tracking_data, atol=1e-7)
+
+    def test_load_inmotio_tracking_data_errors(self):
+        with self.assertRaises(FileNotFoundError):
+            load_inmotio_tracking_data(
+                self.tracking_data_loc[:-3], self.metadata_loc, verbose=False
+            )
+        with self.assertRaises(FileNotFoundError):
+            load_inmotio_tracking_data(
+                self.tracking_data_loc, self.metadata_loc + ".xml", verbose=False
+            )
 
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_loc)
@@ -38,17 +59,6 @@ class TestInmotioParser(unittest.TestCase):
         )
         expected_td = TD_INMOTIO.drop(["matchtime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
-
-    def test_load_tracking_data(self):
-        tracking_data, metadata = load_inmotio_tracking_data(
-            self.tracking_data_loc, self.metadata_loc, verbose=False
-        )
-        expected_tracking_data = TD_INMOTIO.iloc[1:, :].reset_index(drop=True)
-        expected_tracking_data, changed_periods = _normalize_playing_direction_tracking(
-            expected_tracking_data, MD_INMOTIO.periods_frames
-        )
-        assert metadata == MD_INMOTIO
-        pd.testing.assert_frame_equal(tracking_data, expected_tracking_data, atol=1e-7)
 
     def test_get_player_data(self):
         file = open(self.metadata_loc, "r", encoding="UTF-8")

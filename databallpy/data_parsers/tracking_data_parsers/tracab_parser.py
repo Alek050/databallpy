@@ -1,4 +1,5 @@
 import datetime as dt
+import os
 from typing import Tuple
 
 import numpy as np
@@ -17,8 +18,11 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import localize_datetime
 from databallpy.utils.utils import MISSING_INT
+
+LOGGER = create_logger(__name__)
 
 
 def load_tracab_tracking_data(
@@ -35,9 +39,21 @@ def load_tracab_tracking_data(
     Returns:
         Tuple[pd.DataFrame, Metadata], the tracking data and metadata class
     """
+    LOGGER.info("Trying to load Tracab tracking data")
+
+    if not os.path.exists(tracab_loc):
+        message = f"Could not find {tracab_loc}."
+        LOGGER.error(message)
+        raise FileNotFoundError(message)
+    if not os.path.exists(metadata_loc):
+        message = f"Could not find {metadata_loc}."
+        LOGGER.error(message)
+        raise FileNotFoundError(message)
 
     tracking_data = _get_tracking_data(tracab_loc, verbose)
+    LOGGER.info("Successfully loaded the Tracab tracking data.")
     metadata = _get_metadata(metadata_loc)
+    LOGGER.info("Successfully loaded the Tracab metdata.")
 
     tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
@@ -59,6 +75,7 @@ def load_tracab_tracking_data(
     )
     metadata.periods_changed_playing_direction = changed_periods
 
+    LOGGER.info("Successfully post-processed the Tracab data.")
     return tracking_data, metadata
 
 

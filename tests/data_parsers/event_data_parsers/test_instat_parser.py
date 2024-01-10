@@ -25,6 +25,25 @@ class TestInstatParser(unittest.TestCase):
         pd.testing.assert_frame_equal(event_data, ED_INSTAT)
         assert metadata == expected_metadata
 
+    def test_load_instat_event_data_errors(self):
+        with self.assertRaises(TypeError):
+            load_instat_event_data(
+                event_data_loc=3, metadata_loc=self.instat_metadata_loc
+            )
+        with self.assertRaises(TypeError):
+            load_instat_event_data(
+                event_data_loc=self.instat_event_data_loc,
+                metadata_loc=[self.instat_metadata_loc],
+            )
+        with self.assertRaises(ValueError):
+            load_instat_event_data(
+                self.instat_event_data_loc[:-4], self.instat_metadata_loc
+            )
+        with self.assertRaises(ValueError):
+            load_instat_event_data(
+                self.instat_event_data_loc, self.instat_metadata_loc + ".xml"
+            )
+
     def test_load_metadata(self):
         metadata = _load_metadata(self.instat_metadata_loc)
         expected_metadata = MD_INSTAT.copy()

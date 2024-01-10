@@ -25,7 +25,10 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 from databallpy.events import PassEvent
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT
+
+LOGGER = create_logger(__name__)
 
 
 def get_match(
@@ -43,237 +46,287 @@ def get_match(
 
     Args:
         tracking_data_loc (str, optional): location of the tracking data.
-                                           Defaults to None.
+            Defaults to None.
         tracking_metadata_loc (str, optional): location of the metadata of the tracking
-                                               data. Defaults to None.
+            data. Defaults to None.
         event_data_loc (str, optional): location of the event data. Defaults to None.
         event_metadata_loc (str, optional): location of the metadata of the event data.
-                                            Defaults to None.
+            Defaults to None.
         tracking_data_provider (str, optional): provider of the tracking data. Defaults
-                                                to None. Supported providers are:
-                                                - Tracab
-                                                - Metrica
-                                                - Inmotio
+            to None. Supported providers are:
+                - Tracab
+                - Metrica
+                - Inmotio
         event_data_provider (str, optional): provider of the event data. Defaults to
-                                             None. Supported providers are:
-                                             - Opta
-                                             - Metrica
-                                             - Instat
+            None. Supported providers are:
+                - Opta
+                - Metrica
+                - Instat
         check_quality (bool, optional): whether you want to check the quality of the
-                                        tracking data. Defaults to True
+            tracking data. Defaults to True
         verbose (bool, optional): whether or not to print info about progress
     Returns:
         (Match): a Match object with all information available of the match.
     """
-
-    if (event_data_loc or _extra_event_data_loc) and event_metadata_loc is None:
-        raise ValueError(
-            "Please provide an event metadata location when providing an event"
-            " data location"
+    try:
+        LOGGER.info(
+            "Trying to load a new match in get_match();"
+            f"\n\tTracking data loc: {str(tracking_data_loc)}"
+            f"\n\tTracking data provider: {str(tracking_data_provider)}"
+            f"\n\tEvent data loc: {str(event_data_loc)}"
+            f"\n\tEven data provider: {str(event_data_provider)}"
+            f"\n\tCheck quality: {str(check_quality)}"
+            f"\n\tVerbose: {str(verbose)}"
         )
-    elif (event_data_loc or _extra_event_data_loc) and event_data_provider is None:
-        raise ValueError(
-            "Please provide an event data provider when providing an event"
-            " data location"
-        )
-    elif event_metadata_loc and event_data_provider is None:
-        raise ValueError(
-            "Please provide an event data provider when providing an event"
-            " metadata location"
-        )
-    elif tracking_data_loc and tracking_data_provider is None:
-        raise ValueError(
-            "Please provide a tracking data provider when providing a tracking"
-            " data location"
-        )
-    elif tracking_data_loc and tracking_metadata_loc is None:
-        raise ValueError(
-            "Please provide a tracking metadata location when providing a tracking"
-            " data location"
-        )
-
-    uses_tracking_data = False
-    uses_event_data = False
-    uses_event_metadata = False
-
-    tracking_precise_timestamps = {"tracab": True, "metrica": True, "inmotio": False}
-    event_precise_timestamps = {
-        "opta": True,
-        "metrica": True,
-        "instat": False,
-        "ortec": True,
-    }
-
-    # Check if tracking data should be loaded
-    if tracking_data_loc and tracking_metadata_loc and tracking_data_provider:
-        tracking_data, tracking_metadata = load_tracking_data(
-            tracking_data_loc=tracking_data_loc,
-            tracking_metadata_loc=tracking_metadata_loc,
-            tracking_data_provider=tracking_data_provider,
-            verbose=verbose,
-        )
-        databallpy_events = {}
-        uses_tracking_data = True
-
-    # Check if event data should be loaded
-    if event_data_loc and event_metadata_loc and event_data_provider:
-        event_data, event_metadata, databallpy_events = load_event_data(
-            event_data_loc=event_data_loc,
-            event_metadata_loc=event_metadata_loc,
-            event_data_provider=event_data_provider,
-        )
-        if event_data is not None and len(event_data) > 0:
-            uses_event_data = True
-        uses_event_metadata = True
-
-    # temporary, in the case of ortec, we only have metadata
-    if event_metadata_loc and event_data_provider == "ortec":
-        _, event_metadata = load_ortec_event_data(
-            event_data_loc=None, metadata_loc=event_metadata_loc
-        )
-        event_data = pd.DataFrame()
-        databallpy_events = {}
-        uses_event_metadata = True
-
-    # load extra event data if needed
-    if (
-        _extra_event_data_loc is not None
-        and "scisportsevents xml v2" in _extra_event_data_loc.lower()
-    ):
-        scisports_event_data, databallpy_events, tracking_data = _handle_scisports_data(
-            scisports_ed_loc=_extra_event_data_loc,
-            tracking_data=tracking_data if uses_tracking_data else None,
-            event_metadata=event_metadata if uses_event_metadata else None,
-            tracking_metadata=tracking_metadata if uses_tracking_data else None,
-            databallpy_events=databallpy_events
-            if "databallpy_events" in vars()
-            else None,
-            verbose=verbose,
-        )
-        uses_event_data = True
-        event_data = (
-            scisports_event_data
-            if ("event_data" not in vars() or len(event_data) == 0)
-            else event_data
-        )
-
-    if not uses_event_data and not uses_tracking_data:
-        raise ValueError("No data loaded, please provide data locations and providers")
-
-    # extra checks when using event data
-    if uses_event_data:
-        if "scisports_event_data" in vars():
-            extra_data = (
-                scisports_event_data
-                if not event_data.equals(scisports_event_data)
-                else None
+        if (event_data_loc or _extra_event_data_loc) and event_metadata_loc is None:
+            LOGGER.error(
+                "Event metadata location is None while event data location is not"
             )
-        else:
-            extra_data = None
-        home_players = event_metadata.home_players
-        away_players = event_metadata.away_players
-        periods = event_metadata.periods_frames
-        pitch_dimensions = event_metadata.pitch_dimensions
+            raise ValueError(
+                "Please provide an event metadata location when providing an event"
+                " data location"
+            )
+        elif (event_data_loc or _extra_event_data_loc) and event_data_provider is None:
+            LOGGER.error("Event data provider is None while event data location is not")
+            raise ValueError(
+                "Please provide an event data provider when providing an event"
+                " data location"
+            )
+        elif event_metadata_loc and event_data_provider is None:
+            LOGGER.error(
+                "Event data provider is None while event metadata location is not"
+            )
+            raise ValueError(
+                "Please provide an event data provider when providing an event"
+                " metadata location"
+            )
+        elif tracking_data_loc and tracking_data_provider is None:
+            LOGGER.error(
+                "Tracking data provider is None while tracking data location is not"
+            )
+            raise ValueError(
+                "Please provide a tracking data provider when providing a tracking"
+                " data location"
+            )
+        elif tracking_data_loc and tracking_metadata_loc is None:
+            LOGGER.error(
+                "Tracking metadata location is None while tracking data location is not"
+            )
+            raise ValueError(
+                "Please provide a tracking metadata location when providing a tracking"
+                " data location"
+            )
 
-    # extra checks when using tracking data
-    if uses_tracking_data:
-        home_players = tracking_metadata.home_players
-        away_players = tracking_metadata.away_players
-        periods = tracking_metadata.periods_frames
-        pitch_dimensions = tracking_metadata.pitch_dimensions
+        uses_tracking_data = False
+        uses_event_data = False
+        uses_event_metadata = False
 
-    # extra checks when using both tracking and event data
-    if uses_tracking_data and uses_event_metadata:
-        periods = merge_metadata_periods(
-            tracking_metadata.periods_frames, event_metadata.periods_frames
+        tracking_precise_timestamps = {
+            "tracab": True,
+            "metrica": True,
+            "inmotio": False,
+        }
+        event_precise_timestamps = {
+            "opta": True,
+            "metrica": True,
+            "instat": False,
+            "ortec": True,
+        }
+
+        LOGGER.info(
+            "Succesfully passed input checks. Attempting to load the base "
+            "data (get_match())."
         )
-        if uses_event_data:
-            event_data, databallpy_events = rescale_event_data(
-                tracking_metadata.pitch_dimensions,
-                event_metadata.pitch_dimensions,
-                event_data,
+
+        # Check if tracking data should be loaded
+        if tracking_data_loc and tracking_metadata_loc and tracking_data_provider:
+            tracking_data, tracking_metadata = load_tracking_data(
+                tracking_data_loc=tracking_data_loc,
+                tracking_metadata_loc=tracking_metadata_loc,
+                tracking_data_provider=tracking_data_provider,
+                verbose=verbose,
+            )
+            databallpy_events = {}
+            uses_tracking_data = True
+        # Check if event data should be loaded
+        if event_data_loc and event_metadata_loc and event_data_provider:
+            event_data, event_metadata, databallpy_events = load_event_data(
+                event_data_loc=event_data_loc,
+                event_metadata_loc=event_metadata_loc,
+                event_data_provider=event_data_provider,
+            )
+            if event_data is not None and len(event_data) > 0:
+                uses_event_data = True
+            uses_event_metadata = True
+
+        # temporary, in the case of ortec, we only have metadata
+        if event_metadata_loc and event_data_provider == "ortec":
+            _, event_metadata = load_ortec_event_data(
+                event_data_loc=None, metadata_loc=event_metadata_loc
+            )
+            event_data = pd.DataFrame()
+            databallpy_events = {}
+            uses_event_metadata = True
+
+        # load extra event data if needed
+        if (
+            _extra_event_data_loc is not None
+            and "scisportsevents xml v2" in _extra_event_data_loc.lower()
+        ):
+            (
+                scisports_event_data,
                 databallpy_events,
+                tracking_data,
+            ) = _handle_scisports_data(
+                scisports_ed_loc=_extra_event_data_loc,
+                tracking_data=tracking_data if uses_tracking_data else None,
+                event_metadata=event_metadata if uses_event_metadata else None,
+                tracking_metadata=tracking_metadata if uses_tracking_data else None,
+                databallpy_events=databallpy_events
+                if "databallpy_events" in vars()
+                else None,
+                verbose=verbose,
             )
-            event_data, event_metadata = align_player_and_team_ids(
-                event_data, event_metadata, tracking_metadata
+            uses_event_data = True
+            event_data = (
+                scisports_event_data
+                if ("event_data" not in vars() or len(event_data) == 0)
+                else event_data
             )
-        home_players, away_players = merge_player_info(
-            tracking_metadata, event_metadata
+
+        if not uses_event_data and not uses_tracking_data:
+            LOGGER.error("Neither event nor tracking data was loaded.")
+            raise ValueError(
+                "No data loaded, please provide data locations and providers"
+            )
+
+        LOGGER.info(
+            f"Loaded data in get_match():\n\tTracking data: {str(uses_tracking_data)}"
+            f"\n\tEvent data: {str(uses_event_data)}"
         )
-        pitch_dimensions = tracking_metadata.pitch_dimensions
+        # set variables to create match object
+        if uses_event_data:
+            if "scisports_event_data" in vars():
+                extra_data = (
+                    scisports_event_data
+                    if not event_data.equals(scisports_event_data)
+                    else None
+                )
+            else:
+                extra_data = None
+            home_players = event_metadata.home_players
+            away_players = event_metadata.away_players
+            periods = event_metadata.periods_frames
+            pitch_dimensions = event_metadata.pitch_dimensions
 
-    # check quality of tracking data
-    allow_synchronise = False
-    if check_quality and uses_tracking_data:
-        allow_synchronise = _quality_check_tracking_data(
-            tracking_data, tracking_metadata.frame_rate, periods
+        # extra checks when using tracking data
+        if uses_tracking_data:
+            home_players = tracking_metadata.home_players
+            away_players = tracking_metadata.away_players
+            periods = tracking_metadata.periods_frames
+            pitch_dimensions = tracking_metadata.pitch_dimensions
+
+        # extra checks when using both tracking and event data
+        LOGGER.info("Combining info from tracking and event data in get_match()")
+        if uses_tracking_data and uses_event_metadata:
+            periods = merge_metadata_periods(
+                tracking_metadata.periods_frames, event_metadata.periods_frames
+            )
+            if uses_event_data:
+                event_data, databallpy_events = rescale_event_data(
+                    tracking_metadata.pitch_dimensions,
+                    event_metadata.pitch_dimensions,
+                    event_data,
+                    databallpy_events,
+                )
+                event_data, event_metadata = align_player_and_team_ids(
+                    event_data, event_metadata, tracking_metadata
+                )
+            home_players, away_players = merge_player_info(
+                tracking_metadata, event_metadata
+            )
+            pitch_dimensions = tracking_metadata.pitch_dimensions
+
+        # check quality of tracking data
+        allow_synchronise = False
+        if check_quality and uses_tracking_data:
+            allow_synchronise = _quality_check_tracking_data(
+                tracking_data, tracking_metadata.frame_rate, periods
+            )
+            allow_synchronise = False if not uses_event_data else allow_synchronise
+
+        changed_periods = None
+        if uses_tracking_data:
+            changed_periods = tracking_metadata.periods_changed_playing_direction
+
+        LOGGER.info("Creating match object in get_match()")
+        match = Match(
+            tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
+            tracking_data_provider=tracking_data_provider
+            if uses_tracking_data
+            else None,
+            event_data=event_data if uses_event_data else pd.DataFrame(),
+            event_data_provider=event_data_provider if uses_event_data else None,
+            pitch_dimensions=pitch_dimensions,
+            periods=periods,
+            frame_rate=tracking_metadata.frame_rate
+            if uses_tracking_data
+            else MISSING_INT,
+            home_team_id=event_metadata.home_team_id
+            if uses_event_metadata
+            else tracking_metadata.home_team_id,
+            home_formation=event_metadata.home_formation
+            if uses_event_metadata
+            else tracking_metadata.home_formation,
+            home_score=event_metadata.home_score
+            if uses_event_metadata
+            else tracking_metadata.home_score,
+            home_team_name=event_metadata.home_team_name
+            if uses_event_metadata
+            else tracking_metadata.home_team_name,
+            home_players=home_players,
+            away_team_id=event_metadata.away_team_id
+            if uses_event_metadata
+            else tracking_metadata.away_team_id,
+            away_formation=event_metadata.away_formation
+            if uses_event_metadata
+            else tracking_metadata.away_formation,
+            away_score=event_metadata.away_score
+            if uses_event_metadata
+            else tracking_metadata.away_score,
+            away_team_name=event_metadata.away_team_name
+            if uses_event_metadata
+            else tracking_metadata.away_team_name,
+            away_players=away_players,
+            country=event_metadata.country
+            if uses_event_metadata
+            else tracking_metadata.country,
+            allow_synchronise_tracking_and_event_data=allow_synchronise,
+            shot_events=databallpy_events["shot_events"]
+            if "shot_events" in databallpy_events.keys()
+            else {},
+            dribble_events=databallpy_events["dribble_events"]
+            if "dribble_events" in databallpy_events.keys()
+            else {},
+            pass_events=databallpy_events["pass_events"]
+            if "pass_events" in databallpy_events.keys()
+            else {},
+            extra_data=extra_data if "extra_data" in vars() else None,
+            _tracking_timestamp_is_precise=tracking_precise_timestamps[
+                tracking_data_provider
+            ]
+            if uses_tracking_data
+            else False,
+            _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
+            if uses_event_data
+            else False,
+            _periods_changed_playing_direction=changed_periods,
         )
-        allow_synchronise = False if not uses_event_data else allow_synchronise
-
-    changed_periods = None
-    if uses_tracking_data:
-        changed_periods = tracking_metadata.periods_changed_playing_direction
-
-    match = Match(
-        tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
-        tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
-        event_data=event_data if uses_event_data else pd.DataFrame(),
-        event_data_provider=event_data_provider if uses_event_data else None,
-        pitch_dimensions=pitch_dimensions,
-        periods=periods,
-        frame_rate=tracking_metadata.frame_rate if uses_tracking_data else MISSING_INT,
-        home_team_id=event_metadata.home_team_id
-        if uses_event_metadata
-        else tracking_metadata.home_team_id,
-        home_formation=event_metadata.home_formation
-        if uses_event_metadata
-        else tracking_metadata.home_formation,
-        home_score=event_metadata.home_score
-        if uses_event_metadata
-        else tracking_metadata.home_score,
-        home_team_name=event_metadata.home_team_name
-        if uses_event_metadata
-        else tracking_metadata.home_team_name,
-        home_players=home_players,
-        away_team_id=event_metadata.away_team_id
-        if uses_event_metadata
-        else tracking_metadata.away_team_id,
-        away_formation=event_metadata.away_formation
-        if uses_event_metadata
-        else tracking_metadata.away_formation,
-        away_score=event_metadata.away_score
-        if uses_event_metadata
-        else tracking_metadata.away_score,
-        away_team_name=event_metadata.away_team_name
-        if uses_event_metadata
-        else tracking_metadata.away_team_name,
-        away_players=away_players,
-        country=event_metadata.country
-        if uses_event_metadata
-        else tracking_metadata.country,
-        allow_synchronise_tracking_and_event_data=allow_synchronise,
-        shot_events=databallpy_events["shot_events"]
-        if "shot_events" in databallpy_events.keys()
-        else {},
-        dribble_events=databallpy_events["dribble_events"]
-        if "dribble_events" in databallpy_events.keys()
-        else {},
-        pass_events=databallpy_events["pass_events"]
-        if "pass_events" in databallpy_events.keys()
-        else {},
-        extra_data=extra_data if "extra_data" in vars() else None,
-        _tracking_timestamp_is_precise=tracking_precise_timestamps[
-            tracking_data_provider
-        ]
-        if uses_tracking_data
-        else False,
-        _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
-        if uses_event_data
-        else False,
-        _periods_changed_playing_direction=changed_periods,
-    )
-
-    return match
+        LOGGER.info(f"Succesfully created match object: {match.name}")
+        return match
+    except Exception as e:
+        LOGGER.exception(f"Found a unexpected exception in get_match(): \n{e}")
+        raise e
 
 
 def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
@@ -287,10 +340,32 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     Returns:
         Match: All information about the match
     """
-    if name[-7:] == ".pickle":
-        name = name[:-7]
-    with open(os.path.join(path, name + ".pickle"), "rb") as f:
+    LOGGER.info(f"Trying to load saved match: {name} in get_saved_match()")
+
+    loc = (
+        os.path.join(path, name + ".pickle")
+        if not name[-7:] == ".pickle"
+        else os.path.join(path, name)
+    )
+    if not os.path.exists(loc):
+        LOGGER.error(f"Can not load {loc} because it does not exist.")
+        raise FileNotFoundError(
+            f"Could not find {loc}. Set the `path` variable"
+            " to specify the right directory of the saved match."
+        )
+    with open(loc, "rb") as f:
         match = pickle.load(f)
+
+    if not isinstance(match, Match):
+        LOGGER.critical(
+            f"Loaded pickle file was not a match object but a {type(match)}. "
+            "Check if this is not a Virus! (get_saved_match())"
+        )
+        raise TypeError(
+            f"Expected a databallpy.Match object, but loaded a {type(match)}."
+            " Insert the location of a match object to load a match."
+        )
+    LOGGER.info(f"Succesfully loaded match {match.name}")
     return match
 
 
@@ -312,12 +387,17 @@ def load_tracking_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the match
     """
-    assert tracking_data_provider in [
-        "tracab",
-        "metrica",
-        "inmotio",
-    ], f"We do not support '{tracking_data_provider}' as tracking data provider yet, "
-    "please open an issue in our Github repository."
+    LOGGER.info("Trying to load tracking in load_tracking_data()")
+
+    if tracking_data_provider not in ["tracab", "metrica", "inmotio"]:
+        LOGGER.error(
+            f"Found invalid tracking data provider: {tracking_data_provider} in "
+            "load_tracking_data()."
+        )
+        raise ValueError(
+            "We do not support '{tracking_data_provider}' as tracking data provider yet"
+            ", please open an issue in our Github repository."
+        )
 
     # Get tracking data and tracking metadata
     if tracking_data_provider == "tracab":
@@ -336,7 +416,10 @@ def load_tracking_data(
             metadata_loc=tracking_metadata_loc,
             verbose=verbose,
         )
-
+    LOGGER.info(
+        f"Successfully loaded {tracking_data_provider} "
+        "tracking data in load_tracking_data()"
+    )
     return tracking_data, tracking_metadata
 
 
@@ -353,12 +436,17 @@ def load_event_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
     """
-    assert event_data_provider in [
-        "opta",
-        "metrica",
-        "instat",
-    ], f"We do not support '{event_data_provider}' as event data provider yet, "
-    "please open an issue in our Github repository."
+
+    LOGGER.info("Trying to load event data in load_event_data()")
+    if event_data_provider not in ["opta", "metrica", "instat"]:
+        LOGGER.error(
+            f"Found invalid tracking data provider: {event_data_provider} in "
+            "load_tracking_data()."
+        )
+        raise ValueError(
+            f"We do not support '{event_data_provider}' as event data provider yet, "
+            "please open an issue in our Github repository."
+        )
 
     # Get event data and event metadata
     databallpy_events = {}
@@ -374,7 +462,9 @@ def load_event_data(
         event_data, event_metadata = load_instat_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
-
+    LOGGER.info(
+        f"Successfully loaded {event_data_provider} tracking data in load_event_data()"
+    )
     return event_data, event_metadata, databallpy_events
 
 
@@ -390,58 +480,73 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
     Returns:
         Match: All information about the match
     """
-    assert provider in ["metrica"]
+    LOGGER.info("Trying to load open match in get_open_match()")
+    try:
+        provider_options = ["metrica"]
+        if provider not in provider_options:
+            LOGGER.error(
+                f"{provider} is not a valid provider for the get_open_match() function"
+            )
+            raise ValueError(
+                f"Open match provider should be in {provider_options}, not {provider}."
+            )
 
-    if provider == "metrica":
-        tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
-        event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
+        if provider == "metrica":
+            tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
+            event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
-    periods_cols = ed_metadata.periods_frames.columns.difference(
-        metadata.periods_frames.columns
-    ).to_list()
-    periods_cols.sort(reverse=True)
-    merged_periods = pd.concat(
-        (
-            metadata.periods_frames,
-            ed_metadata.periods_frames[periods_cols],
-        ),
-        axis=1,
-    )
+        periods_cols = ed_metadata.periods_frames.columns.difference(
+            metadata.periods_frames.columns
+        ).to_list()
+        periods_cols.sort(reverse=True)
+        merged_periods = pd.concat(
+            (
+                metadata.periods_frames,
+                ed_metadata.periods_frames[periods_cols],
+            ),
+            axis=1,
+        )
 
-    match = Match(
-        tracking_data=tracking_data,
-        tracking_data_provider=provider,
-        event_data=event_data,
-        event_data_provider=provider,
-        pitch_dimensions=metadata.pitch_dimensions,
-        periods=merged_periods,
-        frame_rate=metadata.frame_rate,
-        home_team_id=metadata.home_team_id,
-        home_formation=metadata.home_formation,
-        home_score=metadata.home_score,
-        home_team_name=metadata.home_team_name,
-        home_players=metadata.home_players,
-        away_team_id=metadata.away_team_id,
-        away_formation=metadata.away_formation,
-        away_score=metadata.away_score,
-        away_team_name=metadata.away_team_name,
-        away_players=metadata.away_players,
-        country="",
-        allow_synchronise_tracking_and_event_data=True,
-        shot_events=databallpy_events["shot_events"]
-        if "shot_events" in databallpy_events.keys()
-        else {},
-        dribble_events=databallpy_events["dribble_events"]
-        if "dribble_events" in databallpy_events.keys()
-        else {},
-        pass_events=databallpy_events["pass_events"]
-        if "pass_events" in databallpy_events.keys()
-        else {},
-        _tracking_timestamp_is_precise=True,
-        _event_timestamp_is_precise=True,
-        _periods_changed_playing_direction=metadata.periods_changed_playing_direction,
-    )
-    return match
+        match = Match(
+            tracking_data=tracking_data,
+            tracking_data_provider=provider,
+            event_data=event_data,
+            event_data_provider=provider,
+            pitch_dimensions=metadata.pitch_dimensions,
+            periods=merged_periods,
+            frame_rate=metadata.frame_rate,
+            home_team_id=metadata.home_team_id,
+            home_formation=metadata.home_formation,
+            home_score=metadata.home_score,
+            home_team_name=metadata.home_team_name,
+            home_players=metadata.home_players,
+            away_team_id=metadata.away_team_id,
+            away_formation=metadata.away_formation,
+            away_score=metadata.away_score,
+            away_team_name=metadata.away_team_name,
+            away_players=metadata.away_players,
+            country="",
+            allow_synchronise_tracking_and_event_data=True,
+            shot_events=databallpy_events["shot_events"]
+            if "shot_events" in databallpy_events.keys()
+            else {},
+            dribble_events=databallpy_events["dribble_events"]
+            if "dribble_events" in databallpy_events.keys()
+            else {},
+            pass_events=databallpy_events["pass_events"]
+            if "pass_events" in databallpy_events.keys()
+            else {},
+            _tracking_timestamp_is_precise=True,
+            _event_timestamp_is_precise=True,
+            _periods_changed_playing_direction=(
+                metadata.periods_changed_playing_direction
+            ),
+        )
+        LOGGER.info(f"Successfully loaded open match {match.name}")
+        return match
+    except Exception as e:
+        LOGGER.exception(f"Found a unexpected exception in get_open_match(): \n{e}")
+        raise e
 
 
 def merge_metadata_periods(
@@ -456,7 +561,7 @@ def merge_metadata_periods(
     Returns:
         pd.DataFrame: merged periods
     """
-
+    LOGGER.info("Trying to merge metadata periods in merge_metadata_periods()")
     periods_cols = event_periods.columns.difference(tracking_periods.columns).to_list()
     periods_cols.sort(reverse=True)
     merged_periods = pd.concat(
@@ -466,6 +571,7 @@ def merge_metadata_periods(
         ),
         axis=1,
     )
+    LOGGER.info("Successfully merged metadata periods in merge_metadata_periods()")
     return merged_periods
 
 
@@ -488,11 +594,20 @@ def rescale_event_data(
     Returns:
         Tuple[pd.DataFrame, dict]: rescaled event data and databallpy events
     """
-    if not (
-        not tracking_pitch_dimensions == event_pitch_dimensions
-        and not pd.isnull(event_pitch_dimensions).any()
-        and not pd.isnull(tracking_pitch_dimensions).any()
+    LOGGER.info(
+        "Trying to rescale the event data based on the tracking data in "
+        "rescale_event_data()."
+    )
+    if (
+        tracking_pitch_dimensions == event_pitch_dimensions
+        or pd.isnull(event_pitch_dimensions).any()
+        or pd.isnull(tracking_pitch_dimensions).any()
     ):
+        LOGGER.info(
+            "Scaling is not needed because pitch dimensions are equal, "
+            "or scaling is not possible because pitch dimensions have nan values."
+            "(rescale_event_data())"
+        )
         return event_data, databallpy_events
 
     x_correction = tracking_pitch_dimensions[0] / event_pitch_dimensions[0]
@@ -510,6 +625,10 @@ def rescale_event_data(
                     event.end_x *= x_correction
                     event.end_y *= y_correction
 
+    LOGGER.info(
+        "Successfully rescaled the pitch dimensions of the event data in "
+        "rescale_event_data()."
+    )
     return event_data, databallpy_events
 
 
@@ -528,7 +647,8 @@ def align_player_and_team_ids(
         pd.DataFrame: event data with aligned player and team id's
     """
 
-    # check player_id's
+    LOGGER.info("Trying to align player and team ids in align_player_and_team_id()")
+    # Align player id's
     if (
         not set(event_metadata.home_players["id"])
         == set(tracking_metadata.home_players["id"])
@@ -558,7 +678,8 @@ def align_player_and_team_ids(
             .fillna(MISSING_INT)
             .astype("int64")
         )
-    # check team_id's
+
+    # Align team id's
     if not event_metadata.home_team_id == tracking_metadata.home_team_id:
         event_home_team_id = event_metadata.home_team_id
         tracking_home_team_id = tracking_metadata.home_team_id
@@ -579,6 +700,9 @@ def align_player_and_team_ids(
             {event_away_team_id: tracking_away_team_id}
         )
 
+    LOGGER.info(
+        "Successfully aligned player and team ids in align_player_and_team_ids()"
+    )
     return event_data, event_metadata
 
 
@@ -595,7 +719,7 @@ def merge_player_info(
         Tuple[pd.DataFrame, pd.DataFrame]: merged home player information
             and merged away player information.
     """
-
+    LOGGER.info("Trying to merge player info in merge_player_info()")
     player_cols = event_metadata.home_players.columns.difference(
         tracking_metadata.home_players.columns
     ).to_list()
@@ -606,5 +730,5 @@ def merge_player_info(
     away_players = tracking_metadata.away_players.merge(
         event_metadata.away_players[player_cols], on="id"
     )
-
+    LOGGER.info("Successfully merged player info in merge_player_info()")
     return home_players, away_players

@@ -840,7 +840,6 @@ class TestMatch(unittest.TestCase):
         with self.assertRaises(DataBallPyError):
             td_changed = self.expected_match_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "home_34_x"] = 3.0
-
             Match(
                 tracking_data=td_changed,
                 tracking_data_provider=self.td_provider,
@@ -1000,14 +999,12 @@ class TestMatch(unittest.TestCase):
 
     def test_match_home_players_column_ids(self):
         assert self.expected_match_tracab_opta.home_players_column_ids() == [
-            "home_34_x",
-            "home_34_y",
+            "home_34",
         ]
 
     def test_match_away_players_column_ids(self):
         assert self.expected_match_tracab_opta.away_players_column_ids() == [
-            "away_17_x",
-            "away_17_y",
+            "away_17",
         ]
 
     def test_match_player_column_id_to_full_name(self):

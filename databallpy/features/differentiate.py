@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 
 from databallpy.utils.filters import filter_data
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT
+
+LOGGER = create_logger(__name__)
 
 
 def get_velocity(
@@ -26,25 +29,28 @@ def get_velocity(
     Returns:
         pd.DataFrame: tracking data with the added velocity columns
     """
+    try:
+        if filter_type not in ["moving_average", "savitzky_golay", None]:
+            raise ValueError(
+                "filter_type should be one of: 'moving_average', "
+                "'savitzky_golay', None, got: {filter_type}"
+            )
 
-    if filter_type not in ["moving_average", "savitzky_golay", None]:
-        raise ValueError(
-            "filter_type should be one of: 'moving_average', "
-            "'savitzky_golay', None, got: {filter_type}"
+        res_df = _differentiate(
+            df,
+            new_name="velocity",
+            metric="",
+            frame_rate=framerate,
+            filter_type=filter_type,
+            window=window,
+            poly_order=poly_order,
+            column_ids=input_columns,
         )
 
-    res_df = _differentiate(
-        df,
-        new_name="velocity",
-        metric="",
-        frame_rate=framerate,
-        filter_type=filter_type,
-        window=window,
-        poly_order=poly_order,
-        column_ids=input_columns,
-    )
-
-    return res_df
+        return res_df
+    except Exception as e:
+        LOGGER.exception(f"Found unexpected exception in get_velocity(): \n{e}")
+        raise e
 
 
 def _differentiate(
@@ -78,43 +84,47 @@ def _differentiate(
     :returns: pandas df with added differentiated values
     """
 
-    to_skip = len(metric) + 2
-    if column_ids is None:
-        column_ids = [x[:-to_skip] for x in df.columns if f"_{metric}x" in x]
+    try:
+        to_skip = len(metric) + 2
+        if column_ids is None:
+            column_ids = [x[:-to_skip] for x in df.columns if f"_{metric}x" in x]
 
-    dt = 1.0 / frame_rate
+        dt = 1.0 / frame_rate
 
-    res_dict = {}
-    for player in column_ids:
-        diff_x = df[player + f"_{metric}x"].diff() / dt
-        diff_y = df[player + f"_{metric}y"].diff() / dt
+        res_dict = {}
+        for player in column_ids:
+            diff_x = df[player + f"_{metric}x"].diff() / dt
+            diff_y = df[player + f"_{metric}y"].diff() / dt
 
-        # remove outliers
-        raw_differentiated = np.linalg.norm([diff_x, diff_y], axis=0)
-        if max_val != MISSING_INT:
-            diff_x[(raw_differentiated > max_val) & (diff_x > max_val)] = max_val
-            diff_x[(raw_differentiated > max_val) & (diff_x < -max_val)] = -max_val
-            diff_y[(raw_differentiated > max_val) & (diff_y > max_val)] = max_val
-            diff_y[(raw_differentiated > max_val) & (diff_y < -max_val)] = -max_val
+            # remove outliers
+            raw_differentiated = np.linalg.norm([diff_x, diff_y], axis=0)
+            if max_val != MISSING_INT:
+                diff_x[(raw_differentiated > max_val) & (diff_x > max_val)] = max_val
+                diff_x[(raw_differentiated > max_val) & (diff_x < -max_val)] = -max_val
+                diff_y[(raw_differentiated > max_val) & (diff_y > max_val)] = max_val
+                diff_y[(raw_differentiated > max_val) & (diff_y < -max_val)] = -max_val
 
-        # smoothing the signal
-        if filter_type is not None:
-            diff_x = filter_data(
-                diff_x.values,
-                filter_type=filter_type,
-                window_length=window,
-                polyorder=poly_order,
-            )
-            diff_y = filter_data(
-                diff_y.values,
-                filter_type=filter_type,
-                window_length=window,
-                polyorder=poly_order,
-            )
+            # smoothing the signal
+            if filter_type is not None:
+                diff_x = filter_data(
+                    diff_x.values,
+                    filter_type=filter_type,
+                    window_length=window,
+                    polyorder=poly_order,
+                )
+                diff_y = filter_data(
+                    diff_y.values,
+                    filter_type=filter_type,
+                    window_length=window,
+                    polyorder=poly_order,
+                )
 
-        res_dict[player + f"_{new_name[0]}x"] = np.array(diff_x)
-        res_dict[player + f"_{new_name[0]}y"] = np.array(diff_y)
-        res_dict[player + f"_{new_name}"] = np.linalg.norm([diff_x, diff_y], axis=0)
+            res_dict[player + f"_{new_name[0]}x"] = np.array(diff_x)
+            res_dict[player + f"_{new_name[0]}y"] = np.array(diff_y)
+            res_dict[player + f"_{new_name}"] = np.linalg.norm([diff_x, diff_y], axis=0)
 
-    new_df = pd.concat([df, pd.DataFrame(res_dict)], axis=1)
-    return new_df
+        new_df = pd.concat([df, pd.DataFrame(res_dict)], axis=1)
+        return new_df
+    except Exception as e:
+        LOGGER.exception(f"Found unexpected exception in _differentiate: \n{e}")
+        raise e
