@@ -216,10 +216,12 @@ class PassEvent(BaseEvent):
             "pass_goal_angle",
         ]
         for value, name in zip(values, names):
-            if not isinstance(value, float):
+            if not isinstance(value, (float, np.floating)):
                 raise TypeError(f"{name} should be float, not {type(value)}")
 
-        if not isinstance(self.opponents_in_passing_lane, (int, float)):
+        if not isinstance(
+            self.opponents_in_passing_lane, (np.integer, int, float, np.floating)
+        ):
             raise TypeError(
                 "opponents_in_passing_lane should be int, not "
                 f"{type(self.opponents_in_passing_lane)}"

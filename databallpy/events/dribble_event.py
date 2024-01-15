@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from databallpy.events.base_event import BaseEvent
@@ -76,11 +77,11 @@ class DribbleEvent(BaseEvent):
         )
 
     def _check_datatypes(self):
-        if not isinstance(self.player_id, int):
+        if not isinstance(self.player_id, (int, np.integer)):
             raise TypeError(
                 f"player_id should be int, got {type(self.player_id)} instead"
             )
-        if not isinstance(self.related_event_id, int):
+        if not isinstance(self.related_event_id, (int, np.integer)):
             raise TypeError(
                 f"related_event_id should be int, got {type(self.related_event_id)} "
                 "instead"
