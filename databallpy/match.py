@@ -978,7 +978,7 @@ def check_inputs_match_object(match: Match):
             raise TypeError(message)
 
     # pitch_dimensions
-    if not isinstance(match.pitch_dimensions, list):
+    if not isinstance(match.pitch_dimensions, (list, tuple)):
         message = (
             "pitch_dimensions ({match.pitch_dimensions}) should be a "
             f"list, not a {type(match.pitch_dimensions)}"
@@ -992,7 +992,7 @@ def check_inputs_match_object(match: Match):
         )
         LOGGER.error(message)
         raise ValueError(message)
-    if not all([isinstance(x, float) for x in match.pitch_dimensions]):
+    if not all([isinstance(x, (float, np.floating)) for x in match.pitch_dimensions]):
         message = (
             "Both values in pitch dimensions should by floats, current inputs "
             f"{[type(x) for x in match.pitch_dimensions]}"
@@ -1036,7 +1036,7 @@ def check_inputs_match_object(match: Match):
 
     # frame_rate
     if not pd.isnull(match.frame_rate) and not match.frame_rate == MISSING_INT:
-        if not isinstance(match.frame_rate, int):
+        if not isinstance(match.frame_rate, (int, np.integer)):
             message = f"frame_rate should be an integer, not a {type(match.frame_rate)}"
             LOGGER.error(message)
             raise TypeError(message)
@@ -1049,7 +1049,7 @@ def check_inputs_match_object(match: Match):
     for team, team_id in zip(
         ["home", "away"], [match.home_team_id, match.away_team_id]
     ):
-        if not isinstance(team_id, int) and not isinstance(team_id, str):
+        if not isinstance(team_id, (int, np.integer)) and not isinstance(team_id, str):
             message = (
                 "{team} team id should be an integer or string, not a "
                 f"{type(team_id)}"
@@ -1069,7 +1069,7 @@ def check_inputs_match_object(match: Match):
     # team scores
     for team, score in zip(["home", "away"], [match.home_score, match.away_score]):
         if not pd.isnull(score) and not score == MISSING_INT:
-            if not isinstance(score, int):
+            if not isinstance(score, (int, np.integer)):
                 message = f"{team} team score should be an integer, not a {type(score)}"
                 LOGGER.error(message)
                 raise TypeError(message)

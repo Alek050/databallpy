@@ -304,7 +304,7 @@ class ShotEvent(BaseEvent):
         )
 
     def _check_datatypes(self):
-        if not isinstance(self.player_id, int):
+        if not isinstance(self.player_id, (int, np.integer)):
             raise TypeError(f"player_id should be int, got {type(self.player_id)}")
         if not isinstance(self.shot_outcome, str):
             raise TypeError(
@@ -324,11 +324,11 @@ class ShotEvent(BaseEvent):
                 "shot_outcome should be goal, miss_off_target, miss_hit_post, "
                 f"miss_on_target, blocked or own_goal, got '{self.shot_outcome}'"
             )
-        if not isinstance(self.y_target, float):
+        if not isinstance(self.y_target, (float, np.floating)):
             raise TypeError(
                 f"y_target should be float or int, got {type(self.y_target)}"
             )
-        if not isinstance(self.z_target, float):
+        if not isinstance(self.z_target, (float, np.floating)):
             raise TypeError(
                 f"z_target should be float or int, got {type(self.z_target)}"
             )
@@ -375,7 +375,7 @@ class ShotEvent(BaseEvent):
                 "created_oppertunity should be assisted, regular_play, or "
                 f"individual_play, got {self.created_oppertunity}"
             )
-        if not isinstance(self.related_event_id, int):
+        if not isinstance(self.related_event_id, (int, np.integer)):
             raise TypeError(
                 f"related_event_id should be int, got {type(self.related_event_id)}"
             )
@@ -398,12 +398,12 @@ class ShotEvent(BaseEvent):
                 self.goal_gk_distance,
             ],
         ):
-            if not isinstance(td_var, (float)):
+            if not isinstance(td_var, (float, np.floating)):
                 raise TypeError(f"{name} should be float, got {type(td_var)}")
 
         for name, td_var in zip(
             ["n_obstructive_players", "n_obstructive_defenders"],
             [self.n_obstructive_players, self.n_obstructive_defenders],
         ):
-            if not isinstance(td_var, (int)):
+            if not isinstance(td_var, (int, np.integer)):
                 raise TypeError(f"{name} should be int, got {type(td_var)}")

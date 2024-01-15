@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 
@@ -29,16 +30,16 @@ class BaseEvent:
     team_id: int
 
     def __post_init__(self):
-        if not isinstance(self.event_id, int):
+        if not isinstance(self.event_id, (np.integer, int)):
             raise TypeError(f"event_id should be int, not {type(self.event_id)}")
 
-        if not isinstance(self.period_id, int):
+        if not isinstance(self.period_id, (np.integer, int)):
             raise TypeError(f"period_id should be int, not {type(self.period_id)}")
 
-        if not isinstance(self.minutes, (int, float)):
+        if not isinstance(self.minutes, (np.integer, int, float, np.floating)):
             raise TypeError(f"minutes should be int, not {type(self.minutes)}")
 
-        if not isinstance(self.seconds, (int, float)):
+        if not isinstance(self.seconds, (np.integer, int, float, np.floating)):
             raise TypeError(f"seconds should be int, not {type(self.seconds)}")
 
         if not isinstance(self.datetime, pd.Timestamp):
@@ -46,13 +47,15 @@ class BaseEvent:
                 f"datetime should be pd.Timestamp, not {type(self.datetime)}"
             )
 
-        if not isinstance(self.start_x, float):
+        if not isinstance(self.start_x, (float, np.floating)):
             raise TypeError(f"x_start should be a float, not {type(self.start_x)}")
 
-        if not isinstance(self.start_y, float):
+        if not isinstance(self.start_y, (float, np.floating)):
             raise TypeError(f"y_start should be a float, not {type(self.start_y)}")
 
-        if not isinstance(self.team_id, int) and not isinstance(self.team_id, str):
+        if not isinstance(self.team_id, (int, np.integer)) and not isinstance(
+            self.team_id, str
+        ):
             raise TypeError(f"team_id should be int, not {type(self.team_id)}")
 
     def __eq__(self, other: object) -> bool:
