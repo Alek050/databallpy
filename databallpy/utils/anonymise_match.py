@@ -39,7 +39,7 @@ def anonymise_match(
             Defaults to pd.to_datetime("1980-1-1 15:00:00", utc=True).
 
     Returns:
-        Match: anonymised match
+        Match: anonymised match, potentially updated keys dataframe
 
     Raises:
         ValueError: if base_time is not a timezone aware timestamp
