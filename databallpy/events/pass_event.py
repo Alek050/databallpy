@@ -85,18 +85,24 @@ class PassEvent(BaseEvent):
 
         goal_loc = [pitch_dimensions[0] / 2.0, 0]
         passer_loc = frame[[f"{passer_column_id}_x", f"{passer_column_id}_y"]].values
-        self.pass_length = np.linalg.norm(passer_loc - pass_end_location)
-        self.forward_distance = pass_end_location[0] - passer_loc[0]
-        self.passer_goal_distance = np.linalg.norm(passer_loc - goal_loc)
-        self.pass_end_loc_goal_distance = np.linalg.norm(pass_end_location - goal_loc)
-        self.opponents_in_passing_lane = get_opponents_in_passing_lane(
-            frame, passer_loc, pass_end_location, opponent_column_ids
+        self.pass_length = float(np.linalg.norm(passer_loc - pass_end_location))
+        self.forward_distance = float(pass_end_location[0] - passer_loc[0])
+        self.passer_goal_distance = float(np.linalg.norm(passer_loc - goal_loc))
+        self.pass_end_loc_goal_distance = float(
+            np.linalg.norm(pass_end_location - goal_loc)
+        )
+        self.opponents_in_passing_lane = int(
+            get_opponents_in_passing_lane(
+                frame, passer_loc, pass_end_location, opponent_column_ids
+            )
         )
 
         passer_goal_vec = goal_loc - passer_loc
         passer_receiver_vec = pass_end_location - passer_loc
-        self.pass_goal_angle = get_smallest_angle(
-            passer_goal_vec, passer_receiver_vec, angle_format="degree"
+        self.pass_goal_angle = float(
+            get_smallest_angle(
+                passer_goal_vec, passer_receiver_vec, angle_format="degree"
+            )
         )
 
     def copy(self):
