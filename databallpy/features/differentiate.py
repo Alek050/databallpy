@@ -23,6 +23,7 @@ def get_velocity(
         input_columns (list): columns for which velocity should be calculated
         framerate (float): framerate of the tracking data
         filter_type (str, optional): filter type to use. Defaults to None.
+            Options are `moving_average` and `savitzky_golay`.
         window (int, optional): window size for the filter. Defaults to 7.
         poly_order (int, optional): polynomial order for the filter. Defaults to 2.
 

@@ -1,16 +1,22 @@
 import subprocess
+import time
+import warnings
 from functools import wraps
 from typing import Tuple
 
 import matplotlib.animation as animation
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap, to_rgba
 from tqdm import tqdm
 
+from databallpy.features.pitch_control import get_pitch_control_period
 from databallpy.match import Match
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
+from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__name__)
 
@@ -427,6 +433,8 @@ def save_match_clip(
     events: list = [],
     variable_of_interest: pd.Series = None,
     player_possession_column: str = None,
+    add_velocities: bool = False,
+    add_pitch_control: bool = False,
     verbose: bool = True,
 ):
     """Function to save a subset of a match clip of the tracking data.
@@ -451,6 +459,10 @@ def save_match_clip(
         player_possession_column (str, optional): Column in match.tracking_data that
             contains the player id of the player that has possession of the ball.
             Defaults to None.
+        add_velocities (bool, optional): Whether or not to add the velocities to the
+            clip, will add arrows to show the velocity. Defaults to False.
+        add_pitch_control (bool, optional): Whether or not to add pitch control to the
+            clip, will add a heatmap to show the pitch control. Defaults to False.
         verbose (bool, optional): Whether or not to print info in the terminal on the
             progress
     """
@@ -490,6 +502,19 @@ def save_match_clip(
                 LOGGER.error(message)
                 raise DataBallPyError(message)
 
+        if add_velocities or add_pitch_control:
+            for player in (
+                match.home_players_column_ids() + match.away_players_column_ids()
+            ):
+                if player + "_vx" not in td.columns or player + "_vy" not in td.columns:
+                    message = (
+                        f"Player vx and/or vy of {player} not found in "
+                        "match.tracking_data.columns. Please run "
+                        "databallpy.features.differentiat.add_velocity() first."
+                    )
+                    LOGGER.error(message)
+                    raise DataBallPyError(message)
+
         animation_metadata = {
             "title": title,
             "artist": "Matplotlib",
@@ -500,9 +525,56 @@ def save_match_clip(
         )
         video_loc = f"{save_folder}/{title}.mp4"
 
+        if pitch_color not in ["white", "w"] and add_pitch_control:
+            message = (
+                "Pitch control will not be shown properly if the pitch color"
+                " is not white. Changing the pitch color to white."
+            )
+            LOGGER.warning(message)
+            warnings.warn(message, category=DataBallPyWarning)
+            pitch_color = "white"
+
         fig, ax = plot_soccer_pitch(
             field_dimen=match.pitch_dimensions, pitch_color=pitch_color
         )
+
+        if add_pitch_control:
+            grid_size = [360, 240]
+            x_range = np.linspace(
+                -match.pitch_dimensions[0] / 2 - 5,
+                match.pitch_dimensions[0] / 2 + 5,
+                grid_size[0],
+            )
+            y_range = np.linspace(
+                -match.pitch_dimensions[1] / 2 - 5,
+                match.pitch_dimensions[1] / 2 + 5,
+                grid_size[1],
+            )
+            grid = np.meshgrid(x_range, y_range)
+
+            c3 = to_rgba(team_colors[0])
+            c2 = (1, 1, 1, 1)
+            c1 = to_rgba(team_colors[1])
+
+            all_colors = [c1, c2, c3]
+
+            cmap = LinearSegmentedColormap.from_list(
+                "custom_colormap", all_colors, N=22
+            )
+
+            start_time = time.time()
+            pitch_control_array = get_pitch_control_period(
+                tracking_data=td,
+                grid=grid,
+            )
+            n_cells = grid_size[0] * grid_size[1]
+            pitch_control_array = (
+                1 / (1 + np.exp(-n_cells / 50.0 * pitch_control_array))
+            ) * 2 - 1
+            LOGGER.info(
+                f"Pitch control took {time.time() - start_time} "
+                f"seconds, len(td) = {len(td)}"
+            )
 
         # Set match name, non variable over time
         ax.text(
@@ -526,8 +598,45 @@ def save_match_clip(
                 indexes = tqdm(td.index, desc="Making match clip", leave=False)
             else:
                 indexes = td.index
-            for _, idx in enumerate(indexes):
+            for i, idx in enumerate(indexes):
                 variable_fig_objs = []
+
+                if add_pitch_control:
+                    pitch_control = pitch_control_array[i]
+                    imshow = ax.imshow(
+                        pitch_control,
+                        extent=[
+                            x_range.min(),
+                            x_range.max(),
+                            y_range.min(),
+                            y_range.max(),
+                        ],
+                        cmap=cmap,
+                        origin="lower",
+                        aspect="auto",
+                        vmin=-1.0,
+                        vmax=1.0,
+                        zorder=-5,
+                    )
+                    variable_fig_objs.append(imshow)
+
+                if add_velocities:
+                    for col_ids in [
+                        match.home_players_column_ids(),
+                        match.away_players_column_ids(),
+                    ]:
+                        for col_id in col_ids:
+                            if pd.isnull(td.loc[idx, col_id + "_vx"]):
+                                continue
+
+                            arrow = mpatches.FancyArrowPatch(
+                                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values,
+                                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values
+                                + td.loc[idx, [f"{col_id}_vx", f"{col_id}_vy"]].values,
+                                mutation_scale=10,
+                            )
+                            fig_obj = ax.add_patch(arrow)
+                            variable_fig_objs.append(fig_obj)
 
                 # Scatter plot the teams
                 for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
