@@ -169,22 +169,25 @@ class ShotEvent(BaseEvent):
         self.shot_angle = get_smallest_angle(
             ball_left_post_vector, ball_right_post_vector, angle_format="degree"
         )
-        self.gk_optimal_loc_distance = np.linalg.norm(
-            np.cross(goal_xy - ball_xy, ball_xy - gk_xy)
-        ) / np.linalg.norm(goal_xy - ball_xy)
-        self.pressure_on_ball = get_pressure_on_player(
-            tracking_data_frame,
-            column_id,
-            pitch_size=pitch_dimensions,
-            d_front="variable",
-            d_back=3.0,
-            q=1.75,
+        self.gk_optimal_loc_distance = float(
+            np.linalg.norm(np.cross(goal_xy - ball_xy, ball_xy - gk_xy))
+            / np.linalg.norm(goal_xy - ball_xy)
         )
-        self.n_obstructive_players = n_obstructive_players
-        self.n_obstructive_defenders = n_obstructive_defenders
-        self.goal_gk_distance = np.linalg.norm(goal_xy - gk_xy)
+        self.pressure_on_ball = float(
+            get_pressure_on_player(
+                tracking_data_frame,
+                column_id,
+                pitch_size=pitch_dimensions,
+                d_front="variable",
+                d_back=3.0,
+                q=1.75,
+            )
+        )
+        self.n_obstructive_players = int(n_obstructive_players)
+        self.n_obstructive_defenders = int(n_obstructive_defenders)
+        self.goal_gk_distance = float(np.linalg.norm(goal_xy - gk_xy))
 
-        self.xG = self.get_xG()
+        self.xG = float(self.get_xG())
 
     def get_xG(self):
         """Get xG of the shot event. This function calculates the xG of the shot.
