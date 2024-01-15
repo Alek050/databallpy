@@ -38,10 +38,12 @@ class TestMetricaTrackingDataParser(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             load_metrica_tracking_data(22, self.md_loc, verbose=False)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(FileNotFoundError):
             load_metrica_tracking_data(
                 "some_wrong_string.txt", self.md_loc, verbose=False
             )
+        with self.assertRaises(FileNotFoundError):
+            load_metrica_tracking_data(self.td_loc, self.md_loc + ".xml", verbose=False)
 
     @patch(
         "requests.get",

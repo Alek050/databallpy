@@ -6,8 +6,11 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers import Metadata
+from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT
+
+LOGGER = create_logger(__name__)
 
 instat_databallpy_map = {
     "Attacking pass accurate": ["pass", 1],
@@ -50,22 +53,32 @@ def load_instat_event_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: the event data of the match and the  metadata
     """
-    assert isinstance(
-        event_data_loc, str
-    ), f"event_data_loc should be a string, not a {type(event_data_loc)}"
-    assert isinstance(
-        metadata_loc, str
-    ), f"event_metadata_loc should be a string, not a {type(metadata_loc)}"
-    assert event_data_loc[-5:] == ".json", "instat event file should by of .json format"
-    assert (
-        metadata_loc[-5:] == ".json"
-    ), "instat event metadata file should be of .json format"
+    LOGGER.info("Trying to load instat event data.")
+    if not isinstance(event_data_loc, str):
+        message = f"event_data_loc should be a string, not a {type(event_data_loc)}"
+        LOGGER.error(message)
+        raise TypeError(message)
+    if not isinstance(metadata_loc, str):
+        message = f"metadata_loc should be a string, not a {type(metadata_loc)}"
+        LOGGER.error(message)
+        raise TypeError(message)
+    if not event_data_loc[-5:] == ".json":
+        message = "instat event file should by of .json format"
+        LOGGER.error(message)
+        raise ValueError(message)
+    if not metadata_loc[-5:] == ".json":
+        message = "instat event metadata file should be of .json format"
+        LOGGER.error(message)
+        raise ValueError(message)
 
     metadata = _load_metadata(metadata_loc=metadata_loc)
+    LOGGER.info("Successfully loaded metadata if instat.")
     metadata = _update_metadata(metadata=metadata, event_data_loc=event_data_loc)
+    LOGGER.info("Successfully updated metadata of instat.")
     event_data, pitch_dimensions = _load_event_data(
         event_data_loc=event_data_loc, metadata=metadata
     )
+    LOGGER.info("Succesfully loaded instat event data.")
     metadata.pitch_dimensions = pitch_dimensions
 
     return event_data, metadata

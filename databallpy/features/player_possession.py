@@ -5,6 +5,9 @@ import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
+from databallpy.utils.logging import create_logger
+
+LOGGER = create_logger(__name__)
 
 
 def get_individual_player_possessions_and_duels(
@@ -50,82 +53,95 @@ def get_individual_player_possessions_and_duels(
     :returns: pd.Series with which player has possession and a pd.Series with duels over
         time.
     """
-
-    if "ball_velocity" not in tracking_data.columns:
-        tracking_data = _differentiate(
-            tracking_data,
-            new_name="velocity",
-            metric="",
-            frame_rate=frame_rate,
-            filter_type=None,
-            column_ids=["ball"],
-        )
-
-    distances_df = get_distance_between_ball_and_players(tracking_data).fillna(np.inf)
-    pz_initial = get_initial_possessions(
-        tracking_data, distances_df, pz_radius=pz_radius, min_frames=min_frames
-    )
-    duels = get_duels(tracking_data, distances_df, dz_radius=dz_radius)
-
-    player_possession = pd.Series(index=tracking_data.index, dtype="object")
-    player_possession[:] = None
-
-    # Find intervals of player possessions, can also include intervals with None values.
-    shifting_idxs = np.where(pz_initial.values[:-1] != pz_initial.values[1:])[0]
-    shifting_idxs = np.concatenate([[-1], shifting_idxs, [len(pz_initial) - 1]])
-    possession_start_idxs = shifting_idxs[:-1] + 1
-    next_possession_start_idxs = possession_start_idxs[1:]
-    next_possession_start_idxs = np.concatenate(
-        [next_possession_start_idxs, [len(pz_initial) - 1]]
-    )
-    possession_end_idxs = shifting_idxs[1:]  # inclusive index, so include it!
-    last_valid_idx = None
-    valid_gains = get_valid_gains(
-        tracking_data,
-        possession_start_idxs,
-        possession_end_idxs,
-        bv_threshold,
-        ba_threshold,
-        duels=duels,
-    )
-
-    for idx, (start_idx, end_idx) in enumerate(
-        zip(possession_start_idxs, possession_end_idxs)
-    ):
-        if pz_initial[start_idx] is None:
-            continue
-
-        player_column_id = pz_initial[start_idx]
-        if valid_gains[idx]:
-            # possession is lost somewhere between last pz index
-            # and the next possession of a player
-            if pz_initial[next_possession_start_idxs[idx]] is None:
-                next_possession_start_idx = next_possession_start_idxs[idx + 1]
-            else:
-                next_possession_start_idx = next_possession_start_idxs[idx]
-
-            lost_possession_idx = get_lost_possession_idx(
-                tracking_data.loc[end_idx:next_possession_start_idx], bd_threshold
+    try:
+        if not frame_rate > 0:
+            raise ValueError(f"frame rate should be above 0, not {frame_rate}")
+        if "ball_velocity" not in tracking_data.columns:
+            tracking_data = _differentiate(
+                tracking_data,
+                new_name="velocity",
+                metric="",
+                frame_rate=frame_rate,
+                filter_type=None,
+                column_ids=["ball"],
             )
 
-            # check if the player is the same as the last player in possession
-            if last_valid_idx is not None:
-                last_possession_idx = last_valid_idx
-                last_player_column_id = pz_initial[last_possession_idx]
-                if last_player_column_id == player_column_id:
-                    start_idx = last_possession_idx
+        distances_df = get_distance_between_ball_and_players(tracking_data).fillna(
+            np.inf
+        )
+        pz_initial = get_initial_possessions(
+            tracking_data, distances_df, pz_radius=pz_radius, min_frames=min_frames
+        )
+        duels = get_duels(tracking_data, distances_df, dz_radius=dz_radius)
 
-            # update last_valid_idx
-            last_valid_idx = lost_possession_idx
+        player_possession = pd.Series(index=tracking_data.index, dtype="object")
+        player_possession[:] = None
 
-            player_possession[start_idx : lost_possession_idx + 1] = player_column_id
+        # Find intervals of player possessions, can also include intervals
+        # with None values.
+        shifting_idxs = np.where(pz_initial.values[:-1] != pz_initial.values[1:])[0]
+        shifting_idxs = np.concatenate([[-1], shifting_idxs, [len(pz_initial) - 1]])
+        possession_start_idxs = shifting_idxs[:-1] + 1
+        next_possession_start_idxs = possession_start_idxs[1:]
+        next_possession_start_idxs = np.concatenate(
+            [next_possession_start_idxs, [len(pz_initial) - 1]]
+        )
+        possession_end_idxs = shifting_idxs[1:]  # inclusive index, so include it!
+        last_valid_idx = None
+        valid_gains = get_valid_gains(
+            tracking_data,
+            possession_start_idxs,
+            possession_end_idxs,
+            bv_threshold,
+            ba_threshold,
+            duels=duels,
+        )
 
-    # Lastly, only apply when ball status is alive
-    alive_mask = tracking_data["ball_status"] == "alive"
-    player_possession[~alive_mask] = None
-    duels[~alive_mask] = None
+        for idx, (start_idx, end_idx) in enumerate(
+            zip(possession_start_idxs, possession_end_idxs)
+        ):
+            if pz_initial[start_idx] is None:
+                continue
 
-    return player_possession, duels
+            player_column_id = pz_initial[start_idx]
+            if valid_gains[idx]:
+                # possession is lost somewhere between last pz index
+                # and the next possession of a player
+                if pz_initial[next_possession_start_idxs[idx]] is None:
+                    next_possession_start_idx = next_possession_start_idxs[idx + 1]
+                else:
+                    next_possession_start_idx = next_possession_start_idxs[idx]
+
+                lost_possession_idx = get_lost_possession_idx(
+                    tracking_data.loc[end_idx:next_possession_start_idx], bd_threshold
+                )
+
+                # check if the player is the same as the last player in possession
+                if last_valid_idx is not None:
+                    last_possession_idx = last_valid_idx
+                    last_player_column_id = pz_initial[last_possession_idx]
+                    if last_player_column_id == player_column_id:
+                        start_idx = last_possession_idx
+
+                # update last_valid_idx
+                last_valid_idx = lost_possession_idx
+
+                player_possession[
+                    start_idx : lost_possession_idx + 1
+                ] = player_column_id
+
+        # Lastly, only apply when ball status is alive
+        alive_mask = tracking_data["ball_status"] == "alive"
+        player_possession[~alive_mask] = None
+        duels[~alive_mask] = None
+
+        return player_possession, duels
+    except Exception as e:
+        LOGGER.exception(
+            "Found unexpected exception in "
+            f"get_individual_player_possessions_and_duels(): \n{e}"
+        )
+        raise e
 
 
 def get_initial_possessions(

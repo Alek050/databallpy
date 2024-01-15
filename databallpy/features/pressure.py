@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
+from databallpy.utils.logging import create_logger
+
+LOGGER = create_logger(__name__)
 
 
 def get_pressure_on_player(
@@ -33,43 +36,51 @@ def get_pressure_on_player(
               to the player changes.
     :returns: numpy array with pressure on player over the length of the df
     """
-    if d_front == "variable":
-        d_front = calculate_variable_dfront(
-            td_frame, column_id, pitch_length=pitch_size[0]
+    try:
+        if d_front == "variable":
+            d_front = calculate_variable_dfront(
+                td_frame, column_id, pitch_length=pitch_size[0]
+            )
+
+        team = column_id[:4]
+        opponent_team = "away" if team == "home" else "home"
+        tot_pressure = 0
+        player_xy = [td_frame[column_id + "_x"], td_frame[column_id + "_y"]]
+
+        for opponent_column_id in [
+            x[:-2] for x in td_frame.index if opponent_team in x and "_x" in x
+        ]:
+            opponent_xy = [
+                td_frame[opponent_column_id + "_x"],
+                td_frame[opponent_column_id + "_y"],
+            ]
+            player_opponent_distance = math.dist(player_xy, opponent_xy)
+            # opponent not close enough to exert pressure on the player
+            if player_opponent_distance > max([d_front, d_back]):
+                continue
+
+            z = calculate_z(
+                td_frame, column_id, opponent_column_id, pitch_length=pitch_size[0]
+            )
+            L = calculate_L(d_back, d_front, z)
+
+            current_pressure = (
+                pd.to_numeric((1 - player_opponent_distance / L), errors="coerce").clip(
+                    0
+                )
+                ** q
+                * 100
+            )
+
+            current_pressure = 0 if pd.isnull(current_pressure) else current_pressure
+            tot_pressure += current_pressure
+
+        return tot_pressure
+    except Exception as e:
+        LOGGER.exception(
+            f"Found unexpected exception in get_pressure_on_player(): \n{e}"
         )
-
-    team = column_id[:4]
-    opponent_team = "away" if team == "home" else "home"
-    tot_pressure = 0
-    player_xy = [td_frame[column_id + "_x"], td_frame[column_id + "_y"]]
-
-    for opponent_column_id in [
-        x[:-2] for x in td_frame.index if opponent_team in x and "_x" in x
-    ]:
-        opponent_xy = [
-            td_frame[opponent_column_id + "_x"],
-            td_frame[opponent_column_id + "_y"],
-        ]
-        player_opponent_distance = math.dist(player_xy, opponent_xy)
-        # opponent not close enough to exert pressure on the player
-        if player_opponent_distance > max([d_front, d_back]):
-            continue
-
-        z = calculate_z(
-            td_frame, column_id, opponent_column_id, pitch_length=pitch_size[0]
-        )
-        L = calculate_L(d_back, d_front, z)
-
-        current_pressure = (
-            pd.to_numeric((1 - player_opponent_distance / L), errors="coerce").clip(0)
-            ** q
-            * 100
-        )
-
-        current_pressure = 0 if pd.isnull(current_pressure) else current_pressure
-        tot_pressure += current_pressure
-
-    return tot_pressure
+        raise e
 
 
 def calculate_variable_dfront(

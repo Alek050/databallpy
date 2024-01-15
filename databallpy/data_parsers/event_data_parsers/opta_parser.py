@@ -9,9 +9,12 @@ from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
 from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
+
+LOGGER = create_logger(__name__)
 
 EVENT_TYPE_IDS = {
     1: "pass",
@@ -189,17 +192,31 @@ def load_opta_event_data(
         Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
         and the databallpy_events.
     """
+    LOGGER.info("Trying to load opta event data.")
+    if not isinstance(f7_loc, str):
+        message = f"f7_loc should be a string, not a {type(f7_loc)}"
+        LOGGER.error(message)
+        raise TypeError(message)
+    if not isinstance(f24_loc, str):
+        message = f"f24_loc should be a string, not a {type(f24_loc)}"
+        LOGGER.error(message)
+        raise TypeError(message)
 
-    assert isinstance(f7_loc, str), f"f7_loc should be a string, not a {type(f7_loc)}"
-    assert isinstance(
-        f24_loc, str
-    ), f"f24_loc should be a string, not a {type(f24_loc)}"
+    if not f7_loc[-4:] == ".xml":
+        message = f"f7 opta file should by of .xml format, not {f7_loc.split('.')[-1]}"
+        LOGGER.error(message)
+        raise ValueError(message)
 
-    assert f7_loc[-4:] == ".xml", "f7 opta file should by of .xml format"
     if not f24_loc == "pass":
-        assert f24_loc[-4:] == ".xml", "f24 opta file should be of .xml format"
+        if not f24_loc[-4:] == ".xml":
+            message = (
+                f"f24 opta file should be of .xml format, not {f24_loc.split('.')[-1]}"
+            )
+            LOGGER.error(message)
+            raise ValueError(message)
 
     metadata = _load_metadata(f7_loc, pitch_dimensions=pitch_dimensions)
+    LOGGER.info("Successfully loaded opta metadata.")
     if f24_loc != "pass":
         event_data, databallpy_events = _load_event_data(
             f24_loc,
@@ -207,6 +224,7 @@ def load_opta_event_data(
             metadata.away_team_id,
             pitch_dimensions=pitch_dimensions,
         )
+        LOGGER.info("Successfully loaded opta event data")
 
         # update timezones for databallpy_events
         for event_types in databallpy_events.values():
@@ -254,7 +272,7 @@ def load_opta_event_data(
     else:
         event_data = pd.DataFrame()
         databallpy_events = {}
-
+    LOGGER.info("Successfully rescaled opta event data.")
     return event_data, metadata, databallpy_events
 
 

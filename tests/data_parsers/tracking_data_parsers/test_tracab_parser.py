@@ -16,6 +16,23 @@ class TestTracabParser(unittest.TestCase):
         self.tracking_data_loc = "tests/test_data/tracab_td_test.dat"
         self.metadata_loc = "tests/test_data/tracab_metadata_test.xml"
 
+    def test_load_tracab_tracking_data(self):
+        tracking_data, metadata = load_tracab_tracking_data(
+            self.tracking_data_loc, self.metadata_loc, verbose=False
+        )
+        assert metadata == MD_TRACAB
+        pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
+
+    def test_load_tracab_tracking_data_errors(self):
+        with self.assertRaises(FileNotFoundError):
+            load_tracab_tracking_data(
+                self.tracking_data_loc[:-3], self.metadata_loc, verbose=False
+            )
+        with self.assertRaises(FileNotFoundError):
+            load_tracab_tracking_data(
+                self.tracking_data_loc, self.metadata_loc + ".sml", verbose=False
+            )
+
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_loc)
         expected_metadata = MD_TRACAB.copy()
@@ -26,13 +43,6 @@ class TestTracabParser(unittest.TestCase):
         tracking_data = _get_tracking_data(self.tracking_data_loc, verbose=False)
         expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
-
-    def test_load_tracking_data(self):
-        tracking_data, metadata = load_tracab_tracking_data(
-            self.tracking_data_loc, self.metadata_loc, verbose=False
-        )
-        assert metadata == MD_TRACAB
-        pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
 
     def test_get_players_metadata(self):
         input_players_info = [

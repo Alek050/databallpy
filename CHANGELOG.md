@@ -62,8 +62,13 @@
 - Added extra tests for the code
 - Added extra metadata to the Match object on which periods the player positions were normalized
 
-## V0.4.3 #####
+## V0.4.3 (15/1/2024)
 
 - Added simple expected goals (xG) model
+- Added anonimisation function
+- Added pitch control model
+- Fixed minor bugs
+- Added logging possibilities
+- Refactor of file structure and folder naming
 
 
