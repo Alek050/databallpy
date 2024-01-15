@@ -32,7 +32,7 @@ def get_pitch_control_period(tracking_data: pd.DataFrame, grid: list) -> np.ndar
 
     Args:
         tracking_data (pd.DataFrame): tracking data.
-        grid (list): Grid created with np.meshgrid.
+        grid (list): Grid created with np.meshgrid(np.linspace(), np.linspace()).
 
     Returns:
         np.ndarray: 3d pitch control values across the grid.
@@ -120,8 +120,6 @@ def get_pitch_control_single_frame(
             grid=grid,
             player_ball_distances=player_ball_distances,
         )
-        if team_influence_away.sum() == 0 and team_influence_home.sum() == 0:
-            return np.zeros(grid[0].shape)
         return team_influence_home - team_influence_away
     except Exception as e:
         LOGGER.exception(f"Found an unexpected exception in get_pitch_control()\n{e}")
@@ -144,37 +142,31 @@ def get_team_influence(
     Returns:
         np.ndarray: Team influence values across the grid.
     """
-    try:
-        player_influence = []
-        for col_id in col_ids:
-            if pd.isnull(frame[f"{col_id}_vx"]):
-                continue
+    player_influence = []
+    for col_id in col_ids:
+        if pd.isnull(frame[f"{col_id}_vx"]):
+            continue
 
-            if player_ball_distances is not None:
-                distance_to_ball = player_ball_distances.loc[col_id]
-            else:
-                distance_to_ball = np.linalg.norm(
-                    frame[[f"{col_id}_x", f"{col_id}_y"]].values
-                    - frame[["ball_x", "ball_y"]].values
-                )
-
-            player_influence.append(
-                get_player_influence(
-                    x_val=frame[f"{col_id}_x"],
-                    y_val=frame[f"{col_id}_y"],
-                    vx_val=frame[f"{col_id}_vx"],
-                    vy_val=frame[f"{col_id}_vy"],
-                    distance_to_ball=distance_to_ball,
-                    grid=grid,
-                )
+        if player_ball_distances is not None:
+            distance_to_ball = player_ball_distances.loc[col_id]
+        else:
+            distance_to_ball = np.linalg.norm(
+                frame[[f"{col_id}_x", f"{col_id}_y"]].values
+                - frame[["ball_x", "ball_y"]].values
             )
-        if len(player_influence) == 0:
-            return np.zeros(grid[0].shape)
-        team_influence = np.sum(player_influence, axis=0)
-        return team_influence
-    except Exception as e:
-        LOGGER.exception(f"Found an unexpected exception in get_team_influence()\n{e}")
-        raise e
+
+        player_influence.append(
+            get_player_influence(
+                x_val=frame[f"{col_id}_x"],
+                y_val=frame[f"{col_id}_y"],
+                vx_val=frame[f"{col_id}_vx"],
+                vy_val=frame[f"{col_id}_vy"],
+                distance_to_ball=distance_to_ball,
+                grid=grid,
+            )
+        )
+    team_influence = np.sum(player_influence, axis=0)
+    return team_influence
 
 
 def get_player_influence(
@@ -207,27 +199,19 @@ def get_player_influence(
     Returns:
         np.ndarray: Player influence values across the grid.
     """
-    try:
-        # Information regarding the normal distribution
-        mean = get_mean_position_of_influence(x_val, y_val, vx_val, vy_val)
-        scaling_matrix = calculate_scaling_matrix(
-            np.hypot(vx_val, vy_val), distance_to_ball
-        )
-        covariance_matrix = calculate_covariance_matrix(vx_val, vy_val, scaling_matrix)
+    mean = get_mean_position_of_influence(x_val, y_val, vx_val, vy_val)
+    scaling_matrix = calculate_scaling_matrix(
+        np.hypot(vx_val, vy_val), distance_to_ball
+    )
+    covariance_matrix = calculate_covariance_matrix(vx_val, vy_val, scaling_matrix)
 
-        grid_size = grid[0].shape
-        positions = np.vstack([grid[0].ravel(), grid[1].ravel()]).T
+    grid_size = grid[0].shape
+    positions = np.vstack([grid[0].ravel(), grid[1].ravel()]).T
 
-        distribution = multivariate_normal(mean=mean, cov=covariance_matrix)
-        influence_values = distribution.pdf(positions)
-        influence_values = normalize_values(influence_values)
-        return influence_values.reshape(grid_size[0], grid_size[1])
-
-    except Exception as e:
-        LOGGER.exception(
-            f"Found an unexpected exception in get_player_influence()\n{e}"
-        )
-        raise e
+    distribution = multivariate_normal(mean=mean, cov=covariance_matrix)
+    influence_values = distribution.pdf(positions)
+    influence_values = normalize_values(influence_values)
+    return influence_values.reshape(grid_size[0], grid_size[1])
 
 
 def normalize_values(influence_values):

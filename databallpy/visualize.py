@@ -502,14 +502,15 @@ def save_match_clip(
                 LOGGER.error(message)
                 raise DataBallPyError(message)
 
-        if add_velocities:
+        if add_velocities or add_pitch_control:
             for player in (
                 match.home_players_column_ids() + match.away_players_column_ids()
             ):
                 if player + "_vx" not in td.columns or player + "_vy" not in td.columns:
                     message = (
                         f"Player vx and/or vy of {player} not found in "
-                        "match.tracking_data.columns"
+                        "match.tracking_data.columns. Please run "
+                        "databallpy.features.differentiat.add_velocity() first."
                     )
                     LOGGER.error(message)
                     raise DataBallPyError(message)
