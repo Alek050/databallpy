@@ -131,6 +131,7 @@ def get_match(
             "metrica": True,
             "instat": False,
             "ortec": True,
+            "scisports": True,
         }
 
         LOGGER.info(
@@ -214,10 +215,11 @@ def get_match(
                 )
             else:
                 extra_data = None
-            home_players = event_metadata.home_players
-            away_players = event_metadata.away_players
-            periods = event_metadata.periods_frames
-            pitch_dimensions = event_metadata.pitch_dimensions
+            if uses_event_metadata:
+                home_players = event_metadata.home_players
+                away_players = event_metadata.away_players
+                periods = event_metadata.periods_frames
+                pitch_dimensions = event_metadata.pitch_dimensions
 
         # extra checks when using tracking data
         if uses_tracking_data:
