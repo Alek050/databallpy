@@ -157,7 +157,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         with self.assertRaises(IndexError):
             match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
 
-
     def test_synchronise_tracking_and_event_data_non_aligned_timestamps(self):
         expected_event_data = self.match_to_sync.event_data.copy()
         expected_tracking_data = self.match_to_sync.tracking_data.copy()
@@ -518,4 +517,3 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_data, tracking_data, offset=1.0
         )
         pd.testing.assert_frame_equal(res_event_data, expected_event_data)
-
