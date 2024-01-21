@@ -114,9 +114,6 @@ def synchronise_tracking_and_event_data(
         # loop over batches
         batch_first_datetime = tracking_data["datetime"].iloc[0]
         for batch_end_datetime in end_datetimes:
-            logger.debug(
-                f"Syncing batch: {batch_first_datetime} - {batch_end_datetime}"
-            )
             # create batches
             event_mask = event_data_to_sync["datetime"].between(
                 batch_first_datetime, batch_end_datetime, inclusive="left"
@@ -331,13 +328,11 @@ def _needleman_wunsch(
             events.append(j)
             i -= 1
             j -= 1
-            logger.debug(f"Matched frame: {i} with event: {j}")
         elif P[i, j] in [3, 5, 7, 9]:  # 3 was added, frame unassigned
             frames.append(i)
             events.append(0)
             i -= 1
         elif P[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
-            logger.debug(f"Event: {j} was left unassigned")
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
             )
