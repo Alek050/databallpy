@@ -711,7 +711,10 @@ class Match:
             LOGGER.error(message)
             raise DataBallPyError(message)
         synchronise_tracking_and_event_data(
-            self, n_batches=n_batches, verbose=verbose, offset=offset
+            self,
+            n_batches=n_batches,
+            verbose=verbose,
+            offset=offset,
         )
 
     def __eq__(self, other):

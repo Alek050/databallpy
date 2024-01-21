@@ -7,8 +7,11 @@ from tqdm import tqdm
 
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
+
+logger = create_logger(__name__)
 
 
 def synchronise_tracking_and_event_data(
@@ -44,108 +47,126 @@ def synchronise_tracking_and_event_data(
     Currently works for the following databallpy_events:
         'pass', 'shot', and 'dribble'
     """
+    try:
+        logger.info(f"Synchronising tracking and event data, match: {match.name}")
+        events_to_sync = [
+            "pass",
+            "shot",
+            "dribble",
+        ]
 
-    events_to_sync = [
-        "pass",
-        "shot",
-        "dribble",
-    ]
+        tracking_data = match.tracking_data
+        event_data = match.event_data
+        tracking_data = pre_compute_synchronisation_variables(
+            tracking_data, match.frame_rate, match.pitch_dimensions
+        )
+        event_data["tracking_frame"] = MISSING_INT
 
-    tracking_data = match.tracking_data
-    event_data = match.event_data
-    tracking_data = pre_compute_synchronisation_variables(
-        tracking_data, match.frame_rate, match.pitch_dimensions, match.periods
-    )
-    event_data["tracking_frame"] = MISSING_INT
+        mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
+        event_data_to_sync = event_data[mask_events_to_sync].copy()
+        if not (match.tracking_timestamp_is_precise & match.event_timestamp_is_precise):
+            event_data_to_sync = align_event_data_datetime(
+                event_data_to_sync, tracking_data, offset=offset
+            )
 
-    mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
-    event_data_to_sync = event_data[mask_events_to_sync].copy()
-    if not (match.tracking_timestamp_is_precise & match.event_timestamp_is_precise):
-        event_data_to_sync = align_event_data_datetime(
-            event_data_to_sync, tracking_data, offset=offset
+        # check if timestamps are less than hour apart to see if
+        # timestamp conversion went right
+        td_first_ts = tracking_data.loc[
+            tracking_data["ball_status"] == "alive", "datetime"
+        ].iloc[0]
+        ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
+        if abs(td_first_ts - ed_first_ts) > pd.Timedelta(seconds=4):
+            diff = abs(td_first_ts - ed_first_ts)
+            message = (
+                f"The tracking data and event data timestamps are {diff} "
+                f"apart: tracking data timestamp: {td_first_ts}; event data timestamp: "
+                f"{ed_first_ts}. We will allign the first tracking data timestamp with"
+                " the first event to correct for the differences in timestamp."
+            )
+            logger.warning(message)
+            warnings.warn(
+                message=message,
+                category=DataBallPyWarning,
+            )
+            event_data_to_sync = align_event_data_datetime(
+                event_data_to_sync, tracking_data, offset=offset
+            )
+
+        if n_batches == "smart":
+            end_datetimes = create_smart_batches(tracking_data)
+        else:
+            end_datetimes = create_batches(
+                n_batches,
+                tracking_data,
+            )
+        logger.info(
+            f"Succesfully created batches. Number of batches: {len(end_datetimes)}"
         )
 
-    # check if timestamps are less than hour apart to see if
-    # timestamp conversion went right
-    td_first_ts = tracking_data.loc[
-        tracking_data["ball_status"] == "alive", "datetime"
-    ].iloc[0]
-    ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
-    if abs(td_first_ts - ed_first_ts) > pd.Timedelta(seconds=4):
-        diff = abs(td_first_ts - ed_first_ts)
-        warnings.warn(
-            message=f"The tracking data and event data timestamps are {diff} "
-            f"apart: tracking data timestamp: {td_first_ts}; event data timestamp: "
-            f"{ed_first_ts}. We will allign the first tracking data timestamp with the"
-            " first event to correct for the differences in timestamp.",
-            category=DataBallPyWarning,
+        if verbose:
+            end_datetimes = tqdm(
+                end_datetimes,
+                desc="Syncing event and tracking data",
+                unit="batches",
+                leave=False,
+            )
+
+        # loop over batches
+        batch_first_datetime = tracking_data["datetime"].iloc[0]
+        for batch_end_datetime in end_datetimes:
+            # create batches
+            event_mask = event_data_to_sync["datetime"].between(
+                batch_first_datetime, batch_end_datetime, inclusive="left"
+            )
+            tracking_mask = tracking_data["datetime"].between(
+                batch_first_datetime, batch_end_datetime, inclusive="left"
+            )
+            tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
+            event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
+
+            if len(event_batch) > 0:
+                sim_mat = _create_sim_mat(
+                    tracking_batch,
+                    event_batch,
+                    match,
+                )
+                event_frame_dict = _needleman_wunsch(sim_mat)
+                # assign events to tracking data frames
+                for event, frame in event_frame_dict.items():
+                    event_id = int(event_batch.loc[event, "event_id"])
+                    event_type = event_batch.loc[event, "databallpy_event"]
+                    event_index = int(event_batch.loc[event, "index"])
+                    tracking_frame = int(tracking_batch.loc[frame, "index"])
+                    tracking_data.loc[tracking_frame, "databallpy_event"] = event_type
+                    tracking_data.loc[tracking_frame, "event_id"] = event_id
+                    event_data.loc[event_index, "tracking_frame"] = tracking_frame
+
+            batch_first_datetime = batch_end_datetime
+
+        tracking_data.drop(
+            [
+                "ball_acceleration_sqrt",
+                "goal_angle_home_team",
+                "goal_angle_away_team",
+            ],
+            axis=1,
+            inplace=True,
         )
-        event_data_to_sync = align_event_data_datetime(
-            event_data_to_sync, tracking_data, offset=offset
-        )
 
-    if n_batches == "smart":
-        end_datetimes = create_smart_batches(tracking_data)
-    else:
-        end_datetimes = create_batches(
-            n_batches,
-            tracking_data,
-        )
+        match.tracking_data = tracking_data
+        match.event_data = event_data
 
-    if verbose:
-        end_datetimes = tqdm(
-            end_datetimes,
-            desc="Syncing event and tracking data",
-            unit="batches",
-            leave=False,
-        )
-
-    # loop over batches
-    batch_first_datetime = tracking_data["datetime"].iloc[0]
-    for batch_end_datetime in end_datetimes:
-        # create batches
-        event_mask = event_data_to_sync["datetime"].between(
-            batch_first_datetime, batch_end_datetime, inclusive="left"
-        )
-        tracking_mask = tracking_data["datetime"].between(
-            batch_first_datetime, batch_end_datetime, inclusive="left"
-        )
-        tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
-        event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
-
-        if len(event_batch) > 0:
-            sim_mat = _create_sim_mat(tracking_batch, event_batch, match)
-            event_frame_dict = _needleman_wunsch(sim_mat)
-            # assign events to tracking data frames
-            for event, frame in event_frame_dict.items():
-                event_id = int(event_batch.loc[event, "event_id"])
-                event_type = event_batch.loc[event, "databallpy_event"]
-                event_index = int(event_batch.loc[event, "index"])
-                tracking_frame = int(tracking_batch.loc[frame, "index"])
-                tracking_data.loc[tracking_frame, "databallpy_event"] = event_type
-                tracking_data.loc[tracking_frame, "event_id"] = event_id
-                event_data.loc[event_index, "tracking_frame"] = tracking_frame
-
-        batch_first_datetime = batch_end_datetime
-
-    tracking_data.drop(
-        [
-            "ball_acceleration_sqrt",
-            "goal_angle_home_team",
-            "goal_angle_away_team",
-        ],
-        axis=1,
-        inplace=True,
-    )
-
-    match.tracking_data = tracking_data
-    match.event_data = event_data
-
-    match._is_synchronised = True
+        match._is_synchronised = True
+        logger.info("Succesfully synchronised tracking and event data")
+    except Exception as e:
+        logger.exception(f"Failed to synchronise tracking and event data, error: {e}")
+        raise e
 
 
 def _create_sim_mat(
-    tracking_batch: pd.DataFrame, event_batch: pd.DataFrame, match
+    tracking_batch: pd.DataFrame,
+    event_batch: pd.DataFrame,
+    match,
 ) -> np.ndarray:
     """Function that creates similarity matrix between every frame and event in batch
 
@@ -175,6 +196,7 @@ def _create_sim_mat(
     ball_loc_diff = np.hypot(ball_x_diff, ball_y_diff)
 
     # Pre-compute time diff and ball diff for all events
+
     time_ball_diff = np.abs(time_diff) + ball_loc_diff / 5
 
     for row in event_batch.itertuples():
@@ -192,31 +214,38 @@ def _create_sim_mat(
                     - tracking_batch[f"{column_id_player}_y"].values,
                 )
         else:
-            player_ball_diff = [np.nan] * len(tracking_batch)
+            player_ball_diff = np.array([np.nan] * len(tracking_batch))
 
         # similarity function from: https://kwiatkowski.io/sync.soccer
         # Added information based in the type of event.
 
         # create array with all cost function variables
         if row.databallpy_event == "pass":
-            total_shape = (len(tracking_batch), 4)
-        elif row.databallpy_event == "shot":
             total_shape = (len(tracking_batch), 5)
+        elif row.databallpy_event == "shot":
+            total_shape = (len(tracking_batch), 6)
         elif row.databallpy_event == "dribble":
             total_shape = (len(tracking_batch), 3)
 
         total = np.zeros(total_shape)
 
         total[:, :3] = np.array(
-            [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff]
+            [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff * 3]
         ).T
 
         if row.databallpy_event in ["shot", "pass"]:
             total[:, 3] = 1 / tracking_batch["ball_acceleration_sqrt"].values.clip(
                 0.1
             )  # ball acceleration
+            # the distance between player and ball should increase at the
+            # moment of a pass or shot
+            player_ball_diff_diff = (
+                np.append(np.diff(player_ball_diff), np.min(player_ball_diff)) * -1 + 1
+            )
+            total[:, 4] = player_ball_diff_diff * 10
+
             if row.databallpy_event == "shot":
-                total[:, 4] = tracking_batch[
+                total[:, 5] = tracking_batch[
                     f"goal_angle_{['home', 'away'][row.team_id != match.home_team_id]}"
                     "_team"
                 ].values
@@ -328,7 +357,6 @@ def pre_compute_synchronisation_variables(
     tracking_data: pd.DataFrame,
     frame_rate: int,
     pitch_dimensions: tuple,
-    periods: pd.DataFrame,
 ) -> pd.DataFrame:
     """Function that precomputes variables that are used in the synchronisation.
     The following variables are computed: ball_velocity, ball_acceleration,
@@ -338,8 +366,6 @@ def pre_compute_synchronisation_variables(
         tracking_data (pd.DataFrame): Tracking data of the match
         frame_rate (int): Frame rate of the tracking_data
         pitch_dimensions (tuple): Tuple containing the pitch dimensions
-        periods (pd.DataFrame): Periods of the match, with corresponding datetime
-            objects.
 
     Returns:
         pd.DataFrame: Tracking data with the precomputed variables.
