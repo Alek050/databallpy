@@ -103,9 +103,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         expected_tracking_data["databallpy_event"] = [
             "pass",
+            None,
+            None,
             "pass",
-            None,
-            None,
             None,
             None,
             None,
@@ -118,9 +118,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
         expected_tracking_data["event_id"] = [
             2499594225,
+            MISSING_INT,
+            MISSING_INT,
             2499594243,
-            MISSING_INT,
-            MISSING_INT,
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
@@ -137,7 +137,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             MISSING_INT,
             MISSING_INT,
             0,
-            1,
+            3,
             MISSING_INT,
             MISSING_INT,
             9,
@@ -198,9 +198,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         expected_tracking_data["databallpy_event"] = [
             "pass",
+            None,
+            None,
             "pass",
-            None,
-            None,
             None,
             None,
             None,
@@ -213,9 +213,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
         expected_tracking_data["event_id"] = [
             2499594225,
+            MISSING_INT,
+            MISSING_INT,
             2499594243,
-            MISSING_INT,
-            MISSING_INT,
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
@@ -232,7 +232,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             MISSING_INT,
             MISSING_INT,
             0,
-            1,
+            3,
             MISSING_INT,
             MISSING_INT,
             9,
@@ -301,7 +301,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_create_sim_mat(self):
         expected_res = RES_SIM_MAT
-        expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data.copy()
         date = pd.to_datetime(
@@ -323,12 +322,10 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_batch=event_data,
             match=self.match_to_sync,
         )
-
         np.testing.assert_allclose(expected_res, res, rtol=1e-05)
 
     def test_create_sim_mat_missing_player(self):
         expected_res = RES_SIM_MAT_MISSING_PLAYER
-        expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data.copy()
         date = pd.to_datetime(
@@ -357,7 +354,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_create_sim_mat_without_player(self):
         expected_res = RES_SIM_MAT_NO_PLAYER
-        expected_res = expected_res.reshape(13, 4)
 
         tracking_data = self.match_to_sync.tracking_data.copy()
         date = pd.to_datetime(
@@ -472,7 +468,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             tracking_data=self.match_to_sync.tracking_data.copy(),
             frame_rate=25,
             pitch_dimensions=(106, 68),
-            periods=self.match_to_sync.periods.copy(),
         )
         pd.testing.assert_frame_equal(res_tracking_data, expected_td)
 
