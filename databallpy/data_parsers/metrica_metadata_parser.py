@@ -1,6 +1,7 @@
 import datetime as dt
 import os
 
+import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -22,9 +23,10 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
         the raw tracking data
     """
     if os.path.exists(metadata_loc):
-        file = open(metadata_loc, "r")
-        lines = file.read()
-        file.close()
+        with open(metadata_loc, "rb") as file:
+            encoding = chardet.detect(file.read())["encoding"]
+        with open(metadata_loc, "r", encoding=encoding) as file:
+            lines = file.read()
         soup = BeautifulSoup(lines, "xml")
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
@@ -78,9 +80,10 @@ def _get_metadata(
         Metadata: all information of the match
     """
     if os.path.exists(metadata_loc):
-        file = open(metadata_loc, "r")
-        lines = file.read()
-        file.close()
+        with open(metadata_loc, "rb") as file:
+            encoding = chardet.detect(file.read())["encoding"]
+        with open(metadata_loc, "r", encoding=encoding) as file:
+            lines = file.read()
         soup = BeautifulSoup(lines, "xml")
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")

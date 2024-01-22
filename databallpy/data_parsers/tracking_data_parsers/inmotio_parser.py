@@ -2,6 +2,7 @@ import os
 from typing import Tuple
 
 import bs4
+import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -178,10 +179,12 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
         list: List with the order of which players are referred to
         in the raw tracking data
     """
-    file = open(metadata_loc, "r", encoding="UTF-8")
-    lines = file.read()
+    with open(metadata_loc, "rb") as file:
+        encoding = chardet.detect(file.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as file:
+        lines = file.read()
+
     soup = BeautifulSoup(lines, "xml")
-    file.close()
 
     res = []
     for channel in soup.find_all("PlayerChannel"):
@@ -211,8 +214,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     Returns:
         Metadata: all information of the match
     """
-
-    with open(metadata_loc, "r", encoding="UTF-8") as file:
+    with open(metadata_loc, "rb") as file:
+        encoding = chardet.detect(file.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as file:
         lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
