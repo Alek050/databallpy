@@ -129,7 +129,8 @@ SCISPORTS_TO_DATABALLPY_MAP = {
     "Shot Wide": "shot",
     "Shot on Target": "shot",
     "Shot Goal": "shot",
-    "Own Goal": "shot",
+    "Goal": "shot",
+    "Own Goal": "own_goal",
     "Take On": "dribble",
 }
 
@@ -590,6 +591,7 @@ def _get_shot_instances(event_data: pd.DataFrame) -> dict:
         "Shot Wide": "miss_off_target",
         "Own Goal": "own_goal",
         "Shot": "not_specified",
+        "Goal": "goal",
     }
     shots_mask = event_data["databallpy_event"] == "shot"
     shot_events = {}

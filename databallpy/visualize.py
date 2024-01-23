@@ -637,6 +637,16 @@ def save_match_clip(
                             )
                             fig_obj = ax.add_patch(arrow)
                             variable_fig_objs.append(fig_obj)
+                    if not pd.isnull(td.loc[idx, "ball_vx"]):
+                        arrow = mpatches.FancyArrowPatch(
+                            td.loc[idx, ["ball_x", "ball_y"]].values,
+                            td.loc[idx, ["ball_x", "ball_y"]].values
+                            + td.loc[idx, ["ball_vx", "ball_vy"]].values,
+                            mutation_scale=10,
+                            color="black",
+                        )
+                        fig_obj = ax.add_patch(arrow)
+                        variable_fig_objs.append(fig_obj)
 
                 # Scatter plot the teams
                 for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
