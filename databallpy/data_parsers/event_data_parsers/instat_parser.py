@@ -2,6 +2,7 @@ import datetime as dt
 import json
 from typing import Tuple
 
+import chardet
 import numpy as np
 import pandas as pd
 
@@ -93,7 +94,9 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: metadata of the match
     """
-    with open(metadata_loc, "r") as f:
+    with open(metadata_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as f:
         data = f.read()
     metadata_json = json.loads(data)
     match_info = metadata_json["data"]["match_info"][0]
@@ -160,8 +163,9 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: updated metadata of the match
     """
-
-    with open(event_data_loc, "r") as f:
+    with open(event_data_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(event_data_loc, "r", encoding=encoding) as f:
         data = f.read()
     event_data_json = json.loads(data)
     events = event_data_json["data"]["row"]
@@ -233,8 +237,9 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     Returns:
         pd.DataFrame: event data of the match
     """
-
-    with open(event_data_loc, "r") as f:
+    with open(event_data_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(event_data_loc, "r", encoding=encoding) as f:
         data = f.read()
     event_data_json = json.loads(data)
     events = event_data_json["data"]["row"]
