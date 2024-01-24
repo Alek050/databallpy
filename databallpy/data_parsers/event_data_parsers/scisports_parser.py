@@ -597,17 +597,17 @@ def _get_shot_instances(event_data: pd.DataFrame) -> dict:
     shot_events = {}
     for shot in event_data.loc[shots_mask].itertuples():
         shot_events[shot.event_id] = ShotEvent(
-            event_id=shot.event_id,
-            period_id=shot.period_id,
+            event_id=int(shot.event_id),
+            period_id=int(shot.period_id),
             minutes=int(shot.minutes),
             seconds=int(shot.seconds),
             datetime=shot.datetime,
-            start_x=shot.start_x,
-            start_y=shot.start_y,
+            start_x=float(shot.start_x),
+            start_y=float(shot.start_y),
             y_target=np.nan,
             z_target=np.nan,
-            team_id=shot.team_id,
-            player_id=shot.player_id,
+            team_id=str(shot.team_id),
+            player_id=int(shot.player_id),
             shot_outcome=shots_map[shot.scisports_event],
             type_of_play=None,
             body_part=None,
@@ -629,15 +629,15 @@ def _get_dribble_instances(event_data: pd.DataFrame) -> dict:
     dribble_events = {}
     for dribble in event_data.loc[dribbles_mask].itertuples():
         dribble_events[dribble.Index] = DribbleEvent(
-            event_id=dribble.event_id,
-            period_id=dribble.period_id,
+            event_id=int(dribble.event_id),
+            period_id=int(dribble.period_id),
             minutes=int(dribble.minutes),
             seconds=int(dribble.seconds),
             datetime=dribble.datetime,
-            start_x=dribble.start_x,
-            start_y=dribble.start_y,
-            team_id=dribble.team_id,
-            player_id=dribble.player_id,
+            start_x=float(dribble.start_x),
+            start_y=float(dribble.start_y),
+            team_id=str(dribble.team_id),
+            player_id=int(dribble.player_id),
             related_event_id=MISSING_INT,
             duel_type=None,
             outcome=None,
@@ -686,16 +686,16 @@ def _get_pass_instances(event_data: pd.DataFrame) -> dict:
         )
 
         pass_events[pass_.Index] = PassEvent(
-            event_id=pass_.event_id,
-            period_id=pass_.period_id,
+            event_id=int(pass_.event_id),
+            period_id=int(pass_.period_id),
             minutes=int(pass_.minutes),
             seconds=int(pass_.seconds),
             datetime=pass_.datetime,
-            start_x=pass_.start_x,
-            start_y=pass_.start_y,
-            team_id=pass_.team_id,
+            start_x=float(pass_.start_x),
+            start_y=float(pass_.start_y),
+            team_id=str(pass_.team_id),
             outcome=outcome,
-            player_id=pass_.player_id,
+            player_id=int(pass_.player_id),
             end_x=np.nan,
             end_y=np.nan,
             pass_type=passes_map[pass_.scisports_event],
@@ -920,6 +920,14 @@ def _handle_scisports_data(
             scisports_event_data, event_metadata
         )
     elif tracking_metadata is not None:
+        if "Ajax Amsterdam U21" in scisports_event_data["team"].unique():
+            scisports_event_data["team"] = scisports_event_data["team"].replace(
+                {"Ajax Amsterdam U21": "Jong Ajax"}
+            )
+            possessions["team"] = possessions["team"].replace(
+                {"Ajax Amsterdam U21": "Jong Ajax"}
+            )
+
         scisports_event_data = _update_scisports_event_data_with_metadata(
             scisports_event_data, tracking_metadata
         )
