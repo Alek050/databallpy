@@ -68,7 +68,7 @@
 #                     MISSING_INT,
 #                     MISSING_INT,
 #                 ],
-#                 "end_frame": [1509994, 1509997, MISSING_INT, MISSING_INT, MISSING_INT],
+#                 "end_frame":[1509994, 1509997, MISSING_INT, MISSING_INT, MISSING_INT],
 #                 "start_datetime_td": [
 #                     pd.to_datetime("2023-01-14").tz_localize("Europe/Amsterdam")
 #                     + dt.timedelta(milliseconds=int((1509993 / 25) * 1000)),
@@ -557,7 +557,7 @@
 
 #     def test_get_match_call_quality_check(self):
 #         # does not check functionality since the tracking data is not valid
-#         with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
+#         with self.assertRaises(ZeroDivisionError),self.assertWarns(DataBallPyWarning):
 #             get_match(
 #                 tracking_data_loc=self.td_tracab_loc,
 #                 tracking_metadata_loc=self.md_tracab_loc,
@@ -568,7 +568,7 @@
 #                 check_quality=True,
 #             )
 
-#         with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
+#         with self.assertRaises(ZeroDivisionError),self.assertWarns(DataBallPyWarning):
 #             get_match(
 #                 tracking_data_loc=self.td_tracab_loc,
 #                 tracking_metadata_loc=self.md_tracab_loc,
