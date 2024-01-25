@@ -1,5 +1,5 @@
-# from databallpy import __version__
+from databallpy import __version__
 
 
-# def test_version():
-#     assert __version__ == "0.4.3"
+def test_version():
+    assert __version__ == "0.4.3"
