@@ -602,6 +602,7 @@ class Match:
                     # can not compare end locations, assume tracking data is correct
                     end_loc_diff = 0.0
             if n_tries == 3 and end_loc_diff > 10:
+                # Cannot find a reliable end location
                 continue
 
             end_loc_td = end_loc_td.astype(float)

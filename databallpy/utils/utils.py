@@ -6,6 +6,23 @@ import pandas as pd
 MISSING_INT = -999
 
 
+def sigmoid(x:np.ndarray, a:float = 1, b:float = 1, c:float = 0, d:float = 0) -> np.ndarray:
+    """Sigmoid function in the shape of a / (1 + e^(-b * (x - c)) ) + d. The defaults 
+    are initialized so that the the default function is 1 / (1 + e^(-x)).
+
+    Args:
+        x (np.ndarray): Input values.
+        a (float, optional): Formula constant. Defaults to 1.
+        b (float, optional): Formula constant. Defaults to 1.
+        c (float, optional): Formula constant. Defaults to 0.
+        d (float, optional): Formula constant. Defaults to 0.
+
+    Returns:
+        np.ndarray: Values after passing through the sigmoid. Returned array is
+            the same shape as the input shape of x
+    """
+    return a / (1 + np.exp(-b * (x - c))) + d
+
 def _to_int(value) -> int:
     """Function to make a integer of the value if possible, else MISSING_INT (-999)
 
