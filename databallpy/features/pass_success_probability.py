@@ -322,6 +322,19 @@ def get_interception_probability(
     return sigmoid(ball_time_to_k-player_time_to_k, 1, 5, -0.25, 0)
 
 def get_ball_time_to_k_linear(ball_to_k_distance:float, beta_0=0.64, beta_1=0.057) -> float:
+    """Function to get the time it takes for the ball to get from the start location
+    to the end location.
+
+    Args:
+        ball_to_k_distance (float): The distance between the start location and the
+            end location in meters.
+        beta_0 (float, optional): The bias of the linear model. Defaults to 0.64.
+        beta_1 (float, optional): The first weight of the linear model. Defaults to 0.057.
+
+    Returns:
+        float: The time it takes for the ball to get from the start location to the
+            end location in seconds.
+    """
     return beta_0 + beta_1 * ball_to_k_distance
 
 def get_ball_time_to_k(ball_to_k_distance:float, ball_start_velocity:float=17., decay_constant=0.379) -> float:
