@@ -51,6 +51,7 @@ class TestOptaParser(unittest.TestCase):
         for shot_event in shot_events_opta.values():
             shot_event.start_x = shot_event.start_x / 106 * 10
             shot_event.start_y = shot_event.start_y / 68 * 10
+            shot_event.pitch_size = [10.0, 10.0]
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():
@@ -205,6 +206,9 @@ class TestOptaParser(unittest.TestCase):
             datetime=pd.to_datetime("2023-04-07T18:02:07.364", utc=True),
             start_x=-4.0279999,
             start_y=-29.852,
+            pitch_size=[106.0, 68.0],
+            team_side="home",
+            _xt=-1.0,
             team_id=325,
             shot_outcome="goal",
             y_target=-1.991040,
@@ -234,7 +238,7 @@ class TestOptaParser(unittest.TestCase):
 
         dribble_event = _make_dribble_event_instance(event, away_team_id=325)
 
-        assert dribble_event == DribbleEvent(
+        expected_dribble_event = DribbleEvent(
             player_id=223345,
             event_id=2529877443,
             period_id=1,
@@ -243,12 +247,16 @@ class TestOptaParser(unittest.TestCase):
             datetime=pd.to_datetime("2023-04-07T18:02:07.364", utc=True),
             start_x=4.0279999,
             start_y=29.852,
+            pitch_size=[106.0, 68.0],
+            team_side="away",
+            _xt=-1.0,
             team_id=325,
             related_event_id=MISSING_INT,
             duel_type="offensive",
             outcome=True,
             has_opponent=True,
         )
+        assert dribble_event == expected_dribble_event
 
     def test_make_pass_event_instance(self):
         event_xml = """
@@ -271,6 +279,9 @@ class TestOptaParser(unittest.TestCase):
             datetime=pd.to_datetime("2022-01-01T00:00:00.000Z", utc=True),
             start_x=0.0,
             start_y=0.0,
+            pitch_size=[106.0, 68.0],
+            team_side="away",
+            _xt=-1.0,
             team_id=1,
             outcome="results_in_shot",
             player_id=1,

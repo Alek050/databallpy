@@ -82,7 +82,7 @@ def load_instat_event_data(
     LOGGER.info("Succesfully loaded instat event data.")
     metadata.pitch_dimensions = pitch_dimensions
 
-    return event_data, metadata
+    return event_data, metadata, {}
 
 
 def _load_metadata(metadata_loc: str) -> pd.DataFrame:

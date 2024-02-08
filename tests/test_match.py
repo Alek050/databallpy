@@ -1129,6 +1129,11 @@ class TestMatch(unittest.TestCase):
                 "n_obstructive_defenders": [MISSING_INT, MISSING_INT, MISSING_INT],
                 "goal_gk_distance": [np.nan, np.nan, np.nan],
                 "xG": [np.nan, np.nan, np.nan],
+                "xT": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].xT,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].xT,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690517].xT,
+                ],
             }
         )
         match = self.expected_match_tracab_opta.copy()
@@ -1409,6 +1414,7 @@ class TestMatch(unittest.TestCase):
                 "duel_type": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].duel_type],
                 "outcome": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].outcome],
                 "has_opponent": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].has_opponent],
+                "xT": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].xT],
             }
         )
         dribbles_df = self.expected_match_tracab_opta.dribbles_df
@@ -1505,10 +1511,28 @@ class TestMatch(unittest.TestCase):
                     PASS_EVENTS_OPTA_TRACAB[2499594225].pass_goal_angle,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].pass_goal_angle,
                 ],
+                "xT": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].xT,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].xT,
+                ],
             }
         )
         passes_df = self.expected_match_tracab_opta.passes_df
         pd.testing.assert_frame_equal(passes_df, expected_df)
+
+    def test_match_get_event(self):
+        match = self.expected_match_tracab_opta.copy()
+        event = match.get_event(2512690515)
+        assert event == match.shot_events[2512690515]
+
+        event = match.get_event(2499594225)
+        assert event == match.pass_events[2499594225]
+
+        event = match.get_event(2499594285)
+        assert event == match.dribble_events[2499594285]
+
+        with self.assertRaises(ValueError):
+            match.get_event(2499594286)
 
     def test_match_requires_event_data_wrapper(self):
         match = self.expected_match_opta.copy()

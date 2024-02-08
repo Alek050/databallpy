@@ -221,7 +221,7 @@ class TestGetMatch(unittest.TestCase):
 
         self.ed_instat_loc = "tests/test_data/instat_ed_test.json"
         self.md_instat_loc = "tests/test_data/instat_md_test.json"
-        self.ed_instat, self.md_instat = load_instat_event_data(
+        self.ed_instat, self.md_instat, _ = load_instat_event_data(
             self.ed_instat_loc, self.md_instat_loc
         )
 
