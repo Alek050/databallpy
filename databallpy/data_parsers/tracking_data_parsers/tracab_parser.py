@@ -2,6 +2,7 @@ import datetime as dt
 import os
 from typing import Tuple
 
+import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -93,12 +94,11 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     if verbose:
         print(f"Reading in {tracab_loc}", end="")
 
-    file = open(tracab_loc, "r")
-    lines = file.readlines()
+    with open(tracab_loc, "r") as file:
+        lines = file.readlines()
     if verbose:
         print(" - Completed")
 
-    file.close()
     size_lines = len(lines)
 
     data = {
@@ -156,8 +156,11 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         Metadata: class that contains metadata
     """
 
-    with open(metadata_loc, "r") as file:
+    with open(metadata_loc, "rb") as file:
+        encoding = chardet.detect(file.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as file:
         lines = file.read()
+
     lines = lines.replace("ï»¿", "")
     soup = BeautifulSoup(lines, "xml")
 

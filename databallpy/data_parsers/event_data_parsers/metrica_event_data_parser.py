@@ -4,6 +4,7 @@ import json
 import os
 from typing import Tuple, Union
 
+import chardet
 import numpy as np
 import pandas as pd
 import requests
@@ -152,9 +153,10 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
     """
 
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
-        file = open(event_data_loc)
-        lines = file.readlines()
-        file.close()
+        with open(event_data_loc, "rb") as file:
+            encoding = chardet.detect(file.read())["encoding"]
+        with open(event_data_loc, "r", encoding=encoding) as file:
+            lines = file.readlines()
         raw_data = "".join(str(i) for i in lines)
         soup = BeautifulSoup(raw_data, "html.parser")
     else:

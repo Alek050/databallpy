@@ -2,6 +2,7 @@ import warnings
 from typing import Tuple
 
 import bs4
+import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -286,10 +287,11 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     Returns:
         MetaData: all metadata information of the current match
     """
-    file = open(f7_loc, "r")
-    lines = file.read()
+    with open(f7_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(f7_loc, "r", encoding=encoding) as file:
+        lines = file.read()
     soup = BeautifulSoup(lines, "xml")
-    file.close()
 
     if len(soup.find_all("SoccerDocument")) > 1:
         # Multiple matches found in f7.xml file
@@ -476,7 +478,9 @@ def _load_event_data(
     shot_events = {}
     pass_events = {}
 
-    with open(f24_loc, "r") as file:
+    with open(f24_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(f24_loc, "r", encoding=encoding) as file:
         lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
