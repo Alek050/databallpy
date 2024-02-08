@@ -1520,6 +1520,20 @@ class TestMatch(unittest.TestCase):
         passes_df = self.expected_match_tracab_opta.passes_df
         pd.testing.assert_frame_equal(passes_df, expected_df)
 
+    def test_match_get_event(self):
+        match = self.expected_match_tracab_opta.copy()
+        event = match.get_event(2512690515)
+        assert event == match.shot_events[2512690515]
+
+        event = match.get_event(2499594225)
+        assert event == match.pass_events[2499594225]
+
+        event = match.get_event(2499594285)
+        assert event == match.dribble_events[2499594285]
+
+        with self.assertRaises(ValueError):
+            match.get_event(2499594286)
+
     def test_match_requires_event_data_wrapper(self):
         match = self.expected_match_opta.copy()
         with self.assertRaises(DataBallPyError):

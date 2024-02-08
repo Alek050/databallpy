@@ -434,6 +434,7 @@ class Match:
         LOGGER.info("Returning the pre-loaded match._passes_df in match.passes_df")
         return self._passes_df
 
+    @requires_event_data
     def get_event(self, event_id: int):
         """Function to get the event with the given event_id
 

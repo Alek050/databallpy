@@ -727,7 +727,6 @@ def _get_pass_instances(
             pitch_size=pitch_size,
             team_side=team_side,
             _xt=-1.0,
-
             outcome=outcome,
             player_id=int(pass_.player_id),
             end_x=np.nan,
