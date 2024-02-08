@@ -19,7 +19,7 @@ class TestInstatParser(unittest.TestCase):
     def test_load_instat_event_data(self):
         expected_metadata = MD_INSTAT.copy()
         expected_metadata.pitch_dimensions = [100.0, 50.0]
-        event_data, metadata = load_instat_event_data(
+        event_data, metadata, _ = load_instat_event_data(
             self.instat_event_data_loc, self.instat_metadata_loc
         )
         pd.testing.assert_frame_equal(event_data, ED_INSTAT)

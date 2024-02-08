@@ -569,18 +569,34 @@ def _get_databallpy_events_scisports(
 
     databallpy_events = {}
 
-    databallpy_events["shot_events"] = _get_shot_instances(event_data=event_data)
-    databallpy_events["dribble_events"] = _get_dribble_instances(event_data=event_data)
-    databallpy_events["pass_events"] = _get_pass_instances(event_data=event_data)
+    databallpy_events["shot_events"] = _get_shot_instances(
+        event_data=event_data,
+        pitch_size=temp_match.pitch_dimensions,
+        team_side=temp_match.home_team_name,
+    )
+    databallpy_events["dribble_events"] = _get_dribble_instances(
+        event_data=event_data,
+        pitch_size=temp_match.pitch_dimensions,
+        team_side=temp_match.home_team_name,
+    )
+    databallpy_events["pass_events"] = _get_pass_instances(
+        event_data=event_data,
+        pitch_size=temp_match.pitch_dimensions,
+        team_side=temp_match.home_team_name,
+    )
 
     return databallpy_events, tracking_data, event_data
 
 
-def _get_shot_instances(event_data: pd.DataFrame) -> dict:
+def _get_shot_instances(
+    event_data: pd.DataFrame, pitch_size: tuple, team_side: str
+) -> dict:
     """Function to get the ShotEvent instances from the scisports event data
 
     Args:
         event_data (pd.DataFrame): The scisports event data of the match
+        pitch_size (tuple): The size of the pitch
+        team_side (str): The side of the team
 
     Returns:
         dict: The ShotEvent instances
@@ -604,6 +620,9 @@ def _get_shot_instances(event_data: pd.DataFrame) -> dict:
             datetime=shot.datetime,
             start_x=float(shot.start_x),
             start_y=float(shot.start_y),
+            pitch_size=pitch_size,
+            team_side=team_side,
+            _xt=-1.0,
             y_target=np.nan,
             z_target=np.nan,
             team_id=str(shot.team_id),
@@ -616,11 +635,15 @@ def _get_shot_instances(event_data: pd.DataFrame) -> dict:
     return shot_events
 
 
-def _get_dribble_instances(event_data: pd.DataFrame) -> dict:
+def _get_dribble_instances(
+    event_data: pd.DataFrame, pitch_size: tuple, team_side: str
+) -> dict:
     """Function to get the DribbleEvent instances from the scisports event data
 
     Args:
         event_data (pd.DataFrame): The scisports event data of the match
+        pitch_size (tuple): The size of the pitch
+        team_side (str): The side of the team
 
     Returns:
         dict: The DribbleEvent instances
@@ -634,6 +657,9 @@ def _get_dribble_instances(event_data: pd.DataFrame) -> dict:
             minutes=int(dribble.minutes),
             seconds=int(dribble.seconds),
             datetime=dribble.datetime,
+            pitch_size=pitch_size,
+            team_side=team_side,
+            _xt=-1.0,
             start_x=float(dribble.start_x),
             start_y=float(dribble.start_y),
             team_id=str(dribble.team_id),
@@ -646,11 +672,15 @@ def _get_dribble_instances(event_data: pd.DataFrame) -> dict:
     return dribble_events
 
 
-def _get_pass_instances(event_data: pd.DataFrame) -> dict:
+def _get_pass_instances(
+    event_data: pd.DataFrame, pitch_size: tuple, team_side: str
+) -> dict:
     """Function to get the PassEvent instances from the scisports event data
 
     Args:
         event_data (pd.DataFrame): The scisports event data of the match
+        pitch_size (tuple): The size of the pitch
+        team_side (str): The side of the team
 
     Returns:
         dict: The PassEvent instances
@@ -694,6 +724,9 @@ def _get_pass_instances(event_data: pd.DataFrame) -> dict:
             start_x=float(pass_.start_x),
             start_y=float(pass_.start_y),
             team_id=str(pass_.team_id),
+            pitch_size=pitch_size,
+            team_side=team_side,
+            _xt=-1.0,
             outcome=outcome,
             player_id=int(pass_.player_id),
             end_x=np.nan,

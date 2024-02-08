@@ -304,6 +304,7 @@ class Match:
                     shot.goal_gk_distance for shot in self.shot_events.values()
                 ],
                 "xG": [shot.xG for shot in self.shot_events.values()],
+                "xT": [shot.xT for shot in self.shot_events.values()],
             }
             self._shots_df = pd.DataFrame(res_dict)
             LOGGER.info(
@@ -364,6 +365,7 @@ class Match:
                 "has_opponent": [
                     dribble.has_opponent for dribble in self.dribble_events.values()
                 ],
+                "xT": [dribble.xT for dribble in self.dribble_events.values()],
             }
             self._dribbles_df = pd.DataFrame(res_dict)
             LOGGER.info(
@@ -423,6 +425,7 @@ class Match:
                 "pass_goal_angle": [
                     pass_.pass_goal_angle for pass_ in self.pass_events.values()
                 ],
+                "xT": [pass_.xT for pass_ in self.pass_events.values()],
             }
             self._passes_df = pd.DataFrame(res_dict)
             LOGGER.info(
@@ -430,6 +433,28 @@ class Match:
             )
         LOGGER.info("Returning the pre-loaded match._passes_df in match.passes_df")
         return self._passes_df
+
+    @requires_event_data
+    def get_event(self, event_id: int):
+        """Function to get the event with the given event_id
+
+        Args:
+            event_id (int): The id of the event
+
+        Raises:
+            ValueError: if the event with the given event_id is not found in the match
+
+        Returns:
+            Databallpy Event: The event with the given event_id
+        """
+        if event_id in self.shot_events.keys():
+            return self.shot_events[event_id]
+        elif event_id in self.dribble_events.keys():
+            return self.dribble_events[event_id]
+        elif event_id in self.pass_events.keys():
+            return self.pass_events[event_id]
+        else:
+            raise ValueError(f"Event with id {event_id} not found in the match.")
 
     @requires_event_data
     @requires_tracking_data

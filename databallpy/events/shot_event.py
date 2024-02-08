@@ -7,14 +7,14 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
 
-from databallpy.events.base_event import BaseEvent
+from databallpy.events.base_event import BaseOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
 from databallpy.utils.utils import MISSING_INT
 
 
 @dataclass
-class ShotEvent(BaseEvent):
+class ShotEvent(BaseOnBallEvent):
     """Class for shot events, inherits from BaseEvent. Saves all information from a
     shot from the event data, and adds information about the shot using the tracking
     data if available.
@@ -27,6 +27,8 @@ class ShotEvent(BaseEvent):
         datetime (pd.Timestamp): datetime at which the event occured
         start_x (float): x location of the event
         start_y (float): y location of the event
+        pitch_size (list): dimensions of the pitch
+        team_side (str): side of the team that takes the shot, either "home" or "away"
         team_id (int): id of the team that takes the shot
         player_id (int): id of the player who takes the shot
         shot_outcome (str): whether the shot is a goal or not on target or not.
@@ -63,7 +65,18 @@ class ShotEvent(BaseEvent):
             the triangle from the ball and the two posts of the goal.
         goal_gk_distance (float, optional): distance between the goal and the
             goalkeeper in meters.
+        set_piece (str, optional): type of set piece. Defaults to "no_set_piece".
+            Choices: "no_set_piece", "free_kick", "penalty"
 
+    Attributes:
+        xG (float): expected goals of the shot. This is calculated using a model that is
+            trained on the distance and angle to the goal, and the distance times the
+            angle to the goal. See the notebook in the notebooks folder for more
+            information on the model.
+        xT (float): expected threat of the event. This is calculated using a model that
+            is trained on the distance and angle to the goal, and the distance times
+            the angle to the goal. See the notebook in the notebooks folder for more
+            information on the model.
 
     Returns:
         ShotEvent: instance of the ShotEvent class
@@ -81,6 +94,7 @@ class ShotEvent(BaseEvent):
     type_of_play: str = "regular_play"
     first_touch: bool = False
     created_oppertunity: str = None
+
     # id of the event that led to the shot. Note: opta id for opta event data
     related_event_id: int = MISSING_INT
 
@@ -94,10 +108,14 @@ class ShotEvent(BaseEvent):
     n_obstructive_defenders: int = MISSING_INT
     goal_gk_distance: float = np.nan
     xG: float = np.nan
+    set_piece: str = "no_set_piece"
 
     def __post_init__(self):
         super().__post_init__()
         self._check_datatypes()
+        if self.type_of_play in ["penalty", "free_kick"]:
+            self.set_piece = self.type_of_play
+        _ = self._xt
 
     def add_tracking_data_features(
         self,
@@ -285,6 +303,9 @@ class ShotEvent(BaseEvent):
             datetime=self.datetime,
             start_x=self.start_x,
             start_y=self.start_y,
+            pitch_size=self.pitch_size,
+            team_side=self.team_side,
+            _xt=self._xt,
             team_id=self.team_id,
             player_id=self.player_id,
             shot_outcome=self.shot_outcome,

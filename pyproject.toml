@@ -20,7 +20,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -50,6 +49,7 @@ flake8 = "^6.0.0"
 isort = "^5.11.4"
 jupyter = "^1.0.0"
 black = "^23.9.1"
+ipython-genutils = "^0.2.0"
 
 [tool.poetry.group.docs]
 optional = true
