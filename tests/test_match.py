@@ -1129,6 +1129,11 @@ class TestMatch(unittest.TestCase):
                 "n_obstructive_defenders": [MISSING_INT, MISSING_INT, MISSING_INT],
                 "goal_gk_distance": [np.nan, np.nan, np.nan],
                 "xG": [np.nan, np.nan, np.nan],
+                "xT": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].xT,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].xT,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690517].xT,
+                ],
             }
         )
         match = self.expected_match_tracab_opta.copy()
@@ -1409,6 +1414,7 @@ class TestMatch(unittest.TestCase):
                 "duel_type": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].duel_type],
                 "outcome": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].outcome],
                 "has_opponent": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].has_opponent],
+                "xT": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].xT],
             }
         )
         dribbles_df = self.expected_match_tracab_opta.dribbles_df
@@ -1504,6 +1510,10 @@ class TestMatch(unittest.TestCase):
                 "pass_goal_angle": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].pass_goal_angle,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].pass_goal_angle,
+                ],
+                "xT": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].xT,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].xT,
                 ],
             }
         )

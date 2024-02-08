@@ -300,6 +300,9 @@ SHOT_EVENTS_OPTA = {
         ),
         start_x=9.5 / 100 * 106 - 53,  # standard opta pitch dimensions = [106, 68]
         start_y=52.8 / 100 * 68 - 34,
+        pitch_size=[106, 68],
+        team_side="home",
+        _xt=-1,
         team_id=3,
         z_target=18.4 / 100 * 2.44,
         y_target=54.3 / 100 * 7.32 - (7.32 / 2),
@@ -322,6 +325,9 @@ SHOT_EVENTS_OPTA = {
         start_x=(9.5 / 100 * 106 - 53)
         * -1,  # standard opta pitch dimensions = [106, 68]
         start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
+        pitch_size=[106, 68],
+        team_side="away",
+        _xt=-1,
         z_target=18.4 / 100 * 2.44,
         y_target=54.3 / 100 * 7.32 - (7.32 / 2),
         team_id=194,
@@ -344,6 +350,9 @@ SHOT_EVENTS_OPTA = {
         start_x=(9.5 / 100 * 106 - 53)
         * -1,  # standard opta pitch dimensions = [106, 68]
         start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
+        pitch_size=[106, 68],
+        team_side="away",
+        _xt=-1,
         z_target=np.nan,
         y_target=np.nan,
         team_id=194,
@@ -378,6 +387,9 @@ DRIBBLE_EVENTS_OPTA = {
         ),
         start_x=65.7 / 100 * 106 - 53,  # standard opta pitch dimensions = [106, 68]
         start_y=23.2 / 100 * 68 - 34,
+        pitch_size=[106, 68],
+        team_side="home",
+        _xt=-1,
         team_id=3,
         player_id=45849,
         related_event_id=4,
@@ -408,6 +420,9 @@ PASS_EVENTS_OPTA = {
         ),
         start_x=(49.7 / 100 * 106 - 53),  # standard opta pitch dimensions = [106, 68]
         start_y=(50.1 / 100 * 68 - 34),
+        pitch_size=[106, 68],
+        team_side="home",
+        _xt=-1,
         team_id=3,
         outcome="successful",
         player_id=19367,
@@ -427,6 +442,9 @@ PASS_EVENTS_OPTA = {
         start_x=(31.6 / 100 * 106 - 53)
         * -1,  # standard opta pitch dimensions = [106, 68]
         start_y=(40.7 / 100 * 68 - 34) * -1,  # times -1 because its away team
+        pitch_size=[106, 68],
+        team_side="away",
+        _xt=-1,
         team_id=194,
         outcome="assist",
         player_id=184934,
@@ -597,6 +615,9 @@ SHOT_EVENTS_METRICA = {
         datetime=pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
         start_x=20.0,
         start_y=5.0,
+        pitch_size=[100.0, 50.0],
+        _xt=-1.0,
+        team_side="home",
         team_id="FIFATMA",
         player_id=3568,
         shot_outcome="miss",
@@ -614,6 +635,9 @@ SHOT_EVENTS_METRICA = {
         datetime=pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
         start_x=20.0,
         start_y=5.0,
+        pitch_size=[100.0, 50.0],
+        _xt=-1.0,
+        team_side="home",
         team_id="FIFATMA",
         player_id=3568,
         shot_outcome="goal",
@@ -631,6 +655,9 @@ SHOT_EVENTS_METRICA = {
         datetime=pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
         start_x=20.0,
         start_y=5.0,
+        pitch_size=[100.0, 50.0],
+        _xt=-1.0,
+        team_side="home",
         team_id="FIFATMA",
         player_id=3568,
         shot_outcome="goal",
@@ -651,6 +678,9 @@ DRIBBLE_EVENTS_METRICA = {
         datetime=pd.to_datetime("2019-02-21T03:30:09.000", utc=True),
         start_x=20.0,
         start_y=5.0,
+        pitch_size=[100.0, 50.0],
+        _xt=-1.0,
+        team_side="home",
         team_id="FIFATMA",
         player_id=3568,
         related_event_id=MISSING_INT,
@@ -669,6 +699,9 @@ PASS_EVENTS_METRICA = {
         datetime=pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
         start_x=0.0,
         start_y=-5.0,
+        pitch_size=[100.0, 50.0],
+        _xt=-1.0,
+        team_side="away",
         team_id="FIFATMB",
         outcome="unsuccessful",
         player_id=3699,

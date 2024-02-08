@@ -299,6 +299,9 @@ class TestScisportsParser(unittest.TestCase):
                 ),
                 start_x=np.nan,
                 start_y=np.nan,
+                pitch_size=[106, 68],
+                _xt=-1.0,
+                team_side="home",
                 y_target=np.nan,
                 z_target=np.nan,
                 team_id="Team 2",
@@ -310,7 +313,7 @@ class TestScisportsParser(unittest.TestCase):
             )
         }
 
-        res_shots = _get_shot_instances(self.processed_event_data)
+        res_shots = _get_shot_instances(self.processed_event_data, (106, 68), "home")
         assert res_shots == expected_shots
 
     def test_get_pass_instances(self):
@@ -325,6 +328,9 @@ class TestScisportsParser(unittest.TestCase):
                 ),
                 start_x=np.nan,
                 start_y=np.nan,
+                pitch_size=[106, 68],
+                _xt=-1.0,
+                team_side="home",
                 team_id="Team 1",
                 outcome="successful",
                 player_id=101,
@@ -335,7 +341,9 @@ class TestScisportsParser(unittest.TestCase):
             )
         }
 
-        res_passes = _get_pass_instances(self.processed_event_data.loc[[0, 4, 6]])
+        res_passes = _get_pass_instances(
+            self.processed_event_data.loc[[0, 4, 6]], (106, 68), "home"
+        )
         assert res_passes == expected_passes
 
     def test_get_dribble_instance(self):
@@ -352,6 +360,9 @@ class TestScisportsParser(unittest.TestCase):
                 ),
                 start_x=np.nan,
                 start_y=np.nan,
+                pitch_size=[106, 68],
+                _xt=-1.0,
+                team_side="home",
                 team_id="Team 1",
                 outcome=None,
                 player_id=102,
@@ -361,7 +372,7 @@ class TestScisportsParser(unittest.TestCase):
             )
         }
 
-        res_dribbles = _get_dribble_instances(event_data)
+        res_dribbles = _get_dribble_instances(event_data, (106, 68), "home")
         assert res_dribbles == expected_dribbles
 
     def test_update_scisports_event_data_with_metadata(self):

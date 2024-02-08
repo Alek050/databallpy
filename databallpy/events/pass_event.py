@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
 
-from databallpy.events.base_event import BaseEvent
+from databallpy.events.base_event import BaseOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
 
 
 @dataclass
-class PassEvent(BaseEvent):
+class PassEvent(BaseOnBallEvent):
     """This is the pass event class. It contains all the information that is available
     for a pass event.
 
@@ -22,6 +22,9 @@ class PassEvent(BaseEvent):
         datetime (pd.Timestamp): datetime at which the pass occured
         start_x (float): x coordinate of the start location of the pass
         start_y (float): y coordinate of the start location of the pass
+        pitch_size (tuple): size of the pitch in meters.
+        team_side (str): side of the team that performed the pass, either
+            ["home", "away"]
         team_id (int): id of the team that performed the pass
         outcome (str): outcome of the pass, options are:
             ['successful', 'unsuccessful', 'offside', 'results_in_shot',
@@ -36,7 +39,24 @@ class PassEvent(BaseEvent):
             ['goal_kick', 'free_kick', 'throw_in', 'corner_kick', 'kick_off',
             'penalty', 'no_set_piece', unspecified_set_piece]
         pass_length (float): length of the pass
+        forward_distance (float): distance the pass is made forward.
+            Default is np.nan.
+        passer_goal_distance (float): distance of the passer to the goal.
+            Default is np.nan.
+        pass_end_loc_goal_distance (float): distance of the end location of the pass
+            to the goal. Default is np.nan.
+        opponents_in_passing_lane (int): number of opponents in the passing lane.
+            Default is np.nan.
+        pressure_on_passer (float): pressure on the passer. Default is np.nan.
+        pressure_on_receiver (float): pressure on the receiver. Default is np.nan.
+        pass_goal_angle (float): angle between the passer, the goal and the end
+            location of the pass. Default is np.nan.
 
+    Attributes:
+        xT (float): xT (float): expected threat of the event. This is calculated using a
+            model that is trained on the distance and angle to the goal, and the
+            distance times the angle to the goal. See the notebook in the notebooks
+            folder for more information on the model.
 
     Raises:
         TypeError: If any of the inputtypes is not correct
@@ -114,6 +134,9 @@ class PassEvent(BaseEvent):
             datetime=self.datetime,
             start_x=self.start_x,
             start_y=self.start_y,
+            pitch_size=self.pitch_size,
+            team_side=self.team_side,
+            _xt=self._xt,
             team_id=self.team_id,
             outcome=self.outcome,
             player_id=self.player_id,
@@ -270,6 +293,7 @@ class PassEvent(BaseEvent):
             raise ValueError(
                 f"set_piece should be one of {valid_set_pieces}, not {self.set_piece}"
             )
+        _ = self._xt
 
 
 def get_opponents_in_passing_lane(

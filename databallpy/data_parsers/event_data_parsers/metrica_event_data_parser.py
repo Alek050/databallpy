@@ -113,7 +113,9 @@ def load_metrica_event_data(
     event_data = _normalize_playing_direction_events(
         event_data, metadata.home_team_id, metadata.away_team_id
     )
-    databallpy_events = _get_databallpy_events(event_data)
+    databallpy_events = _get_databallpy_events(
+        event_data, metadata.pitch_dimensions, metadata.home_team_id
+    )
     LOGGER.info("Succesfully rescaled the data and added the databallpy events.")
     return event_data, metadata, databallpy_events
 
@@ -250,11 +252,15 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
     return events
 
 
-def _get_databallpy_events(event_data: pd.DataFrame) -> dict:
+def _get_databallpy_events(
+    event_data: pd.DataFrame, pitch_dimensions: tuple, home_team_id: int
+) -> dict:
     """Function to get the databallpy events from the event data
 
     Args:
         event_data (pd.DataFrame): event data
+        pitch_dimensions (tuple): dimensions of the pitch
+        home_team_id (int): id of the home team
 
     Returns:
         dict: dictionary with the databallpy events
@@ -266,19 +272,34 @@ def _get_databallpy_events(event_data: pd.DataFrame) -> dict:
     shot_mask = event_data["databallpy_event"] == "shot"
     shot_events = {
         shot.event_id: shot
-        for shot in event_data[shot_mask].apply(_get_shot_event, axis=1)
+        for shot in event_data[shot_mask].apply(
+            _get_shot_event,
+            pitch_dimensions=pitch_dimensions,
+            home_team_id=home_team_id,
+            axis=1,
+        )
     }
 
     pass_maks = event_data["databallpy_event"] == "pass"
     pass_events = {
         pass_.event_id: pass_
-        for pass_ in event_data[pass_maks].apply(_get_pass_event, axis=1)
+        for pass_ in event_data[pass_maks].apply(
+            _get_pass_event,
+            pitch_dimensions=pitch_dimensions,
+            home_team_id=home_team_id,
+            axis=1,
+        )
     }
 
     dribble_mask = event_data["databallpy_event"] == "dribble"
     dribble_events = {
         dribble.event_id: dribble
-        for dribble in event_data[dribble_mask].apply(_get_dribble_event, axis=1)
+        for dribble in event_data[dribble_mask].apply(
+            _get_dribble_event,
+            pitch_dimensions=pitch_dimensions,
+            home_team_id=home_team_id,
+            axis=1,
+        )
     }
 
     databallpy_events = {
@@ -289,12 +310,16 @@ def _get_databallpy_events(event_data: pd.DataFrame) -> dict:
     return databallpy_events
 
 
-def _get_shot_event(row: pd.Series) -> ShotEvent:
+def _get_shot_event(
+    row: pd.Series, pitch_dimensions: tuple, home_team_id: int
+) -> ShotEvent:
     """Function to return a ShotEvent object from a row of the metrica
       event data
 
     Args:
         row (pd.Series): row of the metrica event data with a shot event
+        pitch_dimensions (tuple): dimensions of the pitch
+        home_team_id (int): id of the home team
 
     Returns:
         ShotEvent: ShotEvent object
@@ -308,6 +333,9 @@ def _get_shot_event(row: pd.Series) -> ShotEvent:
         start_x=row.start_x,
         start_y=row.start_y,
         team_id=row.team_id,
+        pitch_size=pitch_dimensions,
+        team_side="home" if row.team_id == home_team_id else "away",
+        _xt=-1.0,
         player_id=row.player_id,
         shot_outcome=["miss", "goal"][row.outcome],
         y_target=np.nan,
@@ -320,12 +348,16 @@ def _get_shot_event(row: pd.Series) -> ShotEvent:
     )
 
 
-def _get_pass_event(row: pd.Series) -> PassEvent:
+def _get_pass_event(
+    row: pd.Series, pitch_dimensions: tuple, home_team_id: int
+) -> PassEvent:
     """Function to return a PassEvent object from a row of the metrica
      event data.
 
     Args:
         row (pd.Series): row of the metrica event data with a pass event
+        pitch_dimensions (tuple): dimensions of the pitch
+        home_team_id (int): id of the home team
 
     Returns:
         PassEvent: PassEvent object
@@ -339,6 +371,9 @@ def _get_pass_event(row: pd.Series) -> PassEvent:
         start_x=row.start_x,
         start_y=row.start_y,
         team_id=row.team_id,
+        pitch_size=pitch_dimensions,
+        team_side="home" if row.team_id == home_team_id else "away",
+        _xt=-1.0,
         player_id=row.player_id,
         outcome=["unsuccessful", "successful"][row.outcome]
         if not pd.isnull(row.outcome)
@@ -350,12 +385,16 @@ def _get_pass_event(row: pd.Series) -> PassEvent:
     )
 
 
-def _get_dribble_event(row: pd.Series) -> DribbleEvent:
+def _get_dribble_event(
+    row: pd.Series, pitch_dimensions: tuple, home_team_id: int
+) -> DribbleEvent:
     """Function to return a DribbleEvent object from a row of the metrica
      event data.
 
     Args:
         row (pd.Series): row of the metrica event data with a dribble event
+        pitch_dimensions (tuple): dimensions of the pitch
+        home_team_id (int): id of the home team
 
     Returns:
         DribbleEvent: DribbleEvent object
@@ -369,6 +408,9 @@ def _get_dribble_event(row: pd.Series) -> DribbleEvent:
         start_x=row.start_x,
         start_y=row.start_y,
         team_id=row.team_id,
+        pitch_size=pitch_dimensions,
+        team_side="home" if row.team_id == home_team_id else "away",
+        _xt=-1.0,
         player_id=row.player_id,
         related_event_id=MISSING_INT,
         duel_type=None,

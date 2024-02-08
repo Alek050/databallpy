@@ -65,7 +65,26 @@ class TestMetricaEventDataParser(unittest.TestCase):
         assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
 
     def test_get_databallpy_events(self):
-        res_dbpe = _get_databallpy_events(ED_METRICA)
-        assert res_dbpe["shot_events"] == SHOT_EVENTS_METRICA
-        assert res_dbpe["pass_events"] == PASS_EVENTS_METRICA
-        assert res_dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
+        res_dbpe = _get_databallpy_events(
+            ED_METRICA, pitch_dimensions=(106, 68), home_team_id=1
+        )
+        shot_events = res_dbpe["shot_events"]
+        expected_shot_events = {}
+        for event_id, event in shot_events.items():
+            expected_shot_events[event_id] = event.copy()
+            expected_shot_events[event_id].pitch_size = (106, 68)
+
+        pass_events = res_dbpe["pass_events"]
+        expected_pass_events = {}
+        for event_id, event in pass_events.items():
+            expected_pass_events[event_id] = event.copy()
+            expected_pass_events[event_id].pitch_size = (106, 68)
+        dribble_events = res_dbpe["dribble_events"]
+        expected_dribble_events = {}
+        for event_id, event in dribble_events.items():
+            expected_dribble_events[event_id] = event.copy()
+            expected_dribble_events[event_id].pitch_size = (106, 68)
+
+        assert res_dbpe["shot_events"] == expected_shot_events
+        assert res_dbpe["pass_events"] == expected_pass_events
+        assert res_dbpe["dribble_events"] == expected_dribble_events

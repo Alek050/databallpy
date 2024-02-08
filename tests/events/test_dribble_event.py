@@ -5,7 +5,7 @@ import pandas as pd
 from databallpy.events.dribble_event import DribbleEvent
 
 
-class TestShotEvent(unittest.TestCase):
+class TestDribbleEvent(unittest.TestCase):
     def setUp(self) -> None:
         self.dribble_event = DribbleEvent(
             event_id=2512690515,
@@ -15,6 +15,9 @@ class TestShotEvent(unittest.TestCase):
             datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
             start_x=50.0,
             start_y=20.0,
+            pitch_size=[105.0, 68.0],
+            team_side="home",
+            _xt=0.02,
             team_id=123,
             player_id=45849,
             related_event_id=123,
@@ -33,6 +36,9 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                pitch_size=[105.0, 68.0],
+                team_side="home",
+                _xt=0.02,
                 team_id=123,
                 player_id=45849,
                 related_event_id=123,
@@ -50,6 +56,9 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                pitch_size=[105.0, 68.0],
+                team_side="home",
+                _xt=0.02,
                 team_id=123,
                 player_id="45849",
                 related_event_id=123,
@@ -67,6 +76,9 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                pitch_size=[105.0, 68.0],
+                team_side="home",
+                _xt=0.02,
                 team_id=123,
                 player_id=45849,
                 related_event_id=[123],
@@ -84,6 +96,9 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                pitch_size=[105.0, 68.0],
+                team_side="home",
+                _xt=0.02,
                 team_id=123,
                 player_id=45849,
                 related_event_id=123,
@@ -101,6 +116,9 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
+                pitch_size=[105.0, 68.0],
+                team_side="home",
+                _xt=0.02,
                 team_id=123,
                 player_id=45849,
                 related_event_id=123,

@@ -461,7 +461,7 @@ def load_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
     elif event_data_provider == "instat":
-        event_data, event_metadata = load_instat_event_data(
+        event_data, event_metadata, _ = load_instat_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
     LOGGER.info(
