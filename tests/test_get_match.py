@@ -584,3 +584,7 @@ class TestGetMatch(unittest.TestCase):
         pd.testing.assert_frame_equal(res_match.periods, MD_SCISPORTS.periods_frames)
         pd.testing.assert_frame_equal(res_match.home_players, MD_SCISPORTS.home_players)
         pd.testing.assert_frame_equal(res_match.away_players, MD_SCISPORTS.away_players)
+
+        self.assertTrue(len(res_match.shot_events) == 2)
+        self.assertTrue(len(res_match.pass_events) == 3)
+        self.assertTrue(len(res_match.dribble_events) == 1)
