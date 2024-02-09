@@ -4,7 +4,6 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.scisports_parser import (
     _get_dribble_event,
     _get_pass_event,
@@ -17,228 +16,19 @@ from databallpy.data_parsers.event_data_parsers.scisports_parser import (
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.utils import MISSING_INT
+from tests.expected_outcomes import ED_SCISPORTS, MD_SCISPORTS
 
 
 class TestSciSportsParser(unittest.TestCase):
     def setUp(self):
         self.json_loc = "tests/test_data/scisports_test.json"
-        self.expected_home_players = pd.DataFrame(
-            {
-                "id": [101, 102],
-                "full_name": ["home player 1", "home player 2"],
-                "formation_place": [3, 4],
-                "position": ["defender", "defender"],
-                "starter": [True, True],
-                "shirt_num": [22, 4],
-            }
-        )
-        self.expected_away_players = pd.DataFrame(
-            {
-                "id": [201, 203],
-                "full_name": ["away player 1", "away player 2"],
-                "formation_place": [7, 9],
-                "position": ["defender", "striker"],
-                "starter": [True, False],
-                "shirt_num": [4, 17],
-            }
-        )
-        self.expected_periods = pd.DataFrame(
-            {
-                "period_id": [1, 2, 3, 4, 5],
-                "start_datetime_ed": pd.to_datetime(
-                    [
-                        "2023-01-01 00:00:00.7",
-                        "2023-01-01 00:0:12.0",
-                        "NaT",
-                        "NaT",
-                        "NaT",
-                    ]
-                ).tz_localize("Europe/Amsterdam"),
-                "end_datetime_ed": pd.to_datetime(
-                    [
-                        "2023-01-01 00:0:09.3",
-                        "2023-01-01 00:0:13.5",
-                        "NaT",
-                        "NaT",
-                        "NaT",
-                    ]
-                ).tz_localize("Europe/Amsterdam"),
-            }
-        )
-        self.expected_metadata = Metadata(
-            match_id="some_id",
-            pitch_dimensions=(106.0, 68.0),
-            periods_frames=self.expected_periods,
-            frame_rate=MISSING_INT,
-            home_team_id=100,
-            home_team_name="Team 1",
-            home_players=self.expected_home_players,
-            home_score=0,
-            home_formation=None,
-            away_team_id=200,
-            away_team_name="Team 2",
-            away_players=self.expected_away_players,
-            away_score=1,
-            away_formation=None,
-            country="Netherlands",
-            periods_changed_playing_direction=None,
-        )
+        self.expected_home_players = MD_SCISPORTS.home_players.copy()
+        self.expected_away_players = MD_SCISPORTS.away_players.copy()
+        self.expected_periods = MD_SCISPORTS.periods_frames.copy()
+        self.expected_metadata = MD_SCISPORTS.copy()
         with open(self.json_loc, "r") as f:
             self.json_data = json.load(f)
-
-        self.expected_event_data = pd.DataFrame(
-            {
-                "event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                "databallpy_event": [
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    "pass",
-                    "dribble",
-                    "pass",
-                    None,
-                    "pass",
-                    "shot",
-                    "shot",
-                    None,
-                ],
-                "period_id": [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2],
-                "minutes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 45, 45, 45],
-                "seconds": [0, 0, 0, 0, 0, 0.7, 3.4, 6.6, 9.3, 0.0, 0.1, 0.7, 1.5],
-                "player_id": [
-                    MISSING_INT,
-                    MISSING_INT,
-                    101,
-                    102,
-                    201,
-                    101,
-                    102,
-                    102,
-                    MISSING_INT,
-                    203,
-                    201,
-                    201,
-                    MISSING_INT,
-                ],
-                "team_id": [
-                    100,
-                    200,
-                    100,
-                    100,
-                    200,
-                    100,
-                    100,
-                    100,
-                    200,
-                    200,
-                    200,
-                    200,
-                    200,
-                ],
-                "outcome": [
-                    MISSING_INT,
-                    MISSING_INT,
-                    MISSING_INT,
-                    MISSING_INT,
-                    MISSING_INT,
-                    1,
-                    1,
-                    0,
-                    MISSING_INT,
-                    1,
-                    0,
-                    1,
-                    MISSING_INT,
-                ],
-                "start_x": [
-                    0.0,
-                    -0.0,
-                    0.0,
-                    0.0,
-                    -0.0,
-                    0.01,
-                    -17.68,
-                    24.01,
-                    0.0,
-                    4.03,
-                    -37.7,
-                    -42.5,
-                    -0.0,
-                ],
-                "start_y": [
-                    0.0,
-                    -0.0,
-                    0.0,
-                    0.0,
-                    -0.0,
-                    -0.6,
-                    2.01,
-                    25.97,
-                    0.0,
-                    -1.9,
-                    32.5,
-                    -0.0,
-                    -0.0,
-                ],
-                "datetime": pd.to_datetime(
-                    ["2023-01-01 00:00:00.0"] * 5
-                    + [
-                        "2023-01-01 00:00:00.7",
-                        "2023-01-01 00:00:03.4",
-                        "2023-01-01 00:00:06.6",
-                        "2023-01-01 00:00:09.3",
-                        "2023-01-01 00:00:12.0",
-                        "2023-01-01 00:00:12.1",
-                        "2023-01-01 00:00:12.7",
-                        "2023-01-01 00:00:13.5",
-                    ]
-                ).tz_localize("Europe/Amsterdam"),
-                "scisports_event": ["formation"] * 2
-                + ["position"] * 3
-                + [
-                    "pass",
-                    "dribble",
-                    "cross",
-                    "period",
-                    "pass",
-                    "shot",
-                    "shot",
-                    "period",
-                ],
-                "player_name": [
-                    "not_applicable",
-                    "not_applicable",
-                    "home player 1",
-                    "home player 2",
-                    "away player 1",
-                    "home player 1",
-                    "home player 2",
-                    "home player 2",
-                    "not_applicable",
-                    "away player 2",
-                    "away player 1",
-                    "away player 1",
-                    "not_applicable",
-                ],
-                "team_name": [
-                    "Team 1",
-                    "Team 2",
-                    "Team 1",
-                    "Team 1",
-                    "Team 2",
-                    "Team 1",
-                    "Team 1",
-                    "Team 1",
-                    "Team 2",
-                    "Team 2",
-                    "Team 2",
-                    "Team 2",
-                    "Team 2",
-                ],
-            }
-        )
+        self.expected_event_data = ED_SCISPORTS.copy()
 
     def test_load_scisports_event_data(self):
         res_ed, res_md, res_dbe = load_scisports_event_data(self.json_loc)
@@ -320,7 +110,7 @@ class TestSciSportsParser(unittest.TestCase):
             self.assertEqual(
                 event.team_side, "home" if row["team_id"] == 100 else "away"
             )
-            self.assertAlmostEqual(event.pitch_size, (106.0, 68.0))
+            self.assertAlmostEqual(event.pitch_size, [106.0, 68.0])
 
             if databallpy_event == "shot":
                 self.assertIsInstance(event, ShotEvent)

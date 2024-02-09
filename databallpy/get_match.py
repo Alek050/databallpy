@@ -615,52 +615,12 @@ def align_player_and_team_ids(
         == set(tracking_metadata.away_players["id"])
     ):
         tracking_metadata = align_player_ids(tracking_metadata, event_metadata)
-        # full_name_id_map = dict(
-        #     zip(
-        #         event_metadata.home_players["full_name"],
-        #         event_metadata.home_players["id"],
-        #     )
-        # )
-        # full_name_id_map.update(
-        #     dict(
-        #         zip(
-        #             event_metadata.away_players["full_name"],
-        #             event_metadata.away_players["id"],
-        #         )
-        #     )
-        # )
 
-        # event_data["player_id"] = (
-        #     event_data["player_name"]
-        #     .map(full_name_id_map)
-        #     .fillna(MISSING_INT)
-        #     .astype("int64")
-        # )
+    # Align team id's
     tracking_metadata.home_team_id = event_metadata.home_team_id
     tracking_metadata.away_team_id = event_metadata.away_team_id
     tracking_metadata.home_team_name = event_metadata.home_team_name
     tracking_metadata.away_team_name = event_metadata.away_team_name
-
-    # Align team id's
-    # if not event_metadata.home_team_id == tracking_metadata.home_team_id:
-    #     event_home_team_id = event_metadata.home_team_id
-    #     tracking_home_team_id = tracking_metadata.home_team_id
-    #     event_data["team_id"] = event_data["team_id"].replace(
-    #         {event_home_team_id: tracking_home_team_id}
-    #     )
-    #     if type(tracking_home_team_id) is not type(event_home_team_id):
-    #         if MISSING_INT in event_data["team_id"].unique():
-    #             event_data.loc[event_data["team_id"] == MISSING_INT, "team_id"] = None
-    #         else:
-    #             event_data.loc[
-    #                 pd.isnull(event_data["team_id"]), "team_id"
-    #             ] = MISSING_INT
-    # if not event_metadata.away_team_id == tracking_metadata.away_team_id:
-    #     event_away_team_id = event_metadata.away_team_id
-    #     tracking_away_team_id = tracking_metadata.away_team_id
-    #     event_data["team_id"] = event_data["team_id"].replace(
-    #         {event_away_team_id: tracking_away_team_id}
-    #     )
 
     LOGGER.info(
         "Successfully aligned player and team ids in align_player_and_team_ids()"
