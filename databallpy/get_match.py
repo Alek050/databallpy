@@ -185,7 +185,7 @@ def get_match(
                 databallpy_events,
             )
             tracking_metadata = align_player_and_team_ids(
-                event_data, event_metadata, tracking_metadata
+                event_metadata, tracking_metadata
             )
             (
                 event_metadata.home_players,
@@ -417,7 +417,7 @@ def load_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
     elif event_data_provider == "scisports":
-        event_data, event_metadata, _ = load_scisports_event_data(
+        event_data, event_metadata, databallpy_events = load_scisports_event_data(
             events_json=event_data_loc,
         )
     LOGGER.info(
@@ -591,13 +591,12 @@ def rescale_event_data(
 
 
 def align_player_and_team_ids(
-    event_data: pd.DataFrame, event_metadata: Metadata, tracking_metadata: Metadata
+    event_metadata: Metadata, tracking_metadata: Metadata
 ) -> pd.DataFrame:
     """Function to align the player and team id's of the tracking data with the event
     data.
 
     Args:
-        event_data (pd.DataFrame): event data
         event_metadata (Metadata): event metadata
         tracking_metadata (Metadata): tracking metadata
 
