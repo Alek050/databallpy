@@ -85,7 +85,7 @@ class TestMetadata(unittest.TestCase):
         # match id
         with self.assertRaises(TypeError):
             Metadata(
-                match_id="12",
+                match_id=["12"],
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -280,10 +280,12 @@ class TestMetadata(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
+            periods = self.periods_frames.copy()
+            periods["start_datetime_ed"] = pd.to_datetime("NaT")
             Metadata(
                 match_id=self.match_id,
                 pitch_dimensions=self.pitch_dimensions,
-                periods_frames=self.periods_frames,
+                periods_frames=periods,
                 frame_rate=-10,
                 home_team_id=self.home_team_id,
                 home_team_name=self.home_team_name,

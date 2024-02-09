@@ -71,4 +71,11 @@
 - Added logging possibilities
 - Refactor of file structure and folder naming
 
+## V0.4.4 (DATE)
+
+- Added event data parser for SciSports
+- Added expected threat model from Karun Singh to on ball events
+- Add function to add which team has ball possession based on the synchronised event data.
+- Solved encoding bug for Windows
+
 

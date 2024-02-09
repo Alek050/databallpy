@@ -7,6 +7,7 @@ from scipy.spatial import Delaunay
 from databallpy.events.base_event import BaseOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
+from databallpy.utils.utils import MISSING_INT
 
 
 @dataclass
@@ -68,6 +69,7 @@ class PassEvent(BaseOnBallEvent):
     end_y: float
     pass_type: str
     set_piece: str
+    receiver_id: int = MISSING_INT
     pass_length: float = np.nan
     forward_distance: float = np.nan
     passer_goal_distance: float = np.nan
