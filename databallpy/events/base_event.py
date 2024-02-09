@@ -162,7 +162,7 @@ class BaseOnBallEvent:
         if not isinstance(self.seconds, (np.integer, int, float, np.floating)):
             raise TypeError(f"seconds should be int, not {type(self.seconds)}")
 
-        if not isinstance(self.datetime, pd.Timestamp):
+        if not pd.isnull(self.datetime) and not isinstance(self.datetime, pd.Timestamp):
             raise TypeError(
                 f"datetime should be pd.Timestamp, not {type(self.datetime)}"
             )
@@ -173,9 +173,7 @@ class BaseOnBallEvent:
         if not isinstance(self.start_y, (float, np.floating)):
             raise TypeError(f"y_start should be a float, not {type(self.start_y)}")
 
-        if not isinstance(self.team_id, (int, np.integer)) and not isinstance(
-            self.team_id, str
-        ):
+        if not isinstance(self.team_id, (int, np.integer, str)):
             raise TypeError(f"team_id should be int, not {type(self.team_id)}")
 
         if not isinstance(self.team_side, str):
@@ -185,25 +183,26 @@ class BaseOnBallEvent:
                 f"team_side should be either 'home' or 'away', not {self.team_side}"
             )
 
-        if not isinstance(self.pitch_size, (list, tuple, np.ndarray)):
-            raise TypeError(
-                "pitch_size should be list, tuple or np.ndarray, "
-                f"not {type(self.pitch_size)}"
-            )
-        if len(self.pitch_size) != 2:
-            raise ValueError(
-                f"pitch_size should have length 2, not {len(self.pitch_size)}"
-            )
-        if not all(
-            [
-                isinstance(x, (int, np.integer, float, np.floating))
-                for x in self.pitch_size
-            ]
-        ):
-            raise TypeError(
-                "pitch_size should contain only numbers, "
-                f"not {type(self.pitch_size[0])}"
-            )
+        if self.pitch_size is not None:
+            if not isinstance(self.pitch_size, (list, tuple, np.ndarray)):
+                raise TypeError(
+                    "pitch_size should be list, tuple or np.ndarray, "
+                    f"not {type(self.pitch_size)}"
+                )
+            if len(self.pitch_size) != 2:
+                raise ValueError(
+                    f"pitch_size should have length 2, not {len(self.pitch_size)}"
+                )
+            if not all(
+                [
+                    isinstance(x, (int, np.integer, float, np.floating))
+                    for x in self.pitch_size
+                ]
+            ):
+                raise TypeError(
+                    "pitch_size should contain only numbers, "
+                    f"not {type(self.pitch_size[0])}"
+                )
 
         if not isinstance(self._xt, (float, np.floating, int, np.integer)):
             raise TypeError(f"xT should be float, not {type(self._xt)}")
@@ -216,7 +215,9 @@ class BaseOnBallEvent:
             self.period_id == other.period_id,
             self.minutes == other.minutes,
             round(self.seconds, 4) == round(other.seconds, 4),
-            self.datetime == other.datetime,
+            self.datetime == other.datetime
+            if not pd.isnull(self.datetime)
+            else pd.isnull(other.datetime),
             round(self.start_x, 4) == round(other.start_x, 4)
             if not pd.isnull(self.start_x)
             else pd.isnull(other.start_x),
@@ -226,6 +227,8 @@ class BaseOnBallEvent:
             self.team_id == other.team_id,
             self.team_side == other.team_side,
             self._xt == other._xt,
-            all([x == y for x, y in zip(self.pitch_size, other.pitch_size)]),
+            all([x == y for x, y in zip(self.pitch_size, other.pitch_size)])
+            if self.pitch_size is not None
+            else other.pitch_size is None,
         ]
         return all(result)

@@ -32,7 +32,7 @@ class ShotEvent(BaseOnBallEvent):
         team_id (int): id of the team that takes the shot
         player_id (int): id of the player who takes the shot
         shot_outcome (str): whether the shot is a goal or not on target or not.
-            Possible values: "goal", "own_goal", "miss_off_target", "miss_on_target",
+            Possible values: "goal", "miss_off_target", "miss_on_target",
             "blocked", "miss_hit_post" "miss"
         y_target (float, optional): y location of the goal. Defaults to np.nan.
         z_target (float, optional): z location of the goal. Defaults to np.nan.

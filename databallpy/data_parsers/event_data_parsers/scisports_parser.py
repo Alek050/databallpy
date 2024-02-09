@@ -1,1047 +1,467 @@
-import warnings
-from typing import Tuple
+import json
+import os
 
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
 
-from databallpy.data_parsers import Metadata
+from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
-from databallpy.match import Match
-from databallpy.utils.align_player_ids import align_player_ids
+from databallpy.utils.logging import create_logger
 from databallpy.utils.utils import MISSING_INT
-from databallpy.utils.warnings import DataBallPyWarning
 
-SCISPORTS_SET_PIECES = [
-    "Kick Off",
-    "Set Piece",
-    "Corner",
-    "Goal Kick",
-    "Throw In",
-    "Free Kick",
-    "Penalty",
-    "Open Play",
-    "Crossed Free Kick",
-    "Crossed Throw In",
-]
-
-SCISPORTS_LOCATIONS = [
-    "Final 3rd",
-    "Between Lines",
-    "Own Half",
-    "Att. Half",
-    "Behind last Line",
-    "Score Box",
-    "Switch",
-]
-
-SCISPORTS_PASS_EVENTS = [
-    "Pass",
-    "Cross",
-    "GK Pass",
-    "Key Pass",
-    "Pre-Key Pass",
-    "GK Throw",
-    "Assist",
-]
-
-SCISPORTS_SHOT_EVENTS = [
-    "Shot",
-    "Wide",
-    "on Target",
-    "Goal",
-    "Own Goal",
-]
-
-SCISPORTS_DUEL_EVENTS = [
-    "Duel",
-    "Air Duel",
-    "Duel Defensive",
-    "Take On",
-    "Take On Faced",
-]
-
-SCISPORTS_DEFENSIVE_EVENTS = [
-    "Tackle",
-    "Interception",
-    "Clearance",
-    "Foul",
-    "Ball Recovery",
-    "GK Save",
-    "GK Punch",
-    "GK Claim",
-    "GK Pick Up",
-    "Shot Blocked",
-]
-
-SCISPORTS_OUTCOMES = [
-    "Possession Loss",
-    "Pass (Successful)",
-]
-
-SCISPORTS_OTHER = [
-    "Defensive",
-    "Yellow Card",
-    "Red Card",
-    "2nd Yellow Card",
-    "Big Chance",
-    "Substitute",
-    "2nd Ball",
-    "Penetration",
-    "Physical",
-]
-
-SCISPORTS_PHYSICAL_EVENTS = [
-    "Deep Run",
-    "Box To Box Run",
-    "Flank To Centre Run",
-    "Centre To Flank Run",
-]
-SCISPORTS_PHYSICAL_RUN_TYPES = [
-    "Run",  # 15-20 km/h
-    "High Run",  # 20-25 km/h
-    "Sprint",  # 25-30 km/h
-    "High Speed Sprint",  # 30+ km/h
-]
-
-SCISPORTS_EVENTS = (
-    SCISPORTS_PASS_EVENTS
-    + SCISPORTS_SHOT_EVENTS
-    + SCISPORTS_DUEL_EVENTS
-    + SCISPORTS_DEFENSIVE_EVENTS
-    + SCISPORTS_OTHER
-    + SCISPORTS_OUTCOMES
-    + SCISPORTS_LOCATIONS
-    + SCISPORTS_SET_PIECES
-    + SCISPORTS_PHYSICAL_EVENTS
-    + SCISPORTS_PHYSICAL_RUN_TYPES
-)
-
-SCISPORTS_TO_DATABALLPY_MAP = {
-    "Pass": "pass",
-    "Cross": "pass",
-    "GK Pass": "pass",
-    "Key Pass": "pass",
-    "Pre-Key Pass": "pass",
-    "GK Throw": "pass",
-    "Assist": "pass",
-    "Shot": "shot",
-    "Shot Wide": "shot",
-    "Shot on Target": "shot",
-    "Shot Goal": "shot",
-    "Goal": "shot",
-    "Own Goal": "own_goal",
-    "Take On": "dribble",
-}
+LOGGER = create_logger(__name__)
 
 
-def load_scisports_event_data(events_xml: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Function to load the SciSports XML file. The SciSports XML file contains
-    all events of a match, and is used to create the event data DataFrame. On top of
-    that, the SciSports XML file is used to create the event data for the databallpy
-    events, possessions and match periods.
+def load_scisports_event_data(
+    events_json: str, pitch_dimensions: tuple = (106.0, 68.0)
+) -> tuple[pd.DataFrame, Metadata, dict]:
+    """This function retrieves the metadata and event data of a specific match. The x
+    and y coordinates provided have been scaled to the dimensions of the pitch, with
+    (0, 0) being the center. Additionally, the coordinates have been standardized so
+    that the home team is represented as playing from left to right for the entire
+    match, and the away team is represented as playing from right to left.
 
     Args:
-        events_xml (str): Path to the SciSports XML file
-
-    Raises:
-        TypeError: If events_xml is not a string
+        events_json (str): location of the event.json file.
+        pitch_dimensions (tuple, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing the event data DataFrame,
-           and a DataFrame with the possessions per team.
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
+        and the databallpy_events.
     """
+    LOGGER.info(f"Loading SciSports event data: events_json: {events_json}")
+    if not os.path.exists(events_json):
+        LOGGER.error(f"File {events_json} does not exist.")
+        raise FileNotFoundError(f"File {events_json} does not exist.")
 
-    if not isinstance(events_xml, str):
-        raise TypeError("events_xml must be a string, not {}".format(type(events_xml)))
+    # Load the metadata
+    metadata = _load_metadata(events_json, pitch_dimensions)
+    LOGGER.info("Successfully loaded SciSports metadata.")
+    # Load the event data
+    event_data, databallpy_events = _load_event_data(events_json, metadata)
 
-    event_data, possessions = _load_event_data(events_xml)
-    event_data["databallpy_event"] = event_data["scisports_event"].map(
-        SCISPORTS_TO_DATABALLPY_MAP
-    )
-    event_data["databallpy_event"] = event_data["databallpy_event"].replace(
-        {np.nan: None}
-    )
-
-    return event_data, possessions
+    LOGGER.info("Successfully loaded SciSports event data and databallpy events.")
+    return event_data, metadata, databallpy_events
 
 
-def _load_event_data(events_xml: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Function to load the SciSports XML file. The SciSports XML file contains
-    all events of a match, and is used to create the event data DataFrame. The
-    event data DataFrame contains all events of a match, with the following columns:
-        - seconds: The time of the event in seconds
-        - team: The team of the player that performed the event
-        - jersey_number: The jersey number of the player that performed the event
-        - player_name: The name of the player that performed the event
-        - event_name: The name of event, e.g. "Pass", "Shot", "Duel"
-        - event_location: The location of the event, e.g. "Final 3rd", "Own Half"
-        - set_piece: The set piece of the event, e.g. "Corner", "Open Play"
-        - outcome: The outcome of the event, 1 if successful, 0 if not
-        - run_type: The run type of the event, e.g. "Run", "Sprint", "High Speed Sprint"
-        - period: The period of the event, 1 if first half, 2 if second half
-        - event_id: The event id of the event, this is a unique identifier of the event
-
+def _load_metadata(events_json: str, pitch_dimensions: tuple) -> Metadata:
+    """This function retrieves the metadata of a specific match.
 
     Args:
-        events_xml (str): Path to the SciSports XML file
+        events_json (str): location of the events.json file.
+        pitch_dimensions (tuple): the length and width of the pitch in meters.
 
     Returns:
-        Tuple [pd.DataFrame, pd.DataFrame]: A tuple containing the event data DataFrame,
-            and a DataFrame with the possessions per team.
+        Metadata: the metadata of the match.
+    """
+    with open(events_json, "r", encoding="utf-8") as f:
+        events_json = json.load(f)
+
+    date = pd.to_datetime(events_json["metaData"]["name"].split(" ")[0], dayfirst=True)
+    periods_frames = _get_periods_frames(events_json, date, "Europe/Amsterdam")
+    home_players, away_players = _get_players(
+        events_json, events_json["metaData"]["homeTeamId"]
+    )
+
+    metadata = Metadata(
+        match_id=events_json["metaData"]["id"],
+        pitch_dimensions=pitch_dimensions,
+        periods_frames=periods_frames,
+        frame_rate=MISSING_INT,
+        home_team_id=events_json["metaData"]["homeTeamId"],
+        home_team_name=events_json["metaData"]["homeTeamName"],
+        home_players=home_players,
+        home_score=events_json["metaData"]["homeTeamGoals"],
+        home_formation=None,
+        away_team_id=events_json["metaData"]["awayTeamId"],
+        away_team_name=events_json["metaData"]["awayTeamName"],
+        away_players=away_players,
+        away_score=events_json["metaData"]["awayTeamGoals"],
+        away_formation=None,
+        country="Netherlands",
+        periods_changed_playing_direction=None,
+    )
+    return metadata
+
+
+def _get_players(
+    events_json: dict, home_team_id: int
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """This function retrieves the players of a specific match.
+
+    Args:
+        events_json (dict): the events.json file.
+        home_team_id (int): the id of the home team.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame]: the home and away players of the match.
     """
 
-    possessions, individual_events, match_periods = _get_all_events(
-        events_xml=events_xml
-    )
+    home_players = {
+        "id": [],
+        "full_name": [],
+        "formation_place": [],
+        "position": [],
+        "starter": [],
+        "shirt_num": [],
+    }
+    away_players = {
+        "id": [],
+        "full_name": [],
+        "formation_place": [],
+        "position": [],
+        "starter": [],
+        "shirt_num": [],
+    }
 
-    # group the individual events by team, player, and time,
-    # to get a single row per event
-    event_identifiers = {}
-    grouped_individual_events = (
-        individual_events.groupby(["seconds", "team", "player_name", "jersey_number"])
-        .agg(
-            {
-                "event_name": lambda x: list(set(x.dropna())),
-                "event_type": lambda x: list(set(x.dropna())),
-                "identifier": lambda x: list(set(x.dropna())),
-                "run_type": lambda x: list(set(x.dropna())),
-            }
-        )
-        .reset_index()
-    )
-    grouped_individual_events["event_id"] = grouped_individual_events.index
-    for event in grouped_individual_events.itertuples():
-        identifiers = np.concatenate(
-            [event.event_name, event.event_type, event.identifier, event.run_type]
-        )
-        identifiers = np.unique(identifiers)
-        event_identifiers[event.event_id] = identifiers
+    position_mapping = {
+        "GK": "goalkeeper",
+        "CB": "defender",
+        "LB": "defender",
+        "RB": "defender",
+        "CM": "midfielder",
+        "LM": "midfielder",
+        "RM": "midfielder",
+        "DMF": "midfielder",
+        "AMF": "midfielder",
+        "CMF": "midfielder",
+        "LW": "forward",
+        "RW": "forward",
+        "CF": "striker",
+        "UNKNOWN": "unknown",
+    }
 
-    individual_events = grouped_individual_events.drop(
-        columns=["event_name", "event_type", "identifier", "run_type"]
-    )
+    for player in events_json["players"]:
+        players = home_players if player["teamId"] == home_team_id else away_players
+        players["id"].append(player["playerId"])
+        players["full_name"].append(player["playerName"])
+        players["formation_place"].append(player["positionId"])
+        players["position"].append(position_mapping[player["positionName"]])
+        players["starter"].append(False)
+        players["shirt_num"].append(player["shirtNumber"])
 
-    # check if all events are present
-    event_info_dict = {
-        "scisports_event": [],
-        "event_location": [],
-        "set_piece": [],
+    home_players = pd.DataFrame(home_players)
+    away_players = pd.DataFrame(away_players)
+
+    for start_event in [
+        event
+        for event in events_json["events"]
+        if event["subTypeName"] == "PLAYER_STARTING_POSITION"
+        and event["startTimeMs"] == 0
+    ]:
+        df = home_players if start_event["teamId"] == home_team_id else away_players
+        df.loc[df["id"] == start_event["playerId"], "starter"] = True
+
+    return home_players, away_players
+
+
+def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.DataFrame:
+    """This function retrieves the periods and frames of a specific match.
+
+    Args:
+        events_json (dict): the events.json file.
+        date (pd.Timestamp): the date of the match.
+        tz (str): the timezone of the match.
+
+    Returns:
+        pd.DataFrame: the periods and frames of the match.
+    """
+    first_half_start_ms = [
+        event["startTimeMs"]
+        for event in events_json["events"]
+        if event["partName"] == "FIRST_HALF" and event["subTypeName"] == "KICK_OFF"
+    ][0]
+    first_half_end_ms = [
+        event["endTimeMs"]
+        for event in events_json["events"]
+        if event["partName"] == "FIRST_HALF"
+    ][-1]
+    second_half_start_ms = [
+        event["startTimeMs"]
+        for event in events_json["events"]
+        if event["partName"] == "SECOND_HALF"
+        and event["subTypeName"] in ["PASS", "KICK_OFF"]
+    ][0]
+    second_half_end_ms = [
+        event["endTimeMs"]
+        for event in events_json["events"]
+        if event["partName"] == "SECOND_HALF"
+    ][-1]
+
+    periods_frames = pd.DataFrame(
+        {
+            "period_id": [1, 2, 3, 4, 5],
+            "start_datetime_ed": [
+                date + pd.to_timedelta(first_half_start_ms, unit="ms"),
+                date + pd.to_timedelta(second_half_start_ms, unit="ms"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+            "end_datetime_ed": [
+                date + pd.to_timedelta(first_half_end_ms, unit="ms"),
+                date + pd.to_timedelta(second_half_end_ms, unit="ms"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+                pd.to_datetime("NaT"),
+            ],
+        }
+    )
+    periods_frames["start_datetime_ed"] = periods_frames[
+        "start_datetime_ed"
+    ].dt.tz_localize(tz)
+    periods_frames["end_datetime_ed"] = periods_frames[
+        "end_datetime_ed"
+    ].dt.tz_localize(tz)
+    return periods_frames
+
+
+def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame, dict]:
+    """This function retrieves the event data of a specific match. The x
+    and y coordinates provided have been scaled to the dimensions of the pitch, with
+    (0, 0) being the center. Additionally, the coordinates have been standardized so
+    that the home team is represented as playing from left to right for the entire
+    match, and the away team is represented as playing from right to left.
+
+    Args:
+        events_json (str): location of the events.json file.
+        metadata (Metadata): the metadata of the match.
+
+    Returns:
+        Tuple[pd.DataFrame, dict]: the event data of the match and the databallpy_events
+    """
+    with open(events_json, "r", encoding="utf-8") as f:
+        events_json = json.load(f)
+
+    event_data = {
         "event_id": [],
-        "outcome": [],
-        "run_type": [],
-    }
-    all_events = SCISPORTS_EVENTS
-    for i, event_list in event_identifiers.items():
-        for event_name in event_list:
-            # check if all events are known
-            if event_name not in all_events:
-                warnings.warn(
-                    f"{event_name} in the scisports events is an unknown event.",
-                    DataBallPyWarning,
-                )
-                continue
-
-        run_type = None
-        if "Physical" in event_list:
-            set_piece, location, outcome = None, None, None
-            event = [x for x in event_list if x in SCISPORTS_PHYSICAL_EVENTS][0]
-            run_type = [x for x in event_list if x in SCISPORTS_PHYSICAL_RUN_TYPES][0]
-
-        else:
-            set_piece = _find_set_piece(event_list)
-            location = _find_location(event_list)
-            event, outcome = _find_event(event_list)
-
-            # set event type for set pieces
-            if set_piece != "Open Play" and event == "Unknown":
-                if "Penalty" in set_piece:
-                    event = "Shot"
-                elif set_piece in ["Crossed Free Kick", "Crossed Throw In", "Corner"]:
-                    event = "Cross"
-                    mapping = {
-                        "Crossed Free Kick": "Free Kick",
-                        "Crossed Throw In": "Throw In",
-                        "Corner": "Corner",
-                    }
-                    set_piece = mapping[set_piece]
-                elif "Free Kick" in set_piece:
-                    if "Own Half" in location:
-                        event = "Pass"
-                else:
-                    event = "Pass"
-
-        event_info_dict["event_location"].append(location)
-        event_info_dict["set_piece"].append(set_piece)
-        event_info_dict["event_id"].append(i)
-        event_info_dict["outcome"].append(outcome)
-        event_info_dict["run_type"].append(run_type)
-        event_info_dict["scisports_event"].append(event)
-
-    events_info = pd.DataFrame(event_info_dict)
-    event_data = pd.merge(individual_events, events_info, on="event_id", how="left")
-    first_half_end = match_periods[1]
-    event_data["period_id"] = np.where(event_data.seconds <= first_half_end, 1, 2)
-
-    return event_data, possessions
-
-
-def _get_all_events(events_xml: str) -> Tuple[pd.DataFrame, pd.DataFrame, list]:
-    """Function to get all events from the SciSports XML file. Note that some of the
-    events are double. Doubled events are characterized by a similar time, team, and
-    jersey number. The event name, event type, identifier, and run type are esentially
-    all identifiers of this one event.
-
-    Args:
-        events_xml (str): Path to the SciSports XML file
-
-    Returns:
-        Tuple[pd.DataFrame, pd.DataFrame, list]: A tuple containing the possessions,
-            individual events, and match periods.
-    """
-
-    with open(events_xml, "r") as file:
-        contents = file.read()
-
-    soup = BeautifulSoup(contents, "xml")
-
-    events = soup.find_all("instance")
-    team_events = {
+        "databallpy_event": [],
+        "period_id": [],
+        "minutes": [],
         "seconds": [],
-        "team": [],
-        "jersey_number": [],
+        "player_id": [],
+        "team_id": [],
+        "outcome": [],
+        "start_x": [],
+        "start_y": [],
+        "datetime": [],
+        "scisports_event": [],
         "player_name": [],
-        "event_type": [],
-        "event_name": [],
-        "identifier": [],
-        "run_type": [],
+        "team_name": [],
     }
-    possessions = {
-        "team": [],
-        "start_seconds": [],
-        "end_seconds": [],
-        "possession_type": [],
+
+    databallpy_mapping = {
+        "PASS": "pass",
+        "CROSS": "pass",
+        "SHOT": "shot",
+        "DRIBBLE": "dribble",
     }
-    match_periods = []
-
-    # loop over events
-    for event in events:
-        start = float(event.find("start").text)
-        end = float(event.find("end").text)
-        time = (start + end) / 2.0
-
-        code = event.find("code").text
-        if code == "SciSports timestamps":
-            match_periods.append(time)
-            continue
-
-        # player events is in team events, otherwise all events are double
-        elif not code.split(" ")[0].isdigit():
-            team, event_info = code.split(" - ")
-
-            event_type, event_name = (
-                event_info.split(":") if ":" in event_info else (None, event_info)
-            )
-            event_type = event_type.strip() if event_type else None
-            event_name = event_name.strip()
-            event_name, identifier = (
-                event_name.split(" | ") if " | " in event_name else (event_name, None)
-            )
-
-            if event_type == "Possession":
-                possessions["team"].append(team)
-                possessions["start_seconds"].append(start)
-                possessions["end_seconds"].append(end)
-                possessions["possession_type"].append(event_name)
-
-            # player events
-            else:
-                jersey_number, player_name, run_type = None, None, None
-                for label in event.find_all("label"):
-                    if (
-                        label.find("group").text == "Player"
-                        or label.find("group").text == "player"
-                    ):
-                        jersey_number, player_name = label.find("text").text.split(
-                            " - "
-                        )
-                        jersey_number = int(jersey_number)
-                    elif label.find("group").text == "run_type":
-                        run_type = label.find("text").text.split(":")[1].strip()
-                team_events["seconds"].append(time)
-                team_events["team"].append(team)
-                team_events["jersey_number"].append(jersey_number)
-                team_events["player_name"].append(player_name)
-                team_events["event_type"].append(event_type)
-                team_events["event_name"].append(event_name)
-                team_events["identifier"].append(identifier)
-                team_events["run_type"].append(run_type)
-
-    individual_events = (
-        pd.DataFrame(team_events).sort_values(by="seconds").reset_index(drop=True)
-    )
-    possessions = (
-        pd.DataFrame(possessions).sort_values(by="start_seconds").reset_index(drop=True)
-    )
-    return possessions, individual_events, match_periods
-
-
-def _find_set_piece(identifiers: list) -> str:
-    """Function to find the set piece of an event, if any.
-
-    Args:
-        identifiers (list): List of all identifiers of an event
-
-    Returns:
-        str: The set piece of the event, if none is found, "Open Play" is returned.
-    """
-    set_pieces = [x for x in identifiers if x in SCISPORTS_SET_PIECES]
-    if len(set_pieces) == 0:
-        set_piece = "Open Play"
-    elif len(set_pieces) == 1:
-        set_piece = set_pieces[0]
-    else:
-        set_pieces = [x for x in set_pieces if x != "Set Piece"]
-        set_piece = set_pieces[0]
-    return set_piece
-
-
-def _find_location(identifiers: list) -> str:
-    """Function to find the location(s) of an event, if any.
-
-    Args:
-        identifiers (list): List of all identifiers of an event
-
-    Returns:
-        str: The location(s) of the event, if none is found, "Unknown" is returned.
-            If multiple are found, they are joined with " - " into one string.
-    """
-    locations = [x for x in identifiers if x in SCISPORTS_LOCATIONS]
-    if len(locations) == 0:
-        location = "Unknown"
-    elif len(locations) == 1:
-        location = locations[0]
-    else:
-        location = " - ".join(locations)
-    return location
-
-
-def _find_event(identifiers: list) -> Tuple[str, int]:
-    """Function to find the event name of an event, and the outcome of the event
-    if applicable.
-
-    Args:
-        identifiers (list): List of all identifiers of an event
-
-    Returns:
-        Tuple [str, int]: The event name and outcome of the event, if none is found,
-            "Unknown" and None are returned.
-    """
-    pass_events = [x for x in identifiers if x in SCISPORTS_PASS_EVENTS]
-    shot_events = [x for x in identifiers if x in SCISPORTS_SHOT_EVENTS]
-    duel_events = [x for x in identifiers if x in SCISPORTS_DUEL_EVENTS]
-    defensive_events = [x for x in identifiers if x in SCISPORTS_DEFENSIVE_EVENTS]
-    outcome_events = [x for x in identifiers if x in SCISPORTS_OUTCOMES]
-
-    event = "Unknown"
-    outcome = None
-
-    # outcome
-    if len(outcome_events) > 0:
-        if "Pass (Successful)" in outcome_events:
-            outcome = 1
-        elif "Possession Loss" in outcome_events:
-            outcome = 0
-
-    # shot events
-    if len(shot_events) > 0:
-        if "Goal" in shot_events:
-            event = "Goal"
-            outcome = 1
-        elif "Own Goal" in shot_events:
-            event = "Own Goal"
-            outcome = 1
-        else:
-            shot_events = [x for x in shot_events if x != "Shot"]
-            event = f"Shot {shot_events[0]}"
-            outcome = 0
-
-    # pass events
-    elif len(pass_events) > 0:
-        # type of pass
-        if "Assist" in pass_events:
-            event = "Assist"
-            outcome = 1
-        elif len(pass_events) == 1:
-            event = pass_events[0]
-        else:
-            pass_events = [x for x in pass_events if x != "Pass"]
-            event = pass_events[0] if len(pass_events) > 0 else "Pass"
-
-    # duel events
-    elif len(duel_events) > 0:
-        if len(duel_events) == 1:
-            event = duel_events[0]
-        else:
-            duel_events = [
-                x for x in duel_events if x != "Duel" and x != "Duel Defensive"
-            ]
-            event = duel_events[0] if len(duel_events) > 0 else "Duel"
-
-    # defensive events
-    elif len(defensive_events) > 0:
-        if len(defensive_events) == 1:
-            event = defensive_events[0]
-        else:
-            defensive_events = [x for x in defensive_events if x != "GK Save"]
-            event = defensive_events[0]
-
-    # handle other events, note that set piece events are handled in _load_event_data
-    else:
-        if "Penetration" in identifiers:
-            event = "Penetration"
-        elif "Possession Loss" in identifiers:
-            event = "Possession Loss"
-            outcome = 1
-        elif "2nd Ball" in identifiers:
-            event = "2nd Ball"
-        elif "Substitute" in identifiers:
-            event = "Substitute"
-
-    return event, outcome
-
-
-def _get_databallpy_events_scisports(
-    tracking_data: pd.DataFrame,
-    tracking_metadata: Metadata,
-    event_data: pd.DataFrame,
-    verbose: bool = True,
-) -> dict:
-    """Function to get the databallpy events from the scisports event data using
-    the tracking data
-
-    Args:
-        tracking_data (pd.DataFrame): The tracking data of the match
-        tracking_metadata (Metadata): The metadata of the tracking data
-        event_data (pd.DataFrame): The scisports event data of the match
-        verbose (bool, optional): Whether to print info about the progress.
-            Defaults to True.
-
-    Returns:
-        dict: The databallpy events
-    """
-    temp_match = Match(
-        tracking_data=tracking_data,
-        tracking_data_provider="unimportant",
-        event_data=event_data,
-        event_data_provider="scisports",
-        pitch_dimensions=tracking_metadata.pitch_dimensions,
-        periods=tracking_metadata.periods_frames,
-        frame_rate=tracking_metadata.frame_rate,
-        home_team_id=tracking_metadata.home_team_id,
-        home_formation=tracking_metadata.home_formation,
-        home_score=tracking_metadata.home_score,
-        home_team_name=tracking_metadata.home_team_name,
-        home_players=tracking_metadata.home_players,
-        away_team_id=tracking_metadata.away_team_id,
-        away_formation=tracking_metadata.away_formation,
-        away_score=tracking_metadata.away_score,
-        away_team_name=tracking_metadata.away_team_name,
-        away_players=tracking_metadata.away_players,
-        country=tracking_metadata.country,
-        allow_synchronise_tracking_and_event_data=True,
-    )
-
-    if verbose:
-        print("Syncing tracking and event data to obtain databallpy events")
-    temp_match.synchronise_tracking_and_event_data(verbose=False)
-    tracking_data = temp_match.tracking_data
-    event_data = temp_match.event_data
-
-    # update the event data with the synced event data
-    mask = ~pd.isnull(event_data["databallpy_event"])
-    for db_event in event_data.loc[mask].itertuples():
-        td_frame = tracking_data.loc[
-            tracking_data["event_id"] == db_event.event_id
-        ].iloc[0]
-        event_data.loc[db_event.Index, "start_x"] = td_frame["ball_x"]
-        event_data.loc[db_event.Index, "start_y"] = td_frame["ball_y"]
-
-    databallpy_events = {}
-
-    databallpy_events["shot_events"] = _get_shot_instances(
-        event_data=event_data,
-        pitch_size=temp_match.pitch_dimensions,
-        team_side=temp_match.home_team_name,
-    )
-    databallpy_events["dribble_events"] = _get_dribble_instances(
-        event_data=event_data,
-        pitch_size=temp_match.pitch_dimensions,
-        team_side=temp_match.home_team_name,
-    )
-    databallpy_events["pass_events"] = _get_pass_instances(
-        event_data=event_data,
-        pitch_size=temp_match.pitch_dimensions,
-        team_side=temp_match.home_team_name,
-    )
-
-    return databallpy_events, tracking_data, event_data
-
-
-def _get_shot_instances(
-    event_data: pd.DataFrame, pitch_size: tuple, team_side: str
-) -> dict:
-    """Function to get the ShotEvent instances from the scisports event data
-
-    Args:
-        event_data (pd.DataFrame): The scisports event data of the match
-        pitch_size (tuple): The size of the pitch
-        team_side (str): The side of the team
-
-    Returns:
-        dict: The ShotEvent instances
-    """
-    shots_map = {
-        "Shot on Target": "miss_on_target",
-        "Shot Goal": "goal",
-        "Shot Wide": "miss_off_target",
-        "Own Goal": "own_goal",
-        "Shot": "not_specified",
-        "Goal": "goal",
-    }
-    shots_mask = event_data["databallpy_event"] == "shot"
     shot_events = {}
-    for shot in event_data.loc[shots_mask].itertuples():
-        shot_events[shot.event_id] = ShotEvent(
-            event_id=int(shot.event_id),
-            period_id=int(shot.period_id),
-            minutes=int(shot.minutes),
-            seconds=int(shot.seconds),
-            datetime=shot.datetime,
-            start_x=float(shot.start_x),
-            start_y=float(shot.start_y),
-            pitch_size=pitch_size,
-            team_side=team_side,
-            _xt=-1.0,
-            y_target=np.nan,
-            z_target=np.nan,
-            team_id=str(shot.team_id),
-            player_id=int(shot.player_id),
-            shot_outcome=shots_map[shot.scisports_event],
-            type_of_play=None,
-            body_part=None,
-            created_oppertunity=None,
-        )
-    return shot_events
-
-
-def _get_dribble_instances(
-    event_data: pd.DataFrame, pitch_size: tuple, team_side: str
-) -> dict:
-    """Function to get the DribbleEvent instances from the scisports event data
-
-    Args:
-        event_data (pd.DataFrame): The scisports event data of the match
-        pitch_size (tuple): The size of the pitch
-        team_side (str): The side of the team
-
-    Returns:
-        dict: The DribbleEvent instances
-    """
-    dribbles_mask = event_data["databallpy_event"] == "dribble"
-    dribble_events = {}
-    for dribble in event_data.loc[dribbles_mask].itertuples():
-        dribble_events[dribble.Index] = DribbleEvent(
-            event_id=int(dribble.event_id),
-            period_id=int(dribble.period_id),
-            minutes=int(dribble.minutes),
-            seconds=int(dribble.seconds),
-            datetime=dribble.datetime,
-            pitch_size=pitch_size,
-            team_side=team_side,
-            _xt=-1.0,
-            start_x=float(dribble.start_x),
-            start_y=float(dribble.start_y),
-            team_id=str(dribble.team_id),
-            player_id=int(dribble.player_id),
-            related_event_id=MISSING_INT,
-            duel_type=None,
-            outcome=None,
-            has_opponent=True,
-        )
-    return dribble_events
-
-
-def _get_pass_instances(
-    event_data: pd.DataFrame, pitch_size: tuple, team_side: str
-) -> dict:
-    """Function to get the PassEvent instances from the scisports event data
-
-    Args:
-        event_data (pd.DataFrame): The scisports event data of the match
-        pitch_size (tuple): The size of the pitch
-        team_side (str): The side of the team
-
-    Returns:
-        dict: The PassEvent instances
-    """
-    set_piece_map = {
-        "Kick Off": "kick_off",
-        "Set Piece": "unspecified_set_piece",
-        "Corner": "corner_kick",
-        "Goal Kick": "goal_kick",
-        "Throw In": "throw_in",
-        "Free Kick": "free_kick",
-        "Penalty": "penalty",
-        "Open Play": "no_set_piece",
-        "Crossed Free Kick": "free_kick",
-        "Crossed Throw In": "throw_in",
-    }
-    passes_map = {
-        "Pass": "not_specified",
-        "Cross": "cross",
-        "GK Pass": "not_specified",
-        "Key Pass": "not_specified",
-        "Pre-Key Pass": "not_specified",
-        "GK Throw": "not_specified",
-        "Assist": "assist",
-    }
-    passes_mask = event_data["databallpy_event"] == "pass"
     pass_events = {}
-    for pass_ in event_data.loc[passes_mask].itertuples():
-        outcome = (
-            ["successful", "unsuccessful"][pass_.outcome == 0]
-            if not pd.isnull(pass_.outcome)
-            else None
+    dribble_events = {}
+    date = pd.to_datetime(
+        metadata.periods_frames["start_datetime_ed"].iloc[0].date()
+    ).tz_localize(metadata.periods_frames["start_datetime_ed"].iloc[0].tz)
+    for id, event in enumerate(events_json["events"]):
+        event_data["event_id"].append(id)
+
+        event_data["period_id"].append(event["partId"])
+        event_data["minutes"].append(MISSING_INT)
+        event_data["seconds"].append(event["startTimeMs"] / 1000)
+        event_data["player_id"].append(
+            event["playerId"] if event["playerId"] != -1 else MISSING_INT
+        )
+        event_data["team_id"].append(
+            event["teamId"] if event["teamId"] != -1 else MISSING_INT
         )
 
-        pass_events[pass_.Index] = PassEvent(
-            event_id=int(pass_.event_id),
-            period_id=int(pass_.period_id),
-            minutes=int(pass_.minutes),
-            seconds=int(pass_.seconds),
-            datetime=pass_.datetime,
-            start_x=float(pass_.start_x),
-            start_y=float(pass_.start_y),
-            team_id=str(pass_.team_id),
-            pitch_size=pitch_size,
-            team_side=team_side,
-            _xt=-1.0,
-            outcome=outcome,
-            player_id=int(pass_.player_id),
-            end_x=np.nan,
-            end_y=np.nan,
-            pass_type=passes_map[pass_.scisports_event],
-            set_piece=set_piece_map[pass_.set_piece],
+        event_data["start_x"].append(event["startPosXM"])
+        event_data["start_y"].append(event["startPosYM"])
+        event_data["datetime"].append(
+            date + pd.to_timedelta(event["startTimeMs"], unit="ms")
         )
-    return pass_events
+        event_data["scisports_event"].append(event["baseTypeName"].lower())
+        event_data["player_name"].append(event["playerName"])
+        event_data["team_name"].append(event["teamName"])
 
-
-def _update_scisports_event_data_with_metadata(
-    scisports_event_data: pd.DataFrame, metadata: Metadata
-) -> pd.DataFrame:
-    """Function to update the scisports event data with metadata. Among other things,
-    this function adds the player id's to the scisports event data.
-
-    Args:
-        scisports_event_data (pd.DataFrame): scisports event data
-        metadata (Metadata): metadata of the match
-
-    Returns:
-        pd.DataFrame: updataed scisports event data
-    """
-
-    event_data = pd.DataFrame(
-        index=scisports_event_data.index,
-        columns=[
-            "event_id",
-            "databallpy_event",
-            "period_id",
-            "minutes",
-            "seconds",
-            "player_id",
-            "team_id",
-            "outcome",
-            "start_x",
-            "start_y",
-            "datetime",
-            "scisports_event",
-            "event_location",
-            "run_type",
-            "player_name",
-        ],
-    )
-
-    event_data["event_id"] = scisports_event_data["event_id"]
-    event_data["databallpy_event"] = scisports_event_data["databallpy_event"]
-    event_data["period_id"] = scisports_event_data["period_id"]
-    event_data["minutes"] = (scisports_event_data["seconds"] // 60).astype("int64")
-    event_data["seconds"] = scisports_event_data["seconds"] % 60
-    event_data["outcome"] = scisports_event_data["outcome"]
-    event_data["start_x"] = np.nan
-    event_data["start_y"] = np.nan
-
-    # datetime
-    time_in_seconds = (
-        scisports_event_data["seconds"] - scisports_event_data["seconds"].iloc[0]
-    )
-    if "start_datetime_ed" in metadata.periods_frames.columns:
-        start_datetime = metadata.periods_frames["start_datetime_ed"].iloc[0]
-    elif "start_datetime_td" in metadata.periods_frames.columns:
-        start_datetime = metadata.periods_frames["start_datetime_td"].iloc[0]
-
-    if "start_datetime" in vars():
-        event_data["datetime"] = start_datetime + pd.to_timedelta(
-            time_in_seconds, unit="s"
-        )
-    else:
-        event_data["datetime"] = pd.to_datetime("NaT")
-
-    event_data["scisports_event"] = scisports_event_data["scisports_event"]
-    event_data["event_location"] = scisports_event_data["event_location"]
-    event_data["run_type"] = scisports_event_data["run_type"]
-    event_data["team_id"] = np.nan
-    event_data["player_id"] = np.nan
-    event_data["player_name"] = scisports_event_data["player_name"]
-    event_data["set_piece"] = scisports_event_data["set_piece"]
-
-    def get_player_id(row):
-        team_name = row["team"]
-        jersey_number = row["jersey_number"]
-        if team_name == metadata.home_team_name:
-            current_player_id = metadata.home_players[
-                metadata.home_players["shirt_num"] == jersey_number
-            ]["id"].iloc[0]
+        if event["baseTypeName"] in databallpy_mapping:
+            databallpy_event = databallpy_mapping[event["baseTypeName"]]
+            event_data["databallpy_event"].append(databallpy_event)
+            event_data["outcome"].append(event["resultId"])
+            if databallpy_event == "shot":
+                shot_events[id] = _get_shot_event(event, id)
+            elif databallpy_event == "pass":
+                pass_events[id] = _get_pass_event(event, id)
+            elif databallpy_event == "dribble":
+                dribble_events[id] = _get_dribble_event(event, id)
         else:
-            current_player_id = metadata.away_players[
-                metadata.away_players["shirt_num"] == jersey_number
-            ]["id"].iloc[0]
-        return current_player_id
+            event_data["databallpy_event"].append(None)
+            event_data["outcome"].append(MISSING_INT)
 
-    def get_player_name(row):
-        team_name = row["team"]
-        jersey_number = row["jersey_number"]
-        if team_name == metadata.home_team_name:
-            current_player_name = metadata.home_players[
-                metadata.home_players["shirt_num"] == jersey_number
-            ]["full_name"].iloc[0]
-        else:
-            current_player_name = metadata.away_players[
-                metadata.away_players["shirt_num"] == jersey_number
-            ]["full_name"].iloc[0]
-        return current_player_name
-
-    team_id_mask = scisports_event_data["team"].apply(
-        lambda team: metadata.home_team_name in team
+    event_data = pd.DataFrame(event_data)
+    event_data["player_name"] = event_data["player_name"].str.replace(
+        "NOT_APPLICABLE", "not_applicable"
     )
-    event_data.loc[team_id_mask, "team_id"] = metadata.home_team_id
-    team_id_mask = scisports_event_data["team"].apply(
-        lambda team: metadata.away_team_name in team
-    )
-    event_data.loc[team_id_mask, "team_id"] = metadata.away_team_id
+    event_data.loc[event_data["period_id"] == 2, "seconds"] -= event_data.loc[
+        event_data["period_id"] == 2, "seconds"
+    ].min() - (45 * 60)
+    event_data["minutes"] = (event_data["seconds"] // 60).astype(int)
+    event_data["seconds"] = event_data["seconds"] % 60
+    event_data.loc[
+        event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
+    ] *= -1
 
-    player_id_mask = scisports_event_data["jersey_number"].isin(
-        metadata.home_players["shirt_num"]
-    )
-    event_data.loc[player_id_mask, "player_id"] = scisports_event_data[
-        player_id_mask
-    ].apply(get_player_id, axis=1)
-    event_data.loc[player_id_mask, "player_name"] = scisports_event_data[
-        player_id_mask
-    ].apply(get_player_name, axis=1)
+    for event in {**shot_events, **pass_events, **dribble_events}.values():
+        row = event_data.loc[event_data["event_id"] == event.event_id]
+        event.minutes = row["minutes"].iloc[0]
+        event.seconds = row["seconds"].iloc[0]
+        event.datetime = row["datetime"].iloc[0]
+        event.pitch_size = metadata.pitch_dimensions
+        if event.team_side == "away":
+            event.start_x *= -1
+            event.start_y *= -1
+            if isinstance(event, PassEvent):
+                event.end_x *= -1
+                event.end_y *= -1
 
-    player_id_mask = scisports_event_data["jersey_number"].isin(
-        metadata.away_players["shirt_num"]
-    )
-    event_data.loc[player_id_mask, "player_id"] = scisports_event_data[
-        player_id_mask
-    ].apply(get_player_id, axis=1)
-    event_data.loc[player_id_mask, "player_name"] = scisports_event_data[
-        player_id_mask
-    ].apply(get_player_name, axis=1)
-
-    event_data["player_id"] = (
-        event_data["player_id"].fillna(MISSING_INT).astype("int64")
-    )
-    return event_data
+    return event_data, {
+        "shot_events": shot_events,
+        "pass_events": pass_events,
+        "dribble_events": dribble_events,
+    }
 
 
-def _add_team_possessions_to_tracking_data(
-    tracking_data: pd.DataFrame,
-    possessions: pd.DataFrame,
-    frame_rate: int,
-    home_team_name: str,
-) -> pd.DataFrame:
-    """Function to add the team possessions to the tracking data based on the
-    possession information from the scisports event data
+def _get_shot_event(event: dict, id: int) -> ShotEvent:
+    """This function retrieves the shot event of a specific match.
 
     Args:
-        tracking_data (pd.DataFrame): The tracking data
-        possessions (pd.DataFrame): The possessions of the match
-        frame_rate (int): The frame rate of the tracking data
-        home_team_name (str): The name of the home team
+        event (dict): the shot event.
+        id (int): the id of the event.
 
     Returns:
-        pd.DataFrame: The tracking data with the team possessions
+        ShotEvent: the shot event of the match.
     """
 
-    if (tracking_data["ball_status"].unique() == "dead").all():
-        match_start_idx = tracking_data.index[0]
-    else:
-        match_start_idx = tracking_data[tracking_data["ball_status"] == "alive"].index[
-            0
-        ]
-
-    tracking_data["td_seconds"] = np.nan
-    td_seconds = np.array(range(len(tracking_data.loc[match_start_idx:]))) / frame_rate
-    tracking_data.loc[match_start_idx:, "td_seconds"] = td_seconds
-    team_shift_idxs = (
-        np.where(possessions.team[1:].values != possessions.team[:-1].values)[0] + 1
+    shot_result_mappping = {
+        "ON_TARGET": "miss_on_target",
+        "BLOCKED": "blocked",
+        "WIDE": "miss_off_target",
+        "POST": "miss_hit_post",
+    }
+    return ShotEvent(
+        event_id=id,
+        period_id=event["partId"],
+        minutes=MISSING_INT,
+        seconds=MISSING_INT,
+        datetime=pd.to_datetime("NaT"),
+        start_x=event["startPosXM"],
+        start_y=event["startPosYM"],
+        team_id=event["teamId"],
+        team_side=event["groupName"].lower(),
+        pitch_size=None,
+        _xt=-1.0,
+        player_id=event["playerId"],
+        shot_outcome=shot_result_mappping[event["shotTypeName"]]
+        if event["resultId"] == 0
+        else "goal",
+        y_target=np.nan,
+        z_target=np.nan,
+        body_part=event["bodyPartName"].lower(),
     )
-    next_possession_start_s = 0
-    for idx in team_shift_idxs:
-        possession_end_s = (
-            possessions.iloc[idx]["start_seconds"]
-            + possessions.iloc[idx - 1]["end_seconds"]
-        ) / 2
-        mask = (tracking_data["td_seconds"] >= next_possession_start_s) & (
-            tracking_data["td_seconds"] < possession_end_s
-        )
-        side = "home" if home_team_name == possessions.iloc[idx - 1]["team"] else "away"
-        tracking_data.loc[mask, "ball_possession"] = side
-        next_possession_start_s = possession_end_s
-
-    # last possession
-    mask = tracking_data["td_seconds"] >= next_possession_start_s
-    side = "home" if home_team_name == possessions.iloc[-1]["team"] else "away"
-    tracking_data.loc[mask, "ball_possession"] = side
-
-    tracking_data.drop(columns=["td_seconds"], inplace=True)
-    return tracking_data
 
 
-def _handle_scisports_data(
-    scisports_ed_loc: str,
-    tracking_data: pd.DataFrame,
-    event_metadata: Metadata,
-    tracking_metadata: Metadata,
-    databallpy_events: dict,
-    verbose: bool,
-) -> Tuple[pd.DataFrame, dict, pd.DataFrame]:
-    """Funciton to handle scisports event data. It updates the event data based on
-    provided metadata. Adds possessions to the tracking data if needed, and syncs
-    player id's between tracking and event data if they are different.
+def _get_pass_event(event: dict, id: int) -> PassEvent:
+    """This function retrieves the pass event of a specific match.
 
     Args:
-        scisports_ed_loc (str): location of the scisports event data (*.xml)
-        tracking_data (pd.DataFrame): tracking data of the match
-        event_metadata (Metadata): metadata based on the (non-scisports) event data
-        tracking_metadata (Metadata): metadata based on the tracking data
-        databallpy_events (dict): dict with extra info about the events
-        verbose (bool): whether to print info about the progress.
+        event (dict): the pass event.
+        id (int): the id of the event.
 
     Returns:
-        Tuple[pd.DataFrame, dict, pd.DataFrame]: updated scisports event data,
-            updated databallpy events, updated tracking data
+        PassEvent: the pass event of the match.
     """
-    scisports_event_data, possessions = load_scisports_event_data(
-        events_xml=scisports_ed_loc
+
+    pass_type_mapping = {
+        "FREE_KICK_CROSSED": "cross",
+        "THROW_IN_CROSSED": "cross",
+        "CROSS": "cross",
+        "CORNER_CROSSED": "cross",
+        "CROSS_CUTBACK": "pull_back",
+        "PASS": "not_specified",
+        "GOAL_KICK": "not_specified",
+        "CORNER_SHORT": "not_specified",
+        "OFFSIDE_PASS": "not_specified",
+        "KICK_OFF": "not_specified",
+        "THROW_IN": "not_specified",
+        "FREE_KICK": "not_specified",
+    }
+
+    set_piece_mapping = {
+        "FREE_KICK_CROSSED": "free_kick",
+        "THROW_IN_CROSSED": "throw_in",
+        "CROSS": "no_set_piece",
+        "CORNER_CROSSED": "corner_kick",
+        "CROSS_CUTBACK": "no_set_piece",
+        "PASS": "no_set_piece",
+        "GOAL_KICK": "goal_kick",
+        "CORNER_SHORT": "corner_kick",
+        "OFFSIDE_PASS": "no_set_piece",
+        "KICK_OFF": "kick_off",
+        "THROW_IN": "throw_in",
+        "FREE_KICK": "free_kick",
+    }
+
+    return PassEvent(
+        event_id=id,
+        period_id=event["partId"],
+        minutes=MISSING_INT,
+        seconds=MISSING_INT,
+        datetime=pd.to_datetime("NaT"),
+        start_x=event["startPosXM"],
+        start_y=event["startPosYM"],
+        team_id=event["teamId"],
+        team_side=event["groupName"].lower(),
+        pitch_size=None,
+        _xt=-1.0,
+        outcome=event["resultName"].lower()
+        if event["subTypeName"] != "OFFSIDE_PASS"
+        else "offside",
+        player_id=event["playerId"],
+        receiver_id=event["receiverId"]
+        if event["receiverTeamId"] == event["teamId"]
+        else MISSING_INT,
+        end_x=event["endPosXM"],
+        end_y=event["endPosYM"],
+        pass_type=pass_type_mapping[event["subTypeName"]],
+        set_piece=set_piece_mapping[event["subTypeName"]],
     )
 
-    if event_metadata is not None:
-        scisports_event_data = _update_scisports_event_data_with_metadata(
-            scisports_event_data, event_metadata
-        )
-    elif tracking_metadata is not None:
-        if "Ajax Amsterdam U21" in scisports_event_data["team"].unique():
-            scisports_event_data["team"] = scisports_event_data["team"].replace(
-                {"Ajax Amsterdam U21": "Jong Ajax"}
-            )
-            possessions["team"] = possessions["team"].replace(
-                {"Ajax Amsterdam U21": "Jong Ajax"}
-            )
 
-        scisports_event_data = _update_scisports_event_data_with_metadata(
-            scisports_event_data, tracking_metadata
-        )
-    else:
-        raise ValueError(
-            "No metadata provided. Either event_metadata or tracking_metadata"
-            " should be provided."
-        )
+def _get_dribble_event(event: dict, id: int) -> DribbleEvent:
+    """This function retrieves the dribble event of a specific match.
 
-    if tracking_data is not None:
-        if event_metadata is not None:
-            if (
-                not set(event_metadata.home_players["id"])
-                == set(tracking_metadata.home_players["id"])
-            ) or (
-                not set(event_metadata.away_players["id"])
-                == set(tracking_metadata.away_players["id"])
-            ):
-                event_metadata = align_player_ids(event_metadata, tracking_metadata)
-                full_name_id_map = dict(
-                    zip(
-                        event_metadata.home_players["full_name"],
-                        event_metadata.home_players["id"],
-                    )
-                )
-                full_name_id_map.update(
-                    dict(
-                        zip(
-                            event_metadata.away_players["full_name"],
-                            event_metadata.away_players["id"],
-                        )
-                    )
-                )
+    Args:
+        event (dict): the dribble event.
+        id (int): the id of the event.
 
-                scisports_event_data["player_id"] = (
-                    scisports_event_data["player_name"]
-                    .map(full_name_id_map)
-                    .fillna(MISSING_INT)
-                    .astype("int64")
-                )
-
-            # also check team_id's
-            if not event_metadata.home_team_id == tracking_metadata.home_team_id:
-                event_home_team_id = event_metadata.home_team_id
-                tracking_home_team_id = tracking_metadata.home_team_id
-                scisports_event_data["team_id"] = scisports_event_data[
-                    "team_id"
-                ].replace({event_home_team_id: tracking_home_team_id})
-                event_metadata.home_team_id = tracking_home_team_id
-            if not event_metadata.away_team_id == tracking_metadata.away_team_id:
-                event_away_team_id = event_metadata.away_team_id
-                tracking_away_team_id = tracking_metadata.away_team_id
-                scisports_event_data["team_id"] = scisports_event_data[
-                    "team_id"
-                ].replace({event_away_team_id: tracking_away_team_id})
-                event_metadata.away_team_id = tracking_away_team_id
-
-            if str(scisports_event_data["team_id"].dtype) == "float64":
-                scisports_event_data["team_id"] = scisports_event_data[
-                    "team_id"
-                ].astype("int64")
-            if str(scisports_event_data["player_id"].dtype) == "float64":
-                scisports_event_data["player_id"] = scisports_event_data[
-                    "player_id"
-                ].astype("int64")
-
-        if tracking_data["ball_possession"].isnull().all():
-            tracking_data = _add_team_possessions_to_tracking_data(
-                tracking_data,
-                possessions,
-                frame_rate=tracking_metadata.frame_rate,
-                home_team_name=tracking_metadata.home_team_name,
-            )
-
-        if databallpy_events is None or len(databallpy_events) == 0:
-            (
-                databallpy_events,
-                tracking_data,
-                scisports_event_data,
-            ) = _get_databallpy_events_scisports(
-                tracking_data, tracking_metadata, scisports_event_data, verbose
-            )
-
-    return scisports_event_data, databallpy_events, tracking_data
+    Returns:
+        DribbleEvent: the dribble event of the match.
+    """
+    return DribbleEvent(
+        event_id=id,
+        period_id=event["partId"],
+        minutes=MISSING_INT,
+        seconds=MISSING_INT,
+        datetime=pd.to_datetime("NaT"),
+        start_x=event["startPosXM"],
+        start_y=event["startPosYM"],
+        team_id=event["teamId"],
+        team_side=event["groupName"].lower(),
+        pitch_size=None,
+        _xt=-1.0,
+        player_id=event["playerId"],
+        related_event_id=MISSING_INT,
+        duel_type="offensive",
+        outcome=event["resultId"] == 1,
+        has_opponent=event["subTypeName"] == "TAKE_ON",
+    )
