@@ -123,7 +123,6 @@ class Match:
     dribble_events: dict = field(default_factory=dict)
     pass_events: dict = field(default_factory=dict)
     allow_synchronise_tracking_and_event_data: bool = False
-    extra_data: pd.DataFrame = None
     _shots_df: pd.DataFrame = None
     _dribbles_df: pd.DataFrame = None
     _passes_df: pd.DataFrame = None
@@ -781,9 +780,6 @@ class Match:
                 if self._passes_df is not None
                 else other._passes_df is None,
                 self.country == other.country,
-                self.extra_data.equals(other.extra_data)
-                if self.extra_data is not None
-                else other.extra_data is None,
                 self.allow_synchronise_tracking_and_event_data
                 == other.allow_synchronise_tracking_and_event_data,
                 self._tracking_timestamp_is_precise
@@ -830,7 +826,6 @@ class Match:
             _passes_df=self._passes_df.copy() if self._passes_df is not None else None,
             country=self.country,
             allow_synchronise_tracking_and_event_data=allow_sync,
-            extra_data=self.extra_data,
             _tracking_timestamp_is_precise=self._tracking_timestamp_is_precise,
             _event_timestamp_is_precise=self._event_timestamp_is_precise,
             _is_synchronised=self._is_synchronised,
@@ -1111,17 +1106,20 @@ def check_inputs_match_object(match: Match):
     for team, form in zip(
         ["home", "away"], [match.home_formation, match.away_formation]
     ):
-        if not isinstance(form, str):
-            message = f"{team} team formation should be a string, not a {type(form)}"
-            LOGGER.error(message)
-            raise TypeError(message)
-        if len(form) > 5:
-            message = (
-                f"{team} team formation should be of length 5 or smaller "
-                f"('1433'), not {len(form)}"
-            )
-            LOGGER.error(message)
-            raise ValueError(message)
+        if form is not None and not form == MISSING_INT:
+            if not isinstance(form, str):
+                message = (
+                    f"{team} team formation should be a string, not a {type(form)}"
+                )
+                LOGGER.error(message)
+                raise TypeError(message)
+            if len(form) > 5:
+                message = (
+                    f"{team} team formation should be of length 5 or smaller "
+                    f"('1433'), not {len(form)}"
+                )
+                LOGGER.error(message)
+                raise ValueError(message)
 
     # team players
     for team, players in zip(

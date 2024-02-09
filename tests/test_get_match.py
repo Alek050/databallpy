@@ -23,7 +23,9 @@ from expected_outcomes import (
     DRIBBLE_EVENTS_OPTA,
     DRIBBLE_EVENTS_OPTA_TRACAB,
     ED_OPTA,
+    ED_SCISPORTS,
     MD_OPTA,
+    MD_SCISPORTS,
     MD_TRACAB,
     PASS_EVENTS_METRICA,
     PASS_EVENTS_OPTA,
@@ -325,12 +327,7 @@ class TestGetMatch(unittest.TestCase):
             _tracking_timestamp_is_precise=False,
             _periods_changed_playing_direction=[],
         )
-        self.expected_match_inmotio_instat.event_data["team_id"] = [
-            "T-0001",
-            "T-0001",
-            "T-0002",
-            None,
-        ]
+
         self.expected_match_inmotio_instat._periods_changed_playing_direction = [2]
 
         self.match_to_sync = get_match(
@@ -489,9 +486,11 @@ class TestGetMatch(unittest.TestCase):
             event_data_provider="instat",
             check_quality=False,
         )
-        assert (
-            match_instat_inmotio_unaligned_input == self.expected_match_inmotio_instat
-        )
+        expected_match = self.expected_match_inmotio_instat.copy()
+        expected_match.home_players.loc[:, "id"] = [100, 200]
+        expected_match.event_data.loc[[0, 1], "player_id"] = [200, 100]
+
+        assert match_instat_inmotio_unaligned_input == expected_match
 
     def test_get_match_inmotio_instat(self):
         match_instat_inmotio = get_match(
@@ -575,3 +574,13 @@ class TestGetMatch(unittest.TestCase):
                 tracking_data_provider=self.td_provider,
                 check_quality=True,
             )
+
+    def test_get_match_scisports(self):
+        res_match = get_match(
+            event_data_loc="tests/test_data/scisports_test.json",
+            event_data_provider="scisports",
+        )
+        pd.testing.assert_frame_equal(res_match.event_data, ED_SCISPORTS)
+        pd.testing.assert_frame_equal(res_match.periods, MD_SCISPORTS.periods_frames)
+        pd.testing.assert_frame_equal(res_match.home_players, MD_SCISPORTS.home_players)
+        pd.testing.assert_frame_equal(res_match.away_players, MD_SCISPORTS.away_players)

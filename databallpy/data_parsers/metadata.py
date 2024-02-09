@@ -34,7 +34,7 @@ class Metadata:
     def __post_init__(self):
         LOGGER.info("Created a Metadata instance, checking inputs...")
         # match id
-        if not isinstance(self.match_id, int):
+        if not isinstance(self.match_id, (int, str)):
             message = (
                 f"match_id ({self.match_id}) should be an integer, not "
                 f"{type(self.match_id)}"
@@ -43,7 +43,7 @@ class Metadata:
             raise TypeError(message)
 
         # pitch_dimensions
-        if not isinstance(self.pitch_dimensions, list):
+        if not isinstance(self.pitch_dimensions, (tuple, list)):
             message = (
                 f"pitch_dimensions ({self.pitch_dimensions}) should be a "
                 f"list, not a {type(self.pitch_dimensions)}"
