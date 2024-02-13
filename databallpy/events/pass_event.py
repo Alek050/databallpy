@@ -38,7 +38,7 @@ class PassEvent(BaseOnBallEvent):
             'flick_on', 'pull_back', 'switch_off_play', 'not_specified']
         set_piece (str): type of set piece, options are:
             ['goal_kick', 'free_kick', 'throw_in', 'corner_kick', 'kick_off',
-            'penalty', 'no_set_piece', unspecified_set_piece]
+            'penalty', 'no_set_piece', 'unspecified_set_piece']
         pass_length (float): length of the pass
         forward_distance (float): distance the pass is made forward.
             Default is np.nan.
