@@ -394,7 +394,7 @@ def _get_pass_event(event: dict, id: int) -> PassEvent:
         "KICK_OFF": "not_specified",
         "THROW_IN": "not_specified",
         "FREE_KICK": "not_specified",
-        "GOALKEEPER_THROW": "no_set_piece",
+        "GOALKEEPER_THROW": "not_specified",
     }
 
     set_piece_mapping = {
