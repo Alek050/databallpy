@@ -105,7 +105,7 @@ class Match:
     tracking_data_provider: str
     event_data: pd.DataFrame
     event_data_provider: str
-    pitch_dimensions: List[float]
+    pitch_dimensions: List[float, float]
     periods: pd.DataFrame
     frame_rate: int
     home_team_id: int
@@ -119,9 +119,9 @@ class Match:
     away_score: int
     away_formation: str
     country: str
-    shot_events: dict = field(default_factory=dict)
-    dribble_events: dict = field(default_factory=dict)
-    pass_events: dict = field(default_factory=dict)
+    shot_events: dict[int | str, ShotEvent] = field(default_factory=dict)
+    dribble_events: dict[int | str, DribbleEvent] = field(default_factory=dict)
+    pass_events: dict[int | str, PassEvent] = field(default_factory=dict)
     allow_synchronise_tracking_and_event_data: bool = False
     _shots_df: pd.DataFrame = None
     _dribbles_df: pd.DataFrame = None
