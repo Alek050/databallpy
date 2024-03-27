@@ -1,5 +1,3 @@
-from typing import List
-
 import numpy as np
 import pandas as pd
 from scipy.stats import multivariate_normal
@@ -9,7 +7,9 @@ from databallpy.utils.logging import create_logger
 LOGGER = create_logger(__name__)
 
 
-def get_pitch_control_period(tracking_data: pd.DataFrame, grid: list) -> np.ndarray:
+def get_pitch_control_period(
+    tracking_data: pd.DataFrame, grid: list[float]
+) -> np.ndarray:
     """
     Calculate the pitch control surface for a given period of time. The pitch control
     surface is the sum of the team influences of the two teams. The team influence is
@@ -232,7 +232,7 @@ def get_mean_position_of_influence(
     y_val: float,
     vx_val: float,
     vy_val: float,
-) -> List[float]:
+) -> list[float]:
     """
     Calculate the mean position of player influence over time using the statistical
     technique presented in the article "Wide Open Spaces" by Fernandez & Born (2018).

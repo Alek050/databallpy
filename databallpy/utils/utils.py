@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 import pandas as pd
 
@@ -22,7 +20,7 @@ def _to_int(value) -> int:
         return MISSING_INT
 
 
-def _to_float(value) -> Union[float, int]:
+def _to_float(value) -> float | int:
     """Function to make a float of the value if possible, else np.nan
 
     Args:

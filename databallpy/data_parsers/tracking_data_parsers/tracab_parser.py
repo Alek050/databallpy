@@ -1,6 +1,5 @@
 import datetime as dt
 import os
-from typing import Tuple
 
 import chardet
 import numpy as np
@@ -28,7 +27,7 @@ LOGGER = create_logger(__name__)
 
 def load_tracab_tracking_data(
     tracab_loc: str, metadata_loc: str, verbose: bool = True
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load tracking data and metadata from the tracab format
 
     Args:
@@ -259,7 +258,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     return metadata
 
 
-def _get_players_metadata(players_info: list) -> pd.DataFrame:
+def _get_players_metadata(players_info: list[dict[str, int | float]]) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
 
     Args:

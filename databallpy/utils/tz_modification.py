@@ -1,5 +1,4 @@
 from datetime import timezone
-from typing import Tuple
 
 import pandas as pd
 
@@ -13,7 +12,7 @@ CHARACTERISTIC_TIMEZONE = {
 
 
 def utc_to_local_datetime(
-    dt_series: Tuple[pd.Series, pd.Timestamp], characteristic: str
+    dt_series: tuple[pd.Series, pd.Timestamp], characteristic: str
 ) -> pd.Series:
     """Function to convert UTC time to local time
 

@@ -1,5 +1,4 @@
 import math
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -14,8 +13,8 @@ def get_pressure_on_player(
     td_frame: pd.Series,
     column_id: str,
     *,
-    pitch_size: list,
-    d_front: Union[str, float] = "variable",
+    pitch_size: list[float, float],
+    d_front: str | float = "variable",
     d_back: float = 3.0,
     q: float = 1.75,
 ):

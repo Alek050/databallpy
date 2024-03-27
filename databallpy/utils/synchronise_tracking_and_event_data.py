@@ -1,5 +1,4 @@
 import warnings
-from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -16,7 +15,7 @@ logger = create_logger(__name__)
 
 def synchronise_tracking_and_event_data(
     match,
-    n_batches: Union[int, str] = "smart",
+    n_batches: int | str = "smart",
     verbose: bool = True,
     offset: float = 1.0,
 ):
@@ -164,9 +163,7 @@ def synchronise_tracking_and_event_data(
 
 
 def _create_sim_mat(
-    tracking_batch: pd.DataFrame,
-    event_batch: pd.DataFrame,
-    match,
+    tracking_batch: pd.DataFrame, event_batch: pd.DataFrame, match
 ) -> np.ndarray:
     """Function that creates similarity matrix between every frame and event in batch
 
@@ -436,7 +433,7 @@ def pre_compute_synchronisation_variables(
 def create_batches(
     n_batches: int,
     tracking_data: pd.DataFrame,
-) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+) -> list[pd.Timestamp]:
     """Function that creates batches to loop over. The batches are created based on
     the number of batches per half. The first batch starts at the first frame of the
     period. The last batch ends at the last frame of the period. The batches are
@@ -496,7 +493,7 @@ def create_batches(
     return end_datetimes_total
 
 
-def create_smart_batches(tracking_data: pd.DataFrame) -> list:
+def create_smart_batches(tracking_data: pd.DataFrame) -> list[pd.Timestamp]:
     """Function that creates batches to loop over. The batches are created based on
     active periods of play. For every active period of play, it is checked when the
     last period of play ended. The split of the batches is chosen in such a way that

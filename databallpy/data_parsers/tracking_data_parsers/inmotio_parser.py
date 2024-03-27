@@ -1,5 +1,4 @@
 import os
-from typing import Tuple
 
 import bs4
 import chardet
@@ -27,7 +26,7 @@ LOGGER = create_logger(__name__)
 
 def load_inmotio_tracking_data(
     tracking_data_loc: str, metadata_loc: str, verbose: bool = True
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load inmotio tracking data.
 
     Args:

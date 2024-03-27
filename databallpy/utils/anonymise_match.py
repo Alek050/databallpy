@@ -1,6 +1,5 @@
 import hashlib
 import secrets
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -70,7 +69,7 @@ def anonymise_match(
 
 
 def add_new_pseudonym(
-    keys: pd.DataFrame, key_type: str, name: str, old_id: Union[int, str]
+    keys: pd.DataFrame, key_type: str, name: str, old_id: int | str
 ) -> pd.DataFrame:
     """Function to create a new key for a specific key type. The function will create a
     new key that does not yet exist in the keys dataframe. It will also check if the
