@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from databallpy.utils.utils import (
@@ -7,6 +8,7 @@ from databallpy.utils.utils import (
     _to_float,
     _to_int,
     get_next_possession_frame,
+    sigmoid,
 )
 
 
@@ -64,3 +66,20 @@ class TestUtils(unittest.TestCase):
         ]
         res4 = get_next_possession_frame(tracking_data, frame, "home_2")
         pd.testing.assert_series_equal(res4, tracking_data.iloc[5])
+
+    def test_sigmoid(self):
+        # Test with default parameters
+        self.assertAlmostEqual(sigmoid(0), 0.5)
+        self.assertAlmostEqual(sigmoid(1), 0.7310585786300049)
+
+        # Test with custom parameters
+        self.assertAlmostEqual(sigmoid(0, a=1, b=2, c=3, d=4, e=5), 1.0)
+        self.assertAlmostEqual(sigmoid(5, a=1, b=2, c=3, d=4, e=5), 1.5)
+
+        # Test with numpy array input
+        np.testing.assert_almost_equal(
+            sigmoid(np.array([0, 1])), np.array([0.5, 0.7310585786300049])
+        )
+        np.testing.assert_almost_equal(
+            sigmoid(np.array([0, 5]), a=1, b=2, c=3, d=4, e=5), np.array([1.0, 1.5])
+        )

@@ -1,14 +1,11 @@
-import warnings
-
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from databallpy.features.angle import get_smallest_angle
+from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.logging import create_logger
-from databallpy.utils.utils import MISSING_INT
-from databallpy.utils.warnings import DataBallPyWarning
+from databallpy.utils.utils import MISSING_INT, sigmoid
 
 logger = create_logger(__name__)
 
@@ -74,7 +71,7 @@ def synchronise_tracking_and_event_data(
             tracking_data["ball_status"] == "alive", "datetime"
         ].iloc[0]
         ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
-        if abs(td_first_ts - ed_first_ts) > pd.Timedelta(seconds=4):
+        if abs(td_first_ts - ed_first_ts) > pd.Timedelta(seconds=0):
             diff = abs(td_first_ts - ed_first_ts)
             message = (
                 f"The tracking data and event data timestamps are {diff} "
@@ -83,10 +80,6 @@ def synchronise_tracking_and_event_data(
                 " the first event to correct for the differences in timestamp."
             )
             logger.warning(message)
-            warnings.warn(
-                message=message,
-                category=DataBallPyWarning,
-            )
             event_data_to_sync = align_event_data_datetime(
                 event_data_to_sync, tracking_data, offset=offset
             )
@@ -130,6 +123,7 @@ def synchronise_tracking_and_event_data(
                     match,
                 )
                 event_frame_dict = _needleman_wunsch(sim_mat)
+
                 # assign events to tracking data frames
                 for event, frame in event_frame_dict.items():
                     event_id = int(event_batch.loc[event, "event_id"])
@@ -138,13 +132,18 @@ def synchronise_tracking_and_event_data(
                     tracking_frame = int(tracking_batch.loc[frame, "index"])
                     tracking_data.loc[tracking_frame, "databallpy_event"] = event_type
                     tracking_data.loc[tracking_frame, "event_id"] = event_id
+                    tracking_data.loc[tracking_frame, "sync_certainty"] = sim_mat[
+                        frame, event
+                    ]
                     event_data.loc[event_index, "tracking_frame"] = tracking_frame
+                    event_data.loc[event_index, "sync_certainty"] = sim_mat[
+                        frame, event
+                    ]
 
             batch_first_datetime = batch_end_datetime
 
         tracking_data.drop(
             [
-                "ball_acceleration_sqrt",
                 "goal_angle_home_team",
                 "goal_angle_away_team",
             ],
@@ -192,12 +191,21 @@ def _create_sim_mat(
     ball_y_diff = track_by[:, np.newaxis] - event_y
     ball_loc_diff = np.hypot(ball_x_diff, ball_y_diff)
 
-    # Pre-compute time diff and ball diff for all events
-
-    time_ball_diff = np.abs(time_diff) + ball_loc_diff / 5
+    time_diff = sigmoid(np.abs(time_diff), e=5)
+    ball_diff = sigmoid(ball_loc_diff, d=5, e=6)
 
     for row in event_batch.itertuples():
         i = row.Index
+
+        # create array with all cost function variables
+        if row.databallpy_event == "pass":
+            total_shape = (len(tracking_batch), 5)
+        elif row.databallpy_event == "shot":
+            total_shape = (len(tracking_batch), 6)
+        elif row.databallpy_event == "dribble":
+            total_shape = (len(tracking_batch), 3)
+
+        total = np.zeros(total_shape)
 
         if not pd.isnull(row.player_id) and row.player_id != MISSING_INT:
             column_id_player = match.player_id_to_column_id(player_id=row.player_id)
@@ -213,39 +221,27 @@ def _create_sim_mat(
         else:
             player_ball_diff = np.array([np.nan] * len(tracking_batch))
 
-        # similarity function from: https://kwiatkowski.io/sync.soccer
-        # Added information based in the type of event.
-
-        # create array with all cost function variables
-        if row.databallpy_event == "pass":
-            total_shape = (len(tracking_batch), 5)
-        elif row.databallpy_event == "shot":
-            total_shape = (len(tracking_batch), 6)
-        elif row.databallpy_event == "dribble":
-            total_shape = (len(tracking_batch), 3)
-
-        total = np.zeros(total_shape)
-
         total[:, :3] = np.array(
-            [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff * 3]
+            [time_diff[:, i], ball_diff[:, i], sigmoid(player_ball_diff, d=5, e=2.5)]
         ).T
 
         if row.databallpy_event in ["shot", "pass"]:
-            total[:, 3] = 1 / tracking_batch["ball_acceleration_sqrt"].values.clip(
-                0.1
+            total[:, 3] = sigmoid(
+                -tracking_batch["ball_acceleration"].values, d=0.2, e=-25.0
             )  # ball acceleration
             # the distance between player and ball should increase at the
             # moment of a pass or shot
-            player_ball_diff_diff = (
-                np.append(np.diff(player_ball_diff), np.min(player_ball_diff)) * -1 + 1
-            )
-            total[:, 4] = player_ball_diff_diff * 10
+            # negative is approaching, positive is moving away
+            raw = np.gradient(player_ball_diff)
+
+            total[:, 4] = sigmoid(raw, d=-8.0)
 
             if row.databallpy_event == "shot":
-                total[:, 5] = tracking_batch[
+                angle = tracking_batch[
                     f"goal_angle_{['home', 'away'][row.team_id != match.home_team_id]}"
                     "_team"
                 ].values
+                total[:, 5] = sigmoid(angle, d=6, e=0.2 * np.pi)
 
         # take the mean of all cost function variables.
         mask = np.isnan(total).all(axis=1)
@@ -253,10 +249,10 @@ def _create_sim_mat(
             total[mask] = np.nanmax(total)
 
         sim_mat[:, i] = np.nanmean(total, axis=1)
+
     # replace nan values with highest value, the algorithm will not assign these
     sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat)
-    den = np.nanmax(np.nanmin(sim_mat, axis=1))  # scale similarity scores
-    sim_mat = np.exp(-sim_mat / den)
+    sim_mat = -sim_mat + 1  # low cost is better similarity
 
     return sim_mat
 
@@ -388,10 +384,6 @@ def pre_compute_synchronisation_variables(
             max_val=150,
             column_ids=["ball"],
         )
-    # take the square root to decrease the quadratic effect of the data
-    tracking_data["ball_acceleration_sqrt"] = np.sqrt(
-        tracking_data["ball_acceleration"]
-    )
 
     # pre compute ball moving vector - ball goal vector angle
     goal_angle = get_smallest_angle(
