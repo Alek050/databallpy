@@ -13,7 +13,6 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     pre_compute_synchronisation_variables,
 )
 from databallpy.utils.utils import MISSING_INT
-from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     RES_SIM_MAT,
     RES_SIM_MAT_MISSING_PLAYER,
@@ -102,46 +101,72 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
 
         expected_tracking_data["databallpy_event"] = [
-            "pass",
-            None,
             None,
             "pass",
             None,
+            "pass",
             None,
             None,
             None,
             None,
             "dribble",
             None,
+            None,
             "shot",
             None,
         ]
         expected_tracking_data["event_id"] = [
-            2499594225,
             MISSING_INT,
+            2499594225,
             MISSING_INT,
             2499594243,
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
-            MISSING_INT,
             2499594285,
+            MISSING_INT,
             MISSING_INT,
             2499594291,
             MISSING_INT,
+        ]
+        expected_tracking_data["sync_certainty"] = [
+            np.nan,
+            0.579847,
+            np.nan,
+            0.634676,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            0.331058,
+            np.nan,
+            np.nan,
+            0.503890,
+            np.nan,
         ]
 
         expected_event_data.loc[:, "tracking_frame"] = [
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
-            0,
+            1,
             3,
             MISSING_INT,
             MISSING_INT,
-            9,
+            8,
             11,
+        ]
+        expected_event_data.loc[:, "sync_certainty"] = [
+            np.nan,
+            np.nan,
+            np.nan,
+            0.579847,
+            0.634676,
+            np.nan,
+            np.nan,
+            0.331058,
+            0.503890,
         ]
         match_to_sync = self.match_to_sync.copy()
 
@@ -202,46 +227,72 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
 
         expected_tracking_data["databallpy_event"] = [
-            "pass",
-            None,
             None,
             "pass",
             None,
+            "pass",
             None,
             None,
             None,
             None,
             "dribble",
             None,
+            None,
             "shot",
             None,
         ]
         expected_tracking_data["event_id"] = [
-            2499594225,
             MISSING_INT,
+            2499594225,
             MISSING_INT,
             2499594243,
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
-            MISSING_INT,
             2499594285,
+            MISSING_INT,
             MISSING_INT,
             2499594291,
             MISSING_INT,
+        ]
+        expected_tracking_data["sync_certainty"] = [
+            np.nan,
+            0.579847,
+            np.nan,
+            0.634676,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            0.331058,
+            np.nan,
+            np.nan,
+            0.503890,
+            np.nan,
         ]
 
         expected_event_data.loc[:, "tracking_frame"] = [
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
-            0,
+            1,
             3,
             MISSING_INT,
             MISSING_INT,
-            9,
+            8,
             11,
+        ]
+        expected_event_data.loc[:, "sync_certainty"] = [
+            np.nan,
+            np.nan,
+            np.nan,
+            0.579847,
+            0.634676,
+            np.nan,
+            np.nan,
+            0.331058,
+            0.503890,
         ]
         expected_event_data["datetime"] += pd.to_timedelta(1, unit="hours")
         match_to_sync = self.match_to_sync.copy()
@@ -249,8 +300,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         match_to_sync._event_timestamp_is_precise = True
         match_to_sync.event_data["datetime"] += pd.to_timedelta(1, unit="hours")
 
-        with self.assertWarns(DataBallPyWarning):
-            match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+        match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
         pd.testing.assert_frame_equal(
             match_to_sync.tracking_data, expected_tracking_data
         )
@@ -327,7 +378,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_batch=event_data,
             match=self.match_to_sync,
         )
-        np.testing.assert_allclose(expected_res, res, rtol=1e-05)
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
     def test_create_sim_mat_missing_player(self):
         expected_res = RES_SIM_MAT_MISSING_PLAYER
@@ -354,7 +405,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_batch=event_data,
             match=self.match_to_sync,
         )
-
         np.testing.assert_allclose(res, expected_res, rtol=1e-05, atol=1e-05)
 
     def test_create_sim_mat_without_player(self):
@@ -394,9 +444,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_pre_compute_synchronisation_variables(self):
         expected_td = self.match_to_sync.tracking_data.copy()
-        expected_td["ball_acceleration_sqrt"] = np.sqrt(
-            expected_td["ball_acceleration"]
-        )
         expected_td["goal_angle_home_team"] = [
             0.19953378014112227,
             0.2249295894248988,
