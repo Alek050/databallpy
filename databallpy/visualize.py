@@ -625,7 +625,9 @@ def save_match_clip(
                         match.away_players_column_ids(),
                     ]:
                         for col_id in col_ids:
-                            if pd.isnull(td.loc[idx, [col_id + "_vx", col_id + "_x"]]).any():
+                            if pd.isnull(
+                                td.loc[idx, [col_id + "_vx", col_id + "_x"]]
+                            ).any():
                                 continue
 
                             arrow = mpatches.FancyArrowPatch(

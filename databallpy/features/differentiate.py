@@ -154,7 +154,12 @@ def _differentiate(
 
         dt = 1.0 / frame_rate
 
-        cols_to_drop = np.array([[c + f"_{new_name}", c + f"_{new_name[0]}x", c + f"_{new_name[0]}y"] for c in column_ids]).ravel()
+        cols_to_drop = np.array(
+            [
+                [c + f"_{new_name}", c + f"_{new_name[0]}x", c + f"_{new_name[0]}y"]
+                for c in column_ids
+            ]
+        ).ravel()
         df.drop(cols_to_drop, axis=1, errors="ignore", inplace=True)
 
         res_dict = {}

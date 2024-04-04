@@ -8,7 +8,6 @@ from databallpy.features.differentiate import (
     get_acceleration,
     get_velocity,
 )
-from databallpy.utils.utils import MISSING_INT
 
 
 class TestDifferentiate(unittest.TestCase):
@@ -61,19 +60,18 @@ class TestDifferentiate(unittest.TestCase):
                     np.nan,
                     np.sqrt(10),
                 ],
-                "ball_ax": [1., 2.0, -.5, np.nan, -2.0, np.nan],
+                "ball_ax": [1.0, 2.0, -0.5, np.nan, -2.0, np.nan],
                 "ball_ay": [1.0, -3, -0.5, np.nan, 0.0, np.nan],
                 "ball_acceleration": [
                     np.sqrt(2),
                     np.sqrt(13),
-                    np.sqrt(.5),
+                    np.sqrt(0.5),
                     np.nan,
                     np.sqrt(4),
                     np.nan,
                 ],
             },
         )
-
 
     def test_get_velocity(self):
         input_df = self.input.copy()
@@ -88,7 +86,7 @@ class TestDifferentiate(unittest.TestCase):
         input_df.drop(columns=["ball_velocity"], inplace=True)
         with self.assertRaises(ValueError):
             get_acceleration(input_df, ["ball"], self.framerate)
-        
+
         input_df = self.input.copy()
         output = get_acceleration(input_df, ["ball"], self.framerate)
         pd.testing.assert_frame_equal(output, self.expected_output_acc)
