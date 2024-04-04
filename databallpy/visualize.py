@@ -625,7 +625,7 @@ def save_match_clip(
                         match.away_players_column_ids(),
                     ]:
                         for col_id in col_ids:
-                            if pd.isnull(td.loc[idx, col_id + "_vx"]):
+                            if pd.isnull(td.loc[idx, [col_id + "_vx", col_id + "_x"]]).any():
                                 continue
 
                             arrow = mpatches.FancyArrowPatch(
@@ -636,7 +636,7 @@ def save_match_clip(
                             )
                             fig_obj = ax.add_patch(arrow)
                             variable_fig_objs.append(fig_obj)
-                    if not pd.isnull(td.loc[idx, "ball_vx"]):
+                    if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
                         arrow = mpatches.FancyArrowPatch(
                             td.loc[idx, ["ball_x", "ball_y"]].values,
                             td.loc[idx, ["ball_x", "ball_y"]].values

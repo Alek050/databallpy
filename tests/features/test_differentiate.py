@@ -3,7 +3,11 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.features.differentiate import _differentiate, get_velocity, get_acceleration
+from databallpy.features.differentiate import (
+    _differentiate,
+    get_acceleration,
+    get_velocity,
+)
 from databallpy.utils.utils import MISSING_INT
 
 
@@ -13,12 +17,19 @@ class TestDifferentiate(unittest.TestCase):
             {
                 "ball_x": [10, 20, -30, 40, np.nan, 60],
                 "ball_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_vx": [1, 2, 5, 1, np.nan, -3.],
-                "ball_vy": [1, 2, -5, 1, np.nan, 1.],
-                "ball_velocity": [np.sqrt(2), np.sqrt(8), np.sqrt(25), np.sqrt(2), np.nan, np.sqrt(10)],
+                "ball_vx": [1, 2, 5, 1, np.nan, -3.0],
+                "ball_vy": [1, 2, -5, 1, np.nan, 1.0],
+                "ball_velocity": [
+                    np.sqrt(2),
+                    np.sqrt(8),
+                    np.sqrt(25),
+                    np.sqrt(2),
+                    np.nan,
+                    np.sqrt(10),
+                ],
             }
         )
-        self.expected_output = pd.DataFrame(
+        self.expected_output_vel = pd.DataFrame(
             {
                 "ball_x": [10, 20, -30, 40, np.nan, 60],
                 "ball_y": [5, 12, -20, 30, np.nan, 60],
@@ -36,17 +47,54 @@ class TestDifferentiate(unittest.TestCase):
         )
         self.framerate = 1
 
+        self.expected_output_acc = pd.DataFrame(
+            {
+                "ball_x": [10, 20, -30, 40, np.nan, 60],
+                "ball_y": [5, 12, -20, 30, np.nan, 60],
+                "ball_vx": [1, 2, 5, 1, np.nan, -3.0],
+                "ball_vy": [1, 2, -5, 1, np.nan, 1.0],
+                "ball_velocity": [
+                    np.sqrt(2),
+                    np.sqrt(8),
+                    np.sqrt(25),
+                    np.sqrt(2),
+                    np.nan,
+                    np.sqrt(10),
+                ],
+                "ball_ax": [1., 2.0, -.5, np.nan, -2.0, np.nan],
+                "ball_ay": [1.0, -3, -0.5, np.nan, 0.0, np.nan],
+                "ball_acceleration": [
+                    np.sqrt(2),
+                    np.sqrt(13),
+                    np.sqrt(.5),
+                    np.nan,
+                    np.sqrt(4),
+                    np.nan,
+                ],
+            },
+        )
+
+
     def test_get_velocity(self):
         input_df = self.input.copy()
         output = get_velocity(input_df, ["ball"], self.framerate)
-        import pdb; pdb.set_trace()
-        pd.testing.assert_frame_equal(output, self.expected_output)
+        pd.testing.assert_frame_equal(output, self.expected_output_vel)
 
         with self.assertRaises(ValueError):
             get_velocity(input_df, ["ball"], self.framerate, filter_type="test")
-    
+
     def test_get_acceleration(self):
-        pass
+        input_df = self.input.copy()
+        input_df.drop(columns=["ball_velocity"], inplace=True)
+        with self.assertRaises(ValueError):
+            get_acceleration(input_df, ["ball"], self.framerate)
+        
+        input_df = self.input.copy()
+        output = get_acceleration(input_df, ["ball"], self.framerate)
+        pd.testing.assert_frame_equal(output, self.expected_output_acc)
+
+        with self.assertRaises(ValueError):
+            get_acceleration(input_df, ["ball"], self.framerate, filter_type="wrong")
 
     def test_differentiate_sg_filter(self):
         output = _differentiate(
@@ -65,8 +113,8 @@ class TestDifferentiate(unittest.TestCase):
             {
                 "ball_x": [10, 20, -30, 40, np.nan, 60],
                 "ball_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_vx": [10., -5., np.nan, np.nan, np.nan, np.nan],
-                "ball_vy": [7., -1.75, np.nan, np.nan, np.nan, np.nan],
+                "ball_vx": [10.0, -5.0, np.nan, np.nan, np.nan, np.nan],
+                "ball_vy": [7.0, -1.75, np.nan, np.nan, np.nan, np.nan],
                 "ball_velocity": [
                     np.sqrt(149),
                     np.sqrt(25 + 1.75**2),
@@ -102,7 +150,7 @@ class TestDifferentiate(unittest.TestCase):
                     np.sqrt(25 + 3.5**2),
                     np.sqrt(25 + 2.75**2),
                     np.sqrt(25 + 1.75**2),
-                    np.nan, 
+                    np.nan,
                     np.nan,
                     np.nan,
                 ],
@@ -123,4 +171,3 @@ class TestDifferentiate(unittest.TestCase):
                 poly_order=1,
                 column_ids=["ball"],
             )
-    

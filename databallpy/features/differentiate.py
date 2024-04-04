@@ -3,7 +3,6 @@ import pandas as pd
 
 from databallpy.utils.filters import filter_data
 from databallpy.utils.logging import create_logger
-from databallpy.utils.utils import MISSING_INT
 
 LOGGER = create_logger(__name__)
 
@@ -15,7 +14,7 @@ def get_acceleration(
     filter_type: str = None,
     window: int = 7,
     poly_order: int = 2,
-    max_val:float = np.nan
+    max_val: float = np.nan,
 ) -> pd.DataFrame:
     """Function that adds acceleration columns based on the position columns
 
@@ -27,7 +26,7 @@ def get_acceleration(
             Options are `moving_average` and `savitzky_golay`.
         window (int, optional): window size for the filter. Defaults to 7.
         poly_order (int, optional): polynomial order for the filter. Defaults to 2.
-        max_val (float, optional): maximum value for the acceleration. Defaults to 
+        max_val (float, optional): maximum value for the acceleration. Defaults to
             np.nan.
 
     Returns:
@@ -44,12 +43,12 @@ def get_acceleration(
                 raise ValueError(
                     f"Velocity was not found for {input_column} in the DataFrame. "
                     " Please calculate velocity first using get_velocity() function."
-                    )
+                )
 
         res_df = _differentiate(
             df,
             new_name="acceleration",
-            metric="velocity",
+            metric="v",
             frame_rate=framerate,
             filter_type=filter_type,
             window=window,
@@ -62,7 +61,7 @@ def get_acceleration(
     except Exception as e:
         LOGGER.exception(f"Found unexpected exception in get_acceleration(): \n{e}")
         raise e
-    
+
 
 def get_velocity(
     df: pd.DataFrame,
@@ -71,7 +70,7 @@ def get_velocity(
     filter_type: str = None,
     window: int = 7,
     poly_order: int = 2,
-    max_val: float = np.nan
+    max_val: float = np.nan,
 ) -> pd.DataFrame:
     """Function that adds velocity columns based on the position columns
 
@@ -126,26 +125,26 @@ def _differentiate(
     column_ids: list = None,
 ):
     """
-    Function that adds the differentiated values to the DataFrame.
+     Function that adds the differentiated values to the DataFrame.
 
-   Args:
-        df (pandas DataFrame): Position data in the x and y directions of players 
-            and ball.
-        metric (str): the metric to differentiate the value on. Note that 
-            f"{player}_{metric}x" and f"{player}_{metric}y" should exist.
-        new_name (str): the name of the magnitude. The first letter will be used
-            for the x and y directions. For example, f"{player}_vx" and
-            f"{player}_velocity" if new_name = "velocity".
-        frame_rate (int): the sample frequency of the data.
-        filter_type (str): the type of filter to use. Options are "moving average",
-            "savitzky_golay", or None.
-        window (int): the window size of the filter
-        max_val (float): The maximim value of the differentiated value. For 
-            instance, player speeds > 12 m/s are very unlikely.
-        poly_order (int): the polynomial order for the Savitzky-Golay filter.
+    Args:
+         df (pandas DataFrame): Position data in the x and y directions of players
+             and ball.
+         metric (str): the metric to differentiate the value on. Note that
+             f"{player}_{metric}x" and f"{player}_{metric}y" should exist.
+         new_name (str): the name of the magnitude. The first letter will be used
+             for the x and y directions. For example, f"{player}_vx" and
+             f"{player}_velocity" if new_name = "velocity".
+         frame_rate (int): the sample frequency of the data.
+         filter_type (str): the type of filter to use. Options are "moving average",
+             "savitzky_golay", or None.
+         window (int): the window size of the filter
+         max_val (float): The maximim value of the differentiated value. For
+             instance, player speeds > 12 m/s are very unlikely.
+         poly_order (int): the polynomial order for the Savitzky-Golay filter.
 
-    Returns:
-        df (pandas DataFrame): the DataFrame with the added columns.
+     Returns:
+         df (pandas DataFrame): the DataFrame with the added columns.
     """
 
     try:
@@ -155,7 +154,8 @@ def _differentiate(
 
         dt = 1.0 / frame_rate
 
-        columns_to_drop = 
+        cols_to_drop = np.array([[c + f"_{new_name}", c + f"_{new_name[0]}x", c + f"_{new_name[0]}y"] for c in column_ids]).ravel()
+        df.drop(cols_to_drop, axis=1, errors="ignore", inplace=True)
 
         res_dict = {}
         for player in column_ids:
@@ -165,10 +165,18 @@ def _differentiate(
             # remove outliers
             raw_differentiated = np.linalg.norm([gradient_x, gradient_y], axis=0)
             if not pd.isnull(max_val):
-                gradient_x[(raw_differentiated > max_val) & (gradient_x > max_val)] = max_val
-                gradient_x[(raw_differentiated > max_val) & (gradient_x < -max_val)] = -max_val
-                gradient_y[(raw_differentiated > max_val) & (gradient_y > max_val)] = max_val
-                gradient_y[(raw_differentiated > max_val) & (gradient_y < -max_val)] = -max_val
+                gradient_x[
+                    (raw_differentiated > max_val) & (gradient_x > max_val)
+                ] = max_val
+                gradient_x[
+                    (raw_differentiated > max_val) & (gradient_x < -max_val)
+                ] = -max_val
+                gradient_y[
+                    (raw_differentiated > max_val) & (gradient_y > max_val)
+                ] = max_val
+                gradient_y[
+                    (raw_differentiated > max_val) & (gradient_y < -max_val)
+                ] = -max_val
 
             # smoothing the signal
             if filter_type is not None:
@@ -187,7 +195,9 @@ def _differentiate(
 
             res_dict[player + f"_{new_name[0]}x"] = np.array(gradient_x)
             res_dict[player + f"_{new_name[0]}y"] = np.array(gradient_y)
-            res_dict[player + f"_{new_name}"] = np.linalg.norm([gradient_x, gradient_y], axis=0)
+            res_dict[player + f"_{new_name}"] = np.linalg.norm(
+                [gradient_x, gradient_y], axis=0
+            )
 
         df = pd.concat([df, pd.DataFrame(res_dict)], axis=1)
         return df
