@@ -12,9 +12,9 @@ def get_acceleration(
     input_columns: list,
     framerate: float,
     filter_type: str = None,
-    window: int = 7,
+    window: int = 25,
     poly_order: int = 2,
-    max_val: float = np.nan,
+    max_val: float = 7.0,
 ) -> pd.DataFrame:
     """Function that adds acceleration columns based on the position columns
 
@@ -24,13 +24,22 @@ def get_acceleration(
         framerate (float): framerate of the tracking data
         filter_type (str, optional): filter type to use. Defaults to None.
             Options are `moving_average` and `savitzky_golay`.
-        window (int, optional): window size for the filter. Defaults to 7.
+        window (int, optional): window size for the filter. Defaults to 25.
         poly_order (int, optional): polynomial order for the filter. Defaults to 2.
         max_val (float, optional): maximum value for the acceleration. Defaults to
-            np.nan.
+            7.0.
 
     Returns:
         pd.DataFrame: tracking data with the added acceleration columns
+
+    Raises:
+        ValueError: if filter_type is not one of `moving_average`, `savitzky_golay`,
+        or None.
+        ValueError: if velocity was not found in the DataFrame for the input_columns.
+
+    Note:
+        The function will delete the columns in input_columns with the acceleration if
+        they already exist.
     """
     try:
         if filter_type not in ["moving_average", "savitzky_golay", None]:
@@ -39,7 +48,10 @@ def get_acceleration(
                 "'savitzky_golay', None, got: {filter_type}"
             )
         for input_column in input_columns:
-            if input_column + "_velocity" not in df.columns:
+            if (
+                input_column + "_vx" not in df.columns
+                or input_column + "_vy" not in df.columns
+            ):
                 raise ValueError(
                     f"Velocity was not found for {input_column} in the DataFrame. "
                     " Please calculate velocity first using get_velocity() function."
@@ -70,7 +82,7 @@ def get_velocity(
     filter_type: str = None,
     window: int = 7,
     poly_order: int = 2,
-    max_val: float = np.nan,
+    max_val: float = 13.0,
 ) -> pd.DataFrame:
     """Function that adds velocity columns based on the position columns
 
@@ -82,10 +94,18 @@ def get_velocity(
             Options are `moving_average` and `savitzky_golay`.
         window (int, optional): window size for the filter. Defaults to 7.
         poly_order (int, optional): polynomial order for the filter. Defaults to 2.
-        max_val (float, optional): maximum value for the velocity. Defaults to np.nan.
+        max_val (float, optional): maximum value for the velocity. Defaults to 13.0
 
     Returns:
         pd.DataFrame: tracking data with the added velocity columns
+
+    Raises:
+        ValueError: if filter_type is not one of `moving_average`, `savitzky_golay`,
+        or None.
+
+    Note:
+        The function will delete the columns in input_columns with the velocity if
+        they already exist.
     """
     try:
         if filter_type not in ["moving_average", "savitzky_golay", None]:
@@ -120,31 +140,37 @@ def _differentiate(
     frame_rate: int = 25,
     filter_type: str = "savitzky_golay",
     window: int = 7,
-    max_val: int = np.nan,
+    max_val: float = np.nan,
     poly_order: int = 2,
-    column_ids: list = None,
-):
+    column_ids: list[str] | None = None,
+) -> pd.DataFrame:
     """
      Function that adds the differentiated values to the DataFrame.
 
     Args:
-         df (pandas DataFrame): Position data in the x and y directions of players
-             and ball.
-         metric (str): the metric to differentiate the value on. Note that
-             f"{player}_{metric}x" and f"{player}_{metric}y" should exist.
-         new_name (str): the name of the magnitude. The first letter will be used
-             for the x and y directions. For example, f"{player}_vx" and
-             f"{player}_velocity" if new_name = "velocity".
-         frame_rate (int): the sample frequency of the data.
-         filter_type (str): the type of filter to use. Options are "moving average",
-             "savitzky_golay", or None.
-         window (int): the window size of the filter
-         max_val (float): The maximim value of the differentiated value. For
-             instance, player speeds > 12 m/s are very unlikely.
-         poly_order (int): the polynomial order for the Savitzky-Golay filter.
+        df (pandas DataFrame): Position data in the x and y directions of players
+            and ball.
+        metric (str): the metric to differentiate the value on. Note that
+            f"{player}_{metric}x" and f"{player}_{metric}y" should exist.
+        new_name (str): the name of the magnitude. The first letter will be used
+            for the x and y directions. For example, f"{player}_vx" and
+            f"{player}_velocity" if new_name = "velocity".
+        frame_rate (int): the sample frequency of the data.
+        filter_type (str): the type of filter to use. Options are "moving average",
+            "savitzky_golay", or None.
+        window (int): the window size of the filter
+        max_val (float): The maximim value of the differentiated value. For
+            instance, player speeds > 12 m/s are very unlikely.
+        poly_order (int): the polynomial order for the Savitzky-Golay filter.
+        column_ids (list[str] | None): the columns to differentiate. If None, all
+            columns with the metric in the name will be used. Defaults to None.
 
      Returns:
          df (pandas DataFrame): the DataFrame with the added columns.
+
+    Note:
+        The function will delete the columns with the new_name if they
+        already exist.
     """
 
     try:
@@ -169,7 +195,7 @@ def _differentiate(
 
             # remove outliers
             raw_differentiated = np.linalg.norm([gradient_x, gradient_y], axis=0)
-            if not pd.isnull(max_val):
+            if not pd.isnull(max_val) and "ball" not in player:
                 gradient_x[
                     (raw_differentiated > max_val) & (gradient_x > max_val)
                 ] = max_val
