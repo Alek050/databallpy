@@ -1,6 +1,5 @@
 import io
 import os
-from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -30,7 +29,7 @@ LOGGER = create_logger(__name__)
 
 def load_metrica_tracking_data(
     tracking_data_loc: str, metadata_loc: str, verbose: bool = True
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load metrica tracking data.
 
     Args:
@@ -105,7 +104,7 @@ def load_metrica_tracking_data(
 
 def load_metrica_open_tracking_data(
     verbose: bool = True,
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load open dataset of metrica
 
     Args:
@@ -128,9 +127,9 @@ def load_metrica_open_tracking_data(
 
 
 def _get_tracking_data(
-    tracking_data_loc: Union[str, io.StringIO],
+    tracking_data_loc: str | io.StringIO,
     channels: dict,
-    pitch_dimensions: list,
+    pitch_dimensions: list[float, float],
     verbose: bool = True,
 ) -> pd.DataFrame:
     """Function to load the tracking data of metrica.

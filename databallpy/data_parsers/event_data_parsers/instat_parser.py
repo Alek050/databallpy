@@ -1,6 +1,5 @@
 import datetime as dt
 import json
-from typing import Tuple
 
 import chardet
 import numpy as np
@@ -40,7 +39,7 @@ instat_databallpy_map = {
 
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """This function retrieves the metadata and event data of a specific match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so

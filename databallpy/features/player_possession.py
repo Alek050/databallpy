@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import pandas as pd
 
@@ -19,7 +17,7 @@ def get_individual_player_possessions_and_duels(
     ba_threshold: float = 10.0,
     bd_threshold: float = 0.1,
     min_frames: int = 0,
-) -> Tuple[pd.Series, pd.Series]:
+) -> tuple[pd.Series, pd.Series]:
     """
     Function to calculate which player has possesion of the ball in accordance with the
     article of Vidal-Codina et al (2022) : "Automatic Event Detection in Football Using

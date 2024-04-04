@@ -43,7 +43,7 @@ class BaseOnBallEvent:
     start_y: float
     team_id: int
     team_side: str
-    pitch_size: tuple
+    pitch_size: tuple[float, float]
     _xt: float
 
     @property

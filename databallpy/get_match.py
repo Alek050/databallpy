@@ -1,6 +1,5 @@
 import os
 import pickle
-from typing import Tuple
 
 import pandas as pd
 
@@ -21,7 +20,7 @@ from databallpy.data_parsers.tracking_data_parsers import (
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _quality_check_tracking_data,
 )
-from databallpy.events import PassEvent
+from databallpy.events import BaseOnBallEvent, PassEvent
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.logging import create_logger
@@ -329,7 +328,7 @@ def load_tracking_data(
     tracking_metadata_loc: str,
     tracking_data_provider: str,
     verbose: bool = True,
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the tracking data of a match
 
     Args:
@@ -379,7 +378,7 @@ def load_tracking_data(
 
 def load_event_data(
     *, event_data_loc: str, event_metadata_loc: str, event_data_provider: str
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the event data of a match
 
     Args:
@@ -534,11 +533,11 @@ def merge_metadata_periods(
 
 
 def rescale_event_data(
-    tracking_pitch_dimensions: list,
-    event_pitch_dimensions: list,
+    tracking_pitch_dimensions: list[float, float],
+    event_pitch_dimensions: list[float, float],
     event_data: pd.DataFrame,
-    databallpy_events: dict,
-) -> Tuple[pd.DataFrame, dict]:
+    databallpy_events: dict[str, dict[str | int, BaseOnBallEvent]] = None,
+) -> tuple[pd.DataFrame, dict[str, dict[str | int, BaseOnBallEvent]]]:
     """Function to rescale the event data and databallpy events to the tracking data
     dimensions if the event data is not scaled in the same dimensions of the tracking
     data.
@@ -629,7 +628,7 @@ def align_player_and_team_ids(
 
 def merge_player_info(
     tracking_metadata: Metadata, event_metadata: Metadata
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Function to merge the player information of the tracking and event metadata
 
     Args:

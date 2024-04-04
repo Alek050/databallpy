@@ -3,7 +3,6 @@ import pickle
 import warnings
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -105,7 +104,7 @@ class Match:
     tracking_data_provider: str
     event_data: pd.DataFrame
     event_data_provider: str
-    pitch_dimensions: List[float]
+    pitch_dimensions: list[float, float]
     periods: pd.DataFrame
     frame_rate: int
     home_team_id: int
@@ -119,9 +118,9 @@ class Match:
     away_score: int
     away_formation: str
     country: str
-    shot_events: dict = field(default_factory=dict)
-    dribble_events: dict = field(default_factory=dict)
-    pass_events: dict = field(default_factory=dict)
+    shot_events: dict[int | str, ShotEvent] = field(default_factory=dict)
+    dribble_events: dict[int | str, DribbleEvent] = field(default_factory=dict)
+    pass_events: dict[int | str, PassEvent] = field(default_factory=dict)
     allow_synchronise_tracking_and_event_data: bool = False
     _shots_df: pd.DataFrame = None
     _dribbles_df: pd.DataFrame = None
@@ -133,7 +132,7 @@ class Match:
     # synchronisation of the tracking and event data
     _tracking_timestamp_is_precise: bool = False
     _event_timestamp_is_precise: bool = False
-    _periods_changed_playing_direction: List[int] = None
+    _periods_changed_playing_direction: list[int] = None
 
     def __repr__(self):
         return "databallpy.match.Match object: " + self.name
@@ -172,7 +171,7 @@ class Match:
         return f"{home_text} - {away_text} {date}"
 
     @requires_tracking_data
-    def home_players_column_ids(self) -> List[str]:
+    def home_players_column_ids(self) -> list[str]:
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -180,7 +179,7 @@ class Match:
         ]
 
     @requires_tracking_data
-    def away_players_column_ids(self) -> List[str]:
+    def away_players_column_ids(self) -> list[str]:
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -700,7 +699,7 @@ class Match:
     @requires_event_data
     def synchronise_tracking_and_event_data(
         self,
-        n_batches: Union[int, str] = "smart",
+        n_batches: int | str = "smart",
         verbose: bool = True,
         offset: int = 1.0,
     ):
@@ -709,7 +708,7 @@ class Match:
 
         Args:
             match (Match): Match object
-            n_batches (Union[int, str]): the number of batches that are created. A
+            n_batches (int or str): the number of batches that are created. A
                 higher number of batches reduces the time the code takes to load,
                 but reduces the accuracy for events close to the splits.
                 Default = 'smart'. If 'smart', the number of batches is determined

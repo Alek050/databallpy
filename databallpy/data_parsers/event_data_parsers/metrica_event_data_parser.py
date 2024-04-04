@@ -2,7 +2,6 @@ import datetime as dt
 import io
 import json
 import os
-from typing import Tuple, Union
 
 import chardet
 import numpy as np
@@ -34,7 +33,7 @@ metrica_databallpy_map = {
 
 def load_metrica_event_data(
     event_data_loc: str, metadata_loc: str
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the metrica event data.
 
     Args:
@@ -121,7 +120,7 @@ def load_metrica_event_data(
     return event_data, metadata, databallpy_events
 
 
-def load_metrica_open_event_data() -> Tuple[pd.DataFrame, Metadata]:
+def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
     """Function to load the open event data of metrica
 
     Returns:
@@ -142,7 +141,7 @@ def load_metrica_open_event_data() -> Tuple[pd.DataFrame, Metadata]:
     return load_metrica_event_data(raw_ed, raw_metadata)
 
 
-def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
+def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
     """Function to load metrica event data
 
     Args:
@@ -255,7 +254,7 @@ def _get_event_data(event_data_loc: Union[str, io.StringIO]) -> pd.DataFrame:
 
 
 def _get_databallpy_events(
-    event_data: pd.DataFrame, pitch_dimensions: tuple, home_team_id: int
+    event_data: pd.DataFrame, pitch_dimensions: tuple[float, float], home_team_id: int
 ) -> dict:
     """Function to get the databallpy events from the event data
 
@@ -313,7 +312,7 @@ def _get_databallpy_events(
 
 
 def _get_shot_event(
-    row: pd.Series, pitch_dimensions: tuple, home_team_id: int
+    row: pd.Series, pitch_dimensions: tuple[float, float], home_team_id: int
 ) -> ShotEvent:
     """Function to return a ShotEvent object from a row of the metrica
       event data
@@ -351,7 +350,7 @@ def _get_shot_event(
 
 
 def _get_pass_event(
-    row: pd.Series, pitch_dimensions: tuple, home_team_id: int
+    row: pd.Series, pitch_dimensions: tuple[float, float], home_team_id: int
 ) -> PassEvent:
     """Function to return a PassEvent object from a row of the metrica
      event data.
@@ -388,7 +387,7 @@ def _get_pass_event(
 
 
 def _get_dribble_event(
-    row: pd.Series, pitch_dimensions: tuple, home_team_id: int
+    row: pd.Series, pitch_dimensions: tuple[float, float], home_team_id: int
 ) -> DribbleEvent:
     """Function to return a DribbleEvent object from a row of the metrica
      event data.
