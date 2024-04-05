@@ -231,15 +231,22 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     i = 0
     for period in periods:
         if period.SessionType.text == "Period":
-            values = [int(x.text) for x in period.find_all("Value")]
-            periods_dict["start_frame"][i] = _to_int(values[0])
-            periods_dict["end_frame"][i] = _to_int(values[1])
-            periods_dict["start_datetime_td"][i] = pd.to_datetime(
-                period.find("Start").text, utc=True
-            )
-            periods_dict["end_datetime_td"][i] = pd.to_datetime(
-                period.find("End").text, utc=True
-            )
+            for param in period.find_all("ProviderParameter"):
+                if "Frame" not in param.Name.text:
+                    continue
+                value = param.Value.text
+                if "Start" in param.Name.text:
+                    dict_key = "start_frame"
+                    dt_key = "start_datetime_td"
+                    find_key = "Start"
+                else:
+                    dict_key = "end_frame"
+                    dt_key = "end_datetime_td"
+                    find_key = "End"
+                periods_dict[dict_key][i] = _to_int(value)
+                periods_dict[dt_key][i] = pd.to_datetime(
+                    period.find(find_key).text, utc=True
+                )
             i += 1
     periods_frames = pd.DataFrame(periods_dict)
 
