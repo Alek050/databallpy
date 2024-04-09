@@ -37,9 +37,7 @@ matplotlib = "^3.6.3"
 requests = "^2.28.2"
 scipy = "^1.11.1"
 pandas = "^2.1.0"
-scikit-learn = "^1.3.2"
 chardet = "^5.2.0"
-pyarrow = "^15.0.0"
 
 [tool.poetry.group.developing]
 optional = true
@@ -51,6 +49,8 @@ isort = "^5.11.4"
 jupyter = "^1.0.0"
 black = "^23.9.1"
 ipython-genutils = "^0.2.0"
+scikit-learn = "^1.3.2"
+pyarrow = "^15.0.0"
 
 [tool.poetry.group.docs]
 optional = true
@@ -65,6 +65,10 @@ myst-parser = "^2.0.0"
 
 [tool.poetry.group.profiler.dependencies]
 line-profiler = "^4.1.2"
+
+
+[tool.poetry.group.dev.dependencies]
+scikit-learn = "^1.4.1.post1"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
