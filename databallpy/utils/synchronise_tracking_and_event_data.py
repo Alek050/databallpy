@@ -19,7 +19,7 @@ def synchronise_tracking_and_event_data(
     home_team_id: int | str,
     n_batches: int | str = "smart",
     verbose: bool = True,
-) -> tuple[dict[int, int | str], dict[int, int]]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Function that synchronises tracking and event data using Needleman-Wunsch
        algorithmn. Based on: https://kwiatkowski.io/sync.soccer. The similarity
        function is used but information based on the specific event is added. For
@@ -47,8 +47,15 @@ def synchronise_tracking_and_event_data(
         'pass', 'shot', and 'dribble'
 
     Returns:
-        tuple: tuple containing the tracking frame to event id dictionary and the
-            tracking frame to the sync certainty dictionary
+        tuple: Tuple containing two DataFrames. The first DataFrame contains
+            information about the tracking data. The columns are:
+            - databallpy_event: the event type
+            - event_id: the event id
+            - sync_certainty: the certainty of the synchronisation
+            The second DataFrame contains information about the event data. The
+            columns are:
+            - tracking_frame: the frame in the tracking data that is synced to the event
+            - sync_certainty: the certainty of the synchronisation
     """
     try:
         event_data_to_sync = event_data[
