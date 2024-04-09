@@ -1,8 +1,8 @@
+import json
 import math
 import os
 from dataclasses import dataclass
 
-import joblib
 import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
@@ -10,6 +10,7 @@ from scipy.spatial import Delaunay
 from databallpy.events.base_event import BaseOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
+from databallpy.models.utils import scale_and_predict_logreg
 from databallpy.utils.utils import MISSING_INT
 
 
@@ -217,13 +218,18 @@ class ShotEvent(BaseOnBallEvent):
         if pd.isnull(self.ball_goal_distance) or pd.isnull(self.shot_angle):
             return np.nan
 
+        with open(f"{path}/xg_params.json", "r") as f:
+            xg_params = json.load(f)
+
         if self.type_of_play == "penalty":
             return 0.79
+
         elif self.type_of_play == "free_kick":
-            pipeline = joblib.load(f"{path}/xG_free_kick_pipeline.pkl")
-            return pipeline.predict_proba(
-                np.array([[self.ball_goal_distance, self.shot_angle]])
-            )[0, 1]
+            return scale_and_predict_logreg(
+                np.array([[self.ball_goal_distance, self.shot_angle]]),
+                xg_params["xG_by_free_kick"],
+            )[0]
+
         elif (
             self.type_of_play
             in [
@@ -234,15 +240,16 @@ class ShotEvent(BaseOnBallEvent):
             ]
             and "foot" not in self.body_part
         ):
-            pipeline = joblib.load(f"{path}/xG_by_head_pipeline.pkl")
-            return pipeline.predict_proba(
-                np.array([[self.ball_goal_distance, self.shot_angle]])
-            )[0, 1]
+            return scale_and_predict_logreg(
+                np.array([[self.ball_goal_distance, self.shot_angle]]),
+                xg_params["xG_by_head"],
+            )[0]
+
         else:  # take most general model, shot by foot
-            pipeline = joblib.load(f"{path}/xG_by_foot_pipeline.pkl")
-            return pipeline.predict_proba(
-                np.array([[self.ball_goal_distance, self.shot_angle]])
-            )[0, 1]
+            return scale_and_predict_logreg(
+                np.array([[self.ball_goal_distance, self.shot_angle]]),
+                xg_params["xG_by_foot"],
+            )[0]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ShotEvent):

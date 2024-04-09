@@ -1,12 +1,9 @@
-import math
-import os
 import unittest
 
-import joblib
+import numpy as np
 import pandas as pd
 
 from databallpy.events import BaseOnBallEvent, PassEvent
-from databallpy.features.angle import get_smallest_angle
 
 
 class TestBaseOnBallEvent(unittest.TestCase):
@@ -46,15 +43,6 @@ class TestBaseOnBallEvent(unittest.TestCase):
             set_piece="penalty",
             pass_length=10.0,
         )
-        distance_to_goal = math.dist([10, 11], [52.5, 0])
-
-        angle_to_goal = get_smallest_angle(
-            [10 - 52.5, 11 - 3.66], [10 - 52.5, 11 + 3.66], angle_format="degree"
-        )
-        dist_ang = distance_to_goal * angle_to_goal
-        path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "databallpy", "models"
-        )
 
         assert pass_event.xT == 0.797
 
@@ -70,65 +58,22 @@ class TestBaseOnBallEvent(unittest.TestCase):
         pass_event._xt = -1
         assert pass_event.xT == 0.001
 
-        throw_in_model = joblib.load(f"{path}/xT_throw_ins.pkl")
         pass_event.set_piece = "throw_in"
         pass_event._xt = -1
-        assert (
-            pass_event.xT == throw_in_model.predict([[distance_to_goal / 107.313]])[0]
-        )
+        np.testing.assert_almost_equal(pass_event.xT, 0.0)
 
-        free_kick_model = joblib.load(f"{path}/xT_free_kicks.pkl")
         pass_event.set_piece = "free_kick"
         pass_event._xt = -1
-        assert (
-            pass_event.xT
-            == free_kick_model.predict(
-                [
-                    [
-                        angle_to_goal / 24.265,
-                        distance_to_goal / 107.313,
-                        dist_ang / 419.069,
-                    ]
-                ]
-            )[0]
-        )
+        np.testing.assert_almost_equal(pass_event.xT, 0.0139, decimal=4)
 
-        open_play_model = joblib.load(f"{path}/xT_open_play.pkl")
         pass_event.set_piece = "no_set_piece"
         pass_event._xt = -1
-        assert (
-            pass_event.xT
-            == open_play_model.predict(
-                [
-                    [
-                        angle_to_goal / 125.493,
-                        distance_to_goal / 109.313,
-                        dist_ang / 419.195,
-                    ]
-                ]
-            )[0]
-        )
+        np.testing.assert_almost_equal(pass_event.xT, 0.0082, decimal=4)
 
         pass_event.set_piece = "unspecified_set_piece"
         pass_event._xt = -1
         pass_event.team_side = "away"
-        distance_to_goal = math.dist([10, 11], [-52.5, 0])
-        angle_to_goal = get_smallest_angle(
-            [10 + 52.5, 11 + 3.66], [10 + 52.5, 11 - 3.66], angle_format="degree"
-        )
-        dist_ang = distance_to_goal * angle_to_goal
-        assert pass_event.xT == max(
-            open_play_model.predict(
-                [
-                    [
-                        angle_to_goal / 125.493,
-                        distance_to_goal / 109.313,
-                        dist_ang / 419.195,
-                    ]
-                ]
-            )[0],
-            0.0,
-        )
+        np.testing.assert_almost_equal(pass_event.xT, 0.0041, decimal=4)
 
         with self.assertRaises(ValueError):
             pass_event.set_piece = "test"

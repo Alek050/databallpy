@@ -1,12 +1,15 @@
-import math
 import os
 from dataclasses import dataclass
 
-import joblib
 import numpy as np
 import pandas as pd
 
-from databallpy.features.angle import get_smallest_angle
+from databallpy.models.utils import get_xT_prediction
+
+path = os.path.join(os.path.dirname(__file__), "..", "models")
+FREE_KICK_XT = np.load(f"{path}/free_kick_xT.npy")
+OPEN_PLAY_XT = np.load(f"{path}/open_play_xT.npy")
+THROW_IN_XT = np.load(f"{path}/throw_in_xT.npy")
 
 
 @dataclass
@@ -67,35 +70,8 @@ class BaseOnBallEvent:
             else:
                 set_piece = "no_set_piece"
 
-            path = os.path.join(os.path.dirname(__file__), "..", "models")
-
-            if set_piece in [
-                "no_set_piece",
-                "free_kick",
-                "throw_in",
-                "unspecified_set_piece",
-            ]:
-                goal_loc = (
-                    np.array([self.pitch_size[0] / 2, 0.0])
-                    if self.team_side == "home"
-                    else np.array([-self.pitch_size[0] / 2, 0.0])
-                )
-                left_post = (
-                    np.array([self.pitch_size[0] / 2, 3.66])
-                    if self.team_side == "home"
-                    else np.array([-self.pitch_size[0] / 2, -3.66])
-                )
-                right_post = (
-                    np.array([self.pitch_size[0] / 2, -3.66])
-                    if self.team_side == "home"
-                    else np.array([-self.pitch_size[0] / 2, 3.66])
-                )
-                event_loc = np.array([self.start_x, self.start_y])
-                angle = get_smallest_angle(
-                    event_loc - left_post, event_loc - right_post, angle_format="degree"
-                )
-                distance = math.dist([self.start_x, self.start_y], goal_loc)
-                angle_distance = angle * distance
+            x = self.start_x if self.team_side == "home" else -self.start_x
+            y = self.start_y if self.team_side == "home" else -self.start_y
 
             if set_piece == "penalty":
                 self._xt = 0.797
@@ -106,40 +82,11 @@ class BaseOnBallEvent:
             elif set_piece == "kick_off":
                 self._xt = 0.001
             elif set_piece == "throw_in":
-                model = joblib.load(f"{path}/xT_throw_ins.pkl")
-                self._xt = np.clip(
-                    model.predict([[distance / 107.313]])[0], a_min=0, a_max=1
-                )
+                self._xt = get_xT_prediction(x, y, THROW_IN_XT)
             elif set_piece == "free_kick":
-                model = joblib.load(f"{path}/xT_free_kicks.pkl")
-                self._xt = np.clip(
-                    model.predict(
-                        [
-                            [
-                                angle / 24.265,
-                                distance / 107.313,
-                                angle_distance / 419.069,
-                            ]
-                        ]
-                    )[0],
-                    a_min=0,
-                    a_max=1,
-                )
+                self._xt = get_xT_prediction(x, y, FREE_KICK_XT)
             elif set_piece in ["no_set_piece", "unspecified_set_piece"]:
-                model = joblib.load(f"{path}/xT_open_play.pkl")
-                self._xt = np.clip(
-                    model.predict(
-                        [
-                            [
-                                angle / 125.493,
-                                distance / 109.313,
-                                angle_distance / 419.195,
-                            ]
-                        ]
-                    )[0],
-                    a_min=0,
-                    a_max=1,
-                )
+                self._xt = get_xT_prediction(x, y, OPEN_PLAY_XT)
             else:
                 raise ValueError(
                     "set_piece should be one of ['penalty', 'corner_kick', 'goal_kick',"
