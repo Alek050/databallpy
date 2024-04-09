@@ -376,7 +376,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            match=self.match_to_sync,
+            home_players=self.match_to_sync.home_players,
+            away_players=self.match_to_sync.away_players,
+            home_team_id=self.match_to_sync.home_team_id,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
@@ -403,7 +405,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            match=self.match_to_sync,
+            home_players=self.match_to_sync.home_players,
+            away_players=self.match_to_sync.away_players,
+            home_team_id=self.match_to_sync.home_team_id,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05, atol=1e-05)
 
@@ -430,7 +434,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             res = _create_sim_mat(
                 tracking_batch=tracking_data,
                 event_batch=event_data,
-                match=self.match_to_sync,
+                home_players=self.match_to_sync.home_players,
+                away_players=self.match_to_sync.away_players,
+                home_team_id=self.match_to_sync.home_team_id,
             )
             np.testing.assert_allclose(expected_res, res, rtol=1e-05)
 
@@ -513,8 +519,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                 "Europe/Amsterdam"
             ),
         ]
-        expected_td["databallpy_event"] = [None] * 13
-        expected_td["event_id"] = [MISSING_INT] * 13
 
         res_tracking_data = pre_compute_synchronisation_variables(
             tracking_data=self.match_to_sync.tracking_data.copy(),
