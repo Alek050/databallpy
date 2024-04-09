@@ -218,7 +218,7 @@ class ShotEvent(BaseOnBallEvent):
         if pd.isnull(self.ball_goal_distance) or pd.isnull(self.shot_angle):
             return np.nan
 
-        with open(f"{path}/xG_params.json", "r") as f:
+        with open(f"{path}/xg_params.json", "r") as f:
             xg_params = json.load(f)
 
         if self.type_of_play == "penalty":
