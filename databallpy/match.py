@@ -11,7 +11,13 @@ from tqdm import tqdm
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
+from databallpy.utils.match_utils import (
+    player_column_id_to_full_name,
+    player_id_to_column_id,
+)
 from databallpy.utils.synchronise_tracking_and_event_data import (
+    align_event_data_datetime,
+    pre_compute_synchronisation_variables,
     synchronise_tracking_and_event_data,
 )
 from databallpy.utils.utils import MISSING_INT, get_next_possession_frame
@@ -196,15 +202,9 @@ class Match:
         Returns:
             str: full name of the player
         """
-        shirt_num = int(column_id.split("_")[1])
-        if column_id[:4] == "home":
-            return self.home_players.loc[
-                self.home_players["shirt_num"] == shirt_num, "full_name"
-            ].iloc[0]
-        else:
-            return self.away_players.loc[
-                self.away_players["shirt_num"] == shirt_num, "full_name"
-            ].iloc[0]
+        return player_column_id_to_full_name(
+            self.home_players, self.away_players, column_id
+        )
 
     @property
     def preprocessing_status(self):
@@ -219,17 +219,11 @@ class Match:
         Returns:
             str: column id of the player, for instance "home_1"
         """
-        if (self.home_players["id"].eq(player_id)).any():
-            num = self.home_players[self.home_players["id"] == player_id][
-                "shirt_num"
-            ].iloc[0]
-            return f"home_{num}"
-        elif (self.away_players["id"].eq(player_id)).any():
-            num = self.away_players[self.away_players["id"] == player_id][
-                "shirt_num"
-            ].iloc[0]
-            return f"away_{num}"
-        else:
+        try:
+            return player_id_to_column_id(
+                self.home_players, self.away_players, player_id
+            )
+        except ValueError:
             LOGGER.error(
                 f"Player_id {player_id} is not in either one of the teams, could not "
                 "obtain column id of player in match.player_id_to_column_id()."
@@ -725,7 +719,7 @@ class Match:
             'pass', 'shot', and 'dribble'
 
         """
-        LOGGER.info("Trying to synchronise tracking and event data.")
+        LOGGER.info(f"Trying to synchronise tracking and event data of {self.name}.")
         if not self.allow_synchronise_tracking_and_event_data:
             message = (
                 "Synchronising tracking and event data is not allowed. The quality "
@@ -733,12 +727,57 @@ class Match:
             )
             LOGGER.error(message)
             raise DataBallPyError(message)
-        synchronise_tracking_and_event_data(
-            self,
+
+        self.tracking_data = pre_compute_synchronisation_variables(
+            self.tracking_data, self.frame_rate, self.pitch_dimensions
+        )
+        # reduce standard error by aligning trakcing and event data on first event
+        changed_event_data = align_event_data_datetime(
+            self.event_data.copy(), self.tracking_data, offset=offset
+        )
+
+        tracking_info, event_info = synchronise_tracking_and_event_data(
+            tracking_data=self.tracking_data,
+            event_data=changed_event_data,
+            home_players=self.home_players,
+            away_players=self.away_players,
+            home_team_id=self.home_team_id,
             n_batches=n_batches,
             verbose=verbose,
-            offset=offset,
         )
+        # update tracking and event data
+        self.tracking_data = pd.concat([self.tracking_data, tracking_info], axis=1)
+        self.event_data = pd.concat([self.event_data, event_info], axis=1)
+        self.tracking_data["databallpy_event"] = self.tracking_data[
+            "databallpy_event"
+        ].replace({np.nan: None})
+        self.tracking_data["event_id"] = (
+            self.tracking_data["event_id"]
+            .infer_objects(copy=False)
+            .fillna(MISSING_INT)
+            .astype(np.int64)
+        )
+        self.tracking_data["sync_certainty"] = self.tracking_data[
+            "sync_certainty"
+        ].infer_objects()
+        self.event_data["tracking_frame"] = (
+            self.event_data["tracking_frame"]
+            .infer_objects(copy=False)
+            .fillna(MISSING_INT)
+            .astype(np.int64)
+        )
+        self.event_data["sync_certainty"] = self.event_data[
+            "sync_certainty"
+        ].infer_objects()
+
+        # remove columns that are not needed anymore (added for synchronisation)
+        self.tracking_data.drop(
+            ["goal_angle_home_team", "goal_angle_away_team"],
+            axis=1,
+            inplace=True,
+        )
+
+        self._is_synchronised = True
 
     def __eq__(self, other):
         if isinstance(other, Match):

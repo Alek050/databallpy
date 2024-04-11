@@ -14,7 +14,7 @@ def anonymise_match(
     match: Match,
     keys_df: pd.DataFrame,
     base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True),
-) -> Match:
+) -> tuple[Match, pd.DataFrame]:
     """Function to anonymise a match. The function will replace all player names with a
     unique identifier as well as all teams. Furthermore, it will replace all player
     jersey numbers with a counter from 1 to n_players in that team. Finally, it will
@@ -38,7 +38,8 @@ def anonymise_match(
             Defaults to pd.to_datetime("1980-1-1 15:00:00", utc=True).
 
     Returns:
-        Match: anonymised match, potentially updated keys dataframe
+        tuple[Match, pd.DataFrame]: tuple containing the match with anonymised players
+            and teams and the potentially updated keys dataframe.
 
     Raises:
         ValueError: if base_time is not a timezone aware timestamp

@@ -109,4 +109,5 @@ def sigmoid(
     Returns:
         float | np.ndarray: The sigmoid function value(s) for the input value(s) x
     """
-    return a + (b / (1 + c * np.exp(d * -(x - e))))
+    in_exp = np.clip(d * -(x - e), a_min=-700, a_max=700)
+    return a + (b / (1 + c * np.exp(in_exp)))
