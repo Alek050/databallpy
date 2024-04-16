@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-MISSING_INT = -999
+from databallpy.utils.constants import MISSING_INT
 
 
 def _to_int(value) -> int:

@@ -4,9 +4,10 @@ from tqdm import tqdm
 
 from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.match_utils import player_id_to_column_id
-from databallpy.utils.utils import MISSING_INT, sigmoid
+from databallpy.utils.utils import sigmoid
 
 logger = create_logger(__name__)
 

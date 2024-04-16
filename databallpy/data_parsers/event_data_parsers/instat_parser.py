@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers import Metadata
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import utc_to_local_datetime
-from databallpy.utils.utils import MISSING_INT
 
 LOGGER = create_logger(__name__)
 

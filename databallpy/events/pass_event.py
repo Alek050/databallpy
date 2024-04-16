@@ -7,7 +7,7 @@ from scipy.spatial import Delaunay
 from databallpy.events.base_event import BaseOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.constants import MISSING_INT
 
 
 @dataclass

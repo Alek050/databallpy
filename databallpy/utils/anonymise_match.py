@@ -6,8 +6,8 @@ import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.match import Match
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.utils import MISSING_INT
 
 
 def anonymise_match(

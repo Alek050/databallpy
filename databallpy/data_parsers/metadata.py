@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
-from databallpy.utils.utils import MISSING_INT
 
 LOGGER = create_logger(__name__)
 

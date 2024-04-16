@@ -5,7 +5,7 @@ import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.constants import MISSING_INT
 
 TD_TRACAB = pd.DataFrame(
     {

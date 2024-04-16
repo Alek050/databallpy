@@ -7,7 +7,8 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.data_parsers import Metadata
-from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
+from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.utils import _to_float, _to_int
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:

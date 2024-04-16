@@ -7,8 +7,8 @@ import pandas as pd
 
 from databallpy.get_match import get_match
 from databallpy.match import Match
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 from expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,

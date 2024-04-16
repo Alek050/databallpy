@@ -17,9 +17,10 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import utc_to_local_datetime
-from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
+from databallpy.utils.utils import _to_float, _to_int
 
 LOGGER = create_logger(__name__)
 

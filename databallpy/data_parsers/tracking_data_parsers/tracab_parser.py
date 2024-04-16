@@ -18,9 +18,9 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import localize_datetime
-from databallpy.utils.utils import MISSING_INT
 
 LOGGER = create_logger(__name__)
 

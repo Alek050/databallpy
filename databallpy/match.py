@@ -9,6 +9,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
 from databallpy.utils.match_utils import (
@@ -20,7 +21,7 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     pre_compute_synchronisation_variables,
     synchronise_tracking_and_event_data,
 )
-from databallpy.utils.utils import MISSING_INT, get_next_possession_frame
+from databallpy.utils.utils import get_next_possession_frame
 from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__name__)

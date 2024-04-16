@@ -9,9 +9,9 @@ from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
 from databallpy.events import BaseOnBallEvent, DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
-from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__name__)
