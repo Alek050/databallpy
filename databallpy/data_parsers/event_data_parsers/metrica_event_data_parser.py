@@ -19,8 +19,9 @@ from databallpy.data_parsers.metrica_metadata_parser import (
     _update_metadata,
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
-from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
+from databallpy.utils.utils import _to_float, _to_int
 
 LOGGER = create_logger(__name__)
 

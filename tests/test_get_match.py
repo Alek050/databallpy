@@ -16,7 +16,7 @@ from databallpy.data_parsers.tracking_data_parsers import (
 )
 from databallpy.get_match import get_match, get_open_match, get_saved_match
 from databallpy.match import Match
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 from expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,

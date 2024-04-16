@@ -23,8 +23,8 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 from databallpy.events import BaseOnBallEvent, PassEvent
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
-from databallpy.utils.utils import MISSING_INT
 
 LOGGER = create_logger(__name__)
 

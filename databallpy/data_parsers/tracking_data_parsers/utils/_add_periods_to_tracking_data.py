@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.constants import MISSING_INT
 
 
 def _add_periods_to_tracking_data(
