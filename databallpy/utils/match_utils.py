@@ -1,5 +1,7 @@
 import pandas as pd
 
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+
 
 def player_column_id_to_full_name(
     home_players: pd.DataFrame, away_players: pd.DataFrame, column_id: str
@@ -46,3 +48,22 @@ def player_id_to_column_id(
         return f"away_{num}"
     else:
         raise ValueError(f"{player_id} is not in either one of the teams")
+
+
+def create_event_attributes_dataframe(
+    events: dict[str | int, ShotEvent | PassEvent | DribbleEvent]
+) -> pd.DataFrame:
+    """Function to create a DataFrame from a dictionary of events
+
+    Args:
+        events (dict[str | int, ShotEvent | PassEvent | DribbleEvent]):
+            The dictionary of events
+
+    Returns:
+        pd.DataFrame: DataFrame with the attributes of the events
+    """
+    attributes = list(events.values())[0].df_attributes
+    res_dict = {
+        attr: [getattr(event, attr) for event in events.values()] for attr in attributes
+    }
+    return pd.DataFrame(res_dict)

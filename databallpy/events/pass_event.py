@@ -58,6 +58,8 @@ class PassEvent(BaseOnBallEvent):
             model that is trained on the distance and angle to the goal, and the
             distance times the angle to the goal. See the notebook in the notebooks
             folder for more information on the model.
+        df_attributes (list[str]): list of attributes that are used to create a
+            DataFrame.
 
     Raises:
         TypeError: If any of the inputtypes is not correct
@@ -296,6 +298,27 @@ class PassEvent(BaseOnBallEvent):
                 f"set_piece should be one of {valid_set_pieces}, not {self.set_piece}"
             )
         _ = self._xt
+
+    @property
+    def df_attributes(self) -> list[str]:
+        base_attributes = super().base_df_attributes
+        return base_attributes + [
+            "outcome",
+            "player_id",
+            "end_x",
+            "end_y",
+            "pass_type",
+            "set_piece",
+            "receiver_id",
+            "pass_length",
+            "forward_distance",
+            "passer_goal_distance",
+            "pass_end_loc_goal_distance",
+            "opponents_in_passing_lane",
+            "pressure_on_passer",
+            "pressure_on_receiver",
+            "pass_goal_angle",
+        ]
 
 
 def get_opponents_in_passing_lane(
