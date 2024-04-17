@@ -13,6 +13,7 @@ from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
 from databallpy.utils.match_utils import (
+    create_event_attributes_dataframe,
     player_column_id_to_full_name,
     player_id_to_column_id,
 )
@@ -237,7 +238,8 @@ class Match:
         """Function to get all shots in the match
 
         Returns:
-            pd.DataFrame: DataFrame with all information of the shots in the match"""
+            pd.DataFrame: DataFrame with all information of the shots in the match
+        """
 
         if self._shots_df is None:
             LOGGER.info("Creating the match._shots_df dataframe in match.shots_df")
@@ -248,58 +250,9 @@ class Match:
                 self.synchronise_tracking_and_event_data(n_batches="smart")
             if self.is_synchronised:
                 self.add_tracking_data_features_to_shots()
-            res_dict = {
-                "event_id": [shot.event_id for shot in self.shot_events.values()],
-                "player_id": [shot.player_id for shot in self.shot_events.values()],
-                "period_id": [shot.period_id for shot in self.shot_events.values()],
-                "minutes": [shot.minutes for shot in self.shot_events.values()],
-                "seconds": [shot.seconds for shot in self.shot_events.values()],
-                "datetime": [shot.datetime for shot in self.shot_events.values()],
-                "start_x": [shot.start_x for shot in self.shot_events.values()],
-                "start_y": [shot.start_y for shot in self.shot_events.values()],
-                "team_id": [shot.team_id for shot in self.shot_events.values()],
-                "shot_outcome": [
-                    shot.shot_outcome for shot in self.shot_events.values()
-                ],
-                "y_target": [shot.y_target for shot in self.shot_events.values()],
-                "z_target": [shot.z_target for shot in self.shot_events.values()],
-                "body_part": [shot.body_part for shot in self.shot_events.values()],
-                "type_of_play": [
-                    shot.type_of_play for shot in self.shot_events.values()
-                ],
-                "first_touch": [shot.first_touch for shot in self.shot_events.values()],
-                "created_oppertunity": [
-                    shot.created_oppertunity for shot in self.shot_events.values()
-                ],
-                "related_event_id": [
-                    shot.related_event_id for shot in self.shot_events.values()
-                ],
-                "ball_goal_distance": [
-                    shot.ball_goal_distance for shot in self.shot_events.values()
-                ],
-                "ball_gk_distance": [
-                    shot.ball_gk_distance for shot in self.shot_events.values()
-                ],
-                "shot_angle": [shot.shot_angle for shot in self.shot_events.values()],
-                "gk_optimal_loc_distance": [
-                    shot.gk_optimal_loc_distance for shot in self.shot_events.values()
-                ],
-                "pressure_on_ball": [
-                    shot.pressure_on_ball for shot in self.shot_events.values()
-                ],
-                "n_obstructive_players": [
-                    shot.n_obstructive_players for shot in self.shot_events.values()
-                ],
-                "n_obstructive_defenders": [
-                    shot.n_obstructive_defenders for shot in self.shot_events.values()
-                ],
-                "goal_gk_distance": [
-                    shot.goal_gk_distance for shot in self.shot_events.values()
-                ],
-                "xG": [shot.xG for shot in self.shot_events.values()],
-                "xT": [shot.xT for shot in self.shot_events.values()],
-            }
-            self._shots_df = pd.DataFrame(res_dict)
+
+            self._shots_df = create_event_attributes_dataframe(self.shot_events)
+
             LOGGER.info(
                 "Successfully created match._shots_df dataframe in match.shots_df"
             )
@@ -318,49 +271,8 @@ class Match:
             LOGGER.info(
                 "Creating the match._dribbles_df dataframe in match.dribbles_df"
             )
-            res_dict = {
-                "event_id": [
-                    dribble.event_id for dribble in self.dribble_events.values()
-                ],
-                "player_id": [
-                    dribble.player_id for dribble in self.dribble_events.values()
-                ],
-                "period_id": [
-                    dribble.period_id for dribble in self.dribble_events.values()
-                ],
-                "minutes": [
-                    dribble.minutes for dribble in self.dribble_events.values()
-                ],
-                "seconds": [
-                    dribble.seconds for dribble in self.dribble_events.values()
-                ],
-                "datetime": [
-                    dribble.datetime for dribble in self.dribble_events.values()
-                ],
-                "start_x": [
-                    dribble.start_x for dribble in self.dribble_events.values()
-                ],
-                "start_y": [
-                    dribble.start_y for dribble in self.dribble_events.values()
-                ],
-                "team_id": [
-                    dribble.team_id for dribble in self.dribble_events.values()
-                ],
-                "related_event_id": [
-                    dribble.related_event_id for dribble in self.dribble_events.values()
-                ],
-                "duel_type": [
-                    dribble.duel_type for dribble in self.dribble_events.values()
-                ],
-                "outcome": [
-                    dribble.outcome for dribble in self.dribble_events.values()
-                ],
-                "has_opponent": [
-                    dribble.has_opponent for dribble in self.dribble_events.values()
-                ],
-                "xT": [dribble.xT for dribble in self.dribble_events.values()],
-            }
-            self._dribbles_df = pd.DataFrame(res_dict)
+            self._dribbles_df = create_event_attributes_dataframe(self.dribble_events)
+
             LOGGER.info(
                 "Successfully created match._dribbles_df dataframe in match.dribbles_df"
             )
@@ -377,50 +289,8 @@ class Match:
 
         if self._passes_df is None:
             LOGGER.info("Creating the match._passes_df dataframe in match.passes_df")
-            res_dict = {
-                "event_id": [pass_.event_id for pass_ in self.pass_events.values()],
-                "player_id": [pass_.player_id for pass_ in self.pass_events.values()],
-                "period_id": [pass_.period_id for pass_ in self.pass_events.values()],
-                "minutes": [pass_.minutes for pass_ in self.pass_events.values()],
-                "seconds": [pass_.seconds for pass_ in self.pass_events.values()],
-                "datetime": [pass_.datetime for pass_ in self.pass_events.values()],
-                "start_x": [pass_.start_x for pass_ in self.pass_events.values()],
-                "start_y": [pass_.start_y for pass_ in self.pass_events.values()],
-                "team_id": [pass_.team_id for pass_ in self.pass_events.values()],
-                "outcome": [pass_.outcome for pass_ in self.pass_events.values()],
-                "end_x": [pass_.end_x for pass_ in self.pass_events.values()],
-                "end_y": [pass_.end_y for pass_ in self.pass_events.values()],
-                "pass_length": [
-                    pass_.pass_length for pass_ in self.pass_events.values()
-                ],
-                "pass_type": [pass_.pass_type for pass_ in self.pass_events.values()],
-                "set_piece": [pass_.set_piece for pass_ in self.pass_events.values()],
-                "forward_distance": [
-                    pass_.forward_distance for pass_ in self.pass_events.values()
-                ],
-                "passer_goal_distance": [
-                    pass_.passer_goal_distance for pass_ in self.pass_events.values()
-                ],
-                "pass_end_loc_goal_distance": [
-                    pass_.pass_end_loc_goal_distance
-                    for pass_ in self.pass_events.values()
-                ],
-                "opponents_in_passing_lane": [
-                    pass_.opponents_in_passing_lane
-                    for pass_ in self.pass_events.values()
-                ],
-                "pressure_on_passer": [
-                    pass_.pressure_on_passer for pass_ in self.pass_events.values()
-                ],
-                "pressure_on_receiver": [
-                    pass_.pressure_on_receiver for pass_ in self.pass_events.values()
-                ],
-                "pass_goal_angle": [
-                    pass_.pass_goal_angle for pass_ in self.pass_events.values()
-                ],
-                "xT": [pass_.xT for pass_ in self.pass_events.values()],
-            }
-            self._passes_df = pd.DataFrame(res_dict)
+            self._passes_df = create_event_attributes_dataframe(self.pass_events)
+
             LOGGER.info(
                 "Successfully created match._passes_df dataframe in match.passes_df"
             )

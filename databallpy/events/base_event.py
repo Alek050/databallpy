@@ -35,6 +35,8 @@ class BaseOnBallEvent:
             that is trained on the distance and angle to the goal, and the distance
             times theangle to the goal. See the notebook in the notebooks folder for
             more information on the model.
+        base_df_attributes (list[str]): list of attributes that are used to create a
+            DataFrame
     """
 
     event_id: int
@@ -95,6 +97,21 @@ class BaseOnBallEvent:
                 )
 
         return self._xt
+
+    @property
+    def base_df_attributes(self) -> list[str]:
+        return [
+            "event_id",
+            "period_id",
+            "minutes",
+            "seconds",
+            "datetime",
+            "start_x",
+            "start_y",
+            "team_id",
+            "team_side",
+            "xT",
+        ]
 
     def __post_init__(self):
         if not isinstance(self.event_id, (np.integer, int)):

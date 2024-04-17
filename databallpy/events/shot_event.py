@@ -78,6 +78,8 @@ class ShotEvent(BaseOnBallEvent):
             is trained on the distance and angle to the goal, and the distance times
             the angle to the goal. See the notebook in the notebooks folder for more
             information on the model.
+        df_attributes (list[str]): list of attributes that are used to create a
+            DataFrame.
 
     Returns:
         ShotEvent: instance of the ShotEvent class
@@ -117,6 +119,31 @@ class ShotEvent(BaseOnBallEvent):
         if self.type_of_play in ["penalty", "free_kick"]:
             self.set_piece = self.type_of_play
         _ = self._xt
+
+    @property
+    def df_attributes(self) -> list[str]:
+        base_attributes = super().base_df_attributes
+        return base_attributes + [
+            "player_id",
+            "shot_outcome",
+            "y_target",
+            "z_target",
+            "body_part",
+            "type_of_play",
+            "first_touch",
+            "created_oppertunity",
+            "related_event_id",
+            "ball_goal_distance",
+            "ball_gk_distance",
+            "shot_angle",
+            "gk_optimal_loc_distance",
+            "pressure_on_ball",
+            "n_obstructive_players",
+            "n_obstructive_defenders",
+            "goal_gk_distance",
+            "xG",
+            "set_piece",
+        ]
 
     def add_tracking_data_features(
         self,

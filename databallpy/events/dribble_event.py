@@ -34,6 +34,8 @@ class DribbleEvent(BaseOnBallEvent):
             that is trained on the distance and angle to the goal, and the distance
             times the angle to the goal. See the notebook in the notebooks folder for
             more information on the model.
+        df_attributes (list[str]): list of attributes that are used to create a
+            DataFrame
 
     Raises:
         TypeError: when one of the input arguments is of the wrong type
@@ -68,6 +70,17 @@ class DribbleEvent(BaseOnBallEvent):
                 self.has_opponent == other.has_opponent,
             ]
             return all(result)
+
+    @property
+    def df_attributes(self) -> list[str]:
+        base_attributes = super().base_df_attributes
+        return base_attributes + [
+            "player_id",
+            "related_event_id",
+            "duel_type",
+            "outcome",
+            "has_opponent",
+        ]
 
     def copy(self):
         return DribbleEvent(
