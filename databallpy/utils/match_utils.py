@@ -1,6 +1,6 @@
 import pandas as pd
 
-from databallpy.events import BaseOnBallEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 
 
 def player_column_id_to_full_name(
@@ -51,12 +51,13 @@ def player_id_to_column_id(
 
 
 def create_event_attributes_dataframe(
-    events: dict[str | int, BaseOnBallEvent]
+    events: dict[str | int, ShotEvent | PassEvent | DribbleEvent]
 ) -> pd.DataFrame:
     """Function to create a DataFrame from a dictionary of events
 
     Args:
-        events (dict[str | int, BaseOnBallEvent]): The dictionary of events
+        events (dict[str | int, ShotEvent | PassEvent | DribbleEvent]):
+            The dictionary of events
 
     Returns:
         pd.DataFrame: DataFrame with the attributes of the events
