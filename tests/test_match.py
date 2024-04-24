@@ -988,6 +988,11 @@ class TestMatch(unittest.TestCase):
     def test_match__eq__(self):
         assert not self.expected_match_tracab_opta == pd.DataFrame()
 
+    def test_match_date(self):
+        assert self.expected_match_tracab_opta.date == pd.Timestamp(
+            "2023-01-14 16:46:39.720000+0100", tz="Europe/Amsterdam"
+        )
+
     def test_match_name(self):
         assert (
             self.expected_match_tracab_opta.name

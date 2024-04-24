@@ -155,22 +155,28 @@ class Match:
         return self._is_synchronised
 
     @property
+    def date(self) -> pd.Timestamp | None:
+        if "start_datetime_td" in self.periods.columns:
+            return self.periods.loc[
+                self.periods["period_id"] == 1, "start_datetime_td"
+            ].iloc[0]
+        elif "start_datetime_ed" in self.periods.columns:
+            return self.periods.loc[
+                self.periods["period_id"] == 1, "start_datetime_ed"
+            ].iloc[0]
+
+        return None
+
+    @property
     def name(self) -> str:
         home_text = f"{self.home_team_name} {self.home_score}"
         away_text = f"{self.away_score} {self.away_team_name}"
-        if "start_datetime_td" in self.periods.columns:
-            date = str(
-                self.periods.loc[
-                    self.periods["period_id"] == 1, "start_datetime_td"
-                ].iloc[0]
-            )[:19]
-        else:
-            date = str(
-                self.periods.loc[
-                    self.periods["period_id"] == 1, "start_datetime_ed"
-                ].iloc[0]
-            )[:19]
-        return f"{home_text} - {away_text} {date}"
+
+        date = self.date
+        if date is None:
+            return f"{home_text} - {away_text}"
+
+        return f"{home_text} - {away_text} {date.strftime('%Y-%m-%d %H:%M:%S')}"
 
     @requires_tracking_data
     def home_players_column_ids(self) -> List[str]:
