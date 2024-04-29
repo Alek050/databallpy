@@ -1002,6 +1002,10 @@ class TestMatch(unittest.TestCase):
             self.expected_match_opta.name == "TeamOne 3 - 1 TeamTwo 2023-01-22 12:18:32"
         )
 
+    def test_match_name_no_date(self):
+        self.expected_match_opta.periods = self.expected_match_opta.periods.drop(columns=["start_datetime_td", "start_datetime_ed"], errors="ignore")
+        assert self.expected_match_opta.name == "TeamOne 3 - 1 TeamTwo"
+
     def test_match_home_players_column_ids(self):
         assert self.expected_match_tracab_opta.home_players_column_ids() == [
             "home_34",
