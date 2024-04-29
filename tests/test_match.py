@@ -1003,10 +1003,11 @@ class TestMatch(unittest.TestCase):
         )
 
     def test_match_name_no_date(self):
-        self.expected_match_opta.periods = self.expected_match_opta.periods.drop(
+        match = self.expected_match_tracab_opta.copy()
+        match.periods = match.periods.drop(
             columns=["start_datetime_td", "start_datetime_ed"], errors="ignore"
         )
-        assert self.expected_match_opta.name == "TeamOne 3 - 1 TeamTwo"
+        assert match.name == "TeamOne 3 - 1 TeamTwo"
 
     def test_match_home_players_column_ids(self):
         assert self.expected_match_tracab_opta.home_players_column_ids() == [
