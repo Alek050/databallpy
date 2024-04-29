@@ -1,22 +1,26 @@
-import warnings
-from typing import Tuple, Union
-
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from databallpy.features.angle import get_smallest_angle
+from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
-from databallpy.utils.utils import MISSING_INT
-from databallpy.utils.warnings import DataBallPyWarning
+from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.logging import create_logger
+from databallpy.utils.match_utils import player_id_to_column_id
+from databallpy.utils.utils import sigmoid
+
+logger = create_logger(__name__)
 
 
 def synchronise_tracking_and_event_data(
-    match,
-    n_batches: Union[int, str] = "smart",
+    tracking_data: pd.DataFrame,
+    event_data: pd.DataFrame,
+    home_players: pd.DataFrame,
+    away_players: pd.DataFrame,
+    home_team_id: int | str,
+    n_batches: int | str = "smart",
     verbose: bool = True,
-    offset: float = 1.0,
-):
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Function that synchronises tracking and event data using Needleman-Wunsch
        algorithmn. Based on: https://kwiatkowski.io/sync.soccer. The similarity
        function is used but information based on the specific event is added. For
@@ -24,7 +28,11 @@ def synchronise_tracking_and_event_data(
        the ball should move towards the goal.
 
     Args:
-        match (Match): Match object
+        tracking_data (pd.DataFrame): Tracking data of the match
+        event_data (pd.DataFrame): Event data of the match
+        home_players (pd.DataFrame): DataFrame containing all the home players
+        away_players (pd.DataFrame): DataFrame containing all the away players
+        home_team_id (int | str): id of the home team
         n_batches (int, str): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = "smart".
@@ -35,124 +43,117 @@ def synchronise_tracking_and_event_data(
             other events, such as yellow cards might not be perfectly synced.
         verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
-        offset (float, optional): Offset in seconds that is added to the difference
-            between the first event and the first tracking frame. This is done because
-            this way the event is synced to the last frame the ball is close to a
-            player. Which often corresponds with the event (pass and shots).
-            Defaults to 1.0.
 
     Currently works for the following databallpy_events:
         'pass', 'shot', and 'dribble'
+
+    Returns:
+        tuple: Tuple containing two DataFrames. The first DataFrame contains
+            information about the tracking data. The columns are:
+            - databallpy_event: the event type
+            - event_id: the event id
+            - sync_certainty: the certainty of the synchronisation
+            The second DataFrame contains information about the event data. The
+            columns are:
+            - tracking_frame: the frame in the tracking data that is synced to the event
+            - sync_certainty: the certainty of the synchronisation
     """
+    try:
+        event_data_to_sync = event_data[
+            event_data["databallpy_event"].isin(["pass", "shot", "dribble"])
+        ]
 
-    events_to_sync = [
-        "pass",
-        "shot",
-        "dribble",
-    ]
-
-    tracking_data = match.tracking_data
-    event_data = match.event_data
-    tracking_data = pre_compute_synchronisation_variables(
-        tracking_data, match.frame_rate, match.pitch_dimensions, match.periods
-    )
-    event_data["tracking_frame"] = MISSING_INT
-
-    mask_events_to_sync = event_data["databallpy_event"].isin(events_to_sync)
-    event_data_to_sync = event_data[mask_events_to_sync].copy()
-    if not (match.tracking_timestamp_is_precise & match.event_timestamp_is_precise):
-        event_data_to_sync = align_event_data_datetime(
-            event_data_to_sync, tracking_data, offset=offset
+        if n_batches == "smart":
+            end_datetimes = create_smart_batches(tracking_data)
+        else:
+            end_datetimes = create_batches(
+                n_batches,
+                tracking_data,
+            )
+        logger.info(
+            f"Succesfully created batches. Number of batches: {len(end_datetimes)}"
         )
 
-    # check if timestamps are less than hour apart to see if
-    # timestamp conversion went right
-    td_first_ts = tracking_data.loc[
-        tracking_data["ball_status"] == "alive", "datetime"
-    ].iloc[0]
-    ed_first_ts = event_data_to_sync.iloc[0]["datetime"]
-    if abs(td_first_ts - ed_first_ts) > pd.Timedelta(seconds=4):
-        diff = abs(td_first_ts - ed_first_ts)
-        warnings.warn(
-            message=f"The tracking data and event data timestamps are {diff} "
-            f"apart: tracking data timestamp: {td_first_ts}; event data timestamp: "
-            f"{ed_first_ts}. We will allign the first tracking data timestamp with the"
-            " first event to correct for the differences in timestamp.",
-            category=DataBallPyWarning,
+        if verbose:
+            end_datetimes = tqdm(
+                end_datetimes,
+                desc="Syncing event and tracking data",
+                unit="batches",
+                leave=False,
+            )
+
+        # loop over batches
+        extra_tracking_info = pd.DataFrame(
+            index=tracking_data.index,
+            columns=["databallpy_event", "event_id", "sync_certainty"],
         )
-        event_data_to_sync = align_event_data_datetime(
-            event_data_to_sync, tracking_data, offset=offset
+        extra_event_info = pd.DataFrame(
+            index=event_data.index, columns=["tracking_frame", "sync_certainty"]
         )
+        batch_first_datetime = tracking_data["datetime"].iloc[0]
+        for batch_end_datetime in end_datetimes:
+            # create batches
+            event_mask = event_data_to_sync["datetime"].between(
+                batch_first_datetime, batch_end_datetime, inclusive="left"
+            )
+            tracking_mask = tracking_data["datetime"].between(
+                batch_first_datetime, batch_end_datetime, inclusive="left"
+            )
+            tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
+            event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
 
-    if n_batches == "smart":
-        end_datetimes = create_smart_batches(tracking_data)
-    else:
-        end_datetimes = create_batches(
-            n_batches,
-            tracking_data,
-        )
+            if len(event_batch) > 0:
+                sim_mat = _create_sim_mat(
+                    tracking_batch,
+                    event_batch,
+                    home_players,
+                    away_players,
+                    home_team_id,
+                )
+                event_frame_dict = _needleman_wunsch(sim_mat)
 
-    if verbose:
-        end_datetimes = tqdm(
-            end_datetimes,
-            desc="Syncing event and tracking data",
-            unit="batches",
-            leave=False,
-        )
+                # assign events to tracking data frames
+                for event, frame in event_frame_dict.items():
+                    event_id = int(event_batch.loc[event, "event_id"])
+                    event_type = event_batch.loc[event, "databallpy_event"]
+                    event_index = int(event_batch.loc[event, "index"])
+                    tracking_frame = int(tracking_batch.loc[frame, "index"])
+                    extra_tracking_info.loc[
+                        tracking_frame, "databallpy_event"
+                    ] = event_type
+                    extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
+                    extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
+                        frame, event
+                    ]
+                    extra_event_info.loc[event_index, "tracking_frame"] = tracking_frame
+                    extra_event_info.loc[event_index, "sync_certainty"] = sim_mat[
+                        frame, event
+                    ]
 
-    # loop over batches
-    batch_first_datetime = tracking_data["datetime"].iloc[0]
-    for batch_end_datetime in end_datetimes:
-        # create batches
-        event_mask = event_data_to_sync["datetime"].between(
-            batch_first_datetime, batch_end_datetime, inclusive="left"
-        )
-        tracking_mask = tracking_data["datetime"].between(
-            batch_first_datetime, batch_end_datetime, inclusive="left"
-        )
-        tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
-        event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
+            batch_first_datetime = batch_end_datetime
 
-        if len(event_batch) > 0:
-            sim_mat = _create_sim_mat(tracking_batch, event_batch, match)
-            event_frame_dict = _needleman_wunsch(sim_mat)
-            # assign events to tracking data frames
-            for event, frame in event_frame_dict.items():
-                event_id = int(event_batch.loc[event, "event_id"])
-                event_type = event_batch.loc[event, "databallpy_event"]
-                event_index = int(event_batch.loc[event, "index"])
-                tracking_frame = int(tracking_batch.loc[frame, "index"])
-                tracking_data.loc[tracking_frame, "databallpy_event"] = event_type
-                tracking_data.loc[tracking_frame, "event_id"] = event_id
-                event_data.loc[event_index, "tracking_frame"] = tracking_frame
-
-        batch_first_datetime = batch_end_datetime
-
-    tracking_data.drop(
-        [
-            "ball_acceleration_sqrt",
-            "goal_angle_home_team",
-            "goal_angle_away_team",
-        ],
-        axis=1,
-        inplace=True,
-    )
-
-    match.tracking_data = tracking_data
-    match.event_data = event_data
-
-    match._is_synchronised = True
+        logger.info("Succesfully synchronised tracking and event data")
+        return extra_tracking_info, extra_event_info
+    except Exception as e:
+        logger.exception(f"Failed to synchronise tracking and event data, error: {e}")
+        raise e
 
 
 def _create_sim_mat(
-    tracking_batch: pd.DataFrame, event_batch: pd.DataFrame, match
+    tracking_batch: pd.DataFrame,
+    event_batch: pd.DataFrame,
+    home_players: pd.DataFrame,
+    away_players: pd.DataFrame,
+    home_team_id: int | str,
 ) -> np.ndarray:
     """Function that creates similarity matrix between every frame and event in batch
 
     Args:
         tracking_batch (pd.DataFrame): batch of tracking data
         event_batch (pd.DataFrame): batch of event data
-        match (Match): Match class containing full_name_to_player_column_id function
+        home_players (pd.DataFrame): DataFrame containing all the home players
+        away_players (pd.DataFrame): DataFrame containing all the away players
+        home_team_id (int | str): id of the home team
 
     Returns:
         np.ndarray: array containing similarity scores between every frame and events,
@@ -174,14 +175,26 @@ def _create_sim_mat(
     ball_y_diff = track_by[:, np.newaxis] - event_y
     ball_loc_diff = np.hypot(ball_x_diff, ball_y_diff)
 
-    # Pre-compute time diff and ball diff for all events
-    time_ball_diff = np.abs(time_diff) + ball_loc_diff / 5
+    time_diff = sigmoid(np.abs(time_diff), e=5)
+    ball_diff = sigmoid(ball_loc_diff, d=5, e=6)
 
     for row in event_batch.itertuples():
         i = row.Index
 
+        # create array with all cost function variables
+        if row.databallpy_event == "pass":
+            total_shape = (len(tracking_batch), 5)
+        elif row.databallpy_event == "shot":
+            total_shape = (len(tracking_batch), 6)
+        elif row.databallpy_event == "dribble":
+            total_shape = (len(tracking_batch), 3)
+
+        total = np.zeros(total_shape)
+
         if not pd.isnull(row.player_id) and row.player_id != MISSING_INT:
-            column_id_player = match.player_id_to_column_id(player_id=row.player_id)
+            column_id_player = player_id_to_column_id(
+                home_players, away_players, player_id=row.player_id
+            )
             if f"{column_id_player}_x" not in tracking_batch.columns:
                 player_ball_diff = [np.nan] * len(tracking_batch)
             else:
@@ -192,34 +205,29 @@ def _create_sim_mat(
                     - tracking_batch[f"{column_id_player}_y"].values,
                 )
         else:
-            player_ball_diff = [np.nan] * len(tracking_batch)
-
-        # similarity function from: https://kwiatkowski.io/sync.soccer
-        # Added information based in the type of event.
-
-        # create array with all cost function variables
-        if row.databallpy_event == "pass":
-            total_shape = (len(tracking_batch), 4)
-        elif row.databallpy_event == "shot":
-            total_shape = (len(tracking_batch), 5)
-        elif row.databallpy_event == "dribble":
-            total_shape = (len(tracking_batch), 3)
-
-        total = np.zeros(total_shape)
+            player_ball_diff = np.array([np.nan] * len(tracking_batch))
 
         total[:, :3] = np.array(
-            [time_ball_diff[:, i] / 2, time_ball_diff[:, i] / 2, player_ball_diff]
+            [time_diff[:, i], ball_diff[:, i], sigmoid(player_ball_diff, d=5, e=2.5)]
         ).T
 
         if row.databallpy_event in ["shot", "pass"]:
-            total[:, 3] = 1 / tracking_batch["ball_acceleration_sqrt"].values.clip(
-                0.1
+            total[:, 3] = sigmoid(
+                -tracking_batch["ball_acceleration"].values, d=0.2, e=-25.0
             )  # ball acceleration
+            # the distance between player and ball should increase at the
+            # moment of a pass or shot
+            # negative is approaching, positive is moving away
+            raw = np.gradient(player_ball_diff)
+
+            total[:, 4] = sigmoid(raw, d=-8.0)
+
             if row.databallpy_event == "shot":
-                total[:, 4] = tracking_batch[
-                    f"goal_angle_{['home', 'away'][row.team_id != match.home_team_id]}"
+                angle = tracking_batch[
+                    f"goal_angle_{['home', 'away'][row.team_id != home_team_id]}"
                     "_team"
                 ].values
+                total[:, 5] = sigmoid(angle, d=6, e=0.2 * np.pi)
 
         # take the mean of all cost function variables.
         mask = np.isnan(total).all(axis=1)
@@ -227,10 +235,10 @@ def _create_sim_mat(
             total[mask] = np.nanmax(total)
 
         sim_mat[:, i] = np.nanmean(total, axis=1)
+
     # replace nan values with highest value, the algorithm will not assign these
     sim_mat[np.isnan(sim_mat)] = np.nanmax(sim_mat)
-    den = np.nanmax(np.nanmin(sim_mat, axis=1))  # scale similarity scores
-    sim_mat = np.exp(-sim_mat / den)
+    sim_mat = -sim_mat + 1  # low cost is better similarity
 
     return sim_mat
 
@@ -328,7 +336,6 @@ def pre_compute_synchronisation_variables(
     tracking_data: pd.DataFrame,
     frame_rate: int,
     pitch_dimensions: tuple,
-    periods: pd.DataFrame,
 ) -> pd.DataFrame:
     """Function that precomputes variables that are used in the synchronisation.
     The following variables are computed: ball_velocity, ball_acceleration,
@@ -338,8 +345,6 @@ def pre_compute_synchronisation_variables(
         tracking_data (pd.DataFrame): Tracking data of the match
         frame_rate (int): Frame rate of the tracking_data
         pitch_dimensions (tuple): Tuple containing the pitch dimensions
-        periods (pd.DataFrame): Periods of the match, with corresponding datetime
-            objects.
 
     Returns:
         pd.DataFrame: Tracking data with the precomputed variables.
@@ -365,10 +370,6 @@ def pre_compute_synchronisation_variables(
             max_val=150,
             column_ids=["ball"],
         )
-    # take the square root to decrease the quadratic effect of the data
-    tracking_data["ball_acceleration_sqrt"] = np.sqrt(
-        tracking_data["ball_acceleration"]
-    )
 
     # pre compute ball moving vector - ball goal vector angle
     goal_angle = get_smallest_angle(
@@ -394,23 +395,13 @@ def pre_compute_synchronisation_variables(
 
     tracking_data["goal_angle_away_team"] = np.concatenate([goal_angle, [np.nan]])
 
-    # Combine the calculated values into a DataFrame
-    new_columns = {
-        "databallpy_event": None,
-        "event_id": MISSING_INT,
-    }
-
-    tracking_data = pd.concat(
-        [tracking_data, pd.DataFrame(new_columns, index=tracking_data.index)], axis=1
-    )
-
     return tracking_data
 
 
 def create_batches(
     n_batches: int,
     tracking_data: pd.DataFrame,
-) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+) -> list[pd.Timestamp]:
     """Function that creates batches to loop over. The batches are created based on
     the number of batches per half. The first batch starts at the first frame of the
     period. The last batch ends at the last frame of the period. The batches are
@@ -470,7 +461,7 @@ def create_batches(
     return end_datetimes_total
 
 
-def create_smart_batches(tracking_data: pd.DataFrame) -> list:
+def create_smart_batches(tracking_data: pd.DataFrame) -> list[pd.Timestamp]:
     """Function that creates batches to loop over. The batches are created based on
     active periods of play. For every active period of play, it is checked when the
     last period of play ended. The split of the batches is chosen in such a way that

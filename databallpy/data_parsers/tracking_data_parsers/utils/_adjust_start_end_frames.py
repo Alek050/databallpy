@@ -1,8 +1,8 @@
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.utils import MISSING_INT
 
 
 def _adjust_start_end_frames(td: pd.DataFrame, metadata: Metadata) -> Metadata:

@@ -2,7 +2,6 @@ import subprocess
 import time
 import warnings
 from functools import wraps
-from typing import Tuple
 
 import matplotlib.animation as animation
 import matplotlib.patches as mpatches
@@ -44,11 +43,11 @@ def requires_ffmpeg(func):
 
 
 def plot_soccer_pitch(
-    field_dimen: tuple = (106.0, 68.0),
+    field_dimen: tuple[float, float] = (106.0, 68.0),
     pitch_color: str = "mediumseagreen",
     linewidth: int = 2,
     markersize: int = 20,
-) -> Tuple[plt.figure, plt.axes]:
+) -> tuple[plt.figure, plt.axes]:
     """A function to plot a soccer pitch
     Note: relies heavily on https://github.com/Friends-of-Tracking-Data-FoTD/
     LaurieOnTracking/blob/master/Metrica_Viz.py
@@ -261,7 +260,7 @@ def plot_events(
     color_by_col: str = None,
     team_colors: list = ["orange", "red"],
     title: str = None,
-) -> Tuple[plt.figure, plt.axes]:
+) -> tuple[plt.figure, plt.axes]:
     """Function to plot the locations of specific events
 
     Args:
@@ -626,7 +625,9 @@ def save_match_clip(
                         match.away_players_column_ids(),
                     ]:
                         for col_id in col_ids:
-                            if pd.isnull(td.loc[idx, col_id + "_vx"]):
+                            if pd.isnull(
+                                td.loc[idx, [col_id + "_vx", col_id + "_x"]]
+                            ).any():
                                 continue
 
                             arrow = mpatches.FancyArrowPatch(
@@ -637,6 +638,16 @@ def save_match_clip(
                             )
                             fig_obj = ax.add_patch(arrow)
                             variable_fig_objs.append(fig_obj)
+                    if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
+                        arrow = mpatches.FancyArrowPatch(
+                            td.loc[idx, ["ball_x", "ball_y"]].values,
+                            td.loc[idx, ["ball_x", "ball_y"]].values
+                            + td.loc[idx, ["ball_vx", "ball_vy"]].values,
+                            mutation_scale=10,
+                            color="black",
+                        )
+                        fig_obj = ax.add_patch(arrow)
+                        variable_fig_objs.append(fig_obj)
 
                 # Scatter plot the teams
                 for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):

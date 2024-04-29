@@ -1,17 +1,17 @@
 import warnings
-from typing import Tuple
 
 import bs4
+import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.events import BaseOnBallEvent, DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
-from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__name__)
@@ -176,7 +176,7 @@ OPPOSITE_RELATED_EVENT_ID = 233  # used for dribbles
 
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
-) -> Tuple[pd.DataFrame, Metadata, dict]:
+) -> tuple[pd.DataFrame, Metadata, dict[str, dict[str, dict[str, BaseOnBallEvent]]]]:
     """This function retrieves the metadata and event data of a specific match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
@@ -286,10 +286,11 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     Returns:
         MetaData: all metadata information of the current match
     """
-    file = open(f7_loc, "r")
-    lines = file.read()
+    with open(f7_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(f7_loc, "r", encoding=encoding) as file:
+        lines = file.read()
     soup = BeautifulSoup(lines, "xml")
-    file.close()
 
     if len(soup.find_all("SoccerDocument")) > 1:
         # Multiple matches found in f7.xml file
@@ -456,7 +457,7 @@ def _load_event_data(
     country: str,
     away_team_id: int,
     pitch_dimensions: list = [106.0, 68.0],
-) -> Tuple[pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, dict[str, dict[str | int, BaseOnBallEvent]]]:
     """Function to load the f27 .xml, the events of the match.
     Note: this function does ignore most qualifiers for now.
 
@@ -469,14 +470,17 @@ def _load_event_data(
 
     Returns:
         pd.DataFrame: all events of the match in a pd dataframe
-        dict: dict with "shot_events" as key and a dict with the ShotEvent instances
+        dict: dict with "shot_events", "dribble_events", and "pass_events"
+             as key and a dict with the BaseOnBallEvent instances
     """
 
     dribble_events = {}
     shot_events = {}
     pass_events = {}
 
-    with open(f24_loc, "r") as file:
+    with open(f24_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(f24_loc, "r", encoding=encoding) as file:
         lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
@@ -585,7 +589,9 @@ def _load_event_data(
 
 
 def _make_pass_instance(
-    event: bs4.element.Tag, away_team_id: int, pitch_dimensions: list = [106.0, 68.0]
+    event: bs4.element.Tag,
+    away_team_id: int,
+    pitch_dimensions: list[float, float] = [106.0, 68.0],
 ) -> PassEvent:
     """Function to create a pass class based on the qualifiers of the event
 
@@ -670,6 +676,9 @@ def _make_pass_instance(
         datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
+        pitch_size=pitch_dimensions,
+        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
+        _xt=-1.0,
         outcome=outcome,
         team_id=int(event.attrs["team_id"]),
         player_id=int(event.attrs["player_id"]),
@@ -681,7 +690,9 @@ def _make_pass_instance(
 
 
 def _make_shot_event_instance(
-    event: bs4.element.Tag, away_team_id: int, pitch_dimensions: list = [106.0, 68.0]
+    event: bs4.element.Tag,
+    away_team_id: int,
+    pitch_dimensions: list[float, float] = [106.0, 68.0],
 ):
     """Function to create a shot class based on the qualifiers of the event
 
@@ -783,6 +794,9 @@ def _make_shot_event_instance(
         datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
+        _xt=-1.0,
+        pitch_size=pitch_dimensions,
+        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
         team_id=int(event.attrs["team_id"]),
         shot_outcome=shot_outcome,
         y_target=y_target,
@@ -796,7 +810,9 @@ def _make_shot_event_instance(
 
 
 def _make_dribble_event_instance(
-    event: bs4.element.Tag, away_team_id: int, pitch_dimensions: list = [106.0, 68.0]
+    event: bs4.element.Tag,
+    away_team_id: int,
+    pitch_dimensions: list[float, float] = [106.0, 68.0],
 ) -> DribbleEvent:
     """Function to create a dribble class based on the qualifiers of the event
 
@@ -844,6 +860,9 @@ def _make_dribble_event_instance(
         datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
+        pitch_size=pitch_dimensions,
+        _xt=-1.0,
+        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
         team_id=int(event.attrs["team_id"]),
         related_event_id=related_event_id,
         duel_type=duel_type,
@@ -879,8 +898,8 @@ def _get_valid_opta_datetime(event: bs4.element.Tag) -> Timestamp:
 
 
 def _rescale_opta_dimensions(
-    x: float, y: float, pitch_dimensions: list = [106.0, 68.0]
-) -> Tuple[float, float]:
+    x: float, y: float, pitch_dimensions: list[float, float] = [106.0, 68.0]
+) -> tuple[float, float]:
     """Function to rescale the x and y coordinates from the opta data to the pitch
     dimensions. This funciton assumes taht the x and y coordinates range from 0 to 100,
     with (0, 0) being the bottom left corner of the pitch.
@@ -892,7 +911,7 @@ def _rescale_opta_dimensions(
             Defaults to [106.0, 68.0].
 
     Returns:
-        Tuple[float, float]: rescaled x and y coordinates
+        tuple[float, float]: rescaled x and y coordinates
     """
     x = x / 100 * pitch_dimensions[0] - (pitch_dimensions[0] / 2)
     y = y / 100 * pitch_dimensions[1] - (pitch_dimensions[1] / 2)
@@ -900,8 +919,10 @@ def _rescale_opta_dimensions(
 
 
 def _update_pass_outcome(
-    event_data: pd.DataFrame, shot_events: dict, pass_events: dict
-) -> dict:
+    event_data: pd.DataFrame,
+    shot_events: dict[str | int, ShotEvent],
+    pass_events: dict[str | int, PassEvent],
+) -> dict[str | int, PassEvent]:
     """Function to update the outcome of passes that result in a shot that is scored to
     'assist'. This function is needed because the opta data does not provide the
     outcome of passes that result in a goal.

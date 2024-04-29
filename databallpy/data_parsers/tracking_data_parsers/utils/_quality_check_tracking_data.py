@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.differentiate import _differentiate
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 
 

@@ -3,11 +3,11 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from databallpy.events.base_event import BaseEvent
+from databallpy.events.base_event import BaseOnBallEvent
 
 
 @dataclass
-class DribbleEvent(BaseEvent):
+class DribbleEvent(BaseOnBallEvent):
     """Class for dribble events
 
     Args:
@@ -18,6 +18,9 @@ class DribbleEvent(BaseEvent):
         datetime (pd.Timestamp): datetime at which the event occured
         start_x (float): x coordinate of the start location of the event
         start_y (float): y coordinate of the start location of the event
+        pitch_size (tuple): size of the pitch in meters.
+        team_side (str): side of the team that performed the event, either
+            ["home", "away"]
         team_id (int): id of the team that performed the event
         player_id (int): id of the player that performed the event
         related_event_id (int): id of the event that the dribble is related to
@@ -25,6 +28,14 @@ class DribbleEvent(BaseEvent):
             ["offensive", "defensive"].
         outcome (bool): whether the dribble was successful or not
         has_opponent (bool): whether the dribble has an opponent in the area or not
+
+    Attributes:
+        xT (float): expected threat of the event. This is calculated using a model
+            that is trained on the distance and angle to the goal, and the distance
+            times the angle to the goal. See the notebook in the notebooks folder for
+            more information on the model.
+        df_attributes (list[str]): list of attributes that are used to create a
+            DataFrame
 
     Raises:
         TypeError: when one of the input arguments is of the wrong type
@@ -42,6 +53,7 @@ class DribbleEvent(BaseEvent):
     def __post_init__(self):
         super().__post_init__()
         self._check_datatypes()
+        _ = self._xt
 
     def __eq__(self, other):
         if not isinstance(other, DribbleEvent):
@@ -59,6 +71,17 @@ class DribbleEvent(BaseEvent):
             ]
             return all(result)
 
+    @property
+    def df_attributes(self) -> list[str]:
+        base_attributes = super().base_df_attributes
+        return base_attributes + [
+            "player_id",
+            "related_event_id",
+            "duel_type",
+            "outcome",
+            "has_opponent",
+        ]
+
     def copy(self):
         return DribbleEvent(
             event_id=self.event_id,
@@ -68,6 +91,9 @@ class DribbleEvent(BaseEvent):
             datetime=self.datetime,
             start_x=self.start_x,
             start_y=self.start_y,
+            pitch_size=self.pitch_size,
+            team_side=self.team_side,
+            _xt=self._xt,
             team_id=self.team_id,
             player_id=self.player_id,
             related_event_id=self.related_event_id,

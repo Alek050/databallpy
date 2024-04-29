@@ -7,8 +7,8 @@ import pandas as pd
 
 from databallpy.get_match import get_match
 from databallpy.match import Match
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 from expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
@@ -1045,11 +1045,6 @@ class TestMatch(unittest.TestCase):
                     SHOT_EVENTS_OPTA_TRACAB[2512690516].event_id,
                     SHOT_EVENTS_OPTA_TRACAB[2512690517].event_id,
                 ],
-                "player_id": [
-                    SHOT_EVENTS_OPTA_TRACAB[2512690515].player_id,
-                    SHOT_EVENTS_OPTA_TRACAB[2512690516].player_id,
-                    SHOT_EVENTS_OPTA_TRACAB[2512690517].player_id,
-                ],
                 "period_id": [
                     SHOT_EVENTS_OPTA_TRACAB[2512690515].period_id,
                     SHOT_EVENTS_OPTA_TRACAB[2512690516].period_id,
@@ -1084,6 +1079,21 @@ class TestMatch(unittest.TestCase):
                     SHOT_EVENTS_OPTA_TRACAB[2512690515].team_id,
                     SHOT_EVENTS_OPTA_TRACAB[2512690516].team_id,
                     SHOT_EVENTS_OPTA_TRACAB[2512690517].team_id,
+                ],
+                "team_side": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].team_side,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].team_side,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690517].team_side,
+                ],
+                "xT": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].xT,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].xT,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690517].xT,
+                ],
+                "player_id": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].player_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].player_id,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690517].player_id,
                 ],
                 "shot_outcome": [
                     SHOT_EVENTS_OPTA_TRACAB[2512690515].shot_outcome,
@@ -1134,6 +1144,11 @@ class TestMatch(unittest.TestCase):
                 "n_obstructive_defenders": [MISSING_INT, MISSING_INT, MISSING_INT],
                 "goal_gk_distance": [np.nan, np.nan, np.nan],
                 "xG": [np.nan, np.nan, np.nan],
+                "set_piece": [
+                    SHOT_EVENTS_OPTA_TRACAB[2512690515].set_piece,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690516].set_piece,
+                    SHOT_EVENTS_OPTA_TRACAB[2512690517].set_piece,
+                ],
             }
         )
         match = self.expected_match_tracab_opta.copy()
@@ -1400,7 +1415,6 @@ class TestMatch(unittest.TestCase):
         expected_df = pd.DataFrame(
             {
                 "event_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].event_id],
-                "player_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].player_id],
                 "period_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].period_id],
                 "minutes": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].minutes],
                 "seconds": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].seconds],
@@ -1408,6 +1422,9 @@ class TestMatch(unittest.TestCase):
                 "start_x": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].start_x],
                 "start_y": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].start_y],
                 "team_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].team_id],
+                "team_side": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].team_side],
+                "xT": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].xT],
+                "player_id": [DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].player_id],
                 "related_event_id": [
                     DRIBBLE_EVENTS_OPTA_TRACAB[2499594285].related_event_id
                 ],
@@ -1425,10 +1442,6 @@ class TestMatch(unittest.TestCase):
                 "event_id": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].event_id,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].event_id,
-                ],
-                "player_id": [
-                    PASS_EVENTS_OPTA_TRACAB[2499594225].player_id,
-                    PASS_EVENTS_OPTA_TRACAB[2499594243].player_id,
                 ],
                 "period_id": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].period_id,
@@ -1458,9 +1471,21 @@ class TestMatch(unittest.TestCase):
                     PASS_EVENTS_OPTA_TRACAB[2499594225].team_id,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].team_id,
                 ],
+                "team_side": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].team_side,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].team_side,
+                ],
+                "xT": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].xT,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].xT,
+                ],
                 "outcome": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].outcome,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].outcome,
+                ],
+                "player_id": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].player_id,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].player_id,
                 ],
                 "end_x": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].end_x,
@@ -1470,10 +1495,6 @@ class TestMatch(unittest.TestCase):
                     PASS_EVENTS_OPTA_TRACAB[2499594225].end_y,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].end_y,
                 ],
-                "pass_length": [
-                    PASS_EVENTS_OPTA_TRACAB[2499594225].pass_length,
-                    PASS_EVENTS_OPTA_TRACAB[2499594243].pass_length,
-                ],
                 "pass_type": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].pass_type,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].pass_type,
@@ -1481,6 +1502,14 @@ class TestMatch(unittest.TestCase):
                 "set_piece": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].set_piece,
                     PASS_EVENTS_OPTA_TRACAB[2499594243].set_piece,
+                ],
+                "receiver_id": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].receiver_id,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].receiver_id,
+                ],
+                "pass_length": [
+                    PASS_EVENTS_OPTA_TRACAB[2499594225].pass_length,
+                    PASS_EVENTS_OPTA_TRACAB[2499594243].pass_length,
                 ],
                 "forward_distance": [
                     PASS_EVENTS_OPTA_TRACAB[2499594225].forward_distance,
@@ -1514,6 +1543,20 @@ class TestMatch(unittest.TestCase):
         )
         passes_df = self.expected_match_tracab_opta.passes_df
         pd.testing.assert_frame_equal(passes_df, expected_df)
+
+    def test_match_get_event(self):
+        match = self.expected_match_tracab_opta.copy()
+        event = match.get_event(2512690515)
+        assert event == match.shot_events[2512690515]
+
+        event = match.get_event(2499594225)
+        assert event == match.pass_events[2499594225]
+
+        event = match.get_event(2499594285)
+        assert event == match.dribble_events[2499594285]
+
+        with self.assertRaises(ValueError):
+            match.get_event(2499594286)
 
     def test_match_requires_event_data_wrapper(self):
         match = self.expected_match_opta.copy()

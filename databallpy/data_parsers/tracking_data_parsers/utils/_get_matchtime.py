@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.constants import MISSING_INT
 
 
 def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:

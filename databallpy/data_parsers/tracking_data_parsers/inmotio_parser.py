@@ -1,7 +1,7 @@
 import os
-from typing import Tuple
 
 import bs4
+import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -17,16 +17,17 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import utc_to_local_datetime
-from databallpy.utils.utils import MISSING_INT, _to_float, _to_int
+from databallpy.utils.utils import _to_float, _to_int
 
 LOGGER = create_logger(__name__)
 
 
 def load_inmotio_tracking_data(
     tracking_data_loc: str, metadata_loc: str, verbose: bool = True
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load inmotio tracking data.
 
     Args:
@@ -178,10 +179,12 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
         list: List with the order of which players are referred to
         in the raw tracking data
     """
-    file = open(metadata_loc, "r", encoding="UTF-8")
-    lines = file.read()
+    with open(metadata_loc, "rb") as file:
+        encoding = chardet.detect(file.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as file:
+        lines = file.read()
+
     soup = BeautifulSoup(lines, "xml")
-    file.close()
 
     res = []
     for channel in soup.find_all("PlayerChannel"):
@@ -211,8 +214,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     Returns:
         Metadata: all information of the match
     """
-
-    with open(metadata_loc, "r", encoding="UTF-8") as file:
+    with open(metadata_loc, "rb") as file:
+        encoding = chardet.detect(file.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as file:
         lines = file.read()
     soup = BeautifulSoup(lines, "xml")
 
@@ -228,15 +232,22 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     i = 0
     for period in periods:
         if period.SessionType.text == "Period":
-            values = [int(x.text) for x in period.find_all("Value")]
-            periods_dict["start_frame"][i] = _to_int(values[0])
-            periods_dict["end_frame"][i] = _to_int(values[1])
-            periods_dict["start_datetime_td"][i] = pd.to_datetime(
-                period.find("Start").text, utc=True
-            )
-            periods_dict["end_datetime_td"][i] = pd.to_datetime(
-                period.find("End").text, utc=True
-            )
+            for param in period.find_all("ProviderParameter"):
+                if "Frame" not in param.Name.text:
+                    continue
+                value = param.Value.text
+                if "Start" in param.Name.text:
+                    dict_key = "start_frame"
+                    dt_key = "start_datetime_td"
+                    find_key = "Start"
+                else:
+                    dict_key = "end_frame"
+                    dt_key = "end_datetime_td"
+                    find_key = "End"
+                periods_dict[dict_key][i] = _to_int(value)
+                periods_dict[dt_key][i] = pd.to_datetime(
+                    period.find(find_key).text, utc=True
+                )
             i += 1
     periods_frames = pd.DataFrame(periods_dict)
 

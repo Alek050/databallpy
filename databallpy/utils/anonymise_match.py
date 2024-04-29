@@ -1,21 +1,20 @@
 import hashlib
 import secrets
-from typing import Union
 
 import numpy as np
 import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.match import Match
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.utils import MISSING_INT
 
 
 def anonymise_match(
     match: Match,
     keys_df: pd.DataFrame,
     base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True),
-) -> Match:
+) -> tuple[Match, pd.DataFrame]:
     """Function to anonymise a match. The function will replace all player names with a
     unique identifier as well as all teams. Furthermore, it will replace all player
     jersey numbers with a counter from 1 to n_players in that team. Finally, it will
@@ -39,7 +38,8 @@ def anonymise_match(
             Defaults to pd.to_datetime("1980-1-1 15:00:00", utc=True).
 
     Returns:
-        Match: anonymised match, potentially updated keys dataframe
+        tuple[Match, pd.DataFrame]: tuple containing the match with anonymised players
+            and teams and the potentially updated keys dataframe.
 
     Raises:
         ValueError: if base_time is not a timezone aware timestamp
@@ -70,7 +70,7 @@ def anonymise_match(
 
 
 def add_new_pseudonym(
-    keys: pd.DataFrame, key_type: str, name: str, old_id: Union[int, str]
+    keys: pd.DataFrame, key_type: str, name: str, old_id: int | str
 ) -> pd.DataFrame:
     """Function to create a new key for a specific key type. The function will create a
     new key that does not yet exist in the keys dataframe. It will also check if the

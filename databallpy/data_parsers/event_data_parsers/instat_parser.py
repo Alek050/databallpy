@@ -1,14 +1,14 @@
 import datetime as dt
 import json
-from typing import Tuple
 
+import chardet
 import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers import Metadata
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import utc_to_local_datetime
-from databallpy.utils.utils import MISSING_INT
 
 LOGGER = create_logger(__name__)
 
@@ -39,7 +39,7 @@ instat_databallpy_map = {
 
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """This function retrieves the metadata and event data of a specific match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
@@ -81,7 +81,7 @@ def load_instat_event_data(
     LOGGER.info("Succesfully loaded instat event data.")
     metadata.pitch_dimensions = pitch_dimensions
 
-    return event_data, metadata
+    return event_data, metadata, {}
 
 
 def _load_metadata(metadata_loc: str) -> pd.DataFrame:
@@ -93,7 +93,9 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: metadata of the match
     """
-    with open(metadata_loc, "r") as f:
+    with open(metadata_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as f:
         data = f.read()
     metadata_json = json.loads(data)
     match_info = metadata_json["data"]["match_info"][0]
@@ -160,8 +162,9 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: updated metadata of the match
     """
-
-    with open(event_data_loc, "r") as f:
+    with open(event_data_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(event_data_loc, "r", encoding=encoding) as f:
         data = f.read()
     event_data_json = json.loads(data)
     events = event_data_json["data"]["row"]
@@ -233,8 +236,9 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     Returns:
         pd.DataFrame: event data of the match
     """
-
-    with open(event_data_loc, "r") as f:
+    with open(event_data_loc, "rb") as f:
+        encoding = chardet.detect(f.read())["encoding"]
+    with open(event_data_loc, "r", encoding=encoding) as f:
         data = f.read()
     event_data_json = json.loads(data)
     events = event_data_json["data"]["row"]

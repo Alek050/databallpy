@@ -1,7 +1,7 @@
 import datetime as dt
 import os
-from typing import Tuple
 
+import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -18,16 +18,16 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
+from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import localize_datetime
-from databallpy.utils.utils import MISSING_INT
 
 LOGGER = create_logger(__name__)
 
 
 def load_tracab_tracking_data(
     tracab_loc: str, metadata_loc: str, verbose: bool = True
-) -> Tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata]:
     """Function to load tracking data and metadata from the tracab format
 
     Args:
@@ -93,12 +93,11 @@ def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     if verbose:
         print(f"Reading in {tracab_loc}", end="")
 
-    file = open(tracab_loc, "r")
-    lines = file.readlines()
+    with open(tracab_loc, "r") as file:
+        lines = file.readlines()
     if verbose:
         print(" - Completed")
 
-    file.close()
     size_lines = len(lines)
 
     data = {
@@ -156,8 +155,11 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         Metadata: class that contains metadata
     """
 
-    with open(metadata_loc, "r") as file:
+    with open(metadata_loc, "rb") as file:
+        encoding = chardet.detect(file.read())["encoding"]
+    with open(metadata_loc, "r", encoding=encoding) as file:
         lines = file.read()
+
     lines = lines.replace("ï»¿", "")
     soup = BeautifulSoup(lines, "xml")
 
@@ -256,7 +258,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     return metadata
 
 
-def _get_players_metadata(players_info: list) -> pd.DataFrame:
+def _get_players_metadata(players_info: list[dict[str, int | float]]) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
 
     Args:

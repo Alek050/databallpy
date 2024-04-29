@@ -1,20 +1,21 @@
+import json
 import math
 import os
 from dataclasses import dataclass
 
-import joblib
 import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
 
-from databallpy.events.base_event import BaseEvent
+from databallpy.events.base_event import BaseOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
-from databallpy.utils.utils import MISSING_INT
+from databallpy.models.utils import scale_and_predict_logreg
+from databallpy.utils.constants import MISSING_INT
 
 
 @dataclass
-class ShotEvent(BaseEvent):
+class ShotEvent(BaseOnBallEvent):
     """Class for shot events, inherits from BaseEvent. Saves all information from a
     shot from the event data, and adds information about the shot using the tracking
     data if available.
@@ -27,10 +28,12 @@ class ShotEvent(BaseEvent):
         datetime (pd.Timestamp): datetime at which the event occured
         start_x (float): x location of the event
         start_y (float): y location of the event
+        pitch_size (list): dimensions of the pitch
+        team_side (str): side of the team that takes the shot, either "home" or "away"
         team_id (int): id of the team that takes the shot
         player_id (int): id of the player who takes the shot
         shot_outcome (str): whether the shot is a goal or not on target or not.
-            Possible values: "goal", "own_goal", "miss_off_target", "miss_on_target",
+            Possible values: "goal", "miss_off_target", "miss_on_target",
             "blocked", "miss_hit_post" "miss"
         y_target (float, optional): y location of the goal. Defaults to np.nan.
         z_target (float, optional): z location of the goal. Defaults to np.nan.
@@ -63,7 +66,20 @@ class ShotEvent(BaseEvent):
             the triangle from the ball and the two posts of the goal.
         goal_gk_distance (float, optional): distance between the goal and the
             goalkeeper in meters.
+        set_piece (str, optional): type of set piece. Defaults to "no_set_piece".
+            Choices: "no_set_piece", "free_kick", "penalty"
 
+    Attributes:
+        xG (float): expected goals of the shot. This is calculated using a model that is
+            trained on the distance and angle to the goal, and the distance times the
+            angle to the goal. See the notebook in the notebooks folder for more
+            information on the model.
+        xT (float): expected threat of the event. This is calculated using a model that
+            is trained on the distance and angle to the goal, and the distance times
+            the angle to the goal. See the notebook in the notebooks folder for more
+            information on the model.
+        df_attributes (list[str]): list of attributes that are used to create a
+            DataFrame.
 
     Returns:
         ShotEvent: instance of the ShotEvent class
@@ -81,6 +97,7 @@ class ShotEvent(BaseEvent):
     type_of_play: str = "regular_play"
     first_touch: bool = False
     created_oppertunity: str = None
+
     # id of the event that led to the shot. Note: opta id for opta event data
     related_event_id: int = MISSING_INT
 
@@ -94,10 +111,39 @@ class ShotEvent(BaseEvent):
     n_obstructive_defenders: int = MISSING_INT
     goal_gk_distance: float = np.nan
     xG: float = np.nan
+    set_piece: str = "no_set_piece"
 
     def __post_init__(self):
         super().__post_init__()
         self._check_datatypes()
+        if self.type_of_play in ["penalty", "free_kick"]:
+            self.set_piece = self.type_of_play
+        _ = self._xt
+
+    @property
+    def df_attributes(self) -> list[str]:
+        base_attributes = super().base_df_attributes
+        return base_attributes + [
+            "player_id",
+            "shot_outcome",
+            "y_target",
+            "z_target",
+            "body_part",
+            "type_of_play",
+            "first_touch",
+            "created_oppertunity",
+            "related_event_id",
+            "ball_goal_distance",
+            "ball_gk_distance",
+            "shot_angle",
+            "gk_optimal_loc_distance",
+            "pressure_on_ball",
+            "n_obstructive_players",
+            "n_obstructive_defenders",
+            "goal_gk_distance",
+            "xG",
+            "set_piece",
+        ]
 
     def add_tracking_data_features(
         self,
@@ -199,13 +245,18 @@ class ShotEvent(BaseEvent):
         if pd.isnull(self.ball_goal_distance) or pd.isnull(self.shot_angle):
             return np.nan
 
+        with open(f"{path}/xg_params.json", "r") as f:
+            xg_params = json.load(f)
+
         if self.type_of_play == "penalty":
             return 0.79
+
         elif self.type_of_play == "free_kick":
-            pipeline = joblib.load(f"{path}/xG_free_kick_pipeline.pkl")
-            return pipeline.predict_proba(
-                np.array([[self.ball_goal_distance, self.shot_angle]])
-            )[0, 1]
+            return scale_and_predict_logreg(
+                np.array([[self.ball_goal_distance, self.shot_angle]]),
+                xg_params["xG_by_free_kick"],
+            )[0]
+
         elif (
             self.type_of_play
             in [
@@ -216,15 +267,16 @@ class ShotEvent(BaseEvent):
             ]
             and "foot" not in self.body_part
         ):
-            pipeline = joblib.load(f"{path}/xG_by_head_pipeline.pkl")
-            return pipeline.predict_proba(
-                np.array([[self.ball_goal_distance, self.shot_angle]])
-            )[0, 1]
+            return scale_and_predict_logreg(
+                np.array([[self.ball_goal_distance, self.shot_angle]]),
+                xg_params["xG_by_head"],
+            )[0]
+
         else:  # take most general model, shot by foot
-            pipeline = joblib.load(f"{path}/xG_by_foot_pipeline.pkl")
-            return pipeline.predict_proba(
-                np.array([[self.ball_goal_distance, self.shot_angle]])
-            )[0, 1]
+            return scale_and_predict_logreg(
+                np.array([[self.ball_goal_distance, self.shot_angle]]),
+                xg_params["xG_by_foot"],
+            )[0]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ShotEvent):
@@ -285,6 +337,9 @@ class ShotEvent(BaseEvent):
             datetime=self.datetime,
             start_x=self.start_x,
             start_y=self.start_y,
+            pitch_size=self.pitch_size,
+            team_side=self.team_side,
+            _xt=self._xt,
             team_id=self.team_id,
             player_id=self.player_id,
             shot_outcome=self.shot_outcome,
