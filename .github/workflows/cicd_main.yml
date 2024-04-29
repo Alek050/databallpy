@@ -3,7 +3,7 @@ name: CI/CD workflow
 on: [push, pull_request]
 
 jobs:
-  buld-and-test:
+  build-and-test:
     # Set up operating system
     runs-on: ubuntu-latest
 

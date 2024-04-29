@@ -988,6 +988,11 @@ class TestMatch(unittest.TestCase):
     def test_match__eq__(self):
         assert not self.expected_match_tracab_opta == pd.DataFrame()
 
+    def test_match_date(self):
+        assert self.expected_match_tracab_opta.date == pd.Timestamp(
+            "2023-01-14 16:46:39.720000+0100", tz="Europe/Amsterdam"
+        )
+
     def test_match_name(self):
         assert (
             self.expected_match_tracab_opta.name
@@ -996,6 +1001,13 @@ class TestMatch(unittest.TestCase):
         assert (
             self.expected_match_opta.name == "TeamOne 3 - 1 TeamTwo 2023-01-22 12:18:32"
         )
+
+    def test_match_name_no_date(self):
+        match = self.expected_match_tracab_opta.copy()
+        match.periods = match.periods.drop(
+            columns=["start_datetime_td", "start_datetime_ed"], errors="ignore"
+        )
+        assert match.name == "TeamOne 3 - 1 TeamTwo"
 
     def test_match_home_players_column_ids(self):
         assert self.expected_match_tracab_opta.home_players_column_ids() == [
