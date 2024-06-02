@@ -17,5 +17,3 @@ python:
     - requirements: docs2/sphinx_requirements.txt
 
 formats: all
-
-url: "https://github.com/Alek050/databallpy"
