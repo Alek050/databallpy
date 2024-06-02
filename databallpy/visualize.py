@@ -520,7 +520,7 @@ def save_match_clip(
             "comment": "Made with DataballPy",
         }
         writer = animation.FFMpegWriter(
-            fps=match.frame_rate, metadata=animation_metadata
+            fps=match.frame_rate, metadata=animation_metadata,
         )
         video_loc = f"{save_folder}/{title}.mp4"
 
@@ -592,7 +592,7 @@ def save_match_clip(
         )
 
         # Generate movie with variable info
-        with writer.saving(fig, video_loc, 100):
+        with writer.saving(fig, video_loc, 300):
             if verbose:
                 indexes = tqdm(td.index, desc="Making match clip", leave=False)
             else:

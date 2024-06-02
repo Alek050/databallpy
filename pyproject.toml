@@ -61,6 +61,7 @@ sphinx-rtd-theme = "^1.1.1"
 sphinx = "^7.2.6"
 nbsphinx = "^0.9.3"
 myst-parser = "^2.0.0"
+jupyter-book = "^1.0.0"
 
 
 [tool.poetry.group.profiler.dependencies]
