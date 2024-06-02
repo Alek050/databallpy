@@ -43,5 +43,10 @@ html_context = {
     "github_version": "master",
     "doc_path": "docs",
 }
+html_theme_options = {
+    "repository_url": "https//github.com/Alek050/databallpy",
+    "use_repository_button": True,
+    "use_issues_button": True,
+}
 
 
