@@ -36,13 +36,7 @@ suppress_warnings = ['myst.domains']
 use_jupyterbook_latex = True
 use_multitoc_numbering = True
 language = 'en'
-
-# get databallpy version
-import sys
-sys.path.insert(0, '../')
-from databallpy import __version__
-version = __version__
-
+version = "0.4.3"
 html_context = {
     "github_user": "your_username",
     "github_repo": "your_repo",
