@@ -1,9 +1,10 @@
-# Table of contents
-# Learn more at https://jupyterbook.org/customize/toc.html
-
 format: jb-book
 root: intro
-chapters:
-- file: markdown
-- file: notebooks
-- file: markdown-notebooks
+parts:
+  - caption: Introduction
+    chapters:
+      - file: intro_page
+  - caption: Getting Started
+    chapters:
+      - file: installation_page
+      - file: loading_in_a_match

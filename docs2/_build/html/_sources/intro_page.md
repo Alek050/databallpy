@@ -68,8 +68,3 @@ This package is developed by a group of soccer enthusiasts who are passionate ab
 - [DaanGro](https://github.com/DaanGro/)
 - [rdghe](https://github.com/rdghe/)
 - [swopper050](https://github.com/Swopper050)
-
-## Table of Contents
-```{tableofcontents}
-```
-

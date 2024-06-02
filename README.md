@@ -30,7 +30,11 @@
 
 A package for loading, synchronizing, and analyzing your soccer event- and tracking data.
 
-This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy][kloppy-url] and [floodlight][floodlight-url], already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data. The main feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article][soccer-sync-url], to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
+This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy][kloppy-url] and [floodlight][floodlight-url], already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data. The main current feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article][soccer-sync-url], to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
+
+## Final goal for DataBallPy
+
+Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. 
 
 ## V0.4.3 (15/1/2024)
 
@@ -40,13 +44,6 @@ This package is developed to create a standardized way to analyse soccer matches
 - Fixed minor bugs
 - Added logging possibilities
 - Refactor of file structure and folder naming
-
-## Planned changes
-
-- Adding different filters to filter the tracking data
-- Adding more features (if you have any ideas/requests, please open an issue!)
-- Creating more databallpy events
-- Adding expected passing and goals models
 
 ## Installation
 
@@ -94,7 +91,7 @@ Tracking and event data is often poorly synchronized. For instance, when taking 
 https://user-images.githubusercontent.com/49450063/224564808-fa71735f-5510-464d-8499-9044227a02e8.mp4
 
 
-As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations, especially when events follow up quickly or around shots. Using the methodology of [this][soccer-synch-url] article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
+As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations, especially when events follow up quickly or around shots. Using the methodology of [this][soccer-sync-url] article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
 
 After running the following command, the events are better synchronized to the tracking data:
 
@@ -136,10 +133,10 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 ## Maintainers & owners
 
 - [Alek050](https://github.com/Alek050/)
-- [DaanGro](https://github.com/DaanGro/)
 
 ## Contributors
 
+- [DaanGro](https://github.com/DaanGro/)
 - [rdghe](https://github.com/rdghe/)
 - [swopper050](https://github.com/Swopper050)
 

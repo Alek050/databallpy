@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Introduction &#8212; DataBallPy Documentation</title>
+    <title>Installation &#8212; DataBallPy Documentation</title>
   
   
   
@@ -57,10 +57,11 @@
     <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'intro';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'installation_page';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Introduction" href="intro_page.html" />
+    <link rel="next" title="Loading in a Match" href="loading_in_a_match.html" />
+    <link rel="prev" title="Introduction" href="intro_page.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -123,8 +124,6 @@
       
       
       
-        
-      
       <div class="bd-sidebar-primary bd-sidebar">
         
 
@@ -141,7 +140,7 @@
 
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="intro.html">
   
   
   
@@ -172,8 +171,8 @@
     <div class="bd-toc-item navbar-nav active">
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
-            <li class="toctree-l1 current active">
-                <a class="reference internal" href="#">
+            <li class="toctree-l1">
+                <a class="reference internal" href="intro.html">
                     Introduction
                 </a>
             </li>
@@ -183,8 +182,8 @@
 <li class="toctree-l1"><a class="reference internal" href="intro_page.html">Introduction</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="installation_page.html">Installation</a></li>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="loading_in_a_match.html">Loading in a Match</a></li>
 
 </ul>
@@ -258,7 +257,7 @@
       
       
       
-      <li><a href="https://github.com/Alek050/databallpy/issues/new?title=Issue%20on%20page%20%2Fintro.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/Alek050/databallpy/issues/new?title=Issue%20on%20page%20%2Finstallation_page.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -288,7 +287,7 @@
       
       
       
-      <li><a href="_sources/intro.md" target="_blank"
+      <li><a href="_sources/installation_page.md" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -372,7 +371,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Introduction</h1>
+    <h1>Installation</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -382,20 +381,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features">Features</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-databallpy">Why DataBallPy?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#who-is-databallpy-for">Who is DataBallPy for?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-databallpy-works">How DataBallPy Works</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about-the-developers">About the Developers</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#maintainers-owners">Maintainers &amp; owners</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#contributors">Contributors</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of Contents</a><ul class="nav section-nav flex-column">
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dependencies">Dependencies</a></li>
 </ul>
             </nav>
         </div>
@@ -410,96 +396,24 @@ document.write(`
   <div align="center">
   <img src="https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34" alt="Logo">
 </div>
-<section class="tex2jax_ignore mathjax_ignore" id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h1>
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
-<p>This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy][kloppy-url] and [floodlight][floodlight-url], already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the <code class="docutils literal notranslate"><span class="pre">Match</span></code> object combines information from the event and tracking data. The main current feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article][soccer-sync-url], to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.</p>
-<p>Although reading in and synchronising data is already very helpfull to get started with your analysis, it’s only the first step. Even after this first step, getting your first ‘simple’ metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones.</p>
-</section>
-<section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>databallpy
+<section class="tex2jax_ignore mathjax_ignore" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
+<p>DataBallPy is available on the Python Package Index (PyPI), which is a repository of software for the Python programming language. PyPI makes it easy for Python developers to share and install software. To install DataBallPy, you can use pip, which is a package installer for Python and comes pre-installed with most Python distributions.</p>
+<p>Here’s the command to install DataBallPy:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">databallpy</span>
 </pre></div>
 </div>
-</section>
-<section id="features">
-<h2>Features<a class="headerlink" href="#features" title="Link to this heading">#</a></h2>
+<p>This command tells pip to download the DataBallPy package from PyPI and install it on your machine.</p>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">#</a></h2>
+<p>DataBallPy has several dependencies, which are other packages that DataBallPy needs to function correctly. When you install DataBallPy using pip, these dependencies are automatically installed. Here are some of the key dependencies and why they’re necessary:</p>
 <ul class="simple">
-<li><p>Fast synchronisation of tracking and event data using a Needlemann-Wunch algorithm</p></li>
-<li><p>Seamless calculations of important features like expected goals (xG) and expected threat (xT)</p></li>
-<li><p>The use of notebooks to visualize and explain how features are calculated</p></li>
-<li><p>Creating and saving videos from the tracking data.</p></li>
+<li><p><strong>NumPy</strong>: This is a package for numerical computing in Python. DataBallPy uses NumPy for efficient computation with arrays of data.</p></li>
+<li><p><strong>Pandas</strong>: This is a data analysis library. DataBallPy uses Pandas for data manipulation and analysis.</p></li>
+<li><p><strong>Matplotlib</strong>: This is a plotting library. DataBallPy uses Matplotlib to create visualizations of the data.</p></li>
 </ul>
-</section>
-<section id="why-databallpy">
-<h2>Why DataBallPy?<a class="headerlink" href="#why-databallpy" title="Link to this heading">#</a></h2>
-<p>DatabBallPy emerged from a drive to understand the full process of changing raw soccer data into valuable metrics. While other packages focus on importing data, DataBallPy goes a step further by combining different data streams from the same match. This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. We also acknowledge that this is just the starting point for most analysts, and that not every analyst might want to know all exact details of the calculations. Therefore, we aim to provide a clear and easy-to-use package that can be used by both developers and scientists.</p>
-<p>We try to make this package accessible to all interested. All features and metrics are easy accessible with minimal code, which makes it easy to get started. For those who want to know more about the calculations, we provide notebooks with visualizations and explanations of the calculations. We hope that this will make it easier for others to understand exaclty what is happening, catch bugs earlier in the process, and inspire others to come up with new features and metrics that, in turn, can be added to the package.</p>
-</section>
-<section id="who-is-databallpy-for">
-<h2>Who is DataBallPy for?<a class="headerlink" href="#who-is-databallpy-for" title="Link to this heading">#</a></h2>
-<p>DataBallPy is for anyone interested in soccer analytics. Whether you are a developer, a scientist, or just a soccer fan, this package is for you. We aim to make the package accessible to all interested, and provide clear explanations of the calculations for those who want to know more.</p>
-</section>
-<section id="how-databallpy-works">
-<h2>How DataBallPy Works<a class="headerlink" href="#how-databallpy-works" title="Link to this heading">#</a></h2>
-<p>The package is centered around the <code class="docutils literal notranslate"><span class="pre">Match</span></code> object. A <code class="docutils literal notranslate"><span class="pre">Match</span></code> has tracking data, event data, and metadata about the match.
-Furthermore, some basic preprocessing (normalizing playing direction, scaling tracking and event data to meters, etc.) is done when loading the data. This ensures that the data is ready for further analysis, no matter the data source you used. We advice you to go through our [Getting-Started][getting-started-page] to get a solid understanding of the package and how to use it. But if you cannot wait to get your hands dirty, you can start by loading a match using the following code:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>from<span class="w"> </span>databallpy<span class="w"> </span>import<span class="w"> </span>get_match,<span class="w"> </span>get_open_match
-<span class="gp">$</span>
-<span class="gp">$ </span><span class="nv">match</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>get_match<span class="o">(</span>
-<span class="gp">$   </span><span class="nv">tracking_data_loc</span><span class="o">=</span><span class="s2">&quot;../data/tracking_data.dat&quot;</span>,
-<span class="gp">$   </span><span class="nv">tracking_metadata_loc</span><span class="o">=</span><span class="s2">&quot;../data/tracking_metadata.xml&quot;</span>,
-<span class="gp">$   </span><span class="nv">tracking_data_provider</span><span class="o">=</span><span class="s2">&quot;tracab&quot;</span>
-<span class="gp">$   </span><span class="nv">event_data_loc</span><span class="o">=</span><span class="s2">&quot;../data/event_data_f24.xml&quot;</span>,
-<span class="gp">$   </span><span class="nv">event_metadata_loc</span><span class="o">=</span><span class="s2">&quot;../data/event_metadata_f7.xml&quot;</span>,
-<span class="gp">$   </span><span class="nv">event_data_provider</span><span class="o">=</span><span class="s2">&quot;opta&quot;</span>,
-<span class="gp">$ </span><span class="o">)</span>
-<span class="gp">$</span>
-<span class="gp">$ </span><span class="c1"># or to load an open metrica dataset of tracking and event data</span>
-<span class="gp">$ </span><span class="nv">match</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>get_open_match<span class="o">()</span>
-<span class="gp">$</span>
-<span class="gp">$ </span>match.home_team_name<span class="w"> </span><span class="c1"># the team name of the home playing team</span>
-<span class="gp">$ </span>match.away_players<span class="w"> </span><span class="c1"># pandas dataframe with the names, ids, shirt numbers and positions of the away team</span>
-<span class="gp">$ </span>match.tracking_data<span class="w"> </span><span class="c1"># pandas dataframe with tracking data of the match</span>
-<span class="gp">$ </span>match.event_data<span class="w"> </span><span class="c1"># pandas dataframe with event data of the match</span>
-</pre></div>
-</div>
-</section>
-<section id="about-the-developers">
-<h2>About the Developers<a class="headerlink" href="#about-the-developers" title="Link to this heading">#</a></h2>
-<p>This package is developed by a group of soccer enthusiasts who are passionate about soccer analytics. We aim to make soccer analytics accessible to all interested, and provide a clear and easy-to-use package that can be used by both developers and scientists. We hope that this package will inspire others to come up with new features and metrics that, in turn, can be added to the package.</p>
-<section id="maintainers-owners">
-<h3>Maintainers &amp; owners<a class="headerlink" href="#maintainers-owners" title="Link to this heading">#</a></h3>
-<ul class="simple">
-<li><p><a class="reference external" href="https://github.com/Alek050/">Alek050</a></p></li>
-</ul>
-</section>
-<section id="contributors">
-<h3>Contributors<a class="headerlink" href="#contributors" title="Link to this heading">#</a></h3>
-<ul class="simple">
-<li><p><a class="reference external" href="https://github.com/DaanGro/">DaanGro</a></p></li>
-<li><p><a class="reference external" href="https://github.com/rdghe/">rdghe</a></p></li>
-<li><p><a class="reference external" href="https://github.com/Swopper050">swopper050</a></p></li>
-</ul>
-</section>
-</section>
-<section id="table-of-contents">
-<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">#</a></h2>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Introduction</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_page.html">Introduction</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="installation_page.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="loading_in_a_match.html">Loading in a Match</a></li>
-<li class="toctree-l1"><a class="reference internal" href="loading_in_a_match.html#match-attributes">Match Attributes</a></li>
-</ul>
-</div>
+<p>These dependencies provide the building blocks that DataBallPy uses to implement its features. By standing on the shoulders of these giants, DataBallPy can focus on providing a great experience for analyzing soccer matches using both event and tracking data.</p>
+<p>Remember, it’s always a good idea to work in a virtual environment when installing Python packages. This helps to keep your global environment clean and manage dependencies effectively. Good luck with your installation!</p>
 </section>
 </section>
 
@@ -533,12 +447,21 @@ Furthermore, some basic preprocessing (normalizing playing direction, scaling tr
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="right-next"
+    <a class="left-prev"
        href="intro_page.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Introduction</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="loading_in_a_match.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Introduction</p>
+        <p class="prev-next-title">Loading in a Match</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -558,20 +481,7 @@ Furthermore, some basic preprocessing (normalizing playing direction, scaling tr
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features">Features</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-databallpy">Why DataBallPy?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#who-is-databallpy-for">Who is DataBallPy for?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-databallpy-works">How DataBallPy Works</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about-the-developers">About the Developers</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#maintainers-owners">Maintainers &amp; owners</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#contributors">Contributors</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of Contents</a><ul class="nav section-nav flex-column">
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dependencies">Dependencies</a></li>
 </ul>
   </nav></div>
 
