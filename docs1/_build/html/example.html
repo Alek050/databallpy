@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example usage &mdash; databallpy  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/nbsphinx-code-cells.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="DataBallPy Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            databallpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Tracking-Data">Tracking Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Event-Data">Event Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Metadata">Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Synchronising-tracking-and-event-data">Synchronising tracking and event data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Databallpy-events">Databallpy events</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Add-features-to-the-data">Add features to the data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Save-Match-Clip">Save Match Clip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Plot-events">Plot events</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#Conclusion">Conclusion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conduct.html">Code of Conduct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">databallpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Example usage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Example-usage">
+<h1>Example usage<a class="headerlink" href="#Example-usage" title="Link to this heading"></a></h1>
+<p>This notebook will show how to get started with the <code class="docutils literal notranslate"><span class="pre">databallpy</span></code> package. The package is build around the <code class="docutils literal notranslate"><span class="pre">Match</span></code> class. All information about match is saved in this class. Amoung others, the class has attributes <code class="docutils literal notranslate"><span class="pre">tracking_data</span></code>, <code class="docutils literal notranslate"><span class="pre">event_data</span></code>, <code class="docutils literal notranslate"><span class="pre">home_players</span></code>, <code class="docutils literal notranslate"><span class="pre">away_score</span></code>, and <code class="docutils literal notranslate"><span class="pre">home_formation</span></code>. For more information on the <code class="docutils literal notranslate"><span class="pre">Match</span></code> class see our <a class="reference external" href="https://databallpy.readthedocs.io/en/latest/autoapi/databallpy/index.html">documentation</a>.</p>
+<p>To use obtain a <code class="docutils literal notranslate"><span class="pre">Match</span></code> using <code class="docutils literal notranslate"><span class="pre">databallpy</span></code> in a project, run the following code:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">databallpy</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">databallpy</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.4.2
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># obtain a match object</span>
+<span class="kn">from</span> <span class="nn">databallpy</span> <span class="kn">import</span> <span class="n">get_match</span><span class="p">,</span> <span class="n">get_open_match</span>
+
+<span class="c1"># example of how to get match from private data:</span>
+<span class="n">match</span> <span class="o">=</span> <span class="n">get_match</span><span class="p">(</span>
+    <span class="n">tracking_data_loc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">location_to_tracking_data_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">tracking_metadata_loc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">location_to_tracking_metadata_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">tracking_data_provider</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tracking_data_provider</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">event_data_loc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">location_to_event_data_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">event_metadata_loc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">location_to_event_metadata_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">event_data_provider</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">event_data_provider</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># or use open metric data</span>
+<span class="n">match</span> <span class="o">=</span> <span class="n">get_open_match</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Downloading Metrica open tracking data... Done!
+Downloading Metrica open event data... Done!
+databallpy.match.Match object: Team A 0 - 2 Team B 2019-02-21 03:30:07
+</pre></div></div>
+</div>
+<p>Congrats, you have now loaded your first <code class="docutils literal notranslate"><span class="pre">Match</span></code> object! The <code class="docutils literal notranslate"><span class="pre">Match</span></code> is basically all the information you need to get started. Some basic preprocessing has already been done here:</p>
+<ul class="simple">
+<li><p>The x and y coordinates are scaled to the pitch dimensions in meters. If no pitch dimensions are available in the metadata, it is assumed that the pitch dimensions are 106 meters in the length (x-axis) and 68 meters in the width (y-axis).</p></li>
+<li><p>The center of the pitch is at position (0, 0)</p></li>
+<li><p>The home team is represented of playing from left to right the whole match, while the away team is represented to play from left to right the whole match. In this way you always now where eiter team wants to score.</p></li>
+<li><p>Some sanity checks on the tracking data are done to inform you about the quality of the data if it is not sufficient. For instance, if the kick off is not close to point (0, 0), there might have been a problem with the scaling of the field. Also, when players or the ball have have a impossible high velocity for over 1% of the match, a warning is raised. When a sanity check fails, the possibility of synchronising the tracking and event data is withdrawn since it greatly effects the quality of
+the synchronisation process.</p></li>
+</ul>
+<p>Let’s now take a look at all the data we have in our <code class="docutils literal notranslate"><span class="pre">Match</span></code>. Roughly speaking, a <code class="docutils literal notranslate"><span class="pre">Match</span></code> has information about the tracking data, the event data, and the metadata of the match. Let’s start of with our tracking data:</p>
+</section>
+<section id="Tracking-Data">
+<h1>Tracking Data<a class="headerlink" href="#Tracking-Data" title="Link to this heading"></a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[[</span><span class="s2">&quot;frame&quot;</span><span class="p">,</span> <span class="s2">&quot;ball_x&quot;</span><span class="p">,</span> <span class="s2">&quot;ball_status&quot;</span><span class="p">,</span> <span class="s2">&quot;home_11_x&quot;</span><span class="p">,</span> <span class="s2">&quot;away_32_y&quot;</span><span class="p">,</span> <span class="s2">&quot;period&quot;</span><span class="p">,</span> <span class="s2">&quot;matchtime_td&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+Index([&#39;frame&#39;, &#39;ball_x&#39;, &#39;ball_y&#39;, &#39;ball_z&#39;, &#39;ball_status&#39;, &#39;ball_possession&#39;,
+       &#39;home_11_x&#39;, &#39;home_11_y&#39;, &#39;home_1_x&#39;, &#39;home_1_y&#39;, &#39;home_2_x&#39;,
+       &#39;home_2_y&#39;, &#39;home_3_x&#39;, &#39;home_3_y&#39;, &#39;home_4_x&#39;, &#39;home_4_y&#39;, &#39;home_5_x&#39;,
+       &#39;home_5_y&#39;, &#39;home_6_x&#39;, &#39;home_6_y&#39;, &#39;home_7_x&#39;, &#39;home_7_y&#39;, &#39;home_8_x&#39;,
+       &#39;home_8_y&#39;, &#39;home_9_x&#39;, &#39;home_9_y&#39;, &#39;home_10_x&#39;, &#39;home_10_y&#39;,
+       &#39;away_28_x&#39;, &#39;away_28_y&#39;, &#39;away_18_x&#39;, &#39;away_18_y&#39;, &#39;away_19_x&#39;,
+       &#39;away_19_y&#39;, &#39;away_20_x&#39;, &#39;away_20_y&#39;, &#39;away_21_x&#39;, &#39;away_21_y&#39;,
+       &#39;away_22_x&#39;, &#39;away_22_y&#39;, &#39;away_23_x&#39;, &#39;away_23_y&#39;, &#39;away_24_x&#39;,
+       &#39;away_24_y&#39;, &#39;away_25_x&#39;, &#39;away_25_y&#39;, &#39;away_26_x&#39;, &#39;away_26_y&#39;,
+       &#39;away_27_x&#39;, &#39;away_27_y&#39;, &#39;home_12_x&#39;, &#39;home_12_y&#39;, &#39;home_13_x&#39;,
+       &#39;home_13_y&#39;, &#39;away_29_x&#39;, &#39;away_29_y&#39;, &#39;home_14_x&#39;, &#39;home_14_y&#39;,
+       &#39;away_31_x&#39;, &#39;away_31_y&#39;, &#39;away_32_x&#39;, &#39;away_32_y&#39;, &#39;away_30_x&#39;,
+       &#39;away_30_y&#39;, &#39;home_15_x&#39;, &#39;home_15_y&#39;, &#39;home_16_x&#39;, &#39;home_16_y&#39;,
+       &#39;away_33_x&#39;, &#39;away_33_y&#39;, &#39;away_34_x&#39;, &#39;away_34_y&#39;, &#39;away_35_x&#39;,
+       &#39;away_35_y&#39;, &#39;home_17_x&#39;, &#39;home_17_y&#39;, &#39;period&#39;, &#39;matchtime_td&#39;],
+      dtype=&#39;object&#39;)
+   frame  ball_x ball_status  home_11_x  away_32_y  period matchtime_td
+0      1     NaN        dead   -36.4581        NaN       1        00:00
+1      2     NaN        dead   -36.4581        NaN       1        00:00
+2      3     NaN        dead   -36.4581        NaN       1        00:00
+3      4     NaN        dead   -36.4581        NaN       1        00:00
+4      5     NaN        dead   -36.4581        NaN       1        00:00
+</pre></div></div>
+</div>
+<p>As you can see, the tracking data of a match is simply a pandas dataframe, making it easy to perform manipulation or filtering on the data. The tracking data has a few distinct columns:</p>
+<ul class="simple">
+<li><p>Frame information: Depending on the provider, the frame number will start at 1 or at a timestamp for that day. In this case, it starts at one and counts up as time proceeds.</p></li>
+<li><p>Ball information: <code class="docutils literal notranslate"><span class="pre">ball_x</span></code>, <code class="docutils literal notranslate"><span class="pre">ball_y</span></code>, and <code class="docutils literal notranslate"><span class="pre">ball_z</span></code> give information about the position of the ball on the pitch. Be cautious with <code class="docutils literal notranslate"><span class="pre">ball_z</span></code> since it often is poor quality data. <code class="docutils literal notranslate"><span class="pre">ball_status</span></code> is either <code class="docutils literal notranslate"><span class="pre">dead</span></code> or <code class="docutils literal notranslate"><span class="pre">alive</span></code>, indication whether the game is playing or not. <code class="docutils literal notranslate"><span class="pre">ball_possession</span></code> indicates what team has possession of the ball. The values can either be <code class="docutils literal notranslate"><span class="pre">home</span></code>, <code class="docutils literal notranslate"><span class="pre">away</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code>. For Metrica data it is put to <code class="docutils literal notranslate"><span class="pre">None</span></code> since the data does not indicate which team has
+possession.</p></li>
+<li><p>Player information: For every player the x and y coordinate are presented. The column name is based on the team the side the player plays for (either <code class="docutils literal notranslate"><span class="pre">home</span></code> or <code class="docutils literal notranslate"><span class="pre">away</span></code>), the jersey number of that player, and the type of data that is presented (x coordinate or y coordinate). The column name for the x-coordinate of the player that plays for the home team with jersey 12 is thus <code class="docutils literal notranslate"><span class="pre">home_12_x</span></code>.</p></li>
+<li><p>General match information: The <code class="docutils literal notranslate"><span class="pre">period_id</span></code> indicates what period of the match is played. A period id of <code class="docutils literal notranslate"><span class="pre">1</span></code> refers to the first half of the match, while <code class="docutils literal notranslate"><span class="pre">2</span></code> refers to the second half. The <code class="docutils literal notranslate"><span class="pre">matchtime_td</span></code> column gives the time in minutes:seconds of the match to give an indication of how far the match is along. It also tracks extra time, see the example below:</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[[</span><span class="s2">&quot;frame&quot;</span><span class="p">,</span> <span class="s2">&quot;ball_x&quot;</span><span class="p">,</span> <span class="s2">&quot;ball_status&quot;</span><span class="p">,</span> <span class="s2">&quot;home_11_x&quot;</span><span class="p">,</span> <span class="s2">&quot;away_32_y&quot;</span><span class="p">,</span> <span class="s2">&quot;period&quot;</span><span class="p">,</span> <span class="s2">&quot;matchtime_td&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">tail</span><span class="p">())</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+         frame  ball_x ball_status  home_11_x  away_32_y  period matchtime_td
+143756  143757     NaN        dead  -39.90735    8.39732       2   90:00+4:23
+143757  143758     NaN        dead  -39.90735    8.43404       2   90:00+4:23
+143758  143759     NaN        dead  -39.90735    8.48572       2   90:00+4:23
+143759  143760     NaN        dead  -39.90735    8.57548       2   90:00+4:23
+143760  143761     NaN        dead  -39.90735    8.94676       2   90:00+4:23
+</pre></div></div>
+</div>
+</section>
+<section id="Event-Data">
+<h1>Event Data<a class="headerlink" href="#Event-Data" title="Link to this heading"></a></h1>
+<p>Since we have an idea of what our tracking data looks like and how it is formatted, let’s now take a look at the event data:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">event_data</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">event_data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+Index([&#39;event_id&#39;, &#39;type_id&#39;, &#39;databallpy_event&#39;, &#39;period_id&#39;, &#39;minutes&#39;,
+       &#39;seconds&#39;, &#39;player_id&#39;, &#39;player_name&#39;, &#39;team_id&#39;, &#39;outcome&#39;, &#39;start_x&#39;,
+       &#39;start_y&#39;, &#39;to_player_id&#39;, &#39;to_player_name&#39;, &#39;end_x&#39;, &#39;end_y&#39;,
+       &#39;td_frame&#39;, &#39;metrica_event&#39;, &#39;datetime&#39;],
+      dtype=&#39;object&#39;)
+</pre></div></div>
+</div>
+<p>Again, you can see that we are just dealing with a familiar pandas dataframe, not to be afraid of. Let’s go through all the columns before we take a look at the data:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">event_id</span></code>: an unique id (usually an integer) for the event.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">type_id</span></code>: an id indicating the type of event.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">databallpy_event</span></code>: a string indicating the event. Since we aim to create a standardized format of event data, we need to translate the event data from the provider, in this case Metrica, to a standard event type, in this case that is <code class="docutils literal notranslate"><span class="pre">databallpy_event</span></code>. It currently can only have the values <code class="docutils literal notranslate"><span class="pre">pass</span></code>, <code class="docutils literal notranslate"><span class="pre">shot</span></code>, or <code class="docutils literal notranslate"><span class="pre">dribble</span></code>. For any other event, the value will be <code class="docutils literal notranslate"><span class="pre">None</span></code>. We aim to increase the number of databallpy events in future versions to be more complete.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">period_id</span></code>: the period that the event happened in. <code class="docutils literal notranslate"><span class="pre">1</span></code> indicating the first half and <code class="docutils literal notranslate"><span class="pre">2</span></code> the second half.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">minutes</span></code>: the number of minutes in the match at the time of the event.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seconds</span></code>: the number of seconds in the match at the time of the event.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">player_id</span></code>: an unique id of the player involved in the event.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">player_name</span></code>: a string with the name of the player.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">team_id</span></code>: an unique id for which team the event belonged to.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">outcome</span></code>: a boolian indicating if the <code class="docutils literal notranslate"><span class="pre">databallpy_event</span></code> was successful (<code class="docutils literal notranslate"><span class="pre">True</span></code>) or not (<code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">start_x</span></code> and <code class="docutils literal notranslate"><span class="pre">start_y</span></code>: the coordinate, indicated by the event data provider, where the event took place. Note that these coordinates are scaled to fit the tracking data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">metrica_event</span></code>: Since <code class="docutils literal notranslate"><span class="pre">databallpy_event</span></code> may not capture all events, we always keep in the original event data of the provider to make sure no data is lost in the process.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datetime</span></code>: a datatime object used to indicate when the event took place.</p></li>
+</ul>
+<p>As you probably have notices, I skipped a few columns. That is because these columns are specific for Metrica, not all event data providers provide this data, and therefore these columns are not present in all event data dataframes.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">to_player_id</span></code> and <code class="docutils literal notranslate"><span class="pre">to_player_name</span></code>: Metrica sometimes indicate to which player the ball was passed. Since metrica indicates this information, we add it in the dataframe, but this column is not present for event data providers that do not indicate this in their data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">end_x</span></code> and <code class="docutils literal notranslate"><span class="pre">end_y</span></code>: the coordinate, indicated by the event data provider, where the event ended. Note that these coordinates are scaled to fit the tracking data. Also, this is again Metrica specific data, not all event data providers provide this data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">td_frame</span></code>: since this match uses tracking and event data from <code class="docutils literal notranslate"><span class="pre">Metrica</span></code>, the two are already synchronised. The <code class="docutils literal notranslate"><span class="pre">td_frame</span></code> indicates what frame in the tracking data belongs to the event to get contextual information of that event.</p></li>
+</ul>
+<p>Here is an example of what an event in the event data looks like:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">event_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">13</span><span class="p">])</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+event_id                                          14
+type_id                                            1
+databallpy_event                                pass
+period_id                                          1
+minutes                                            0
+seconds                                        28.88
+player_id                                       3570
+player_name                                 Player 3
+team_id                                      FIFATMA
+outcome                                            1
+start_x                                     -32.9574
+start_y                                    -24.63232
+to_player_id                                    3578
+to_player_name                             Player 11
+end_x                                      -48.33255
+end_y                                       -8.37284
+td_frame                                         722
+metrica_event                                   pass
+datetime            2019-02-21 03:30:35.840000+00:00
+Name: 13, dtype: object
+</pre></div></div>
+</div>
+</section>
+<section id="Metadata">
+<h1>Metadata<a class="headerlink" href="#Metadata" title="Link to this heading"></a></h1>
+<p>We are now only missing the metadata of the match. Most of the metadata speaks for itselfs, but let’s just go through it:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">periods</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">frame_rate</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">home_team_id</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">away_team_id</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">home_team_name</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">away_team_name</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">home_score</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">away_score</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">home_formation</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">away_formation</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">allow_synchronise_tracking_and_event_data</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[105.0, 68.0]
+period                                              1
+start_frame                                         1
+end_frame                                       69661
+start_datetime_td           2019-02-21 03:30:07+00:00
+end_datetime_td      2019-02-21 04:16:33.400000+00:00
+start_datetime_ed           2019-02-21 03:30:07+00:00
+end_datetime_ed      2019-02-21 04:16:33.400000+00:00
+Name: 0, dtype: object
+25
+FIFATMA FIFATMB
+Team A Team B
+0 2
+1451 1442
+True
+</pre></div></div>
+</div>
+<p>As you can see, <code class="docutils literal notranslate"><span class="pre">periods</span></code> is also a pandas dataframe, with for every period a row. This could be usefull if you want to check how the tracking and event data “starts” at a different time. However, since the event and tracking data is here both from Metrica, the start and end datetimes are identical for the event and tracking data. The formation of both teams is captured in a string. Team 1 plays 1-4-5-1 and team 2 1-4-4-2.</p>
+<p>We are still missing one crucial piece of information: information about the players. This is also captured in a dataframe:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">home_players</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+id                       3578
+full_name           Player 11
+formation_place             0
+position           goalkeeper
+starter                  True
+shirt_num                  11
+start_frame              -999
+end_frame                -999
+Name: 0, dtype: object
+</pre></div></div>
+</div>
+<p>The dataframe holds information about the id, full name, position, shirt number, and if the data is available, at what tracking data frame the player enters and leaves the pitch. In this case the data is not available. <code class="docutils literal notranslate"><span class="pre">-999</span></code> is the integer indicating a missing value. For floats we use <code class="docutils literal notranslate"><span class="pre">np.nan</span></code> and for string or objects <code class="docutils literal notranslate"><span class="pre">None</span></code> to indicate a missing value.</p>
+<p>So thats it? Now we have it all? Of course not, now we can get started, let me show you a few examples.</p>
+</section>
+<section id="Synchronising-tracking-and-event-data">
+<h1>Synchronising tracking and event data<a class="headerlink" href="#Synchronising-tracking-and-event-data" title="Link to this heading"></a></h1>
+<p>to synchronise tracking and event data (for instance when the tracking and event data provider differ) you can simply run:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">match</span><span class="o">.</span><span class="n">synchronise_tracking_and_event_data</span><span class="p">(</span><span class="n">n_batches</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Index([&#39;frame&#39;, &#39;ball_x&#39;, &#39;ball_y&#39;, &#39;ball_z&#39;, &#39;ball_status&#39;, &#39;ball_possession&#39;,
+       &#39;home_11_x&#39;, &#39;home_11_y&#39;, &#39;home_1_x&#39;, &#39;home_1_y&#39;, &#39;home_2_x&#39;,
+       &#39;home_2_y&#39;, &#39;home_3_x&#39;, &#39;home_3_y&#39;, &#39;home_4_x&#39;, &#39;home_4_y&#39;, &#39;home_5_x&#39;,
+       &#39;home_5_y&#39;, &#39;home_6_x&#39;, &#39;home_6_y&#39;, &#39;home_7_x&#39;, &#39;home_7_y&#39;, &#39;home_8_x&#39;,
+       &#39;home_8_y&#39;, &#39;home_9_x&#39;, &#39;home_9_y&#39;, &#39;home_10_x&#39;, &#39;home_10_y&#39;,
+       &#39;away_28_x&#39;, &#39;away_28_y&#39;, &#39;away_18_x&#39;, &#39;away_18_y&#39;, &#39;away_19_x&#39;,
+       &#39;away_19_y&#39;, &#39;away_20_x&#39;, &#39;away_20_y&#39;, &#39;away_21_x&#39;, &#39;away_21_y&#39;,
+       &#39;away_22_x&#39;, &#39;away_22_y&#39;, &#39;away_23_x&#39;, &#39;away_23_y&#39;, &#39;away_24_x&#39;,
+       &#39;away_24_y&#39;, &#39;away_25_x&#39;, &#39;away_25_y&#39;, &#39;away_26_x&#39;, &#39;away_26_y&#39;,
+       &#39;away_27_x&#39;, &#39;away_27_y&#39;, &#39;home_12_x&#39;, &#39;home_12_y&#39;, &#39;home_13_x&#39;,
+       &#39;home_13_y&#39;, &#39;away_29_x&#39;, &#39;away_29_y&#39;, &#39;home_14_x&#39;, &#39;home_14_y&#39;,
+       &#39;away_31_x&#39;, &#39;away_31_y&#39;, &#39;away_32_x&#39;, &#39;away_32_y&#39;, &#39;away_30_x&#39;,
+       &#39;away_30_y&#39;, &#39;home_15_x&#39;, &#39;home_15_y&#39;, &#39;home_16_x&#39;, &#39;home_16_y&#39;,
+       &#39;away_33_x&#39;, &#39;away_33_y&#39;, &#39;away_34_x&#39;, &#39;away_34_y&#39;, &#39;away_35_x&#39;,
+       &#39;away_35_y&#39;, &#39;home_17_x&#39;, &#39;home_17_y&#39;, &#39;period&#39;, &#39;matchtime_td&#39;,
+       &#39;ball_vx&#39;, &#39;ball_vy&#39;, &#39;ball_velocity&#39;, &#39;ball_ax&#39;, &#39;ball_ay&#39;,
+       &#39;ball_acceleration&#39;, &#39;datetime&#39;, &#39;databallpy_event&#39;, &#39;event_id&#39;],
+      dtype=&#39;object&#39;)
+</pre></div></div>
+</div>
+<p>Now, <code class="docutils literal notranslate"><span class="pre">databallpy_event</span></code> and <code class="docutils literal notranslate"><span class="pre">event_id</span></code> are added to the tracking data, indicating when and what kind of event happens. The corresponding tracking data frame can now also be found in the event_data.</p>
+<p>Note: you can see also information about the ball velocity and acceleration is added to the tracking data. This information is used in the cost function to find the optimal alignment between the tracking data and the event data. For instance, you know that there must be a high acceleration of the ball when someone shoots it.</p>
+</section>
+<section id="Databallpy-events">
+<h1>Databallpy events<a class="headerlink" href="#Databallpy-events" title="Link to this heading"></a></h1>
+<p>The use of databallpy events has some added value. Since we know exactly what event we are talking about, we can collect additional information about the event. For instance, you can find information about a shot while looking in the event data, but that might not be enough for you. Maybe you want to make a expected goal model and use tracking data to get more information out of the data. We already did this for you a little. Simply look into our <code class="docutils literal notranslate"><span class="pre">shots_df</span></code> (we also have a <code class="docutils literal notranslate"><span class="pre">dribbles_df</span></code> and
+a <code class="docutils literal notranslate"><span class="pre">passes_df</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">shots_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">shots_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Index([&#39;event_id&#39;, &#39;player_id&#39;, &#39;period_id&#39;, &#39;minutes&#39;, &#39;seconds&#39;, &#39;datetime&#39;,
+       &#39;start_x&#39;, &#39;start_y&#39;, &#39;team_id&#39;, &#39;shot_outcome&#39;, &#39;y_target&#39;, &#39;z_target&#39;,
+       &#39;body_part&#39;, &#39;type_of_play&#39;, &#39;first_touch&#39;, &#39;created_oppertunity&#39;,
+       &#39;related_event_id&#39;, &#39;ball_goal_distance&#39;, &#39;ball_gk_distance&#39;,
+       &#39;shot_angle&#39;, &#39;gk_optimal_loc_distance&#39;, &#39;pressure_on_ball&#39;,
+       &#39;n_obstructive_players&#39;, &#39;n_obstructive_defenders&#39;, &#39;goal_gk_distance&#39;],
+      dtype=&#39;object&#39;)
+event_id                                                131
+player_id                                              3574
+period_id                                                 1
+minutes                                                   3
+seconds                                               53.16
+datetime                   2019-02-21 03:34:00.120000+00:00
+start_x                                            29.23725
+start_y                                            16.09968
+team_id                                             FIFATMA
+shot_outcome                                           miss
+y_target                                                NaN
+z_target                                                NaN
+body_part                                              None
+type_of_play                                           None
+first_touch                                            None
+created_oppertunity                                    None
+related_event_id                                       -999
+ball_goal_distance                                 28.29055
+ball_gk_distance                                  27.731554
+shot_angle                                        12.209503
+gk_optimal_loc_distance                            1.099935
+pressure_on_ball                                        0.0
+n_obstructive_players                                     5
+n_obstructive_defenders                                   5
+goal_gk_distance                                   1.243868
+Name: 0, dtype: object
+</pre></div></div>
+</div>
+<p>If available in the event data, we store here information about the body part, relateded event id and type of play (e.g. did the shot originate from a set piece or not). But we also already added some extra information based on the synchronised tracking and even data.</p>
+</section>
+<section id="Add-features-to-the-data">
+<h1>Add features to the data<a class="headerlink" href="#Add-features-to-the-data" title="Link to this heading"></a></h1>
+<p>Having data is one thing, but you want to enrich the data. For that, you might want to add features to the data. The available possibilities we have right now are the following:</p>
+<ul class="simple">
+<li><p>get the pressure on the ball (Herrold et al., 2022)</p></li>
+<li><p>get the individual player possession (Adrienko et al., 2016)</p></li>
+<li><p>get the velocity, acceleration (and jerk) of players and the ball.</p></li>
+<li><p>filter the data</p></li>
+</ul>
+<p>For specific use cases look at our official documentation, lets give you an example with individual player possession:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databallpy.features.player_possession</span> <span class="kn">import</span> <span class="n">get_individual_player_possessions_and_duels</span>
+
+<span class="n">possessions</span><span class="p">,</span> <span class="n">duels</span> <span class="o">=</span> <span class="n">get_individual_player_possessions_and_duels</span><span class="p">(</span>
+    <span class="n">tracking_data</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">,</span>
+    <span class="n">frame_rate</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">frame_rate</span><span class="p">,</span>
+    <span class="n">pz_radius</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="c1"># the possession zone radius</span>
+    <span class="n">dz_radius</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="c1"># the duel zone radius</span>
+    <span class="n">bv_threshold</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="c1"># the ball velocity change threshold</span>
+    <span class="n">ba_threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="c1"># the ball angle change threshold</span>
+    <span class="n">bd_threshold</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="c1"># the ball displacement change threshold</span>
+    <span class="n">min_frames</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1"># number of frames there need to be before a ball possession can be assigned</span>
+<span class="p">)</span>
+
+<span class="k">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[</span><span class="s2">&quot;player_possession&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">possessions</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[</span><span class="s2">&quot;player_possession&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">())</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+player_possession
+home_7     3429
+home_6     3219
+home_1     2881
+away_19    2786
+home_3     2662
+away_28    2439
+home_4     2437
+away_20    2343
+away_24    2323
+away_29    1751
+away_22    1705
+home_5     1624
+away_23    1530
+home_11    1521
+away_21    1396
+home_12    1370
+home_2     1315
+away_25    1250
+home_15    1161
+away_18     825
+away_27     811
+away_33     788
+home_9      775
+home_8      767
+home_10     742
+away_26     717
+away_30     700
+away_31     676
+home_13     653
+home_16     551
+away_34     451
+home_17     422
+home_14     398
+away_32     254
+away_35     104
+Name: count, dtype: int64
+</pre></div></div>
+</div>
+</section>
+<section id="Save-Match-Clip">
+<h1>Save Match Clip<a class="headerlink" href="#Save-Match-Clip" title="Link to this heading"></a></h1>
+<p>Another functionality is in saving match clips of the tracking and event data. Since we have already synchronised the tracking and event data, we can now also indicate which events we want to see in the match clip. On top of that, we also just added player possession to our data, lets check how well it worked by adding a yellow circle around the proposed player that has ball possession. To save a match clip, run the following code:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databallpy.visualize</span> <span class="kn">import</span> <span class="n">save_match_clip</span>
+
+<span class="c1"># saving match clip from the index 1065 to 1565, with a frame rate of 25 fps (20 seconds of the match).</span>
+<span class="n">save_match_clip</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="mi">1085</span><span class="p">,</span> <span class="mi">1585</span><span class="p">,</span> <span class="n">save_folder</span><span class="o">=</span><span class="s2">&quot;example_data&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="n">events</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pass&quot;</span><span class="p">],</span>  <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">player_possession_column</span><span class="o">=</span><span class="s2">&quot;player_possession&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">HTML</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;video alt=&quot;save match clip&quot; width=&quot;640&quot; height=&quot;480&quot; controls&gt;</span>
+<span class="s2">        &lt;source src=&quot;https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/example.mp4&quot; type=&quot;video/mp4&quot;&gt;</span>
+<span class="s2">    &lt;/video&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<video alt="save match clip" width="640" height="480" controls>
+    <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/example.mp4" type="video/mp4">
+</video></div>
+</div>
+<p>As you can see, the event synchronisation and the individual player possessions work pretty good.</p>
+</section>
+<section id="Plot-events">
+<h1>Plot events<a class="headerlink" href="#Plot-events" title="Link to this heading"></a></h1>
+<p>Also, events can be plotted. You can specify the event, the outcome, the player, and the team. For instance, if you want all shots plotted, colored by which team took the shot, you can use the following code:</p>
+<p>Note that because the home team (Team A) is always represented playing from left to right, all shots of the match (both first and second half) are represented on the right side of the pitch.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databallpy.visualize</span> <span class="kn">import</span> <span class="n">plot_events</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_events</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">events</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;shot&quot;</span><span class="p">],</span> <span class="n">color_by_col</span><span class="o">=</span><span class="s2">&quot;team_id&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;shots&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Found 20 matching events
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/example_30_1.png" src="_images/example_30_1.png" />
+</div>
+</div>
+</section>
+<section id="Conclusion">
+<h1>Conclusion<a class="headerlink" href="#Conclusion" title="Link to this heading"></a></h1>
+<p>Hope you have an idea of how the package works and how it can speed up your analysis of soccer matches. However, we are still in development, so if you have any suggestion, bugs, warnings, things you don’t understand and/or just want to contribute to the package, don’t hesitate to go to the <a class="reference external" href="https://github.com/Alek050/databallpy">GitHub page</a> of the project and open an issue/question or just let us know what you think of the package!</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="DataBallPy Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Alexander Oonk &amp; Daan Grob.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>databallpy.load_data.event_data.opta &mdash; databallpy  documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> databallpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../example.html">Example usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../example.html#save-match-clip">Save Match Clip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../conduct.html">Code of Conduct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">databallpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">databallpy.load_data.event_data.opta</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for databallpy.load_data.event_data.opta</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+<span class="kn">from</span> <span class="nn">databallpy.load_data.metadata</span> <span class="kn">import</span> <span class="n">Metadata</span>
+
+<span class="n">EVENT_TYPE_IDS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;pass&quot;</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;offside pass&quot;</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;take on&quot;</span><span class="p">,</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;foul&quot;</span><span class="p">,</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+    <span class="mi">6</span><span class="p">:</span> <span class="s2">&quot;corner awarded&quot;</span><span class="p">,</span>
+    <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;tackle&quot;</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">:</span> <span class="s2">&quot;interception&quot;</span><span class="p">,</span>
+    <span class="mi">9</span><span class="p">:</span> <span class="s2">&quot;turnover&quot;</span><span class="p">,</span>
+    <span class="mi">10</span><span class="p">:</span> <span class="s2">&quot;save&quot;</span><span class="p">,</span>
+    <span class="mi">11</span><span class="p">:</span> <span class="s2">&quot;claim&quot;</span><span class="p">,</span>
+    <span class="mi">12</span><span class="p">:</span> <span class="s2">&quot;clearance&quot;</span><span class="p">,</span>
+    <span class="mi">13</span><span class="p">:</span> <span class="s2">&quot;miss&quot;</span><span class="p">,</span>
+    <span class="mi">14</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+    <span class="mi">15</span><span class="p">:</span> <span class="s2">&quot;attempt saved&quot;</span><span class="p">,</span>
+    <span class="mi">16</span><span class="p">:</span> <span class="s2">&quot;goal&quot;</span><span class="p">,</span>
+    <span class="mi">17</span><span class="p">:</span> <span class="s2">&quot;card&quot;</span><span class="p">,</span>
+    <span class="mi">18</span><span class="p">:</span> <span class="s2">&quot;player off&quot;</span><span class="p">,</span>
+    <span class="mi">19</span><span class="p">:</span> <span class="s2">&quot;player on&quot;</span><span class="p">,</span>
+    <span class="mi">20</span><span class="p">:</span> <span class="s2">&quot;player retired&quot;</span><span class="p">,</span>
+    <span class="mi">21</span><span class="p">:</span> <span class="s2">&quot;player returns&quot;</span><span class="p">,</span>
+    <span class="mi">22</span><span class="p">:</span> <span class="s2">&quot;player becomes goalkeeper&quot;</span><span class="p">,</span>
+    <span class="mi">23</span><span class="p">:</span> <span class="s2">&quot;goalkeeper becomes player&quot;</span><span class="p">,</span>
+    <span class="mi">24</span><span class="p">:</span> <span class="s2">&quot;condition change&quot;</span><span class="p">,</span>
+    <span class="mi">25</span><span class="p">:</span> <span class="s2">&quot;official change&quot;</span><span class="p">,</span>
+    <span class="mi">27</span><span class="p">:</span> <span class="s2">&quot;start delay&quot;</span><span class="p">,</span>
+    <span class="mi">28</span><span class="p">:</span> <span class="s2">&quot;end delay&quot;</span><span class="p">,</span>
+    <span class="mi">29</span><span class="p">:</span> <span class="s2">&quot;unknown event 29&quot;</span><span class="p">,</span>
+    <span class="mi">30</span><span class="p">:</span> <span class="s2">&quot;end&quot;</span><span class="p">,</span>
+    <span class="mi">31</span><span class="p">:</span> <span class="s2">&quot;unknown event 31&quot;</span><span class="p">,</span>
+    <span class="mi">32</span><span class="p">:</span> <span class="s2">&quot;start&quot;</span><span class="p">,</span>
+    <span class="mi">33</span><span class="p">:</span> <span class="s2">&quot;unknown event 33&quot;</span><span class="p">,</span>
+    <span class="mi">34</span><span class="p">:</span> <span class="s2">&quot;team set up&quot;</span><span class="p">,</span>
+    <span class="mi">35</span><span class="p">:</span> <span class="s2">&quot;player changed position&quot;</span><span class="p">,</span>
+    <span class="mi">36</span><span class="p">:</span> <span class="s2">&quot;player changed jersey number&quot;</span><span class="p">,</span>
+    <span class="mi">37</span><span class="p">:</span> <span class="s2">&quot;collection end&quot;</span><span class="p">,</span>
+    <span class="mi">38</span><span class="p">:</span> <span class="s2">&quot;temp_goal&quot;</span><span class="p">,</span>
+    <span class="mi">39</span><span class="p">:</span> <span class="s2">&quot;temp_attempt&quot;</span><span class="p">,</span>
+    <span class="mi">40</span><span class="p">:</span> <span class="s2">&quot;formation change&quot;</span><span class="p">,</span>
+    <span class="mi">41</span><span class="p">:</span> <span class="s2">&quot;punch&quot;</span><span class="p">,</span>
+    <span class="mi">42</span><span class="p">:</span> <span class="s2">&quot;good skill&quot;</span><span class="p">,</span>
+    <span class="mi">43</span><span class="p">:</span> <span class="s2">&quot;deleted event&quot;</span><span class="p">,</span>
+    <span class="mi">44</span><span class="p">:</span> <span class="s2">&quot;aerial&quot;</span><span class="p">,</span>
+    <span class="mi">45</span><span class="p">:</span> <span class="s2">&quot;challenge&quot;</span><span class="p">,</span>
+    <span class="mi">46</span><span class="p">:</span> <span class="s2">&quot;unknown event 46&quot;</span><span class="p">,</span>
+    <span class="mi">47</span><span class="p">:</span> <span class="s2">&quot;rescinded card&quot;</span><span class="p">,</span>
+    <span class="mi">48</span><span class="p">:</span> <span class="s2">&quot;unknown event 46&quot;</span><span class="p">,</span>
+    <span class="mi">49</span><span class="p">:</span> <span class="s2">&quot;ball recovery&quot;</span><span class="p">,</span>
+    <span class="mi">50</span><span class="p">:</span> <span class="s2">&quot;dispossessed&quot;</span><span class="p">,</span>
+    <span class="mi">51</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+    <span class="mi">52</span><span class="p">:</span> <span class="s2">&quot;keeper pick-up&quot;</span><span class="p">,</span>
+    <span class="mi">53</span><span class="p">:</span> <span class="s2">&quot;cross not claimed&quot;</span><span class="p">,</span>
+    <span class="mi">54</span><span class="p">:</span> <span class="s2">&quot;smother&quot;</span><span class="p">,</span>
+    <span class="mi">55</span><span class="p">:</span> <span class="s2">&quot;offside provoked&quot;</span><span class="p">,</span>
+    <span class="mi">56</span><span class="p">:</span> <span class="s2">&quot;shield ball opp&quot;</span><span class="p">,</span>
+    <span class="mi">57</span><span class="p">:</span> <span class="s2">&quot;foul throw in&quot;</span><span class="p">,</span>
+    <span class="mi">58</span><span class="p">:</span> <span class="s2">&quot;penalty faced&quot;</span><span class="p">,</span>
+    <span class="mi">59</span><span class="p">:</span> <span class="s2">&quot;keeper sweeper&quot;</span><span class="p">,</span>
+    <span class="mi">60</span><span class="p">:</span> <span class="s2">&quot;chance missed&quot;</span><span class="p">,</span>
+    <span class="mi">61</span><span class="p">:</span> <span class="s2">&quot;ball touch&quot;</span><span class="p">,</span>
+    <span class="mi">62</span><span class="p">:</span> <span class="s2">&quot;unknown event 62&quot;</span><span class="p">,</span>
+    <span class="mi">63</span><span class="p">:</span> <span class="s2">&quot;temp_save&quot;</span><span class="p">,</span>
+    <span class="mi">64</span><span class="p">:</span> <span class="s2">&quot;resume&quot;</span><span class="p">,</span>
+    <span class="mi">65</span><span class="p">:</span> <span class="s2">&quot;contentious referee decision&quot;</span><span class="p">,</span>
+    <span class="mi">66</span><span class="p">:</span> <span class="s2">&quot;possession data&quot;</span><span class="p">,</span>
+    <span class="mi">67</span><span class="p">:</span> <span class="s2">&quot;50/50&quot;</span><span class="p">,</span>
+    <span class="mi">68</span><span class="p">:</span> <span class="s2">&quot;referee drop ball&quot;</span><span class="p">,</span>
+    <span class="mi">69</span><span class="p">:</span> <span class="s2">&quot;failed to block&quot;</span><span class="p">,</span>
+    <span class="mi">70</span><span class="p">:</span> <span class="s2">&quot;injury time announcement&quot;</span><span class="p">,</span>
+    <span class="mi">71</span><span class="p">:</span> <span class="s2">&quot;coach setup&quot;</span><span class="p">,</span>
+    <span class="mi">72</span><span class="p">:</span> <span class="s2">&quot;caught offside&quot;</span><span class="p">,</span>
+    <span class="mi">73</span><span class="p">:</span> <span class="s2">&quot;other ball contact&quot;</span><span class="p">,</span>
+    <span class="mi">74</span><span class="p">:</span> <span class="s2">&quot;blocked pass&quot;</span><span class="p">,</span>
+    <span class="mi">75</span><span class="p">:</span> <span class="s2">&quot;delayed start&quot;</span><span class="p">,</span>
+    <span class="mi">76</span><span class="p">:</span> <span class="s2">&quot;early end&quot;</span><span class="p">,</span>
+    <span class="mi">77</span><span class="p">:</span> <span class="s2">&quot;player off pitch&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="load_opta_event_data"><a class="viewcode-back" href="../../../../autoapi/databallpy/load_data/event_data/opta/index.html#databallpy.load_data.event_data.opta.load_opta_event_data">[docs]</a><span class="k">def</span> <span class="nf">load_opta_event_data</span><span class="p">(</span>
+    <span class="n">f7_loc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">f24_loc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pitch_dimensions</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="mf">106.0</span><span class="p">,</span> <span class="mf">68.0</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This function retrieves the metadata and event data of a specific match. The x</span>
+<span class="sd">    and y coordinates provided have been scaled to the dimensions of the pitch, with</span>
+<span class="sd">    (0, 0) being the center. Additionally, the coordinates have been standardized so</span>
+<span class="sd">    that the home team is represented as playing from left to right for the entire</span>
+<span class="sd">    match, and the away team is represented as playing from right to left.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        f7_loc (str): location of the f7.xml file.</span>
+<span class="sd">        f24_loc (str): location of the f24.xml file.</span>
+<span class="sd">        pitch_dimensions (list, optional): the length and width of the pitch in meters</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[pd.DataFrame, Metadata]: the event data of the match and the metadata</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f7_loc</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;f7_loc should be a string, not a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">f7_loc</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">f24_loc</span><span class="p">,</span> <span class="nb">str</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;f24_loc should be a string, not a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">f24_loc</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="n">f7_loc</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;.xml&quot;</span><span class="p">,</span> <span class="s2">&quot;f7 opta file should by of .xml format&quot;</span>
+    <span class="k">assert</span> <span class="n">f24_loc</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;.xml&quot;</span><span class="p">,</span> <span class="s2">&quot;f24 opta file should be of .xml format&quot;</span>
+
+    <span class="n">event_data</span> <span class="o">=</span> <span class="n">_load_event_data</span><span class="p">(</span><span class="n">f24_loc</span><span class="p">)</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">_load_metadata</span><span class="p">(</span><span class="n">f7_loc</span><span class="p">,</span> <span class="n">pitch_dimensions</span><span class="o">=</span><span class="n">pitch_dimensions</span><span class="p">)</span>
+
+    <span class="c1"># Add player names to the event data dataframe</span>
+    <span class="n">home_players</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="nb">zip</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">home_players</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">metadata</span><span class="o">.</span><span class="n">home_players</span><span class="p">[</span><span class="s2">&quot;full_name&quot;</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">away_players</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="nb">zip</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">away_players</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">metadata</span><span class="o">.</span><span class="n">away_players</span><span class="p">[</span><span class="s2">&quot;full_name&quot;</span><span class="p">])</span>
+    <span class="p">)</span>
+
+    <span class="n">home_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">event_data</span><span class="p">[</span><span class="s2">&quot;team_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">metadata</span><span class="o">.</span><span class="n">home_team_id</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span>
+        <span class="n">event_data</span><span class="p">[</span><span class="s2">&quot;player_id&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">away_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">event_data</span><span class="p">[</span><span class="s2">&quot;team_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">metadata</span><span class="o">.</span><span class="n">away_team_id</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span>
+        <span class="n">event_data</span><span class="p">[</span><span class="s2">&quot;player_id&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">home_mask</span><span class="p">,</span> <span class="s2">&quot;player_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+        <span class="n">home_mask</span><span class="p">,</span> <span class="s2">&quot;player_id&quot;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">home_players</span><span class="p">)</span>
+    <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">away_mask</span><span class="p">,</span> <span class="s2">&quot;player_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+        <span class="n">away_mask</span><span class="p">,</span> <span class="s2">&quot;player_id&quot;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">away_players</span><span class="p">)</span>
+
+    <span class="c1"># Rescale the x and y coordinates relative to the pitch dimensions</span>
+    <span class="c1"># The original dimension of the x and y coordinates range from 0 to 100</span>
+    <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;start_x&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;start_x&quot;</span><span class="p">]]</span> <span class="o">/</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;start_y&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;start_y&quot;</span><span class="p">]]</span> <span class="o">/</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
+
+    <span class="c1"># Change direction of play of the away team so it is represented from right to left</span>
+    <span class="n">event_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+        <span class="n">event_data</span><span class="p">[</span><span class="s2">&quot;team_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">metadata</span><span class="o">.</span><span class="n">away_team_id</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;start_x&quot;</span><span class="p">,</span> <span class="s2">&quot;start_y&quot;</span><span class="p">]</span>
+    <span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">event_data</span><span class="p">,</span> <span class="n">metadata</span></div>
+
+
+<div class="viewcode-block" id="_load_metadata"><a class="viewcode-back" href="../../../../autoapi/databallpy/load_data/event_data/opta/index.html#databallpy.load_data.event_data.opta._load_metadata">[docs]</a><span class="k">def</span> <span class="nf">_load_metadata</span><span class="p">(</span><span class="n">f7_loc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pitch_dimensions</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to load metadata from the f7.xml opta file</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        f7_loc (str): location of the f7.xml opta file</span>
+<span class="sd">        pitch_dimensions (list): the length and width of the pitch in meters</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        MetaData: all metadata information of the current match</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">f7_loc</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="s2">&quot;xml&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Obtain match id</span>
+    <span class="n">match_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;SoccerDocument&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;uID&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="c1"># Obtain match start and end of period datetime</span>
+    <span class="n">periods</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;period&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+        <span class="s2">&quot;start_datetime_opta&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;end_datetime_opta&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">}</span>
+    <span class="n">start_period_1</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;Stat&quot;</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;first_half_start&quot;</span><span class="p">})</span>
+    <span class="n">end_period_1</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;Stat&quot;</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;first_half_stop&quot;</span><span class="p">})</span>
+    <span class="n">start_period_2</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;Stat&quot;</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;second_half_start&quot;</span><span class="p">})</span>
+    <span class="n">end_period_2</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;Stat&quot;</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;second_half_stop&quot;</span><span class="p">})</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">start_period_1</span><span class="p">,</span> <span class="n">start_period_2</span><span class="p">],</span> <span class="p">[</span><span class="n">end_period_1</span><span class="p">,</span> <span class="n">end_period_2</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="c1"># Add one hour to go from utc to Dutch time</span>
+        <span class="n">periods</span><span class="p">[</span><span class="s2">&quot;start_datetime_opta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">start</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">periods</span><span class="p">[</span><span class="s2">&quot;end_datetime_opta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">end</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Opta has a TeamData and Team attribute in the f7 file</span>
+    <span class="n">team_datas</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;TeamData&quot;</span><span class="p">)</span>
+    <span class="n">teams</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;Team&quot;</span><span class="p">)</span>
+    <span class="n">teams_info</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">teams_player_info</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">team_data</span><span class="p">,</span> <span class="n">team</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">team_datas</span><span class="p">,</span> <span class="n">teams</span><span class="p">):</span>
+
+        <span class="c1"># Team information</span>
+        <span class="n">team_name</span> <span class="o">=</span> <span class="n">team</span><span class="o">.</span><span class="n">findChildren</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">team_info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">team_info</span><span class="p">[</span><span class="s2">&quot;team_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">team_name</span>
+        <span class="n">team_info</span><span class="p">[</span><span class="s2">&quot;side&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">team_data</span><span class="p">[</span><span class="s2">&quot;Side&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">team_info</span><span class="p">[</span><span class="s2">&quot;formation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">team_data</span><span class="p">[</span><span class="s2">&quot;Formation&quot;</span><span class="p">]</span>
+        <span class="n">team_info</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">team_data</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">])</span>
+        <span class="n">team_info</span><span class="p">[</span><span class="s2">&quot;team_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">team_data</span><span class="p">[</span><span class="s2">&quot;TeamRef&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">teams_info</span><span class="p">[</span><span class="n">team_info</span><span class="p">[</span><span class="s2">&quot;side&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">team_info</span>
+
+        <span class="c1"># Player information</span>
+        <span class="n">players_data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">player</span><span class="o">.</span><span class="n">attrs</span> <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">team_data</span><span class="o">.</span><span class="n">findChildren</span><span class="p">(</span><span class="s2">&quot;MatchPlayer&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">players_names</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">team</span><span class="o">.</span><span class="n">findChildren</span><span class="p">(</span><span class="s2">&quot;Player&quot;</span><span class="p">):</span>
+            <span class="n">player_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;uID&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">first_name</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span>
+
+            <span class="k">if</span> <span class="s2">&quot;Last&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">3</span><span class="p">]):</span>
+                <span class="n">last_name_idx</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">last_name_idx</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">last_name</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="n">last_name_idx</span><span class="p">]</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">first_name</span><span class="p">:</span>
+                <span class="n">players_names</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">player_id</span><span class="p">)]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">first_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">last_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">players_names</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">player_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">last_name</span>
+
+        <span class="n">player_info</span> <span class="o">=</span> <span class="n">_get_player_info</span><span class="p">(</span><span class="n">players_data</span><span class="p">,</span> <span class="n">players_names</span><span class="p">)</span>
+        <span class="n">teams_player_info</span><span class="p">[</span><span class="n">team_info</span><span class="p">[</span><span class="s2">&quot;side&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">player_info</span>
+
+    <span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="p">(</span>
+        <span class="n">match_id</span><span class="o">=</span><span class="n">match_id</span><span class="p">,</span>
+        <span class="n">pitch_dimensions</span><span class="o">=</span><span class="n">pitch_dimensions</span><span class="p">,</span>
+        <span class="n">periods_frames</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">periods</span><span class="p">),</span>
+        <span class="n">frame_rate</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+        <span class="n">home_team_id</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;home&quot;</span><span class="p">][</span><span class="s2">&quot;team_id&quot;</span><span class="p">],</span>
+        <span class="n">home_team_name</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;home&quot;</span><span class="p">][</span><span class="s2">&quot;team_name&quot;</span><span class="p">],</span>
+        <span class="n">home_players</span><span class="o">=</span><span class="n">teams_player_info</span><span class="p">[</span><span class="s2">&quot;home&quot;</span><span class="p">],</span>
+        <span class="n">home_score</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;home&quot;</span><span class="p">][</span><span class="s2">&quot;score&quot;</span><span class="p">],</span>
+        <span class="n">home_formation</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;home&quot;</span><span class="p">][</span><span class="s2">&quot;formation&quot;</span><span class="p">],</span>
+        <span class="n">away_team_id</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;away&quot;</span><span class="p">][</span><span class="s2">&quot;team_id&quot;</span><span class="p">],</span>
+        <span class="n">away_team_name</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;away&quot;</span><span class="p">][</span><span class="s2">&quot;team_name&quot;</span><span class="p">],</span>
+        <span class="n">away_players</span><span class="o">=</span><span class="n">teams_player_info</span><span class="p">[</span><span class="s2">&quot;away&quot;</span><span class="p">],</span>
+        <span class="n">away_score</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;away&quot;</span><span class="p">][</span><span class="s2">&quot;score&quot;</span><span class="p">],</span>
+        <span class="n">away_formation</span><span class="o">=</span><span class="n">teams_info</span><span class="p">[</span><span class="s2">&quot;away&quot;</span><span class="p">][</span><span class="s2">&quot;formation&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">metadata</span></div>
+
+
+<div class="viewcode-block" id="_get_player_info"><a class="viewcode-back" href="../../../../autoapi/databallpy/load_data/event_data/opta/index.html#databallpy.load_data.event_data.opta._get_player_info">[docs]</a><span class="k">def</span> <span class="nf">_get_player_info</span><span class="p">(</span><span class="n">players_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">players_names</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to loop over all players and save data in a pd.DataFrame</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        players_data (list): for every player a dictionary with info about the player</span>
+<span class="sd">        except the player name</span>
+<span class="sd">        players_names (dict): dictionary with player id as key and the player name as</span>
+<span class="sd">        value</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: all information of the players</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;formation_place&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;position&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;starter&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;shirt_num&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">players_data</span><span class="p">:</span>
+        <span class="n">player_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;PlayerRef&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">player_id</span><span class="p">)</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;full_name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">players_names</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">player_id</span><span class="p">)])</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;formation_place&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;Formation_Place&quot;</span><span class="p">]))</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">player</span><span class="p">[</span><span class="s2">&quot;Position&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;Position&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Substitute&quot;</span>
+            <span class="k">else</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;SubPosition&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;starter&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;Status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Start&quot;</span><span class="p">)</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;shirt_num&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;ShirtNumber&quot;</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">result_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="_load_event_data"><a class="viewcode-back" href="../../../../autoapi/databallpy/load_data/event_data/opta/index.html#databallpy.load_data.event_data.opta._load_event_data">[docs]</a><span class="k">def</span> <span class="nf">_load_event_data</span><span class="p">(</span><span class="n">f24_loc</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to load the f27 .xml, the events of the match.</span>
+<span class="sd">    Note: this function does ignore qualifiers for now</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        f24_loc (str): location of the f24.xml file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: all events of the match in a pd dataframe</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">f24_loc</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="s2">&quot;xml&quot;</span><span class="p">)</span>
+
+    <span class="n">result_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;event_id&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;type_id&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;period_id&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;minutes&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;seconds&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;player_id&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;team_id&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;outcome&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;start_x&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;start_y&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;datetime&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">}</span>
+
+    <span class="n">events</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;Event&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;event_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]))</span>
+        <span class="n">event_type_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;type_id&quot;</span><span class="p">])</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;type_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event_type_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">event_type_id</span> <span class="ow">in</span> <span class="n">EVENT_TYPE_IDS</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">event_name</span> <span class="o">=</span> <span class="n">EVENT_TYPE_IDS</span><span class="p">[</span><span class="n">event_type_id</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Unknown event</span>
+            <span class="n">event_name</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;event&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event_name</span><span class="p">)</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;period_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;period_id&quot;</span><span class="p">]))</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;minutes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]))</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;seconds&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;sec&quot;</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="s2">&quot;player_id&quot;</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;player_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;player_id&quot;</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;player_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;team_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;team_id&quot;</span><span class="p">]))</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;outcome&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;outcome&quot;</span><span class="p">]))</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;start_x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]))</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;start_y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]))</span>
+        <span class="n">result_dict</span><span class="p">[</span><span class="s2">&quot;datetime&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]))</span>
+
+    <span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">result_dict</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Alexander Oonk &amp; Daan Grob.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

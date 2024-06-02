@@ -8,6 +8,9 @@ build:
   tools:
     python: "3.12"
 
+sphinx:
+  configuration: docs2/conf.py
+
 python:
   install:
     - requirements: docs2/requirements.txt

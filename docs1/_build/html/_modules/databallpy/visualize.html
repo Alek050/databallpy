@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>databallpy.visualize &mdash; databallpy  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> databallpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../example.html">Example usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example.html#save-match-clip">Save Match Clip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conduct.html">Code of Conduct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">databallpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">databallpy.visualize</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for databallpy.visualize</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.animation</span> <span class="k">as</span> <span class="nn">animation</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span> <span class="nn">databallpy.match</span> <span class="kn">import</span> <span class="n">Match</span>
+
+
+<div class="viewcode-block" id="plot_soccer_pitch"><a class="viewcode-back" href="../../autoapi/databallpy/visualize/index.html#databallpy.visualize.plot_soccer_pitch">[docs]</a><span class="k">def</span> <span class="nf">plot_soccer_pitch</span><span class="p">(</span>
+    <span class="n">field_dimen</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">106.0</span><span class="p">,</span> <span class="mf">68.0</span><span class="p">),</span>
+    <span class="n">pitch_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mediumseagreen&quot;</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">markersize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A function to plot a soccer pitch</span>
+<span class="sd">    Note: relies heavily on https://github.com/Friends-of-Tracking-Data-FoTD/</span>
+<span class="sd">    LaurieOnTracking/blob/master/Metrica_Viz.py</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        field_dimen (tuple, optional): x and y length of pitch in meters. Defaults to</span>
+<span class="sd">        (106.0, 68.0).</span>
+<span class="sd">        pitch_color (str, optional): Color of the pitch. Defaults to &quot;mediumseagreen&quot;.</span>
+<span class="sd">        linewidth (int, optional): Width of the lines on the pitch. Defaults to 2.</span>
+<span class="sd">        markersize (int, optional): Size of the dots on the pitch. Defaults to 20.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[plt.figure, plt.axes]: figure and axes with the pitch depicted on it</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+    <span class="c1"># Set pitch and line colors</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="n">pitch_color</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pitch_color</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">]:</span>
+        <span class="n">lc</span> <span class="o">=</span> <span class="s2">&quot;whitesmoke&quot;</span>  <span class="c1"># line color</span>
+        <span class="n">pc</span> <span class="o">=</span> <span class="s2">&quot;w&quot;</span>  <span class="c1"># &#39;spot&#39; colors</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lc</span> <span class="o">=</span> <span class="s2">&quot;k&quot;</span>
+        <span class="n">pc</span> <span class="o">=</span> <span class="s2">&quot;k&quot;</span>
+
+    <span class="c1"># All dimensions in meters</span>
+    <span class="n">border_dimen</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># include a border arround of the field of width 3m</span>
+    <span class="n">half_pitch_length</span> <span class="o">=</span> <span class="n">field_dimen</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span>  <span class="c1"># length of half pitch</span>
+    <span class="n">half_pitch_width</span> <span class="o">=</span> <span class="n">field_dimen</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span>  <span class="c1"># width of half pitch</span>
+
+    <span class="c1"># Soccer field dimensions are in yards, so we need to convert them to meters</span>
+    <span class="n">meters_per_yard</span> <span class="o">=</span> <span class="mf">0.9144</span>  <span class="c1"># unit conversion from yards to meters</span>
+    <span class="n">goal_line_width</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">box_width</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">box_length</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">area_width</span> <span class="o">=</span> <span class="mi">44</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">area_length</span> <span class="o">=</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">penalty_spot</span> <span class="o">=</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">corner_radius</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">D_length</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">D_radius</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">D_pos</span> <span class="o">=</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+    <span class="n">centre_circle_radius</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">meters_per_yard</span>
+
+    <span class="c1"># Plot half way line</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="n">half_pitch_width</span><span class="p">,</span> <span class="n">half_pitch_width</span><span class="p">],</span> <span class="n">lc</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="n">lc</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">markersize</span><span class="p">)</span>
+    <span class="c1"># Plot center circle</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span> <span class="o">*</span> <span class="n">centre_circle_radius</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">centre_circle_radius</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lc</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lc</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">)</span>
+
+    <span class="n">signs</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">signs</span><span class="p">:</span>  <span class="c1"># plots each line seperately</span>
+
+        <span class="c1"># Plot pitch boundary</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="o">-</span><span class="n">half_pitch_length</span><span class="p">,</span> <span class="n">half_pitch_length</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_width</span><span class="p">,</span> <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_width</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">,</span> <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="n">half_pitch_width</span><span class="p">,</span> <span class="n">half_pitch_width</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Goal posts &amp; line</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">,</span> <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="n">goal_line_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">goal_line_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">pc</span> <span class="o">+</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span>
+            <span class="n">markersize</span><span class="o">=</span><span class="mi">6</span> <span class="o">*</span> <span class="n">markersize</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 6 yard box</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">,</span> <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">box_length</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">box_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">box_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">,</span> <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">box_length</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="n">box_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="n">box_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">box_length</span><span class="p">,</span>
+                <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">box_length</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="n">box_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">box_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Penalty area</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">,</span> <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">area_length</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">area_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">area_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span><span class="p">,</span> <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">area_length</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="n">area_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="n">area_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">area_length</span><span class="p">,</span>
+                <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">area_length</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="n">area_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">area_width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Penalty spot</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+            <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">penalty_spot</span><span class="p">,</span>
+            <span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+            <span class="n">facecolor</span><span class="o">=</span><span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">s</span><span class="o">=</span><span class="n">markersize</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Corner flags</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span> <span class="o">*</span> <span class="n">corner_radius</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">corner_radius</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span>
+            <span class="o">-</span><span class="n">half_pitch_width</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span>
+            <span class="n">lc</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="n">half_pitch_width</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span> <span class="n">lc</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Draw the half circles by the box: the D</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span> <span class="o">*</span> <span class="n">D_length</span>
+        <span class="p">)</span>  <span class="c1"># D_length is the chord of the circle that defines the D</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">D_radius</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">D_pos</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">s</span> <span class="o">*</span> <span class="n">half_pitch_length</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lc</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">)</span>
+
+    <span class="c1"># remove axis labels and ticks</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+    <span class="c1"># set axis limits</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">field_dimen</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">border_dimen</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="n">field_dimen</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">border_dimen</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="n">xmax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="n">ymax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_axisbelow</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
+
+
+<div class="viewcode-block" id="save_match_clip"><a class="viewcode-back" href="../../autoapi/databallpy/visualize/index.html#databallpy.visualize.save_match_clip">[docs]</a><span class="k">def</span> <span class="nf">save_match_clip</span><span class="p">(</span>
+    <span class="n">match</span><span class="p">:</span> <span class="n">Match</span><span class="p">,</span>
+    <span class="n">start_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">end_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">save_folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;test_clip&quot;</span><span class="p">,</span>
+    <span class="n">team_colors</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">],</span>
+    <span class="n">pitch_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mediumseagreen&quot;</span><span class="p">,</span>
+    <span class="n">events</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">variable_of_interest</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to save a subset of a match clip of the tracking data.</span>
+
+<span class="sd">    Note that making animation is build with FFMPEG. You need to have FFMPEG installed</span>
+<span class="sd">    on you device before being able to use this function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        match (Match): Match with tracking data and ohter info of the match.</span>
+<span class="sd">        start_idx (int): Start index of what to save of the match.tracking_data df.</span>
+<span class="sd">        end_idx (int): End index of what to save of the match.tracking_data df.</span>
+<span class="sd">        save_folder (str): Location where to save the clip.</span>
+<span class="sd">        title (str, optional): Title of the clip. Defaults to &quot;test_clip&quot;.</span>
+<span class="sd">        team_colors (list, optional): Colors of the home and away team. Defaults to</span>
+<span class="sd">        [&quot;green&quot;, &quot;red&quot;].</span>
+<span class="sd">        pitch_color (str, optional): Color of the pitch. Defaults to &quot;mediumseagreen&quot;.</span>
+<span class="sd">        events (list, optional): What events should be plotted as well. Defaults to [].</span>
+<span class="sd">        variable_of_interest (pd.Series, optional): Variable you want to have plotted</span>
+<span class="sd">        in the clip, this is a pd.Series that should have the same index</span>
+<span class="sd">        (start_idx:end_idx) as the tracking data that will be plotted. Defaults to None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">td</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span>
+    <span class="n">td_ht</span> <span class="o">=</span> <span class="n">td</span><span class="p">[[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">match</span><span class="o">.</span><span class="n">home_players_column_ids</span> <span class="k">if</span> <span class="s2">&quot;_x&quot;</span> <span class="ow">in</span> <span class="n">x</span> <span class="ow">or</span> <span class="s2">&quot;_y&quot;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]]</span>
+    <span class="n">td_at</span> <span class="o">=</span> <span class="n">td</span><span class="p">[[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">match</span><span class="o">.</span><span class="n">away_players_column_ids</span> <span class="k">if</span> <span class="s2">&quot;_x&quot;</span> <span class="ow">in</span> <span class="n">x</span> <span class="ow">or</span> <span class="s2">&quot;_y&quot;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">variable_of_interest</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">variable_of_interest</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="n">td</span><span class="o">.</span><span class="n">index</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="p">(</span>
+            <span class="s2">&quot;Index of variable of interest and of the tracking data should be alike!&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="s2">&quot;event&quot;</span> <span class="ow">in</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">),</span> <span class="s2">&quot;No event column found in match.tracking_data.columns, did you synchronize&quot;</span>
+        <span class="s2">&quot;event and tracking data?&quot;</span>
+
+    <span class="n">animation_metadata</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+        <span class="s2">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Matplotlib&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;Made with databallpy&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">animation</span><span class="o">.</span><span class="n">FFMpegWriter</span><span class="p">(</span><span class="n">fps</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">frame_rate</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">animation_metadata</span><span class="p">)</span>
+    <span class="n">video_loc</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">save_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">.mp4&quot;</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_soccer_pitch</span><span class="p">(</span>
+        <span class="n">field_dimen</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">,</span> <span class="n">pitch_color</span><span class="o">=</span><span class="n">pitch_color</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Set match name, non variable over time</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+        <span class="k">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="k">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="k">match</span><span class="o">.</span><span class="n">home_team_name</span><span class="p">,</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">team_colors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+        <span class="k">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="mi">15</span><span class="p">,</span>
+        <span class="k">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="k">match</span><span class="o">.</span><span class="n">away_team_name</span><span class="p">,</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">team_colors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Generate movie with variable info</span>
+    <span class="k">with</span> <span class="n">writer</span><span class="o">.</span><span class="n">saving</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">video_loc</span><span class="p">,</span> <span class="mi">100</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Making match clip...&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">index</span><span class="p">)):</span>
+
+            <span class="n">variable_fig_objs</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># Scatter plot the teams</span>
+            <span class="k">for</span> <span class="n">td_team</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="n">td_ht</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">td_at</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]],</span> <span class="n">team_colors</span><span class="p">):</span>
+                <span class="n">x_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">td_team</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;_x&quot;</span><span class="p">]</span>
+                <span class="n">y_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">td_team</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;_y&quot;</span><span class="p">]</span>
+                <span class="n">fig_obj</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                    <span class="n">td_team</span><span class="p">[</span><span class="n">x_cols</span><span class="p">],</span> <span class="n">td_team</span><span class="p">[</span><span class="n">y_cols</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mf">2.5</span>
+                <span class="p">)</span>
+                <span class="n">variable_fig_objs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fig_obj</span><span class="p">)</span>
+
+                <span class="c1"># Add shirt number to every dot</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_cols</span><span class="p">,</span> <span class="n">y_cols</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">td_team</span><span class="p">[</span><span class="n">x</span><span class="p">]):</span>
+                        <span class="c1"># Player not on the pitch currently</span>
+                        <span class="k">continue</span>
+
+                    <span class="c1"># Slightly different place needed if the number has a len of 2</span>
+                    <span class="n">correction</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.8</span>
+                    <span class="n">fig_obj</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                        <span class="n">td_team</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">correction</span><span class="p">,</span>
+                        <span class="n">td_team</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span>
+                        <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># the shirt number</span>
+                        <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span>
+                        <span class="n">c</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+                        <span class="n">zorder</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">variable_fig_objs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fig_obj</span><span class="p">)</span>
+
+            <span class="c1"># Plot the ball</span>
+            <span class="n">fig_obj</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                <span class="n">td</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s2">&quot;ball_x&quot;</span><span class="p">],</span> <span class="n">td</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s2">&quot;ball_y&quot;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;black&quot;</span>
+            <span class="p">)</span>
+            <span class="n">variable_fig_objs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fig_obj</span><span class="p">)</span>
+
+            <span class="c1"># Add time info</span>
+            <span class="n">fig_obj</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                <span class="o">-</span><span class="mf">20.5</span><span class="p">,</span>
+                <span class="k">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">,</span>
+                <span class="n">td</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s2">&quot;matchtime_td&quot;</span><span class="p">],</span>
+                <span class="n">c</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">variable_fig_objs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fig_obj</span><span class="p">)</span>
+
+            <span class="c1"># Add variable of interest</span>
+            <span class="k">if</span> <span class="n">variable_of_interest</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fig_obj</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                    <span class="o">-</span><span class="mi">7</span><span class="p">,</span>
+                    <span class="k">match</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">,</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">variable_of_interest</span><span class="p">[</span><span class="n">idx</span><span class="p">]),</span>
+                    <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">variable_fig_objs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fig_obj</span><span class="p">)</span>
+
+            <span class="c1"># This code will only work after match has a synchronise() function</span>
+            <span class="c1"># # Add events</span>
+            <span class="c1"># # Note: this should be last in this function since it assumes that all</span>
+            <span class="c1"># # other info is already plotted in the axes</span>
+            <span class="c1"># if len(events) &gt; 0:</span>
+            <span class="c1">#     if td.loc[idx, &quot;event&quot;] in events:</span>
+            <span class="c1">#         event = (</span>
+            <span class="c1">#             match.event_data[</span>
+            <span class="c1">#                 match.event_data[&quot;event_id&quot;] == td.loc[idx, &quot;event_id&quot;]</span>
+            <span class="c1">#             ]</span>
+            <span class="c1">#             .iloc[0]</span>
+            <span class="c1">#             .T</span>
+            <span class="c1">#         )</span>
+
+            <span class="c1">#         player_name = event[&quot;player_name&quot;]</span>
+            <span class="c1">#         event_name = event[&quot;event&quot;]</span>
+
+            <span class="c1">#         # Add event text</span>
+            <span class="c1">#         fig_obj = ax.text(</span>
+            <span class="c1">#             15,</span>
+            <span class="c1">#             match.pitch_dimension[1] / 2.0 + 2.0,</span>
+            <span class="c1">#             f&quot;{player_name}: {event_name}&quot;,</span>
+            <span class="c1">#             fontsize=14,</span>
+            <span class="c1">#         )</span>
+            <span class="c1">#         variable_fig_objs.append(fig_obj)</span>
+
+            <span class="c1">#         # Highligh location on the pitch of the event</span>
+            <span class="c1">#         fig_obj = ax.scatter(</span>
+            <span class="c1">#             event[&quot;start_x&quot;],</span>
+            <span class="c1">#             event[&quot;start_y&quot;],</span>
+            <span class="c1">#             color=&quot;red&quot;,</span>
+            <span class="c1">#             marker=&quot;x&quot;,</span>
+            <span class="c1">#             markersize=14,</span>
+            <span class="c1">#         )</span>
+            <span class="c1">#         variable_fig_objs.append(fig_obj)</span>
+
+            <span class="c1">#         # Grap frame match.frame_rate times to &#39;pause&#39; the video at</span>
+            <span class="c1">#         # this moment</span>
+            <span class="c1">#         for _ in range(match.frame_rate):</span>
+            <span class="c1">#             writer.grab_frame()</span>
+
+            <span class="c1"># Save current frame</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">grab_frame</span><span class="p">()</span>
+
+            <span class="c1"># Delete all variable axis objects</span>
+            <span class="k">for</span> <span class="n">fig_obj</span> <span class="ow">in</span> <span class="n">variable_fig_objs</span><span class="p">:</span>
+                <span class="n">fig_obj</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+
+    <span class="c1"># Close figure</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Alexander Oonk &amp; Daan Grob.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
