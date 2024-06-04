@@ -139,20 +139,14 @@
 
   
 
-<a class="navbar-brand logo" href="intro.html">
+<a class="navbar-brand logo" href="welcome_to_databallpy.html">
   
   
   
   
   
-    
-    
-      
-    
-    
-    <img src="_static/databallpy_logo.png" class="logo__image only-light" alt="DataBallPy Documentation - Home"/>
-    <script>document.write(`<img src="_static/databallpy_logo.png" class="logo__image only-dark" alt="DataBallPy Documentation - Home"/>`);</script>
   
+    <p class="title logo__title">DataBallPy Documentation</p>
   
 </a></div>
         <div class="sidebar-primary-item">
@@ -171,20 +165,25 @@
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
             <li class="toctree-l1">
-                <a class="reference internal" href="intro.html">
-                    Introduction
+                <a class="reference internal" href="welcome_to_databallpy.html">
+                    Welcome to DataBallPy!
                 </a>
             </li>
         </ul>
         <p aria-level="2" class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="intro_page.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_page.html">Overview</a></li>
+
+
+
+
+
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="installation_page.html">Installation</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Loading in a Match</a></li>
-
 </ul>
 
     </div>
@@ -380,19 +379,17 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Loading in a Match</a></li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#match-attributes">Match Attributes</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metadata">Metadata</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#team-and-player-information">Team and Player Information</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#match-attributes">Match Attributes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#metadata">Metadata</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#team-and-player-information">Team and Player Information</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tracking-data">Tracking Data</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pitch-conventions">Pitch Conventions</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#event-data">Event data</a></li>
 </ul>
-</li>
-</ul>
-
             </nav>
         </div>
     </div>
@@ -458,11 +455,10 @@ document.write(`
 </div>
 </div>
 <p>Simple as that! Note that it might take a few seconds to load in your data. On top of that, it might be different for different data providers. Currently, the package is mostly optimized for loading tracab and opta data. For the other providers, without a doubt, improvements in performance can be made. All suggestions are welcome.</p>
-</section>
-<section class="tex2jax_ignore mathjax_ignore" id="match-attributes">
-<h1>Match Attributes<a class="headerlink" href="#match-attributes" title="Link to this heading">#</a></h1>
+<section id="match-attributes">
+<h2>Match Attributes<a class="headerlink" href="#match-attributes" title="Link to this heading">#</a></h2>
 <section id="metadata">
-<h2>Metadata<a class="headerlink" href="#metadata" title="Link to this heading">#</a></h2>
+<h3>Metadata<a class="headerlink" href="#metadata" title="Link to this heading">#</a></h3>
 <p>Before looking at the tracking and event data, lets first investigate the metadata of the match that is available. Firstly the match specific metadata:</p>
 <ul class="simple">
 <li><p>The end score</p></li>
@@ -513,7 +509,7 @@ Name: 0, dtype: object
 </div>
 </section>
 <section id="team-and-player-information">
-<h2>Team and Player Information<a class="headerlink" href="#team-and-player-information" title="Link to this heading">#</a></h2>
+<h3>Team and Player Information<a class="headerlink" href="#team-and-player-information" title="Link to this heading">#</a></h3>
 <p>Some aditional team information stored in the <code class="docutils literal notranslate"><span class="pre">Match</span></code>. On top of that, information about the players is crucial for individual player and group analysis.</p>
 <ul class="simple">
 <li><p>team id</p></li>
@@ -556,6 +552,7 @@ Name: 0, dtype: object
 <p class="admonition-title">Important</p>
 <p>The start and end frame normally represent the frames where the players started the match, and when they ended the match. However, for Metrica we did not implement this yet. Therefore the value is -999. This is the default value for a missing integer value in DataBallPy. This is chosen since making it <code class="docutils literal notranslate"><span class="pre">NaN</span></code> would change to full column to a <code class="docutils literal notranslate"><span class="pre">float64</span></code> object, while it should stay of type integer.</p>
 </div>
+</section>
 </section>
 <section id="tracking-data">
 <h2>Tracking Data<a class="headerlink" href="#tracking-data" title="Link to this heading">#</a></h2>
@@ -827,19 +824,17 @@ Name: 13, dtype: object
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Loading in a Match</a></li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#match-attributes">Match Attributes</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metadata">Metadata</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#team-and-player-information">Team and Player Information</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#match-attributes">Match Attributes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#metadata">Metadata</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#team-and-player-information">Team and Player Information</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tracking-data">Tracking Data</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pitch-conventions">Pitch Conventions</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#event-data">Event data</a></li>
 </ul>
-</li>
-</ul>
-
   </nav></div>
 
 </div></div>

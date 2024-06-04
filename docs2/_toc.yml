@@ -1,5 +1,5 @@
 format: jb-book
-root: intro
+root: welcome_to_databallpy
 parts:
   - caption: Introduction
     chapters:

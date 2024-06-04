@@ -1,6 +1,6 @@
-<div align="center">
-  <img src="https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34" alt="Logo">
-</div>
+<p align="center">
+  <img src="./media/databallpy_logo.png" />
+</p>
 
 # Installation
 
@@ -13,6 +13,12 @@ pip install databallpy
 ```
 
 This command tells pip to download the DataBallPy package from PyPI and install it on your machine.
+
+<div align="center">
+  <a href="https://pypi.org/project/databallpy/">
+      <img src="./media/pypi_logo.png" alt="PyPi"/>
+  </a>
+</div>
 
 ### Dependencies
 
