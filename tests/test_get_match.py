@@ -18,7 +18,6 @@ from databallpy.get_match import get_match, get_open_match, get_saved_match
 from databallpy.match import Match
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
-
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
@@ -36,6 +35,7 @@ from tests.expected_outcomes import (
     SHOT_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
 )
+
 from .mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
