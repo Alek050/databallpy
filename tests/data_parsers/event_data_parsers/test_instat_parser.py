@@ -10,7 +10,6 @@ from databallpy.data_parsers.event_data_parsers.instat_parser import (
 )
 from tests.expected_outcomes import ED_INSTAT, MD_INSTAT
 
-
 class TestInstatParser(unittest.TestCase):
     def setUp(self):
         self.instat_metadata_loc = "tests/test_data/instat_md_test.json"
