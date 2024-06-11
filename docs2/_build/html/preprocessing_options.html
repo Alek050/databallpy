@@ -139,14 +139,20 @@
 
   
 
-<a class="navbar-brand logo" href="welcome_to_databallpy.html">
+<a class="navbar-brand logo" href="index.html">
   
   
   
   
   
+    
+    
+      
+    
+    
+    <img src="_static/databallpy_logo.png" class="logo__image only-light" alt="DataBallPy Documentation - Home"/>
+    <script>document.write(`<img src="_static/databallpy_logo.png" class="logo__image only-dark" alt="DataBallPy Documentation - Home"/>`);</script>
   
-    <p class="title logo__title">DataBallPy Documentation</p>
   
 </a></div>
         <div class="sidebar-primary-item">
@@ -165,7 +171,7 @@
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
             <li class="toctree-l1">
-                <a class="reference internal" href="welcome_to_databallpy.html">
+                <a class="reference internal" href="index.html">
                     Welcome to DataBallPy!
                 </a>
             </li>
@@ -181,9 +187,10 @@
 
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
-<ul class="nav bd-sidenav">
+<ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="installation_page.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="loading_in_a_match.html">Loading in a Match</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Preprocessing</a></li>
 </ul>
 
     </div>
@@ -408,25 +415,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">FileNotFoundError</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">4</span>
-<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">import</span> <span class="nn">os</span>
-<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">databallpy</span> <span class="kn">import</span> <span class="n">get_saved_match</span>
-<span class="ne">----&gt; </span><span class="mi">4</span> <span class="n">match</span> <span class="o">=</span> <span class="n">get_saved_match</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;not_synced_match&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s2">&quot;saved_matches&quot;</span><span class="p">))</span>
-<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-
-<span class="nn">File ~/Develop/databallpy/databallpy/get_match.py:305,</span> in <span class="ni">get_saved_match</span><span class="nt">(name, path)</span>
-<span class="g g-Whitespace">    </span><span class="mi">303</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">loc</span><span class="p">):</span>
-<span class="g g-Whitespace">    </span><span class="mi">304</span>     <span class="n">LOGGER</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Can not load </span><span class="si">{</span><span class="n">loc</span><span class="si">}</span><span class="s2"> because it does not exist.&quot;</span><span class="p">)</span>
-<span class="ne">--&gt; </span><span class="mi">305</span>     <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-<span class="g g-Whitespace">    </span><span class="mi">306</span>         <span class="sa">f</span><span class="s2">&quot;Could not find </span><span class="si">{</span><span class="n">loc</span><span class="si">}</span><span class="s2">. Set the `path` variable&quot;</span>
-<span class="g g-Whitespace">    </span><span class="mi">307</span>         <span class="s2">&quot; to specify the right directory of the saved match.&quot;</span>
-<span class="g g-Whitespace">    </span><span class="mi">308</span>     <span class="p">)</span>
-<span class="g g-Whitespace">    </span><span class="mi">309</span> <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-<span class="g g-Whitespace">    </span><span class="mi">310</span>     <span class="n">match</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-<span class="ne">FileNotFoundError</span>: Could not find /Users/alexander/Develop/databallpy/docs2/saved_matches/not_synced_match.pickle. Set the `path` variable to specify the right directory of the saved match.
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>T-6a1be08f 2 - 2 T-dcd6dad8 1980-01-01 15:00:00
 </pre></div>
 </div>
 </div>
@@ -461,8 +450,8 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/3ce975a5d8b8a7d9d1b0155bff48c63f7b0b623c75f147ad5647e0f04b3dfc56.png" src="_images/3ce975a5d8b8a7d9d1b0155bff48c63f7b0b623c75f147ad5647e0f04b3dfc56.png" />
-<img alt="_images/55b1ecb585f169b6bd116265b9117cb314d349b32ff01fbea4ea6bf24cc7e5f4.png" src="_images/55b1ecb585f169b6bd116265b9117cb314d349b32ff01fbea4ea6bf24cc7e5f4.png" />
+<img alt="_images/e720fc9c895496147dd608c376ee3aac5fc4087b4a84f738382db5dc06a5f093.png" src="_images/e720fc9c895496147dd608c376ee3aac5fc4087b4a84f738382db5dc06a5f093.png" />
+<img alt="_images/e05771a7e3c862ce94d2f4c8fe98916d0fedb411c07cd9031c1ef7f99d19f4ef.png" src="_images/e05771a7e3c862ce94d2f4c8fe98916d0fedb411c07cd9031c1ef7f99d19f4ef.png" />
 </div>
 </div>
 <div class="admonition note">
