@@ -60,6 +60,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'loading_in_a_match';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Preprocessing" href="preprocessing_options.html" />
     <link rel="prev" title="Installation" href="installation_page.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -452,6 +453,161 @@ document.write(`
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>The current version of databallpy is 0.4.3
 </pre></div>
 </div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">KeyboardInterrupt</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">4</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">databallpy</span> <span class="kn">import</span> <span class="n">get_open_match</span><span class="p">,</span> <span class="n">__version__</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The current version of databallpy is </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="ne">----&gt; </span><span class="mi">4</span> <span class="n">match</span> <span class="o">=</span> <span class="n">get_open_match</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nn">File ~/Develop/databallpy/databallpy/get_match.py:452,</span> in <span class="ni">get_open_match</span><span class="nt">(provider, verbose)</span>
+<span class="g g-Whitespace">    </span><span class="mi">447</span>     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">448</span>         <span class="sa">f</span><span class="s2">&quot;Open match provider should be in </span><span class="si">{</span><span class="n">provider_options</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">provider</span><span class="si">}</span><span class="s2">.&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">449</span>     <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">451</span> <span class="k">if</span> <span class="n">provider</span> <span class="o">==</span> <span class="s2">&quot;metrica&quot;</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">452</span>     <span class="n">tracking_data</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">load_metrica_open_tracking_data</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">453</span>     <span class="n">event_data</span><span class="p">,</span> <span class="n">ed_metadata</span><span class="p">,</span> <span class="n">databallpy_events</span> <span class="o">=</span> <span class="n">load_metrica_open_event_data</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">455</span> <span class="n">periods_cols</span> <span class="o">=</span> <span class="n">ed_metadata</span><span class="o">.</span><span class="n">periods_frames</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">456</span>     <span class="n">metadata</span><span class="o">.</span><span class="n">periods_frames</span><span class="o">.</span><span class="n">columns</span>
+<span class="g g-Whitespace">    </span><span class="mi">457</span> <span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+
+<span class="nn">File ~/Develop/databallpy/databallpy/data_parsers/tracking_data_parsers/metrica_tracking_data_parser.py:126,</span> in <span class="ni">load_metrica_open_tracking_data</span><span class="nt">(verbose)</span>
+<span class="g g-Whitespace">    </span><span class="mi">124</span> <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">125</span>     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; Done!&quot;</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">126</span> <span class="k">return</span> <span class="n">load_metrica_tracking_data</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">127</span>     <span class="n">tracking_data_loc</span><span class="o">=</span><span class="n">td_data</span><span class="p">,</span> <span class="n">metadata_loc</span><span class="o">=</span><span class="n">td_metadata</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span>
+<span class="g g-Whitespace">    </span><span class="mi">128</span> <span class="p">)</span>
+
+<span class="nn">File ~/Develop/databallpy/databallpy/data_parsers/tracking_data_parsers/metrica_tracking_data_parser.py:80,</span> in <span class="ni">load_metrica_tracking_data</span><span class="nt">(tracking_data_loc, metadata_loc, verbose)</span>
+<span class="g g-Whitespace">     </span><span class="mi">76</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">_update_metadata</span><span class="p">(</span><span class="n">td_channels</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">77</span> <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+<span class="g g-Whitespace">     </span><span class="mi">78</span>     <span class="s2">&quot;Successfully updated metrica metadata based on tracking data channels.&quot;</span>
+<span class="g g-Whitespace">     </span><span class="mi">79</span> <span class="p">)</span>
+<span class="ne">---&gt; </span><span class="mi">80</span> <span class="n">tracking_data</span> <span class="o">=</span> <span class="n">_get_tracking_data</span><span class="p">(</span>
+<span class="g g-Whitespace">     </span><span class="mi">81</span>     <span class="n">tracking_data_loc</span><span class="p">,</span> <span class="n">td_channels</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">pitch_dimensions</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span>
+<span class="g g-Whitespace">     </span><span class="mi">82</span> <span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">83</span> <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Successfully loaded metrica tracking data.&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">85</span> <span class="n">tracking_data</span><span class="p">,</span> <span class="n">changed_periods</span> <span class="o">=</span> <span class="n">_normalize_playing_direction_tracking</span><span class="p">(</span>
+<span class="g g-Whitespace">     </span><span class="mi">86</span>     <span class="n">tracking_data</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">periods_frames</span>
+<span class="g g-Whitespace">     </span><span class="mi">87</span> <span class="p">)</span>
+
+<span class="nn">File ~/Develop/databallpy/databallpy/data_parsers/tracking_data_parsers/metrica_tracking_data_parser.py:178,</span> in <span class="ni">_get_tracking_data</span><span class="nt">(tracking_data_loc, channels, pitch_dimensions, verbose)</span>
+<span class="g g-Whitespace">    </span><span class="mi">175</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">_to_int</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">176</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;frame&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span>
+<span class="ne">--&gt; </span><span class="mi">178</span> <span class="n">channel</span> <span class="o">=</span> <span class="n">channels</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+<span class="g g-Whitespace">    </span><span class="mi">179</span>     <span class="p">(</span><span class="n">channels</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">frame</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">channels</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">frame</span><span class="p">),</span>
+<span class="g g-Whitespace">    </span><span class="mi">180</span>     <span class="s2">&quot;ids&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">181</span> <span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="g g-Whitespace">    </span><span class="mi">183</span> <span class="n">players</span> <span class="o">=</span> <span class="n">players_info</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">184</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">player</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">players</span><span class="p">):</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexing.py:1184,</span> in <span class="ni">_LocationIndexer.__getitem__</span><span class="nt">(self, key)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1182</span>     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_scalar_access</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">1183</span>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="o">.</span><span class="n">_get_value</span><span class="p">(</span><span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="n">takeable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_takeable</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1184</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getitem_tuple</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1185</span> <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">   </span><span class="mi">1186</span>     <span class="c1"># we by definition only have the 0th axis</span>
+<span class="g g-Whitespace">   </span><span class="mi">1187</span>     <span class="n">axis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="ow">or</span> <span class="mi">0</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexing.py:1368,</span> in <span class="ni">_LocIndexer._getitem_tuple</span><span class="nt">(self, tup)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1366</span> <span class="k">with</span> <span class="n">suppress</span><span class="p">(</span><span class="n">IndexingError</span><span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">1367</span>     <span class="n">tup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_expand_ellipsis</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1368</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getitem_lowerdim</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1370</span> <span class="c1"># no multi-index, so validate all of the indexers</span>
+<span class="g g-Whitespace">   </span><span class="mi">1371</span> <span class="n">tup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_tuple_indexer</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexing.py:1089,</span> in <span class="ni">_LocationIndexer._getitem_lowerdim</span><span class="nt">(self, tup)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1087</span>             <span class="k">return</span> <span class="n">section</span>
+<span class="g g-Whitespace">   </span><span class="mi">1088</span>         <span class="c1"># This is an elided recursive call to iloc/loc</span>
+<span class="ne">-&gt; </span><span class="mi">1089</span>         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)[</span><span class="n">new_key</span><span class="p">]</span>
+<span class="g g-Whitespace">   </span><span class="mi">1091</span> <span class="k">raise</span> <span class="n">IndexingError</span><span class="p">(</span><span class="s2">&quot;not applicable&quot;</span><span class="p">)</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexing.py:1191,</span> in <span class="ni">_LocationIndexer.__getitem__</span><span class="nt">(self, key)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1189</span> <span class="n">maybe_callable</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">apply_if_callable</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1190</span> <span class="n">maybe_callable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_deprecated_callable_usage</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">maybe_callable</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1191</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getitem_axis</span><span class="p">(</span><span class="n">maybe_callable</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexing.py:1413,</span> in <span class="ni">_LocIndexer._getitem_axis</span><span class="nt">(self, key, axis)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1411</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slice_axis</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1412</span> <span class="k">elif</span> <span class="n">com</span><span class="o">.</span><span class="n">is_bool_indexer</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+<span class="ne">-&gt; </span><span class="mi">1413</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getbool_axis</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1414</span> <span class="k">elif</span> <span class="n">is_list_like_indexer</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">1415</span>     <span class="c1"># an iterable multi-selection</span>
+<span class="g g-Whitespace">   </span><span class="mi">1416</span>     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">MultiIndex</span><span class="p">)):</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexing.py:1209,</span> in <span class="ni">_LocationIndexer._getbool_axis</span><span class="nt">(self, key, axis)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1205</span> <span class="nd">@final</span>
+<span class="g g-Whitespace">   </span><span class="mi">1206</span> <span class="k">def</span> <span class="nf">_getbool_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="n">AxisInt</span><span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">1207</span>     <span class="c1"># caller is responsible for ensuring non-None axis</span>
+<span class="g g-Whitespace">   </span><span class="mi">1208</span>     <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="o">.</span><span class="n">_get_axis</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1209</span>     <span class="n">key</span> <span class="o">=</span> <span class="n">check_bool_indexer</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1210</span>     <span class="n">inds</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="g g-Whitespace">   </span><span class="mi">1211</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="o">.</span><span class="n">_take_with_is_copy</span><span class="p">(</span><span class="n">inds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexing.py:2681,</span> in <span class="ni">check_bool_indexer</span><span class="nt">(index, key)</span>
+<span class="g g-Whitespace">   </span><span class="mi">2677</span> <span class="k">elif</span> <span class="ow">not</span> <span class="n">is_array_like</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">2678</span>     <span class="c1"># GH 33924</span>
+<span class="g g-Whitespace">   </span><span class="mi">2679</span>     <span class="c1"># key may contain nan elements, check_array_indexer needs bool array</span>
+<span class="g g-Whitespace">   </span><span class="mi">2680</span>     <span class="n">result</span> <span class="o">=</span> <span class="n">pd_array</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">2681</span> <span class="k">return</span> <span class="n">check_array_indexer</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexers/utils.py:535,</span> in <span class="ni">check_array_indexer</span><span class="nt">(array, indexer)</span>
+<span class="g g-Whitespace">    </span><span class="mi">533</span>     <span class="n">indexer</span> <span class="o">=</span> <span class="n">indexer</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">na_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">534</span> <span class="k">else</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">535</span>     <span class="n">indexer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">indexer</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">537</span> <span class="c1"># GH26658</span>
+<span class="g g-Whitespace">    </span><span class="mi">538</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indexer</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/generic.py:6293,</span> in <span class="ni">NDFrame.__getattr__</span><span class="nt">(self, name)</span>
+<span class="g g-Whitespace">   </span><span class="mi">6283</span><span class="w"> </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="g g-Whitespace">   </span><span class="mi">6284</span><span class="sd"> After regular attribute access, try looking up the name</span>
+<span class="g g-Whitespace">   </span><span class="mi">6285</span><span class="sd"> This allows simpler access to columns for interactive use.</span>
+<span class="g g-Whitespace">   </span><span class="mi">6286</span><span class="sd"> &quot;&quot;&quot;</span>
+<span class="g g-Whitespace">   </span><span class="mi">6287</span> <span class="c1"># Note: obj.x will always call obj.__getattribute__(&#39;x&#39;) prior to</span>
+<span class="g g-Whitespace">   </span><span class="mi">6288</span> <span class="c1"># calling obj.__getattr__(&#39;x&#39;).</span>
+<span class="g g-Whitespace">   </span><span class="mi">6289</span> <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">6290</span>     <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_names_set</span>
+<span class="g g-Whitespace">   </span><span class="mi">6291</span>     <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span>
+<span class="g g-Whitespace">   </span><span class="mi">6292</span>     <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accessors</span>
+<span class="ne">-&gt; </span><span class="mi">6293</span>     <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info_axis</span><span class="o">.</span><span class="n">_can_hold_identifiers_and_holds_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">6294</span> <span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">6295</span>     <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+<span class="g g-Whitespace">   </span><span class="mi">6296</span> <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexes/base.py:5450,</span> in <span class="ni">Index._can_hold_identifiers_and_holds_name</span><span class="nt">(self, name)</span>
+<span class="g g-Whitespace">   </span><span class="mi">5437</span> <span class="nd">@final</span>
+<span class="g g-Whitespace">   </span><span class="mi">5438</span> <span class="k">def</span> <span class="nf">_can_hold_identifiers_and_holds_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="g g-Whitespace">   </span><span class="mi">5439</span><span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="g g-Whitespace">   </span><span class="mi">5440</span><span class="sd">     Faster check for ``name in self`` when we know `name` is a Python</span>
+<span class="g g-Whitespace">   </span><span class="mi">5441</span><span class="sd">     identifier (e.g. in NDFrame.__getattr__, which hits this to support</span>
+<span class="sd">   (...)</span>
+<span class="g g-Whitespace">   </span><span class="mi">5445</span><span class="sd">     https://github.com/pandas-dev/pandas/issues/19764</span>
+<span class="g g-Whitespace">   </span><span class="mi">5446</span><span class="sd">     &quot;&quot;&quot;</span>
+<span class="g g-Whitespace">   </span><span class="mi">5447</span>     <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">5448</span>         <span class="n">is_object_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">5449</span>         <span class="ow">or</span> <span class="n">is_string_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">5450</span>         <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">CategoricalDtype</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">5451</span>     <span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">5452</span>         <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span>
+<span class="g g-Whitespace">   </span><span class="mi">5453</span>     <span class="k">return</span> <span class="kc">False</span>
+
+<span class="nn">File ~/Library/Caches/pypoetry/virtualenvs/databallpy-dxir0YXO-py3.12/lib/python3.12/site-packages/pandas/core/indexes/range.py:376,</span> in <span class="ni">RangeIndex.dtype</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">352</span><span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">353</span><span class="sd">     Memory usage of my values</span>
+<span class="g g-Whitespace">    </span><span class="mi">354</span><span class="sd"> </span>
+<span class="sd">   (...)</span>
+<span class="g g-Whitespace">    </span><span class="mi">372</span><span class="sd">     numpy.ndarray.nbytes</span>
+<span class="g g-Whitespace">    </span><span class="mi">373</span><span class="sd">     &quot;&quot;&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">374</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbytes</span>
+<span class="ne">--&gt; </span><span class="mi">376</span> <span class="nd">@property</span>
+<span class="g g-Whitespace">    </span><span class="mi">377</span> <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">378</span>     <span class="k">return</span> <span class="n">_dtype_int64</span>
+<span class="g g-Whitespace">    </span><span class="mi">380</span> <span class="nd">@property</span>
+<span class="g g-Whitespace">    </span><span class="mi">381</span> <span class="k">def</span> <span class="nf">is_unique</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+
+<span class="ne">KeyboardInterrupt</span>: 
+</pre></div>
+</div>
 </div>
 </div>
 <p>Simple as that! Note that it might take a few seconds to load in your data. On top of that, it might be different for different data providers. Currently, the package is mostly optimized for loading tracab and opta data. For the other providers, without a doubt, improvements in performance can be made. All suggestions are welcome.</p>
@@ -807,6 +963,15 @@ Name: 13, dtype: object
         <p class="prev-next-subtitle">previous</p>
         <p class="prev-next-title">Installation</p>
       </div>
+    </a>
+    <a class="right-next"
+       href="preprocessing_options.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Preprocessing</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>

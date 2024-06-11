@@ -1,5 +1,5 @@
 format: jb-book
-root: welcome_to_databallpy
+root: index
 parts:
   - caption: Introduction
     chapters:
@@ -8,3 +8,4 @@ parts:
     chapters:
       - file: installation_page
       - file: loading_in_a_match
+      - file: preprocessing_options

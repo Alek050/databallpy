@@ -103,7 +103,7 @@ class DribbleEvent(BaseOnBallEvent):
         )
 
     def _check_datatypes(self):
-        if not isinstance(self.player_id, (int, np.integer)):
+        if not isinstance(self.player_id, (int, np.integer, str)):
             raise TypeError(
                 f"player_id should be int, got {type(self.player_id)} instead"
             )

@@ -223,7 +223,7 @@ class PassEvent(BaseOnBallEvent):
                 f"outcome should be one of {valid_outcomes}, not {self.outcome}"
             )
 
-        if not isinstance(self.player_id, int):
+        if not isinstance(self.player_id, (int, np.integer, str)):
             raise TypeError(f"player_id should be int, not {type(self.player_id)}")
 
         values = [
