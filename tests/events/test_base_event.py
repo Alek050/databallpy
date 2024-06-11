@@ -98,7 +98,7 @@ class TestBaseOnBallEvent(unittest.TestCase):
             _xt=0.02,
         )
 
-    def test_base_on_ball_eventt_post_init(self):
+    def test_base_on_ball_event_post_init(self):
         # event_id
         with self.assertRaises(TypeError):
             BaseOnBallEvent(

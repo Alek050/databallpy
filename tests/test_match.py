@@ -10,7 +10,7 @@ from databallpy.match import Match
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.warnings import DataBallPyWarning
-from expected_outcomes import (
+from tests.expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
     PASS_EVENTS_OPTA_TRACAB,
     SHOT_EVENTS_OPTA_TRACAB,
