@@ -300,7 +300,7 @@ SHOT_EVENTS_OPTA = {
         ),
         start_x=9.5 / 100 * 106 - 53,  # standard opta pitch dimensions = [106, 68]
         start_y=52.8 / 100 * 68 - 34,
-        pitch_size=[106, 68],
+        pitch_size=[106.0, 68.0],
         team_side="home",
         _xt=-1,
         team_id=3,
@@ -325,7 +325,7 @@ SHOT_EVENTS_OPTA = {
         start_x=(9.5 / 100 * 106 - 53)
         * -1,  # standard opta pitch dimensions = [106, 68]
         start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
-        pitch_size=[106, 68],
+        pitch_size=[106.0, 68.0],
         team_side="away",
         _xt=-1,
         z_target=18.4 / 100 * 2.44,
@@ -350,7 +350,7 @@ SHOT_EVENTS_OPTA = {
         start_x=(9.5 / 100 * 106 - 53)
         * -1,  # standard opta pitch dimensions = [106, 68]
         start_y=(52.8 / 100 * 68 - 34) * -1,  # times -1 because its away team
-        pitch_size=[106, 68],
+        pitch_size=[106.0, 68.0],
         team_side="away",
         _xt=-1,
         z_target=np.nan,
@@ -387,7 +387,7 @@ DRIBBLE_EVENTS_OPTA = {
         ),
         start_x=65.7 / 100 * 106 - 53,  # standard opta pitch dimensions = [106, 68]
         start_y=23.2 / 100 * 68 - 34,
-        pitch_size=[106, 68],
+        pitch_size=[106.0, 68.0],
         team_side="home",
         _xt=-1,
         team_id=3,
@@ -420,7 +420,7 @@ PASS_EVENTS_OPTA = {
         ),
         start_x=(49.7 / 100 * 106 - 53),  # standard opta pitch dimensions = [106, 68]
         start_y=(50.1 / 100 * 68 - 34),
-        pitch_size=[106, 68],
+        pitch_size=[106.0, 68.0],
         team_side="home",
         _xt=-1,
         team_id=3,
@@ -442,7 +442,7 @@ PASS_EVENTS_OPTA = {
         start_x=(31.6 / 100 * 106 - 53)
         * -1,  # standard opta pitch dimensions = [106, 68]
         start_y=(40.7 / 100 * 68 - 34) * -1,  # times -1 because its away team
-        pitch_size=[106, 68],
+        pitch_size=[106.0, 68.0],
         team_side="away",
         _xt=-1,
         team_id=194,

@@ -18,7 +18,7 @@ from databallpy.get_match import get_match, get_open_match, get_saved_match
 from databallpy.match import Match
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
-from expected_outcomes import (
+from tests.expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
     DRIBBLE_EVENTS_OPTA_TRACAB,
@@ -35,7 +35,8 @@ from expected_outcomes import (
     SHOT_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
 )
-from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
+
+from .mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
 class TestGetMatch(unittest.TestCase):
@@ -161,9 +162,9 @@ class TestGetMatch(unittest.TestCase):
             away_team_name=self.md_opta.away_team_name,
             away_players=self.expected_away_players_tracab_opta,
             country=self.md_opta.country,
-            shot_events=SHOT_EVENTS_OPTA_TRACAB,
-            dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB,
-            pass_events=PASS_EVENTS_OPTA_TRACAB,
+            shot_events=SHOT_EVENTS_OPTA_TRACAB.copy(),
+            dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB.copy(),
+            pass_events=PASS_EVENTS_OPTA_TRACAB.copy(),
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
@@ -363,31 +364,6 @@ class TestGetMatch(unittest.TestCase):
             _periods_changed_playing_direction=[],
         )
 
-        self.expected_match_opta = Match(
-            tracking_data=pd.DataFrame(),
-            tracking_data_provider=None,
-            event_data=ED_OPTA,
-            event_data_provider="opta",
-            pitch_dimensions=MD_OPTA.pitch_dimensions,
-            periods=MD_OPTA.periods_frames,
-            frame_rate=MD_OPTA.frame_rate,
-            home_team_id=MD_OPTA.home_team_id,
-            home_formation=MD_OPTA.home_formation,
-            home_score=MD_OPTA.home_score,
-            home_team_name=MD_OPTA.home_team_name,
-            home_players=MD_OPTA.home_players,
-            away_team_id=MD_OPTA.away_team_id,
-            away_formation=MD_OPTA.away_formation,
-            away_score=MD_OPTA.away_score,
-            away_team_name=MD_OPTA.away_team_name,
-            away_players=MD_OPTA.away_players,
-            country=MD_OPTA.country,
-            shot_events=SHOT_EVENTS_OPTA,
-            dribble_events=DRIBBLE_EVENTS_OPTA,
-            pass_events=PASS_EVENTS_OPTA,
-            _event_timestamp_is_precise=True,
-        )
-
     def test_get_match_wrong_inputs(self):
         with self.assertRaises(ValueError):
             get_match(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
@@ -442,7 +418,32 @@ class TestGetMatch(unittest.TestCase):
         match.event_data[y_cols] = match.event_data[y_cols] / 68.0 * 10
         match.pitch_dimensions = [10.0, 10.0]
 
-        assert match == self.expected_match_opta
+        expected_match_opta = Match(
+            tracking_data=pd.DataFrame(),
+            tracking_data_provider=None,
+            event_data=ED_OPTA,
+            event_data_provider="opta",
+            pitch_dimensions=MD_OPTA.pitch_dimensions,
+            periods=MD_OPTA.periods_frames,
+            frame_rate=MD_OPTA.frame_rate,
+            home_team_id=MD_OPTA.home_team_id,
+            home_formation=MD_OPTA.home_formation,
+            home_score=MD_OPTA.home_score,
+            home_team_name=MD_OPTA.home_team_name,
+            home_players=MD_OPTA.home_players,
+            away_team_id=MD_OPTA.away_team_id,
+            away_formation=MD_OPTA.away_formation,
+            away_score=MD_OPTA.away_score,
+            away_team_name=MD_OPTA.away_team_name,
+            away_players=MD_OPTA.away_players,
+            country=MD_OPTA.country,
+            shot_events=SHOT_EVENTS_OPTA,
+            dribble_events=DRIBBLE_EVENTS_OPTA,
+            pass_events=PASS_EVENTS_OPTA,
+            _event_timestamp_is_precise=True,
+        )
+
+        assert match == expected_match_opta
 
     def test_get_match_only_tracking_data(self):
         match = get_match(
