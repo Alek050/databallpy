@@ -89,7 +89,7 @@ class TestShotEvent(unittest.TestCase):
                 team_id=123,
                 z_target=15.0,
                 y_target=3.5,
-                player_id="45849",
+                player_id=[22],
                 shot_outcome="own_goal",
                 body_part="head",
                 type_of_play="corner_kick",

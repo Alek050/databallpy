@@ -2,13 +2,12 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
-from databallpy.features.differentiate import _differentiate
 from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
 
-def get_individual_player_possessions_and_duels(
+def add_individual_player_possessions_and_duels(
     tracking_data: pd.DataFrame,
     frame_rate: int,
     pz_radius: float = 1.0,
@@ -17,7 +16,8 @@ def get_individual_player_possessions_and_duels(
     ba_threshold: float = 10.0,
     bd_threshold: float = 0.1,
     min_frames: int = 0,
-) -> tuple[pd.Series, pd.Series]:
+    inplace: bool = False,
+) -> tuple[pd.Series, pd.Series] | tuple[None, None]:
     """
     Function to calculate which player has possesion of the ball in accordance with the
     article of Vidal-Codina et al (2022) : "Automatic Event Detection in Football Using
@@ -32,36 +32,39 @@ def get_individual_player_possessions_and_duels(
     happening at the same time since we have no data here what player performs the
     action.
 
-    :param tracking_data: pandas df with tracking data over which to calculate the
-        player possession.
-    :param frame_rate: int with the sampling frequency of the tracking data
-    :param pz_radius: float with the radius of the possession zone (PZ) in meters.
+    Args:
+    tracking_data (pd.DataFrame): pandas df with tracking data over which to calculate
+        the player possession.
+    frame_rate (int): int with the sampling frequency of the tracking data
+    pz_radius (float, optional): float with the radius of the possession zone (PZ) in
+        meters. Default is 1.0 m
+    dz_radius (float, optional): float with the radius of the duel zone (DZ) in meters.
         Default is 1.0 m
-    :param dz_radius: float with the radius of the duel zone (DZ) in meters.
-        Default is 1.0 m
-    :param bv_threshold: float with the threshold for the ball velocity (in m/s) change
-        needed to gain ball possession. Default is 5.0 m/s
-    :param ba_threshold: float with the threshold for the ball angle (in degree) change
-        needed to gain ball possession. Default is 10.0 degree.
-    :param bd_threshold: float with the threshold for the ball displacement (in meters)
-        change needed to lose ball possession. Default is 0.1 m.
-    :param min_frames: int with the minimum number of frames a player needs to have the
-        ball to be considered possession. Default is 0 frames.
+    bv_threshold (float, optional): float with the threshold for the ball velocity (in
+        m/s) change needed to gain ball possession. Default is 5.0 m/s
+    ba_threshold (float, optional): float with the threshold for the ball angle (in
+        degree) change needed to gain ball possession. Default is 10.0 degree.
+    bd_threshold (float, optional): float with the threshold for the ball displacement
+        (in meters) change needed to lose ball possession. Default is 0.1 m.
+    min_frames (int, optional): int with the minimum number of frames a player needs to
+        have the ball to be considered possession. Default is 0 frames.
+    inplace (bool, optional): Whether to modify the DataFrame in place. Defaults to
+        False.
 
-    :returns: pd.Series with which player has possession and a pd.Series with duels over
-        time.
+    Returns:
+    tuple[pd.Series, pd.Series] | tuple[None, None]: tuple with the player possession
+        and duels. If inplace is True, the function will modify the tracking_data
+        DataFrame in place and return None, None. If inplace is False, the function will
+        return the player possession and duels as pd.Series.
+
     """
     try:
         if not frame_rate > 0:
             raise ValueError(f"frame rate should be above 0, not {frame_rate}")
         if "ball_velocity" not in tracking_data.columns:
-            tracking_data = _differentiate(
-                tracking_data,
-                new_name="velocity",
-                metric="",
-                frame_rate=frame_rate,
-                filter_type=None,
-                column_ids=["ball"],
+            raise ValueError(
+                "ball_velocity should be in the tracking_data. Please "
+                "calculate the ball velocity first using the add_velocity() function."
             )
 
         distances_df = get_distance_between_ball_and_players(tracking_data).fillna(
@@ -133,7 +136,13 @@ def get_individual_player_possessions_and_duels(
         player_possession[~alive_mask] = None
         duels[~alive_mask] = None
 
-        return player_possession, duels
+        if inplace:
+            tracking_data["player_possession"] = player_possession
+            tracking_data["duels"] = duels
+            return None, None
+        else:
+            return player_possession, duels
+
     except Exception as e:
         LOGGER.exception(
             "Found unexpected exception in "

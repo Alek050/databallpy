@@ -520,7 +520,8 @@ def save_match_clip(
             "comment": "Made with DataballPy",
         }
         writer = animation.FFMpegWriter(
-            fps=match.frame_rate, metadata=animation_metadata,
+            fps=match.frame_rate,
+            metadata=animation_metadata,
         )
         video_loc = f"{save_folder}/{title}.mp4"
 

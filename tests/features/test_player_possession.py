@@ -3,10 +3,11 @@ import unittest
 import numpy as np
 import pandas as pd
 
+from databallpy.features.differentiate import add_velocity
 from databallpy.features.player_possession import (
+    add_individual_player_possessions_and_duels,
     get_distance_between_ball_and_players,
     get_duels,
-    get_individual_player_possessions_and_duels,
     get_initial_possessions,
     get_lost_possession_idx,
     get_valid_gains,
@@ -42,18 +43,6 @@ class TestPlayerPossession(unittest.TestCase):
             {
                 "ball_x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
                 "ball_y": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "ball_velocity": [
-                    np.nan,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                ],
                 "home_1_x": [0, 5, 2, 3, 4, 5, 1, 7, 8, 9],
                 "home_1_y": [0, 5, 2, 3, 4, 5, 1, 7, 8, 9],
                 "home_2_vx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -87,12 +76,21 @@ class TestPlayerPossession(unittest.TestCase):
         )
         self.possession_start_idxs = np.array([0, 6])
         self.possession_end_idxs = np.array([4, 9])
+        self.tracking_data_full = add_velocity(
+            self.tracking_data_full, column_ids=["ball"], frame_rate=1
+        )
+        self.tracking_data = add_velocity(
+            self.tracking_data, column_ids="ball", frame_rate=1
+        )
 
     def test_get_individual_player_possession(self):
         td = self.tracking_data_full.copy()
-        possessions, duels = get_individual_player_possessions_and_duels(
+        possessions, duels = add_individual_player_possessions_and_duels(
             td, 1, bv_threshold=3
         )
+
+        pd.testing.assert_frame_equal(td, self.tracking_data_full)
+
         expected_possessions = pd.Series(
             [
                 None,
@@ -123,6 +121,15 @@ class TestPlayerPossession(unittest.TestCase):
         )
         pd.testing.assert_series_equal(possessions, expected_possessions)
         pd.testing.assert_series_equal(duels, expected_duels)
+
+        add_individual_player_possessions_and_duels(td, 1, bv_threshold=3, inplace=True)
+
+        assert not td.equals(self.tracking_data_full)
+
+        pd.testing.assert_series_equal(
+            td["player_possession"], expected_possessions, check_names=False
+        )
+        pd.testing.assert_series_equal(td["duels"], expected_duels, check_names=False)
 
     def test_get_initial_possessions(self):
         possessions_no_min_frames = get_initial_possessions(
@@ -287,4 +294,8 @@ class TestPlayerPossession(unittest.TestCase):
     def test_get_individual_player_possessions_and_duels_wrong_input(self):
         td = self.tracking_data_full.copy()
         with self.assertRaises(ValueError):
-            get_individual_player_possessions_and_duels(td, -1.5, bv_threshold=3)
+            add_individual_player_possessions_and_duels(td, -1.5, bv_threshold=3)
+
+        td.drop(columns=["ball_velocity"], inplace=True)
+        with self.assertRaises(ValueError):
+            add_individual_player_possessions_and_duels(td, 1, bv_threshold=3)

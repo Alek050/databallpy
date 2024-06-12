@@ -57,6 +57,8 @@
     <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'preprocessing_options';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -387,7 +389,24 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-data">Filtering Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-data">Filtering Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameters">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#returns">Returns</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-velocity-and-acceleration">Adding Velocity and Acceleration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Returns</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#synchronizing-tracking-and-event-data">Synchronizing Tracking and Event Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#team-possession">Team Possession</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Returns</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#individual-player-possession">Individual Player Possession</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusion">Conclusion</a></li>
 </ul>
             </nav>
         </div>
@@ -432,17 +451,15 @@ document.write(`
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">databallpy.visualize</span> <span class="kn">import</span> <span class="n">plot_soccer_pitch</span>
-<span class="kn">from</span> <span class="nn">databallpy.utils.filters</span> <span class="kn">import</span> <span class="n">filter_data</span>
+<span class="kn">from</span> <span class="nn">databallpy.features.filters</span> <span class="kn">import</span> <span class="n">filter_tracking_data</span>
 
-<span class="n">ball_x</span><span class="p">,</span> <span class="n">ball_y</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[</span><span class="s2">&quot;ball_x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[</span><span class="s2">&quot;ball_y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-
-<span class="n">ball_x_filtered</span> <span class="o">=</span> <span class="n">filter_data</span><span class="p">(</span><span class="n">ball_x</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;savitzky_golay&quot;</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">polyorder</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">ball_y_filtered</span> <span class="o">=</span> <span class="n">filter_data</span><span class="p">(</span><span class="n">ball_y</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;savitzky_golay&quot;</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">polyorder</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">unfiltered_data</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span>
+<span class="n">filtered_data</span> <span class="o">=</span> <span class="n">filter_tracking_data</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">,</span> <span class="n">column_ids</span><span class="o">=</span><span class="s2">&quot;ball&quot;</span><span class="p">,</span> <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;savitzky_golay&quot;</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">polyorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">plot_soccer_pitch</span><span class="p">()</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax2</span> <span class="o">=</span> <span class="n">plot_soccer_pitch</span><span class="p">()</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ball_x</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">],</span> <span class="n">ball_y</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;unfiltered&quot;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ball_x_filtered</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">],</span> <span class="n">ball_y_filtered</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;filtered&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">unfiltered_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">][</span><span class="s2">&quot;ball_x&quot;</span><span class="p">],</span> <span class="n">unfiltered_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">][</span><span class="s2">&quot;ball_y&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;unfiltered&quot;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">filtered_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">][</span><span class="s2">&quot;ball_x&quot;</span><span class="p">],</span> <span class="n">filtered_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">][</span><span class="s2">&quot;ball_y&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;filtered&quot;</span><span class="p">)</span>
 <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Unfiltered Data&quot;</span><span class="p">)</span>
 <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Filtered Data&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -451,14 +468,229 @@ document.write(`
 </div>
 <div class="cell_output docutils container">
 <img alt="_images/e720fc9c895496147dd608c376ee3aac5fc4087b4a84f738382db5dc06a5f093.png" src="_images/e720fc9c895496147dd608c376ee3aac5fc4087b4a84f738382db5dc06a5f093.png" />
-<img alt="_images/e05771a7e3c862ce94d2f4c8fe98916d0fedb411c07cd9031c1ef7f99d19f4ef.png" src="_images/e05771a7e3c862ce94d2f4c8fe98916d0fedb411c07cd9031c1ef7f99d19f4ef.png" />
+<img alt="_images/4c30b17fe61834d920f94faafd730678e9edbebd6e101317a3f92bce1157f0cd.png" src="_images/4c30b17fe61834d920f94faafd730678e9edbebd6e101317a3f92bce1157f0cd.png" />
 </div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Filtering of this specific data might not be necessary depending on the specific needs. The high number of frames chosen here is only to showcase how the filtering works, not an advice on how many frames you should filter your data on.</p>
+<p>Filtering of data might not be necessary depending on your specific needs. The high number of frames chosen here is only to showcase how the filtering works, not an advice on how many frames you should filter your data on.</p>
 </div>
 <p>As you can see, the filtered data looks less noisy. Currently, two filter types are supported: “savitzkey_golay” and “moving_average”. The window_length is the number of frames over which to filter, and should be adapted based on you specific data and sample rate. The polyorder argument is only used if “savitzkey_golay” is chosen as filter type.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">filter_tracking_data</span></code> function is designed to apply filtering techniques to specific columns of a pandas DataFrame containing tracking data. This function supports two types of filters: the Savitzky-Golay filter and the moving average filter. It allows for in-place modification of the DataFrame or can return a new DataFrame with the filtered data.</p>
+<section id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>tracking_data</strong> (<code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>): The DataFrame containing the tracking data that needs filtering. This parameter is mandatory.</p></li>
+<li><p><strong>column_ids</strong> (<code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">list[str]</span></code>): Specifies the columns to which the filter should be applied. This can be a single column name as a string or a list of column names.</p></li>
+<li><p><strong>filter_type</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>, optional): Determines the type of filter to apply. The options are <code class="docutils literal notranslate"><span class="pre">&quot;savitzky_golay&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;moving_average&quot;</span></code>. The default value is <code class="docutils literal notranslate"><span class="pre">&quot;savitzky_golay&quot;</span></code>.</p></li>
+<li><p><strong>window_length</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, optional): Defines the length of the window used by the filter. This parameter is used by both filter types and defaults to <code class="docutils literal notranslate"><span class="pre">7</span></code>. For the Savitzky-Golay filter, this represents the number of coefficients (the polynomial order plus one). For the moving average, it specifies the number of points over which to average.</p></li>
+<li><p><strong>polyorder</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, optional): Specifies the order of the polynomial used in the Savitzky-Golay filter. This parameter is ignored when using the moving average filter. The default value is <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+<li><p><strong>inplace</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, optional): If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the filtering operation modifies the original DataFrame in place. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, the function returns a new DataFrame with the filtered data, leaving the original DataFrame unchanged. The default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</section>
+<section id="returns">
+<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>pd.DataFrame</strong>: If <code class="docutils literal notranslate"><span class="pre">inplace</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, the function returns a new DataFrame with the specified columns filtered according to the selected filter type. If <code class="docutils literal notranslate"><span class="pre">inplace</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the function returns <code class="docutils literal notranslate"><span class="pre">None</span></code>, and the original DataFrame is modified in place.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Column ID
+The column ID refers to a player or the ball. If you wish to refer to the ball, you can use the string “ball”. If you wish to refer to a player, you can use the player’s side (e.g., “home” or “away”) and the player’s jersey number (e.g., “home_10” or “away_7”). The function adds the suffix “_x” or “_y” to the column ID to filter the x and y coordinates, respectively. If you would like to get all the column IDs of a team, you can also call <code class="docutils literal notranslate"><span class="pre">match.home_players_column_ids()</span></code> or <code class="docutils literal notranslate"><span class="pre">match.away_players_column_ids()</span></code>.</p>
+</div>
+</section>
+</section>
+<section id="adding-velocity-and-acceleration">
+<h2>Adding Velocity and Acceleration<a class="headerlink" href="#adding-velocity-and-acceleration" title="Link to this heading">#</a></h2>
+<p>The next step in preprocessing is adding velocity and acceleration to the tracking data. This can be done by using the <code class="docutils literal notranslate"><span class="pre">add_velocity</span></code> and <code class="docutils literal notranslate"><span class="pre">add_acceleration</span></code> functions. The velocity is calculated by taking the difference between two consecutive frames and dividing it by the time difference. The acceleration is calculated by taking the difference between two consecutive velocities and dividing it by the time difference. The new columns are added to the tracking data dataframe.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databallpy.features.differentiate</span> <span class="kn">import</span> <span class="n">add_velocity</span><span class="p">,</span> <span class="n">add_acceleration</span>
+
+<span class="k">match</span><span class="o">.</span><span class="n">tracking_data</span> <span class="o">=</span> <span class="n">add_velocity</span><span class="p">(</span>
+    <span class="k">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">,</span> 
+    <span class="n">frame_rate</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">frame_rate</span><span class="p">,</span> 
+    <span class="n">column_ids</span><span class="o">=</span><span class="s2">&quot;ball&quot;</span><span class="p">,</span> 
+    <span class="n">max_velocity</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span>
+    <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;moving_average&quot;</span><span class="p">,</span>
+    <span class="n">window_length</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="k">match</span><span class="o">.</span><span class="n">tracking_data</span> <span class="o">=</span> <span class="n">add_acceleration</span><span class="p">(</span>
+    <span class="k">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">,</span> 
+    <span class="n">frame_rate</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">frame_rate</span><span class="p">,</span> 
+    <span class="n">column_ids</span><span class="o">=</span><span class="s2">&quot;ball&quot;</span><span class="p">,</span> 
+    <span class="n">max_acceleration</span><span class="o">=</span><span class="mf">20.</span><span class="p">,</span>
+    <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;savitzky_golay&quot;</span><span class="p">,</span>
+    <span class="n">window_length</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span>
+    <span class="n">polyorder</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">,</span> <span class="n">ax3</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span><span class="s2">&quot;ball_x&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;ball_vx&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;vx&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span><span class="s2">&quot;ball_ax&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ax&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span><span class="s2">&quot;ball_y&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span><span class="s2">&quot;ball_vy&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;vy&quot;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span><span class="s2">&quot;ball_ay&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ay&quot;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">ax3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span><span class="s2">&quot;ball_velocity&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;velocity&quot;</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;frame&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="mi">300</span><span class="p">,</span><span class="s2">&quot;ball_acceleration&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;acceleration&quot;</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frames&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/d7250579c3f76a2bfb0ab2f927a3b74d42aa1f5651d1da5035ac037c7287af8d.png" src="_images/d7250579c3f76a2bfb0ab2f927a3b74d42aa1f5651d1da5035ac037c7287af8d.png" />
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The magnitude of the acceleration is calculated by taking the magnitude of the x and y acceleration, not by directly differentiating the velocity.</p>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">add_velocity</span></code> and <code class="docutils literal notranslate"><span class="pre">add_acceleration</span></code> functions are designed to calculate the velocity/acceleration of the players and the ball based on the tracking data. It adds new columns to the DataFrame containing the tracking data with the velocity values for each player and the ball.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The acceleration is calculated by differentiating the velocity, so before you can use the <code class="docutils literal notranslate"><span class="pre">add_acceleration</span></code> function, you need to have used the <code class="docutils literal notranslate"><span class="pre">add_velocity</span></code> function.</p>
+</div>
+<section id="id1">
+<h3>Parameters<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>tracking_data</strong> (<code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>): The DataFrame containing the tracking data to which the velocity/acceleration columns will be added. This parameter is mandatory.</p></li>
+<li><p><strong>column_ids</strong> (<code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">list[str]</span></code>): Specifies the columns for which the velocity/acceleration should be calculated. This can be a single column name as a string or a list of column names.</p></li>
+<li><p><strong>frame_rate</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>): The frame rate at which the tracking data was recorded. This parameter is mandatory and can be obtained from the match object (<code class="docutils literal notranslate"><span class="pre">match.frame_rate</span></code>).</p></li>
+<li><p><strong>filter_type</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>, optional): Determines the type of filter to apply to the velocity/acceleration data. The options are <code class="docutils literal notranslate"><span class="pre">&quot;savitzky_golay&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;moving_average&quot;</span></code>. The default value is <code class="docutils literal notranslate"><span class="pre">&quot;savitzky_golay&quot;</span></code>. Filtering is adviced during differentiating since it is known to amplify noise.</p></li>
+<li><p><strong>window_length</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, optional): Defines the length of the window used by the filter. This parameter is used by both filter types and defaults to <code class="docutils literal notranslate"><span class="pre">7</span></code>. For the Savitzky-Golay filter, this represents the number of coefficients (the polynomial order plus one). For the moving average, it specifies the number of points over which to average.</p></li>
+<li><p><strong>polyorder</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, optional): Specifies the order of the polynomial used in the Savitzky-Golay filter. This parameter is ignored when using the moving average filter. The default value is <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+<li><p><strong>max_velocity</strong> or <strong>max_acceleration</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, optional): The maximum velocity/acceleration value that a player can achieve (<span class="math notranslate nohighlight">\(m/s\)</span> or <span class="math notranslate nohighlight">\(m/s^{2}\)</span>). This parameter is used to clip the values to a maximum value. The default value is <code class="docutils literal notranslate"><span class="pre">np.inf</span></code>.</p></li>
+</ul>
+<aside class="margin sidebar">
+<p class="sidebar-title"></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you wish to calculate the velocity/acceleration for both the players and the ball with different max values, you will have to run the function twice with different column_ids and max values.</p>
+</div>
+</aside>
+<ul class="simple">
+<li><p><strong>inplace</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, optional): If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the velocity/acceleration columns are added to the original DataFrame in place. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, the function returns a new DataFrame with the additional columns, leaving the original DataFrame unchanged. The default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+<aside class="margin sidebar">
+<p class="sidebar-title"></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Using <code class="docutils literal notranslate"><span class="pre">inplace=True</span></code> can create a highly fragmented DataFrame. It is advised to use <code class="docutils literal notranslate"><span class="pre">inplace=False</span></code> and assign the result to a new variable.</p>
+</div>
+</aside>
+</section>
+<section id="id2">
+<h3>Returns<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>pd.DataFrame</strong>: If <code class="docutils literal notranslate"><span class="pre">inplace</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, the function returns a new DataFrame with the velocity/acceleration columns added. If <code class="docutils literal notranslate"><span class="pre">inplace</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the function returns <code class="docutils literal notranslate"><span class="pre">None</span></code>, and the original DataFrame is modified in place.</p></li>
+</ul>
+</section>
+</section>
+<section id="synchronizing-tracking-and-event-data">
+<h2>Synchronizing Tracking and Event Data<a class="headerlink" href="#synchronizing-tracking-and-event-data" title="Link to this heading">#</a></h2>
+<p>This is a crucial step in preprocessing. A different page will be created to clearly explain the synchronisation process. For now, we will just show how you can synchronise your data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">match</span><span class="o">.</span><span class="n">synchronise_tracking_and_event_data</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Ain’t that easy?</p>
+</section>
+<section id="team-possession">
+<h2>Team Possession<a class="headerlink" href="#team-possession" title="Link to this heading">#</a></h2>
+<p>One of the important things to know in a match is which team has possession over the ball. Some data providers, like Tracab, already include this information in their tracking data, however, not all data providers do. In this case, you can use the event data to approximate which team has possession. For this you can use the <code class="docutils literal notranslate"><span class="pre">add_team_possession</span></code> function. This function will use the databallpy events to guess which team is in possession of the ball for every frame. This function will only work after you have synchronized the tracking and event data.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databallpy.features.team_possession</span> <span class="kn">import</span> <span class="n">add_team_possession</span>
+
+<span class="n">match</span> <span class="o">=</span> <span class="n">get_saved_match</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;synced_match&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s2">&quot;saved_matches&quot;</span><span class="p">))</span>
+<span class="k">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ball_possession&quot;</span><span class="p">:</span> <span class="s2">&quot;ball_possession_original&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">add_team_possession</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">event_data</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">home_team_id</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[</span><span class="s2">&quot;ball_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;alive&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;ball_possession&quot;</span><span class="p">,</span> <span class="s2">&quot;ball_possession_original&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>ball_possession  ball_possession_original
+home             home                        3586
+away             away                        1597
+home             away                         407
+away             home                         302
+Name: count, dtype: int64
+</pre></div>
+</div>
+</div>
+</div>
+<p>Okay agreed, it is not perfect. But it is a good start. The function will return a new column in the tracking data dataframe called “ball_possession”. This column will contain the team that is in possession of the ball for every frame.</p>
+<aside class="margin sidebar">
+<p class="sidebar-title"></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you have any questions or improvements, feel free to open an issue on the <a class="reference external" href="https://github.com/Alek050/databallpy/issues/">GitHub page</a> of DataBallPy!</p>
+</div>
+</aside>
+<section id="id3">
+<h3>Parameters<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>tracking_data</strong> (<code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>): The DataFrame containing the tracking data to which the possession column will be added. This parameter is mandatory.</p></li>
+<li><p><strong>event_data</strong> (<code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>): The DataFrame containing the event data. This parameter is mandatory.</p></li>
+<li><p><strong>home_team_id</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>): The ID of the home team. This parameter is mandatory and can be obtained from the match object (<code class="docutils literal notranslate"><span class="pre">match.home_team_id</span></code>).</p></li>
+<li><p><strong>inplace</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, optional): If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the possession column is added to the original DataFrame in place. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, the function returns a new DataFrame with the additional column, leaving the original DataFrame unchanged. The default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Returns<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>pd.DataFrame</strong>: If <code class="docutils literal notranslate"><span class="pre">inplace</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, the function returns a new DataFrame with the possession column added. If <code class="docutils literal notranslate"><span class="pre">inplace</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the function returns <code class="docutils literal notranslate"><span class="pre">None</span></code>, and the original DataFrame is modified in place.</p></li>
+</ul>
+</section>
+</section>
+<section id="individual-player-possession">
+<h2>Individual Player Possession<a class="headerlink" href="#individual-player-possession" title="Link to this heading">#</a></h2>
+<p>Similar to knowing which team has possession, it might also be necessary to know which individual player has possession for every given frame. The question becomes, when does a player has possession? This is a difficult question to answer, but currently we have implemented the propoces solution by a paper of Vidal-Codina et al (2022) : “Automatic Event Detection in Football Using Tracking Data”. The algorithm finds if the ball is within the possession zone (PZ) of a player, it losses the ball when the ball is outside of the PZ in a next frame and a different player gains the ball in his PZ. The ball is only gained when the ball changes direction or speed, to correct for balls that fly over players. A dedicated page will be created to show the exact calculations. For now, you can use the <code class="docutils literal notranslate"><span class="pre">add_individual_player_possessions_and_duels</span></code> function to add a column to the tracking data dataframe with the player that has possession for every frame.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databallpy.features.player_possession</span> <span class="kn">import</span> <span class="n">add_individual_player_possessions_and_duels</span>
+
+<span class="n">add_individual_player_possessions_and_duels</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">frame_rate</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[</span><span class="s2">&quot;player_possession&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">tracking_data</span><span class="p">[</span><span class="s2">&quot;duels&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>player_possession
+home_2     581
+home_4     402
+home_5     335
+home_10    259
+away_7     172
+Name: count, dtype: int64
+duels
+home_3-away_7     48
+home_11-away_2    19
+home_9-away_7     17
+home_7-away_11    12
+home_8-away_3     12
+Name: count, dtype: int64
+</pre></div>
+</div>
+</div>
+</div>
+<p>Seems like <code class="docutils literal notranslate"><span class="pre">&quot;home_2&quot;</span></code> had the ball in his poessession the longest (581 frames, is in this case about 23 seconds in the first 6 minutes).</p>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">#</a></h2>
+<p>This page showed the different preprocessing steps that are available in DataBallPy. The filtering of tracking data, adding velocity and acceleration, synchronizing tracking and event data, and calculating team and individual player possession are all important steps in the preprocessing of soccer data. These steps are crucial to ensure that the data is clean and ready for further analysis.</p>
+<p>If you have any questions or improvements, feel free to open an issue on the <a class="reference external" href="https://www.github.com/Alek050/databallpy/issues/">GitHub page</a> of DataBallPy!</p>
 </section>
 </section>
 
@@ -518,7 +750,24 @@ document.write(`
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-data">Filtering Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-data">Filtering Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameters">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#returns">Returns</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-velocity-and-acceleration">Adding Velocity and Acceleration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Returns</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#synchronizing-tracking-and-event-data">Synchronizing Tracking and Event Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#team-possession">Team Possession</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Returns</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#individual-player-possession">Individual Player Possession</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusion">Conclusion</a></li>
 </ul>
   </nav></div>
 
