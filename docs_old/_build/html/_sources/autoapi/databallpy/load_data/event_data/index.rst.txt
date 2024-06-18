@@ -1,0 +1,15 @@
+:py:mod:`databallpy.load_data.event_data`
+=========================================
+
+.. py:module:: databallpy.load_data.event_data
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   opta/index.rst
+
+

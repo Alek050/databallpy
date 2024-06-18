@@ -1,0 +1,17 @@
+format: jb-book
+root: index
+parts:
+  - caption: Introduction
+    chapters:
+      - file: intro_page
+  - caption: Getting Started
+    chapters:
+      - file: installation_page
+      - file: loading_in_a_match
+      - file: preprocessing_options
+      - file: visualizations_page
+  - caption: Toturials
+    chapters:
+      - file: toturials/simple_xG_models
+      - file: toturials/xT_models
+

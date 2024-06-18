@@ -249,11 +249,7 @@ class Match:
 
         if self._shots_df is None:
             LOGGER.info("Creating the match._shots_df dataframe in match.shots_df")
-            if (
-                not self.is_synchronised
-                and self.allow_synchronise_tracking_and_event_data
-            ):
-                self.synchronise_tracking_and_event_data(n_batches="smart")
+
             if self.is_synchronised:
                 self.add_tracking_data_features_to_shots()
 

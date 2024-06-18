@@ -119,6 +119,9 @@ class ShotEvent(BaseOnBallEvent):
         if self.type_of_play in ["penalty", "free_kick"]:
             self.set_piece = self.type_of_play
         _ = self._xt
+        self._update_ball_goal_distance()
+        self._update_shot_angle()
+        self.xG = float(self.get_xG())
 
     @property
     def df_attributes(self) -> list[str]:
@@ -144,6 +147,55 @@ class ShotEvent(BaseOnBallEvent):
             "xG",
             "set_piece",
         ]
+
+    def _update_ball_goal_distance(self, ball_xy: np.ndarray | None = None):
+        """Function to update the ball goal distance. Uses ball_xy input
+        if provided, else uses the start_x and start_y of the event data.
+
+        Args:
+            ball_xy (np.ndarray | None, optional): The start location of the event.
+                Defaults to None.
+        """
+        goal_xy = (
+            [self.pitch_size[0] / 2.0, 0]
+            if self.team_side == "home"
+            else [-self.pitch_size[0] / 2.0, 0]
+        )
+        if ball_xy is None:
+            # use event data
+            ball_xy = np.array([self.start_x, self.start_y])
+        self.ball_goal_distance = math.dist(ball_xy, goal_xy)
+
+    def _update_shot_angle(self, ball_xy: np.ndarray | None = None):
+        """Function to update the shot angle. Uses ball_xy input
+        if provided, else uses the start_x and start_y of the event data.
+
+        Args:
+            ball_xy (np.ndarray | None, optional): The start location of the event.
+                Defaults to None.
+        """
+
+        left_post_xy = (
+            [self.pitch_size[0] / 2.0, (7.32 / 2)]
+            if self.team_side == "home"
+            else [-self.pitch_size[0] / 2.0, -(7.32 / 2)]
+        )
+        right_post_xy = (
+            [self.pitch_size[0] / 2.0, -(7.32 / 2)]
+            if self.team_side == "home"
+            else [-self.pitch_size[0] / 2.0, (7.32 / 2)]
+        )
+
+        if ball_xy is None:
+            # use event data
+            ball_xy = np.array([self.start_x, self.start_y])
+        # define vectors
+        ball_left_post_vector = np.array(left_post_xy) - np.array(ball_xy)
+        ball_right_post_vector = np.array(right_post_xy) - np.array(ball_xy)
+
+        self.shot_angle = get_smallest_angle(
+            ball_left_post_vector, ball_right_post_vector, angle_format="degree"
+        )
 
     def add_tracking_data_features(
         self,
@@ -187,10 +239,6 @@ class ShotEvent(BaseOnBallEvent):
         ball_xy = tracking_data_frame[["ball_x", "ball_y"]].values
         gk_xy = tracking_data_frame[[f"{gk_column_id}_x", f"{gk_column_id}_y"]].values
 
-        # define vectors
-        ball_left_post_vector = np.array(left_post_xy) - np.array(ball_xy)
-        ball_right_post_vector = np.array(right_post_xy) - np.array(ball_xy)
-
         # calculate obstructive players
         triangle = Delaunay([right_post_xy, left_post_xy, ball_xy])
         players_column_ids = [
@@ -210,11 +258,9 @@ class ShotEvent(BaseOnBallEvent):
         n_obstructive_defenders = (triangle.find_simplex(opponent_xy) >= 0).sum()
 
         # add variables
-        self.ball_goal_distance = math.dist(ball_xy, goal_xy)
+        self._update_ball_goal_distance(ball_xy)
         self.ball_gk_distance = math.dist(ball_xy, gk_xy)
-        self.shot_angle = get_smallest_angle(
-            ball_left_post_vector, ball_right_post_vector, angle_format="degree"
-        )
+        self._update_shot_angle(ball_xy)
         self.gk_optimal_loc_distance = float(
             np.linalg.norm(np.cross(goal_xy - ball_xy, ball_xy - gk_xy))
             / np.linalg.norm(goal_xy - ball_xy)
