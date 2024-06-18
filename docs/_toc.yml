@@ -7,7 +7,7 @@ parts:
   - caption: Getting Started
     chapters:
       - file: installation_page
-      - file: loading_in_a_match
+      - file: loading_in_a_match_page
       - file: preprocessing_options
       - file: visualizations_page
   - caption: Toturials
