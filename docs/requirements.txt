@@ -1,2 +1,2 @@
-git+https://github.com/Alek050/databallpy.git@new_documentation#egg=databallpy
+git+https://github.com/Alek050/databallpy.git@develop#egg=databallpy
 jupyter-book

@@ -34,6 +34,16 @@ def load_scisports_event_data(
         LOGGER.error(f"File {events_json} does not exist.")
         raise FileNotFoundError(f"File {events_json} does not exist.")
 
+    if not isinstance(pitch_dimensions, (tuple, list)) or len(pitch_dimensions) != 2:
+        LOGGER.error(
+            f"Invalid pitch_dimensions: {pitch_dimensions}. "
+            "Must be a tuple of length 2."
+        )
+        raise ValueError(
+            f"Invalid pitch_dimensions: {pitch_dimensions}. "
+            "Must be a tuple of length 2."
+        )
+
     # Load the metadata
     metadata = _load_metadata(events_json, pitch_dimensions)
     LOGGER.info("Successfully loaded SciSports metadata.")
@@ -358,7 +368,7 @@ def _get_shot_event(event: dict, id: int) -> ShotEvent:
         start_y=event["startPosYM"],
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
-        pitch_size=None,
+        pitch_size=(106.0, 68.0),
         _xt=-1.0,
         player_id=event["playerId"],
         shot_outcome=shot_result_mappping[event["shotTypeName"]]
@@ -423,7 +433,7 @@ def _get_pass_event(event: dict, id: int) -> PassEvent:
         start_y=event["startPosYM"],
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
-        pitch_size=None,
+        pitch_size=(106.0, 68.0),
         _xt=-1.0,
         outcome=event["resultName"].lower()
         if event["subTypeName"] != "OFFSIDE_PASS"
@@ -459,7 +469,7 @@ def _get_dribble_event(event: dict, id: int) -> DribbleEvent:
         start_y=event["startPosYM"],
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
-        pitch_size=None,
+        pitch_size=(106.0, 68.0),
         _xt=-1.0,
         player_id=event["playerId"],
         related_event_id=MISSING_INT,

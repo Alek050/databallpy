@@ -456,16 +456,14 @@ class TestShotEvent(unittest.TestCase):
         shot_event = self.shot_event.copy()
         shot_event.add_tracking_data_features(
             tracking_data_frame=self.tracking_data_frame,
-            team_side="home",
-            pitch_dimensions=[100, 50],
             column_id="home_1",
             gk_column_id="away_1",
         )
-        ball_left_post_vec = [50, 7.32 / 2]
-        ball_right_post_vec = [50, -7.32 / 2]
+        ball_left_post_vec = [53, 7.32 / 2]
+        ball_right_post_vec = [53, -7.32 / 2]
 
         self.assertAlmostEqual(
-            shot_event.ball_goal_distance, np.sqrt(50**2), places=4
+            shot_event.ball_goal_distance, np.sqrt(53**2), places=4
         )
         self.assertAlmostEqual(
             shot_event.ball_gk_distance, np.sqrt(10**2 + 10**2), places=4
@@ -486,7 +484,7 @@ class TestShotEvent(unittest.TestCase):
         self.assertEqual(shot_event.n_obstructive_players, 1)
         self.assertEqual(shot_event.n_obstructive_defenders, 1)
         self.assertAlmostEqual(
-            shot_event.goal_gk_distance, np.sqrt(40**2 + 10**2), places=4
+            shot_event.goal_gk_distance, np.sqrt(43**2 + 10**2), places=4
         )
 
     def test_shot_event_copy(self):

@@ -431,7 +431,7 @@ def plot_tracking_data(
     ax: plt.axes = None,
     title: str = None,
     events: list = [],
-    variable_of_interest: any,
+    variable_of_interest: any = None,
     add_player_possession: bool = False,
     add_velocities: bool = False,
     add_pitch_control: bool = False,

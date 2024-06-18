@@ -70,6 +70,9 @@ class TestSciSportsParser(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             load_scisports_event_data("non_existent_file.json")
 
+        with self.assertRaises(ValueError):
+            load_scisports_event_data(self.json_loc, pitch_dimensions={106.0, 68.0})
+
     def test_load_metadata(self):
         result = _load_metadata(self.json_loc, (106.0, 68.0))
         self.assertEqual(result, self.expected_metadata)
@@ -177,7 +180,7 @@ class TestSciSportsParser(unittest.TestCase):
             start_y=0.0,
             team_id=200,
             team_side="away",
-            pitch_size=None,
+            pitch_size=(106.0, 68.0),
             _xt=-1.0,
             player_id=201,
             shot_outcome="goal",
@@ -243,7 +246,7 @@ class TestSciSportsParser(unittest.TestCase):
             start_y=25.97,
             team_id=100,
             team_side="home",
-            pitch_size=None,
+            pitch_size=(106.0, 68.0),
             _xt=-1.0,
             outcome="unsuccessful",
             player_id=102,
@@ -311,7 +314,7 @@ class TestSciSportsParser(unittest.TestCase):
             start_y=2.01,
             team_id=100,
             team_side="home",
-            pitch_size=None,
+            pitch_size=(106.0, 68.0),
             _xt=-1.0,
             player_id=102,
             related_event_id=MISSING_INT,
