@@ -353,10 +353,10 @@ class ShotEvent(BaseOnBallEvent):
             self.ball_gk_distance == other.ball_gk_distance
             if not pd.isnull(self.ball_gk_distance)
             else pd.isnull(other.ball_gk_distance),
-            self.ball_goal_distance == other.ball_goal_distance
+            math.isclose(self.ball_goal_distance, other.ball_goal_distance, abs_tol=1e-5)
             if not pd.isnull(self.ball_goal_distance)
             else pd.isnull(other.ball_goal_distance),
-            self.shot_angle == other.shot_angle
+            math.isclose(self.shot_angle, other.shot_angle, abs_tol=1e-5)
             if not pd.isnull(self.shot_angle)
             else pd.isnull(other.shot_angle),
             self.gk_optimal_loc_distance == other.gk_optimal_loc_distance
@@ -370,7 +370,7 @@ class ShotEvent(BaseOnBallEvent):
             self.goal_gk_distance == other.goal_gk_distance
             if not pd.isnull(self.goal_gk_distance)
             else pd.isnull(other.goal_gk_distance),
-            self.xG == other.xG if not pd.isnull(self.xG) else pd.isnull(other.xG),
+            math.isclose(self.xG, other.xG, abs_tol=1e-5) if not pd.isnull(self.xG) else pd.isnull(other.xG),
         ]
         return all(result)
 
