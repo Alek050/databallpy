@@ -11,7 +11,7 @@ build:
 sphinx:
   configuration: docs/conf.py
   config:
-    html_extra_path: ['./media']
+    html_static_path: ['static']
 
 python:
   install:

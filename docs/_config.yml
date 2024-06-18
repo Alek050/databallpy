@@ -3,7 +3,7 @@
 
 title: DataBallPy Documentation
 author: Alexander Oonk
-logo: media/databallpy_logo.png
+logo: static/databallpy_logo.png
 copyright: Copyright 2024, Alexander Oonk
 exclude_patterns: [_build, Thumbs.db, .DS_Store, .env, "**.ipynb_checkpoints",]
 
