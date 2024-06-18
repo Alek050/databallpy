@@ -48,17 +48,22 @@ class TestOptaParser(unittest.TestCase):
 
         # SHOT_EVENTS_OPTA is scaled to a pitch of [106, 68],
         # while here [10, 10] is expected.
-        shot_events_opta = {}
+        expected_shot_events_opta = {}
         for shot_id, shot_event in SHOT_EVENTS_OPTA.items():
-            shot_events_opta[shot_id] = shot_event.copy()
-            shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 10
-            shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 10
-            shot_events_opta[shot_id].pitch_size = [10.0, 10.0]
+            expected_shot_events_opta[shot_id] = shot_event.copy()
+            expected_shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 10
+            expected_shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 10
+            expected_shot_events_opta[shot_id].pitch_size = [10.0, 10.0]
+            expected_shot_events_opta[shot_id]._update_shot_angle()
+            expected_shot_events_opta[shot_id]._update_ball_goal_distance()
+            expected_shot_events_opta[shot_id].xG = expected_shot_events_opta[
+                shot_id
+            ].get_xG()
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():
-            assert key in shot_events_opta.keys()
-            assert event == shot_events_opta[key]
+            assert key in expected_shot_events_opta.keys()
+            assert event == expected_shot_events_opta[key]
 
     def test_load_event_data_pass(self):
         event_data, metadata, dbp_events = load_opta_event_data(

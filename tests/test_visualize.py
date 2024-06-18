@@ -8,12 +8,12 @@ import pandas as pd
 
 from databallpy.get_match import get_match
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.warnings import DataBallPyWarning
 from databallpy.visualize import (
     plot_events,
     plot_soccer_pitch,
+    plot_tracking_data,
     requires_ffmpeg,
-    save_match_clip,
+    save_tracking_video,
 )
 
 
@@ -28,6 +28,7 @@ class TestVisualize(unittest.TestCase):
             event_data_provider="opta",
             check_quality=False,
         )
+        self.match.tracking_data["player_possession"] = "home_34"
 
     def test_requires_ffmpeg_wrapper(self):
         @requires_ffmpeg
@@ -61,7 +62,6 @@ class TestVisualize(unittest.TestCase):
             events=["pass", "dribble"],
             player_ids=[45849],
             team_id=3,
-            pitch_color="green",
             color_by_col="team_id",
             team_colors=["blue", "red"],
             title="My Test Plot",
@@ -81,7 +81,6 @@ class TestVisualize(unittest.TestCase):
             player_ids=[45849],
             outcome=1,
             team_id=3,
-            pitch_color="green",
             color_by_col="team_id",
             team_colors=["blue", "red"],
             title="My Test Plot",
@@ -94,7 +93,6 @@ class TestVisualize(unittest.TestCase):
             events=["pass", "dribble"],
             player_ids=[45849],
             team_id=3,
-            pitch_color="green",
             color_by_col="databallpy_event",
             team_colors=["blue", "red"],
             title="My Test Plot2",
@@ -112,7 +110,6 @@ class TestVisualize(unittest.TestCase):
             events=["pass", "dribble"],
             player_ids=[45849],
             team_id=3,
-            pitch_color="green",
             team_colors=["blue", "red"],
             title="My Test Plot3",
         )
@@ -135,6 +132,20 @@ class TestVisualize(unittest.TestCase):
         with self.assertRaises(ValueError):
             plot_events(self.match.copy(), team_id="12345678")
 
+    def test_plot_tracking_data(self):
+        match = self.match.copy()
+        idx = 1
+        fig, ax = plot_tracking_data(
+            match,
+            idx,
+            title="My Test Plot",
+            add_player_possession=True,
+        )
+        self.assertIsInstance(fig, plt.Figure)
+        self.assertIsInstance(ax, plt.Axes)
+
+        plt.close(fig)
+
     def test_save_match_clip(self):
         match = self.match.copy()
         match.tracking_data["player_possession"] = [
@@ -146,7 +157,7 @@ class TestVisualize(unittest.TestCase):
         ]
         series = pd.Series([22, 23, 25], index=[1, 2, 3])
         with self.assertRaises(DataBallPyError):
-            save_match_clip(
+            save_tracking_video(
                 match,
                 1,
                 3,
@@ -155,7 +166,7 @@ class TestVisualize(unittest.TestCase):
                 events=["pass"],
             )
         with self.assertRaises(DataBallPyError):
-            save_match_clip(
+            save_tracking_video(
                 match,
                 0,
                 2,
@@ -164,17 +175,7 @@ class TestVisualize(unittest.TestCase):
                 variable_of_interest=series,
             )
         with self.assertRaises(DataBallPyError):
-            save_match_clip(
-                match,
-                1,
-                3,
-                save_folder="tests/test_data",
-                title="test_clip",
-                variable_of_interest=series,
-                player_possession_column="unknown_column",
-            )
-        with self.assertRaises(DataBallPyError):
-            save_match_clip(
+            save_tracking_video(
                 match,
                 1,
                 3,
@@ -186,14 +187,14 @@ class TestVisualize(unittest.TestCase):
         if os.path.exists("tests/test_data/test_clip.mp4"):
             os.remove("tests/test_data/test_clip.mp4")
 
-        save_match_clip(
+        save_tracking_video(
             match,
             1,
             3,
             save_folder="tests/test_data",
             title="test_clip",
             variable_of_interest=series,
-            player_possession_column="player_possession",
+            add_player_possession=True,
         )
 
         assert os.path.exists("tests/test_data/test_clip.mp4")
@@ -223,7 +224,7 @@ class TestVisualize(unittest.TestCase):
             synced_match.tracking_data.loc[mask, col + "_velocity"] = 2.67
         synced_match.allow_synchronise_tracking_and_event_data = True
 
-        grid_size = [360, 240]
+        grid_size = [480, 320]
         x_range = np.linspace(
             -100 / 2 - 5,
             100 / 2 + 5,
@@ -246,18 +247,17 @@ class TestVisualize(unittest.TestCase):
         if os.path.exists("tests/test_data/test_match_with_events.mp4"):
             os.remove("tests/test_data/test_match_with_events.mp4")
 
-        with self.assertWarns(DataBallPyWarning):
-            save_match_clip(
-                synced_match,
-                1,
-                10,
-                save_folder="tests/test_data",
-                title="test_match_with_events",
-                events=events,
-                add_pitch_control=True,
-                add_velocities=True,
-                verbose=False,
-            )
+        save_tracking_video(
+            synced_match,
+            1,
+            10,
+            save_folder="tests/test_data",
+            title="test_match_with_events",
+            events=events,
+            add_pitch_control=True,
+            add_velocities=True,
+            verbose=False,
+        )
 
         assert os.path.exists("tests/test_data/test_match_with_events.mp4")
         os.remove("tests/test_data/test_match_with_events.mp4")

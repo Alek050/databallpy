@@ -1,6 +1,5 @@
 import subprocess
 import time
-import warnings
 from functools import wraps
 
 import matplotlib.animation as animation
@@ -15,7 +14,6 @@ from databallpy.features.pitch_control import get_pitch_control_period
 from databallpy.match import Match
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
-from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__name__)
 
@@ -47,6 +45,8 @@ def plot_soccer_pitch(
     pitch_color: str = "mediumseagreen",
     linewidth: int = 2,
     markersize: int = 20,
+    fig: plt.figure = None,
+    ax: plt.axes = None,
 ) -> tuple[plt.figure, plt.axes]:
     """A function to plot a soccer pitch
     Note: relies heavily on https://github.com/Friends-of-Tracking-Data-FoTD/
@@ -58,13 +58,16 @@ def plot_soccer_pitch(
         pitch_color (str, optional): Color of the pitch. Defaults to "mediumseagreen".
         linewidth (int, optional): Width of the lines on the pitch. Defaults to 2.
         markersize (int, optional): Size of the dots on the pitch. Defaults to 20.
+        fig (plt.figure, optional): Figure to plot the pitch on. Defaults to None.
+        ax (plt.axes, optional): Axes to plot the pitch on. Defaults to None.
 
     Returns:
         Tuple[plt.figure, plt.axes]: figure and axes with the pitch depicted on it
     """
     LOGGER.info("Trying to plot soccer pitch")
     try:
-        fig, ax = plt.subplots(figsize=(12, 8))
+        if fig is None and ax is None:
+            fig, ax = plt.subplots(figsize=(12, 8))
 
         # Set pitch and line colors
         ax.set_facecolor(pitch_color)
@@ -252,33 +255,35 @@ def plot_soccer_pitch(
 
 def plot_events(
     match: Match,
-    events: list = [],
+    events: list[str] = [],
     outcome: int = None,
-    player_ids: list = [],
-    team_id: int = None,
-    pitch_color: str = "mediumseagreen",
+    player_ids: list[str] = [],
+    team_id: int | str | None = None,
+    fig: plt.figure = None,
+    ax: plt.axes = None,
     color_by_col: str = None,
-    team_colors: list = ["orange", "red"],
-    title: str = None,
+    team_colors: list[str] = ["orange", "red"],
+    title: str | None = None,
 ) -> tuple[plt.figure, plt.axes]:
     """Function to plot the locations of specific events
 
     Args:
         match (Match): All information about a match
         events (list, optional): Filter of events you want to plot, if empty,
-        all events are plotted. Defaults to [].
+            all events are plotted. Defaults to [].
         outcome (int, optional): Filter if the event should have a succesfull
-        outcome (1) or not (0), if None, all outcomes are included. Defaults to None.
-        player_ids (list, optional): Filter for what players to include, if empty, all
-        players are included. Defaults to [].
-        team_id (int, optional): Filter for what team to include, if None, both teams
-        are included. Defaults to None.
-        pitch_color (str, optional): Prefered color of the pitch. Defaults to
-        "mediumseagreen".
+            outcome (1) or not (0), if None, all outcomes are included.
+                Defaults to None.
+        player_ids (list, optional): Filter for what players to include, if empty,
+            all players are included. Defaults to [].
+        team_id (int | str, optional): Filter for what team to include, if None,
+            both teams are included. Defaults to None.
+        fig (plt.figure, optional): Figure to plot the events on. Defaults to None.
+        ax (plt.axes, optional): Axes to plot the events on. Defaults to None.
         color_by_col (str, optional): If specified, colors of scatter is specified by
-        this colom in match.event_data. Defaults to None.
+            this colom in match.event_data. Defaults to None.
         team_colors (list, optional): Colors by which the teams should be represented.
-        Defaults to ["orange", "red"].
+            Defaults to ["orange", "red"].
         title (str, optional): Title of the plot. Defaults to None.
 
     Returns:
@@ -344,11 +349,9 @@ def plot_events(
             return None, None
         else:
             LOGGER.info(f"Found {len(event_data)} matching events in plot_events().")
-            print(f"Found {len(event_data)} matching events")
 
-        fig, ax = plot_soccer_pitch(
-            field_dimen=match.pitch_dimensions, pitch_color=pitch_color
-        )
+        if fig is None and ax is None:
+            fig, ax = plot_soccer_pitch(field_dimen=match.pitch_dimensions)
         if title:
             ax.set_title(title)
 
@@ -404,7 +407,7 @@ def plot_events(
                     )
 
             # Add legend to the plot
-            plt.legend(loc="upper center")
+            ax.legend(loc="upper center")
 
         # If color_by_col is not specified, color events using default settings
         else:
@@ -419,8 +422,129 @@ def plot_events(
         raise e
 
 
+def plot_tracking_data(
+    match: Match,
+    idx: int,
+    team_colors: list[str] = ["green", "red"],
+    *,
+    fig: plt.figure = None,
+    ax: plt.axes = None,
+    title: str = None,
+    events: list = [],
+    variable_of_interest: any = None,
+    add_player_possession: bool = False,
+    add_velocities: bool = False,
+    add_pitch_control: bool = False,
+) -> tuple[plt.figure, plt.axes]:
+    """Function to plot the tracking data of a specific index in the
+    match.tracking_data.
+
+    Args:
+        match (Match): Match with tracking data and other info of the match.
+        idx (int): Index of the tracking data you want to plot.
+        team_colors (list[str], optional): The color of the teams.
+            Defaults to ["green", "red"].
+        fig (plt.figure, optional): The figure to plot on. Defaults to None.
+        ax (plt.axes, optional): The axes to plot on. Defaults to None.
+        title (str, optional): The title of the plot. Defaults to None.
+        events (list, optional): The databallpy events to plot. Defaults to [].
+        variable_of_interest (any, optional): The variable you want to plot.
+            Defaults to None.
+        add_player_possession (bool, optional): Whether to add a circle around the
+            player that has possession over the ball. Defaults to False.
+        add_velocities (bool, optional): Whether to add the velocities to the plot.
+            Defaults to False.
+        add_pitch_control (bool, optional): Whether to add the pitch control to the
+            plot.Defaults to False.
+
+    Returns:
+        tuple[plt.figure, plt.axes]: The figure and axes with the tracking data
+    """
+
+    LOGGER.info(f"Trying to plot tracking data at index {idx} in plot_tracking_data().")
+    try:
+        td = match.tracking_data.loc[[idx]]
+        td_ht = td[
+            np.array(
+                [[x + "_x", x + "_y"] for x in match.home_players_column_ids()]
+            ).reshape(1, -1)[0]
+        ]
+        td_at = td[
+            np.array(
+                [[x + "_x", x + "_y"] for x in match.away_players_column_ids()]
+            ).reshape(1, -1)[0]
+        ]
+
+        _pre_check_plot_td_inputs(
+            match=match,
+            td=td,
+            events=events,
+            variable_of_interest=variable_of_interest,
+            add_player_possession=add_player_possession,
+            add_velocities=add_velocities,
+            add_pitch_control=add_pitch_control,
+        )
+
+        if fig is None and ax is None:
+            fig, ax = plot_soccer_pitch(field_dimen=match.pitch_dimensions)
+        if title:
+            ax.set_title(title)
+
+        # Set match name
+        ax.text(
+            match.pitch_dimensions[0] / -2.0 + 2,
+            match.pitch_dimensions[1] / 2.0 + 1.0,
+            match.home_team_name,
+            fontsize=14,
+            c=team_colors[0],
+            zorder=2.5,
+        )
+        ax.text(
+            match.pitch_dimensions[0] / 2.0 - 15,
+            match.pitch_dimensions[1] / 2.0 + 1.0,
+            match.away_team_name,
+            fontsize=14,
+            c=team_colors[1],
+            zorder=2.5,
+        )
+
+        if add_pitch_control:
+            pitch_control_array, x_range, y_range, cmap = _get_pitch_control_variables(
+                match, td, team_colors
+            )
+            _, ax = _plot_pitch_control(
+                ax, pitch_control_array[0], x_range, y_range, cmap, []
+            )
+
+        if add_velocities:
+            _, ax = _plot_velocities(ax, td, idx, match, [])
+
+        _, ax = _plot_single_frame(ax, td_ht, td_at, idx, team_colors, [], td, match)
+
+        if variable_of_interest is not None:
+            _, ax = _plot_variable_of_interest(ax, variable_of_interest, [], match)
+
+        if add_player_possession:
+            column_id = match.tracking_data.loc[idx, "player_possession"]
+            _, ax = _plot_player_possession(ax, column_id, idx, match, [])
+
+        if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
+            _, ax = _plot_events(ax, td, idx, match, [])
+
+        LOGGER.info(
+            f"Succesfully plotted tracking data at index {idx} in plot_tracking_data()."
+        )
+        return fig, ax
+
+    except Exception as e:
+        LOGGER.exception(
+            f"Found an unexpected exception in plot_tracking_data(): \n{e}"
+        )
+        raise e
+
+
 @requires_ffmpeg
-def save_match_clip(
+def save_tracking_video(
     match: Match,
     start_idx: int,
     end_idx: int,
@@ -428,18 +552,17 @@ def save_match_clip(
     *,
     title: str = "test_clip",
     team_colors: list = ["green", "red"],
-    pitch_color: str = "mediumseagreen",
     events: list = [],
-    variable_of_interest: pd.Series = None,
-    player_possession_column: str = None,
+    variable_of_interest: pd.Series | list = None,
+    add_player_possession: bool = False,
     add_velocities: bool = False,
     add_pitch_control: bool = False,
     verbose: bool = True,
 ):
     """Function to save a subset of a match clip of the tracking data.
 
-    Note that making animation is build with FFMPEG. You need to have FFMPEG installed
-    on you device before being able to use this function.
+    Note that making animation is build with FFMPEG. You need to have
+    FFMPEG installed on you device before being able to use this function.
 
     Args:
         match (Match): Match with tracking data and ohter info of the match.
@@ -449,15 +572,14 @@ def save_match_clip(
         title (str, optional): Title of the clip. Defaults to "test_clip".
         team_colors (list, optional): Colors of the home and away team. Defaults to
             ["green", "red"].
-        pitch_color (str, optional): Color of the pitch. Defaults to "mediumseagreen".
         events (list, optional): What events should be plotted as well. Defaults to [].
-        variable_of_interest (pd.Series, optional): Variable you want to have plotted
-            in the clip, this is a pd.Series that should have the same index
+        variable_of_interest (pd.Series | list, optional): Variable you want to have
+            plotted in the clip, this is a pd.Series that should have the same index
             (start_idx:end_idx) as the tracking data that will be plotted. Defaults to
             None.
-        player_possession_column (str, optional): Column in match.tracking_data that
-            contains the player id of the player that has possession of the ball.
-            Defaults to None.
+        add_player_possession (bool, optional): Whether to add a mark around which
+            player has possession over the ball. Defaults to False. If True, the
+            column 'player_possession' should be in the match.tracking_data.
         add_velocities (bool, optional): Whether or not to add the velocities to the
             clip, will add arrows to show the velocity. Defaults to False.
         add_pitch_control (bool, optional): Whether or not to add pitch control to the
@@ -478,101 +600,35 @@ def save_match_clip(
                 [[x + "_x", x + "_y"] for x in match.away_players_column_ids()]
             ).reshape(1, -1)[0]
         ]
-        if variable_of_interest is not None:
-            if not (variable_of_interest.index == td.index).all():
-                message = (
-                    "index of the variable_of_interest should be equal to the index "
-                    "of the start_idx:end_idx."
-                )
-                LOGGER.error(message)
-                raise DataBallPyError(message)
-        if player_possession_column is not None:
-            if player_possession_column not in match.tracking_data.columns:
-                message = (
-                    f"Column {player_possession_column} not found in "
-                    "match.tracking_data.columns"
-                )
-                LOGGER.error(message)
-                raise DataBallPyError(message)
 
-        if len(events) > 0:
-            if not match.is_synchronised:
-                message = "Match needs to be synchronised to add events."
-                LOGGER.error(message)
-                raise DataBallPyError(message)
+        _pre_check_plot_td_inputs(
+            match=match,
+            td=td,
+            events=events,
+            variable_of_interest=variable_of_interest,
+            add_player_possession=add_player_possession,
+            add_velocities=add_velocities,
+            add_pitch_control=add_pitch_control,
+        )
 
-        if add_velocities or add_pitch_control:
-            for player in (
-                match.home_players_column_ids() + match.away_players_column_ids()
-            ):
-                if player + "_vx" not in td.columns or player + "_vy" not in td.columns:
-                    message = (
-                        f"Player vx and/or vy of {player} not found in "
-                        "match.tracking_data.columns. Please run "
-                        "databallpy.features.differentiat.add_velocity() first."
-                    )
-                    LOGGER.error(message)
-                    raise DataBallPyError(message)
-
-        animation_metadata = {
-            "title": title,
-            "artist": "Matplotlib",
-            "comment": "Made with DataballPy",
-        }
         writer = animation.FFMpegWriter(
-            fps=match.frame_rate, metadata=animation_metadata
+            fps=match.frame_rate,
+            metadata={
+                "title": title,
+                "artist": "Matplotlib",
+                "comment": "Made with DataballPy",
+            },
         )
         video_loc = f"{save_folder}/{title}.mp4"
 
-        if pitch_color not in ["white", "w"] and add_pitch_control:
-            message = (
-                "Pitch control will not be shown properly if the pitch color"
-                " is not white. Changing the pitch color to white."
-            )
-            LOGGER.warning(message)
-            warnings.warn(message, category=DataBallPyWarning)
-            pitch_color = "white"
-
+        pitch_color = "white" if add_pitch_control else "mediumseagreen"
         fig, ax = plot_soccer_pitch(
             field_dimen=match.pitch_dimensions, pitch_color=pitch_color
         )
 
         if add_pitch_control:
-            grid_size = [360, 240]
-            x_range = np.linspace(
-                -match.pitch_dimensions[0] / 2 - 5,
-                match.pitch_dimensions[0] / 2 + 5,
-                grid_size[0],
-            )
-            y_range = np.linspace(
-                -match.pitch_dimensions[1] / 2 - 5,
-                match.pitch_dimensions[1] / 2 + 5,
-                grid_size[1],
-            )
-            grid = np.meshgrid(x_range, y_range)
-
-            c3 = to_rgba(team_colors[0])
-            c2 = (1, 1, 1, 1)
-            c1 = to_rgba(team_colors[1])
-
-            all_colors = [c1, c2, c3]
-
-            cmap = LinearSegmentedColormap.from_list(
-                "custom_colormap", all_colors, N=22
-            )
-
-            start_time = time.time()
-            pitch_control_array = get_pitch_control_period(
-                tracking_data=td,
-                grid=grid,
-            )
-            n_cells = grid_size[0] * grid_size[1]
-            pitch_control_array = (
-                1 / (1 + np.exp(-n_cells / 50.0 * pitch_control_array))
-            ) * 2 - 1
-            LOGGER.info(
-                f"Pitch control took {time.time() - start_time} "
-                f"seconds, len(td) = {len(td)}"
+            pitch_control_array, x_range, y_range, cmap = _get_pitch_control_variables(
+                match, td, team_colors
             )
 
         # Set match name, non variable over time
@@ -591,177 +647,57 @@ def save_match_clip(
             color=team_colors[1],
         )
 
+        indexes = (
+            td.index
+            if not verbose
+            else tqdm(td.index, desc="Making match clip", leave=False)
+        )
         # Generate movie with variable info
-        with writer.saving(fig, video_loc, 100):
-            if verbose:
-                indexes = tqdm(td.index, desc="Making match clip", leave=False)
-            else:
-                indexes = td.index
-            for i, idx in enumerate(indexes):
+        with writer.saving(fig, video_loc, dpi=300):
+            for idx_loc, idx in enumerate(indexes):
                 variable_fig_objs = []
 
                 if add_pitch_control:
-                    pitch_control = pitch_control_array[i]
-                    imshow = ax.imshow(
-                        pitch_control,
-                        extent=[
-                            x_range.min(),
-                            x_range.max(),
-                            y_range.min(),
-                            y_range.max(),
-                        ],
-                        cmap=cmap,
-                        origin="lower",
-                        aspect="auto",
-                        vmin=-1.0,
-                        vmax=1.0,
-                        zorder=-5,
+                    variable_fig_objs, ax = _plot_pitch_control(
+                        ax,
+                        pitch_control_array[idx_loc],
+                        x_range,
+                        y_range,
+                        cmap,
+                        variable_fig_objs,
                     )
-                    variable_fig_objs.append(imshow)
 
                 if add_velocities:
-                    for col_ids in [
-                        match.home_players_column_ids(),
-                        match.away_players_column_ids(),
-                    ]:
-                        for col_id in col_ids:
-                            if pd.isnull(
-                                td.loc[idx, [col_id + "_vx", col_id + "_x"]]
-                            ).any():
-                                continue
-
-                            arrow = mpatches.FancyArrowPatch(
-                                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values,
-                                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values
-                                + td.loc[idx, [f"{col_id}_vx", f"{col_id}_vy"]].values,
-                                mutation_scale=10,
-                            )
-                            fig_obj = ax.add_patch(arrow)
-                            variable_fig_objs.append(fig_obj)
-                    if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
-                        arrow = mpatches.FancyArrowPatch(
-                            td.loc[idx, ["ball_x", "ball_y"]].values,
-                            td.loc[idx, ["ball_x", "ball_y"]].values
-                            + td.loc[idx, ["ball_vx", "ball_vy"]].values,
-                            mutation_scale=10,
-                            color="black",
-                        )
-                        fig_obj = ax.add_patch(arrow)
-                        variable_fig_objs.append(fig_obj)
-
-                # Scatter plot the teams
-                for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
-                    x_cols = [x for x in td_team.index if x[-2:] == "_x"]
-                    y_cols = [y for y in td_team.index if y[-2:] == "_y"]
-                    fig_obj = ax.scatter(
-                        td_team[x_cols],
-                        td_team[y_cols],
-                        c=c,
-                        alpha=0.7,
-                        s=90,
-                        zorder=2.5,
+                    variable_fig_objs, ax = _plot_velocities(
+                        ax, td, idx, match, variable_fig_objs
                     )
-                    variable_fig_objs.append(fig_obj)
 
-                    # Add shirt number to every dot
-                    for x, y in zip(x_cols, y_cols):
-                        if pd.isnull(td_team[x]):
-                            # Player not on the pitch currently
-                            continue
-
-                        # Slightly different place needed if the number has a len of 2
-                        correction = 0.5 if len(x.split("_")[1]) == 1 else 0.8
-                        fig_obj = ax.text(
-                            td_team[x] - correction,
-                            td_team[y] - 0.5,
-                            x.split("_")[1],  # the shirt number
-                            fontsize=9,
-                            c="white",
-                            zorder=3.0,
-                        )
-                        variable_fig_objs.append(fig_obj)
-
-                # Plot the ball
-                fig_obj = ax.scatter(
-                    td.loc[idx, "ball_x"], td.loc[idx, "ball_y"], c="black"
+                variable_fig_objs, ax = _plot_single_frame(
+                    ax, td_ht, td_at, idx, team_colors, variable_fig_objs, td, match
                 )
-                variable_fig_objs.append(fig_obj)
 
-                # Add time info
-                fig_obj = ax.text(
-                    -20.5,
-                    match.pitch_dimensions[1] / 2.0 + 1.0,
-                    td.loc[idx, "matchtime_td"],
-                    c="k",
-                    fontsize=14,
-                )
-                variable_fig_objs.append(fig_obj)
-
-                # Add variable of interest
                 if variable_of_interest is not None:
-                    fig_obj = ax.text(
-                        -7,
-                        match.pitch_dimensions[1] / 2.0 + 1.0,
-                        str(variable_of_interest[idx]),
-                        fontsize=14,
+                    if isinstance(variable_of_interest, pd.Series):
+                        value = variable_of_interest.loc[idx]
+                    else:
+                        value = variable_of_interest[idx_loc]
+                    variable_fig_objs, ax = _plot_variable_of_interest(
+                        ax, value, variable_fig_objs, match
                     )
-                    variable_fig_objs.append(fig_obj)
 
-                # add player possessions
-                if player_possession_column is not None:
-                    column_id = match.tracking_data.loc[idx, player_possession_column]
-                    if not pd.isnull(column_id):
-                        circle = plt.Circle(
-                            (
-                                match.tracking_data.loc[idx, f"{column_id}_x"],
-                                match.tracking_data.loc[idx, f"{column_id}_y"],
-                            ),
-                            radius=1,
-                            color="gold",
-                            fill=False,
-                        )
-                        fig_obj = ax.add_artist(circle)
-                        variable_fig_objs.append(fig_obj)
+                if add_player_possession:
+                    column_id = match.tracking_data.loc[idx, "player_possession"]
+                    variable_fig_objs, ax = _plot_player_possession(
+                        ax, column_id, idx, match, variable_fig_objs
+                    )
 
-                # Add events
-                # Note: this should be last in this function since it assumes that all
-                # other info is already plotted in the axes
-                if len(events) > 0:
-                    if td.loc[idx, "databallpy_event"] in events:
-                        event = (
-                            match.event_data[
-                                match.event_data["event_id"] == td.loc[idx, "event_id"]
-                            ]
-                            .iloc[0]
-                            .T
-                        )
+                if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
+                    variable_fig_objs, ax = _plot_events(
+                        ax, td, idx, match, variable_fig_objs
+                    )
 
-                        player_name = event["player_name"]
-                        event_name = event["databallpy_event"]
-
-                        # Add event text
-                        fig_obj = ax.text(
-                            5,
-                            match.pitch_dimensions[1] / 2.0 + 1,
-                            f"{player_name}: {event_name}",
-                            fontsize=14,
-                        )
-                        variable_fig_objs.append(fig_obj)
-
-                        # Highligh location on the pitch of the event
-                        fig_obj = ax.scatter(
-                            event["start_x"],
-                            event["start_y"],
-                            color="red",
-                            marker="x",
-                            s=50,
-                        )
-                        variable_fig_objs.append(fig_obj)
-
-                        # Grap frame match.frame_rate times to 'pause' the video at
-                        # this moment
-                        for _ in range(match.frame_rate):
-                            writer.grab_frame()
+                    # 'pause' the clip for 1 second on this event
+                    [writer.grab_frame() for _ in range(match.frame_rate)]
 
                 # Save current frame
                 writer.grab_frame()
@@ -770,7 +706,6 @@ def save_match_clip(
                 for fig_obj in variable_fig_objs:
                     fig_obj.remove()
 
-        # Close figure
         plt.clf()
         plt.close(fig)
         LOGGER.info(
@@ -779,3 +714,294 @@ def save_match_clip(
     except Exception as e:
         LOGGER.exception(f"Found an unexpected exception in save_match_clip(): \n{e}")
         raise e
+
+
+def _pre_check_plot_td_inputs(
+    match: Match,
+    td: pd.DataFrame,
+    events: list[str],
+    variable_of_interest: str | None,
+    add_player_possession: bool,
+    add_velocities: bool,
+    add_pitch_control: bool,
+):
+    """Function to check if the inputs for the save_match_clip function are correct."""
+    if not isinstance(match, Match):
+        message = "match should be an instance of databallpy.Match"
+        raise DataBallPyError(message)
+
+    if variable_of_interest is not None:
+        if isinstance(variable_of_interest, pd.Series):
+            if not (variable_of_interest.index == td.index).all():
+                message = (
+                    "index of the variable_of_interest should be equal to the index "
+                    "of the start_idx:end_idx."
+                )
+                raise DataBallPyError(message)
+        elif isinstance(variable_of_interest, list):
+            if len(variable_of_interest) != len(td):
+                message = (
+                    "Length of variable_of_interest should be equal to the length of "
+                    "the start_idx:end_idx."
+                )
+                raise DataBallPyError(message)
+    if add_player_possession:
+        if "player_possession" not in match.tracking_data.columns:
+            message = (
+                "Column 'player_possession' not found in " "match.tracking_data.columns"
+            )
+            raise DataBallPyError(message)
+
+    if len(events) > 0:
+        if not match.is_synchronised:
+            message = "Match needs to be synchronised to add events."
+            raise DataBallPyError(message)
+
+    if add_velocities or add_pitch_control:
+        for player in match.home_players_column_ids() + match.away_players_column_ids():
+            if player + "_vx" not in td.columns or player + "_vy" not in td.columns:
+                message = (
+                    f"Player vx and/or vy of {player} not found in "
+                    "match.tracking_data.columns. Please run "
+                    "databallpy.features.differentiat.add_velocity() first."
+                )
+                raise DataBallPyError(message)
+
+
+def _get_pitch_control_variables(
+    match: Match, td: pd.DataFrame, team_colors: list[str]
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, LinearSegmentedColormap]:
+    """Function to get the pitch control variables for the save_match_clip function."""
+    grid_size = [480, 320]
+    x_range = np.linspace(
+        -match.pitch_dimensions[0] / 2 - 5,
+        match.pitch_dimensions[0] / 2 + 5,
+        grid_size[0],
+    )
+    y_range = np.linspace(
+        -match.pitch_dimensions[1] / 2 - 5,
+        match.pitch_dimensions[1] / 2 + 5,
+        grid_size[1],
+    )
+    grid = np.meshgrid(x_range, y_range)
+
+    c3 = to_rgba(team_colors[0])
+    c2 = (1, 1, 1, 1)
+    c1 = to_rgba(team_colors[1])
+
+    all_colors = [c1, c2, c3]
+
+    cmap = LinearSegmentedColormap.from_list("custom_colormap", all_colors, N=22)
+
+    start_time = time.time()
+    pitch_control_array = get_pitch_control_period(tracking_data=td, grid=grid)
+    n_cells = grid_size[0] * grid_size[1]
+    pitch_control_array = (
+        1 / (1 + np.exp(-n_cells / 50.0 * pitch_control_array))
+    ) * 2 - 1
+    LOGGER.info(
+        f"Pitch control took {time.time() - start_time} "
+        f"seconds, len(td) = {len(td)}"
+    )
+
+    return pitch_control_array, x_range, y_range, cmap
+
+
+def _plot_pitch_control(
+    ax: plt.axes,
+    current_pitch_control: np.ndarray,
+    x_range: np.ndarray,
+    y_range: np.ndarray,
+    cmap: LinearSegmentedColormap,
+    variable_fig_objs: list,
+) -> tuple[list, plt.axes]:
+    """Helper function to plot the pitch control of the current frame."""
+    imshow = ax.imshow(
+        current_pitch_control,
+        extent=[
+            x_range.min(),
+            x_range.max(),
+            y_range.min(),
+            y_range.max(),
+        ],
+        cmap=cmap,
+        origin="lower",
+        aspect="auto",
+        vmin=-1.0,
+        vmax=1.0,
+        zorder=-5,
+    )
+    variable_fig_objs.append(imshow)
+    return variable_fig_objs, ax
+
+
+def _plot_velocities(
+    ax: plt.axes, td: pd.DataFrame, idx: int, match: Match, variable_fig_objs: list
+) -> tuple[list, plt.axes]:
+    """Helper function to plot the velocities of the current frame."""
+    # Player velocities
+    for col_ids in [
+        match.home_players_column_ids(),
+        match.away_players_column_ids(),
+    ]:
+        for col_id in col_ids:
+            if pd.isnull(td.loc[idx, [col_id + "_vx", col_id + "_x"]]).any():
+                continue
+
+            arrow = mpatches.FancyArrowPatch(
+                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values,
+                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values
+                + td.loc[idx, [f"{col_id}_vx", f"{col_id}_vy"]].values,
+                mutation_scale=10,
+            )
+            fig_obj = ax.add_patch(arrow)
+            variable_fig_objs.append(fig_obj)
+
+    # Ball velocity
+    if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
+        arrow = mpatches.FancyArrowPatch(
+            td.loc[idx, ["ball_x", "ball_y"]].values,
+            td.loc[idx, ["ball_x", "ball_y"]].values
+            + td.loc[idx, ["ball_vx", "ball_vy"]].values,
+            mutation_scale=10,
+            color="black",
+        )
+        fig_obj = ax.add_patch(arrow)
+        variable_fig_objs.append(fig_obj)
+
+    return variable_fig_objs, ax
+
+
+def _plot_single_frame(
+    ax: plt.axes,
+    td_ht: pd.DataFrame,
+    td_at: pd.DataFrame,
+    idx: int,
+    team_colors: list[str],
+    variable_fig_objs: list,
+    td: pd.DataFrame,
+    match: Match,
+) -> tuple[list, plt.axes]:
+    """Helper function to plot the single frame of the current frame."""
+    # Scatter plot the teams
+    for td_team, c in zip([td_ht.loc[idx], td_at.loc[idx]], team_colors):
+        x_cols = [x for x in td_team.index if x[-2:] == "_x"]
+        y_cols = [y for y in td_team.index if y[-2:] == "_y"]
+        fig_obj = ax.scatter(
+            td_team[x_cols],
+            td_team[y_cols],
+            c=c,
+            alpha=0.7,
+            s=90,
+            zorder=2.5,
+        )
+        variable_fig_objs.append(fig_obj)
+
+        # Add shirt number to every dot
+        for x, y in zip(x_cols, y_cols):
+            if pd.isnull(td_team[x]):
+                continue
+
+            correction = 0.5 if len(x.split("_")[1]) == 1 else 0.8
+            fig_obj = ax.text(
+                td_team[x] - correction,
+                td_team[y] - 0.5,
+                x.split("_")[1],  # player number
+                fontsize=9,
+                c="white",
+                zorder=3.0,
+            )
+            variable_fig_objs.append(fig_obj)
+
+    # Plot the ball
+    fig_obj = ax.scatter(td.loc[idx, "ball_x"], td.loc[idx, "ball_y"], c="black")
+    variable_fig_objs.append(fig_obj)
+
+    # Add time info
+    fig_obj = ax.text(
+        -20.5,
+        match.pitch_dimensions[1] / 2.0 + 1.0,
+        td.loc[idx, "matchtime_td"],
+        c="k",
+        fontsize=14,
+    )
+    variable_fig_objs.append(fig_obj)
+
+    return variable_fig_objs, ax
+
+
+def _plot_variable_of_interest(
+    ax: plt.axes,
+    value: any,
+    variable_fig_objs: list,
+    match: Match,
+) -> tuple[list, plt.axes]:
+    """Helper function to plot the variable of interest of the current frame."""
+    fig_obj = ax.text(
+        -7,
+        match.pitch_dimensions[1] / 2.0 + 1.0,
+        str(value),
+        fontsize=14,
+    )
+    variable_fig_objs.append(fig_obj)
+
+    return variable_fig_objs, ax
+
+
+def _plot_player_possession(
+    ax: plt.axes, column_id: str, idx: int, match: Match, variable_fig_objs: list
+) -> tuple[list, plt.axes]:
+    """Helper function to plot the player possession of the current frame."""
+    if pd.isnull(column_id) or pd.isnull(
+        match.tracking_data.loc[idx, f"{column_id}_x"]
+    ):
+        return variable_fig_objs, ax
+
+    circle = plt.Circle(
+        (
+            match.tracking_data.loc[idx, f"{column_id}_x"],
+            match.tracking_data.loc[idx, f"{column_id}_y"],
+        ),
+        radius=1,
+        color="gold",
+        fill=False,
+    )
+    fig_obj = ax.add_artist(circle)
+    variable_fig_objs.append(fig_obj)
+
+    return variable_fig_objs, ax
+
+
+def _plot_events(
+    ax: plt.axes, td: pd.DataFrame, idx: int, match: Match, variable_fig_objs: list
+) -> tuple[list, plt.axes]:
+    """Helper function to plot the events of the current frame."""
+    event = (
+        match.event_data[match.event_data["event_id"] == td.loc[idx, "event_id"]]
+        .iloc[0]
+        .T
+    )
+
+    player_name = event["player_name"]
+    event_name = event["databallpy_event"]
+
+    # Add event text
+    fig_obj = ax.text(
+        5,
+        match.pitch_dimensions[1] / 2.0 + 1,
+        f"{player_name}: {event_name}",
+        fontsize=14,
+    )
+    variable_fig_objs.append(fig_obj)
+
+    # Highligh location on the pitch of the event
+    fig_obj = ax.scatter(
+        event["start_x"],
+        event["start_y"],
+        color="red",
+        marker="x",
+        s=50,
+    )
+    variable_fig_objs.append(fig_obj)
+
+    return variable_fig_objs, ax

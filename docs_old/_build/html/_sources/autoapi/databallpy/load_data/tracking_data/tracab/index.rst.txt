@@ -1,0 +1,72 @@
+:py:mod:`databallpy.load_data.tracking_data.tracab`
+===================================================
+
+.. py:module:: databallpy.load_data.tracking_data.tracab
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   databallpy.load_data.tracking_data.tracab.load_tracab_tracking_data
+   databallpy.load_data.tracking_data.tracab._get_tracking_data
+   databallpy.load_data.tracking_data.tracab._get_metadata
+   databallpy.load_data.tracking_data.tracab._get_players_metadata
+
+
+
+.. py:function:: load_tracab_tracking_data(tracab_loc: str, metadata_loc: str, verbose: bool = True) -> Tuple[pandas.DataFrame, databallpy.load_data.metadata.Metadata]
+
+   Function to load tracking data and metadata from the tracab format
+
+   :param tracab_loc: location of the tracking_data.dat file
+   :type tracab_loc: str
+   :param metadata_loc: location of the meta_data.xml file
+   :type metadata_loc: str
+   :param verbose: whether to print on progress of loading in the terminal,
+   :type verbose: bool
+   :param defaults to True:
+
+   :returns: Tuple[pd.DataFrame, Metadata], the tracking data and metadata class
+
+
+.. py:function:: _get_tracking_data(tracab_loc: str, verbose: bool) -> pandas.DataFrame
+
+   Function that reads tracking data from .dat file and stores it in a pd.DataFrame
+
+   :param tracab_loc: location of the tracking_data.dat file
+   :type tracab_loc: str
+   :param verbose: whether to print info in terminal
+   :type verbose: bool
+
+   :returns: contains tracking data
+   :rtype: pd.DataFrame
+
+
+.. py:function:: _get_metadata(metadata_loc: str) -> databallpy.load_data.metadata.Metadata
+
+   Function that reads metadata.xml file and stores it in Metadata class
+
+   :param meta_data_loc: location of the metadata.xml file
+   :type meta_data_loc: str
+
+   :returns: class that contains metadata
+   :rtype: Metadata
+
+
+.. py:function:: _get_players_metadata(players_info: list) -> pandas.DataFrame
+
+   Function that creates a df containing info on all players for a team
+
+   :param team: contains an information dictionary for each player
+   :type team: list
+
+   :returns: contains all player information for a team
+   :rtype: pd.DataFrame
+
+

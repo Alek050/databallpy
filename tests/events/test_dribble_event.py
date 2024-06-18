@@ -60,7 +60,7 @@ class TestDribbleEvent(unittest.TestCase):
                 team_side="home",
                 _xt=0.02,
                 team_id=123,
-                player_id="45849",
+                player_id=[22],
                 related_event_id=123,
                 duel_type="offensive",
                 outcome=True,

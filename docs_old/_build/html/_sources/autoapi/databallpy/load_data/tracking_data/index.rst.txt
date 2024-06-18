@@ -1,0 +1,20 @@
+:py:mod:`databallpy.load_data.tracking_data`
+============================================
+
+.. py:module:: databallpy.load_data.tracking_data
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   _add_ball_data_to_dict/index.rst
+   _add_player_data_to_dict/index.rst
+   _add_player_tracking_data_to_dict/index.rst
+   _get_matchtime/index.rst
+   _insert_missing_rows/index.rst
+   tracab/index.rst
+
+

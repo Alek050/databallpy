@@ -7,8 +7,11 @@ LOGGER = create_logger(__name__)
 
 
 def add_team_possession(
-    tracking_data: pd.DataFrame, event_data: pd.DataFrame, home_team_id: int
-) -> None:
+    tracking_data: pd.DataFrame,
+    event_data: pd.DataFrame,
+    home_team_id: int,
+    inplace: bool = False,
+) -> None | pd.DataFrame:
     """Function to add a column 'ball_possession' to the tracking data, indicating
     which team has possession of the ball at each frame, either 'home' or 'away'.
 
@@ -21,6 +24,11 @@ def add_team_possession(
         tracking_data (pd.DataFrame): Tracking data for a match
         event_data (pd.DataFrame): Event data for a match
         home_team_id (int): The ID of the home team.
+        inplace (bool, optional): Whether to modify the DataFrame in place.
+            Defaults to False.
+
+    Returns:
+        None | pd.DataFrame: The tracking data with the 'ball_possession' column added.
     """
     try:
         if "event_id" not in tracking_data.columns:
@@ -33,6 +41,9 @@ def add_team_possession(
                 "The home team ID is not in the event data, please check"
                 " the home team ID"
             )
+
+        if not inplace:
+            tracking_data = tracking_data.copy()
 
         on_ball_events = ["pass", "dribble", "shot"]
         current_team_id = event_data.loc[
@@ -56,6 +67,9 @@ def add_team_possession(
 
         last_team = "home" if current_team_id == home_team_id else "away"
         tracking_data.loc[start_idx:, "ball_possession"] = last_team
+
+        if not inplace:
+            return tracking_data
 
     except Exception as e:
         LOGGER.exception(e)

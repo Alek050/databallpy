@@ -149,3 +149,5 @@ data/
 # config files
 databallpy_config.ini
 
+_build/*
+
