@@ -891,7 +891,7 @@ def _plot_single_frame(
             td_team[x_cols],
             td_team[y_cols],
             c=c,
-            alpha=0.7,
+            alpha=0.9,
             s=90,
             zorder=2.5,
         )
