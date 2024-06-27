@@ -677,10 +677,11 @@ def save_tracking_video(
                 )
 
                 if variable_of_interest is not None:
-                    if isinstance(variable_of_interest, pd.Series):
-                        value = variable_of_interest.loc[idx]
-                    else:
-                        value = variable_of_interest[idx_loc]
+                    value = (
+                        variable_of_interest.loc[idx]
+                        if isinstance(variable_of_interest, pd.Series)
+                        else variable_of_interest[idx_loc]
+                    )
                     variable_fig_objs, ax = _plot_variable_of_interest(
                         ax, value, variable_fig_objs, match
                     )
@@ -738,6 +739,7 @@ def _pre_check_plot_td_inputs(
                     "of the start_idx:end_idx."
                 )
                 raise DataBallPyError(message)
+
         elif isinstance(variable_of_interest, list):
             if len(variable_of_interest) != len(td):
                 message = (

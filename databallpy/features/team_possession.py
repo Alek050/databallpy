@@ -57,6 +57,7 @@ def add_team_possession(
             if (
                 event["databallpy_event"] in on_ball_events
                 and event.team_id != current_team_id
+                and event.outcome == 1
             ):
                 end_idx = tracking_data[tracking_data.event_id == event_id].index[0]
                 team = "home" if current_team_id == home_team_id else "away"
