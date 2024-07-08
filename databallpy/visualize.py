@@ -739,7 +739,6 @@ def _pre_check_plot_td_inputs(
                     "of the start_idx:end_idx."
                 )
                 raise DataBallPyError(message)
-
         elif isinstance(variable_of_interest, list):
             if len(variable_of_interest) != len(td):
                 message = (
