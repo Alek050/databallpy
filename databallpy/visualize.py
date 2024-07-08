@@ -677,10 +677,11 @@ def save_tracking_video(
                 )
 
                 if variable_of_interest is not None:
-                    if isinstance(variable_of_interest, pd.Series):
-                        value = variable_of_interest.loc[idx]
-                    else:
-                        value = variable_of_interest[idx_loc]
+                    value = (
+                        variable_of_interest.loc[idx]
+                        if isinstance(variable_of_interest, pd.Series)
+                        else variable_of_interest[idx_loc]
+                    )
                     variable_fig_objs, ax = _plot_variable_of_interest(
                         ax, value, variable_fig_objs, match
                     )
@@ -891,7 +892,7 @@ def _plot_single_frame(
             td_team[x_cols],
             td_team[y_cols],
             c=c,
-            alpha=0.7,
+            alpha=0.9,
             s=90,
             zorder=2.5,
         )

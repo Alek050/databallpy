@@ -10,8 +10,12 @@ parts:
       - file: loading_in_a_match_page
       - file: preprocessing_options
       - file: visualizations_page
-  - caption: Toturials
+  - caption: Features
     chapters:
-      - file: toturials/simple_xG_models
-      - file: toturials/xT_models
-
+      - file: features/pressure_page
+        title: Pressure
+      - file: features/team_and_player_possession
+        title: Team and Player Possession
+      - file: features/simple_xG_models
+      - file: features/xT_models
+      

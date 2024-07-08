@@ -11,7 +11,7 @@ exclude_patterns: [_build, Thumbs.db, .DS_Store, .env, "**.ipynb_checkpoints",]
 # See https://jupyterbook.org/content/execute.html
 execute:
   execute_notebooks: auto
-  exclude_patterns: ["toturials/*"]
+  exclude_patterns: ["features/*models*"]
   timeout: 600
 
 # Define the name of the latex output file for PDF builds

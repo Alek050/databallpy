@@ -19,6 +19,7 @@ class TestAddTeamPossession(unittest.TestCase):
                 "event_id": [1, 3, 6, 7, 8],
                 "databallpy_event": ["pass", "tackle", "pass", "interception", "pass"],
                 "team_id": [1, 2, 1, 2, 2],
+                "outcome": [1, 1, 1, 1, 1],
             }
         )
 
