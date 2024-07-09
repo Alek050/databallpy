@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataBallPy &mdash; databallpy  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            databallpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Tracking-Data">Tracking Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Event-Data">Event Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Metadata">Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Synchronising-tracking-and-event-data">Synchronising tracking and event data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Databallpy-events">Databallpy events</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Add-features-to-the-data">Add features to the data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Save-Match-Clip">Save Match Clip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Plot-events">Plot events</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#Conclusion">Conclusion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conduct.html">Code of Conduct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">databallpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">DataBallPy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/readme_link.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div align="center">
+  <img src="https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34" alt="Logo">
+</div>
+<p><a class="reference external" href="https://pypi.org/project/databallpy/"><img alt="Latest Version" src="https://img.shields.io/pypi/v/databallpy?color=006666" /></a>
+<a class="reference external" href="https://pypi.org/project/databallpy/"><img alt="Python Version" src="https://img.shields.io/pypi/pyversions/databallpy?color=006666" /></a>
+<a class="reference external" href="https://databallpy.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/databallpy/badge/?version=latest" /></a>
+<a class="reference external" href="https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml"><img alt="CI/CD Status" src="https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml/badge.svg" /></a>
+<a class="reference external" href="https://codecov.io/gh/Alek050/databallpy"><img alt="Codecov" src="https://codecov.io/gh/Alek050/databallpy/branch/develop/graph/badge.svg?token=MBI3380I0H" /></a></p>
+<section id="databallpy">
+<h1>DataBallPy<a class="headerlink" href="#databallpy" title="Link to this heading"></a></h1>
+<p>A package for loading, synchronizing, and analyzing your soccer event- and tracking data.</p>
+<p>This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like <a class="reference external" href="https://github.com/PySport/kloppy">kloppy</a> and <a class="reference external" href="https://github.com/floodlight-sports/floodlight">floodlight</a>, already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the <code class="docutils literal notranslate"><span class="pre">Match</span></code> object combines information from the event and tracking data. The main feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by <a class="reference external" href="https://kwiatkowski.io/sync.soccer">this article</a>, to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.</p>
+<section id="v0-4-2-27-10-2023">
+<h2>V0.4.2 (27/10/2023)<a class="headerlink" href="#v0-4-2-27-10-2023" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>fixed bug in get_valid_gains (player possessions)</p></li>
+<li><p>Changed ‘period’ to ‘period_id’ in all tracking and event dataframes</p></li>
+<li><p>Solved bug with reading in timestamps for Opta</p></li>
+<li><p>Made get_opponents_in_passing_lane more robust.</p></li>
+<li><p>Made function to automatically check if the proposed start and end frames are reliable, adjusts it if this is not the case</p></li>
+<li><p>Fixed bug in normalize_playing_direction</p></li>
+<li><p>Added an offset to the alignment in datetimes between tracking and event data</p></li>
+<li><p>Added extra sanity checks for the ball status of the tracking data</p></li>
+<li><p>Set “smart” as default for synchronising the tracking and event data</p></li>
+<li><p>Added check if datetime of tracking and event data are not close enough</p></li>
+<li><p>Added extra tests for the code</p></li>
+<li><p>Added extra metadata to the Match object on which periods the player positions were normalized</p></li>
+</ul>
+</section>
+<section id="planned-changes">
+<h2>Planned changes<a class="headerlink" href="#planned-changes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Adding different filters to filter the tracking data</p></li>
+<li><p>Adding more features (if you have any ideas/requests, please open an issue!)</p></li>
+<li><p>Creating more databallpy events</p></li>
+<li><p>Adding expected passing and goals models</p></li>
+</ul>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>databallpy
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>The package is centered around the <code class="docutils literal notranslate"><span class="pre">Match</span></code> object. A <code class="docutils literal notranslate"><span class="pre">Match</span></code> has tracking data, event data metadata about the match.
+For a more elaborate example, see the <a class="reference external" href="https://databallpy.readthedocs.io/en/latest/example.html">example file</a>.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>from<span class="w"> </span>databallpy<span class="w"> </span>import<span class="w"> </span>get_match,<span class="w"> </span>get_open_match
+<span class="gp">$</span>
+<span class="gp">$ </span><span class="nv">match</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>get_match<span class="o">(</span>
+<span class="gp">$   </span><span class="nv">tracking_data_loc</span><span class="o">=</span><span class="s2">&quot;../data/tracking_data.dat&quot;</span>,
+<span class="gp">$   </span><span class="nv">tracking_metadata_loc</span><span class="o">=</span><span class="s2">&quot;../data/tracking_metadata.xml&quot;</span>,
+<span class="gp">$   </span><span class="nv">tracking_data_provider</span><span class="o">=</span><span class="s2">&quot;tracab&quot;</span>
+<span class="gp">$   </span><span class="nv">event_data_loc</span><span class="o">=</span><span class="s2">&quot;../data/event_data_f24.xml&quot;</span>,
+<span class="gp">$   </span><span class="nv">event_metadata_loc</span><span class="o">=</span><span class="s2">&quot;../data/event_metadata_f7.xml&quot;</span>,
+<span class="gp">$   </span><span class="nv">event_data_provider</span><span class="o">=</span><span class="s2">&quot;opta&quot;</span>,
+<span class="gp">$ </span><span class="o">)</span>
+<span class="gp">$</span>
+<span class="gp">$ </span><span class="c1"># or to load an open metrica dataset of tracking and event data</span>
+<span class="gp">$ </span><span class="nv">match</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>get_open_match<span class="o">()</span>
+<span class="gp">$</span>
+<span class="gp">$ </span>match.home_team_name<span class="w"> </span><span class="c1"># the team name of the home playing team</span>
+<span class="gp">$ </span>match.away_players<span class="w"> </span><span class="c1"># pandas dataframe with the names, ids, shirt numbers and positions of the away team</span>
+<span class="gp">$ </span>match.tracking_data<span class="w"> </span><span class="c1"># pandas dataframe with tracking data of the match</span>
+<span class="gp">$ </span>match.event_data<span class="w"> </span><span class="c1"># pandas dataframe with event data of the match</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="https://databallpy.readthedocs.io/en/latest/?badge=latest">the documentation</a> of the <code class="docutils literal notranslate"><span class="pre">Match</span></code> object and the <a class="reference external" href="https://databallpy.readthedocs.io/en/latest/example.html">example usage</a> for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a <code class="docutils literal notranslate"><span class="pre">Match</span></code> object.</p>
+</section>
+<section id="synchronization-of-tracking-and-event-data">
+<h2>Synchronization of tracking and event data<a class="headerlink" href="#synchronization-of-tracking-and-event-data" title="Link to this heading"></a></h2>
+<p>Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, you can sync the fist frame with the kick-off pass. Now you can sync the other events with the tracking data based on the time difference between the event and the kick off pass. If you do this, how get something like this:</p>
+<video width="640" height="480" controls>
+  <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/not_synced.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+<p>https://user-images.githubusercontent.com/49450063/224564808-fa71735f-5510-464d-8499-9044227a02e8.mp4</p>
+<p>As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations, especially when events follow up quickly or around shots. Using the methodology of [this][soccer-synch-url] article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm.</p>
+<p>After running the following command, the events are better synchronized to the tracking data:</p>
+<div class="highlight-batch notranslate"><div class="highlight"><pre><span></span>$ match.synchronise_tracking_and_event_data()
+</pre></div>
+</div>
+<video width="640" height="480" controls>
+  <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/synced.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+<p>https://user-images.githubusercontent.com/49450063/224564913-4091faf7-f6ef-4429-b132-7f93ce5e1d91.mp4</p>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<p>The official documentation can be found <a class="reference external" href="https://databallpy.readthedocs.io/en/latest/?badge=latest">here</a>.</p>
+</section>
+<section id="providers">
+<h2>Providers<a class="headerlink" href="#providers" title="Link to this heading"></a></h2>
+<p>For now we limited providers. We are planning on adding more providers later on.</p>
+<p>Event data providers:</p>
+<ul class="simple">
+<li><p>Opta</p></li>
+<li><p>Metrica</p></li>
+<li><p>Instat</p></li>
+</ul>
+<p>Tracking data providers:</p>
+<ul class="simple">
+<li><p>Tracab</p></li>
+<li><p>Metrica</p></li>
+<li><p>Inmotio</p></li>
+</ul>
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h2>
+<p>Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.</p>
+</section>
+<section id="maintainers-owners">
+<h2>Maintainers &amp; owners<a class="headerlink" href="#maintainers-owners" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/Alek050/">Alek050</a></p></li>
+<li><p><a class="reference external" href="https://github.com/DaanGro/">DaanGro</a></p></li>
+</ul>
+</section>
+<section id="contributors">
+<h2>Contributors<a class="headerlink" href="#contributors" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/rdghe/">rdghe</a></p></li>
+<li><p><a class="reference external" href="https://github.com/Swopper050">swopper050</a></p></li>
+</ul>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">databallpy</span></code> was created by Alexander Oonk &amp; Daan Grob. It is licensed under the terms of the MIT license.</p>
+</section>
+<section id="similar-projects">
+<h2>Similar projects<a class="headerlink" href="#similar-projects" title="Link to this heading"></a></h2>
+<p>Although we think this package helps when starting to analyse soccer data, other packages may be better suited for your specific needs. Make sure to check out the following packages as well:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/PySport/kloppy">kloppy</a></p></li>
+<li><p><a class="reference external" href="https://github.com/floodlight-sports/floodlight">floodlight</a></p></li>
+<li><p><a class="reference external" href="https://github.com/metrica-sports/codeball">codeball</a></p></li>
+<li><p><a class="reference external" href="https://github.com/ML-KULeuven/socceraction">socceraction</a></p></li>
+</ul>
+<p>And for a more specific toturials on how to get started with soccer data”</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/Friends-of-Tracking-Data-FoTD">Friends of Tracking</a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Alexander Oonk &amp; Daan Grob.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

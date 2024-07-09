@@ -147,26 +147,28 @@ class BaseOnBallEvent:
                 f"team_side should be either 'home' or 'away', not {self.team_side}"
             )
 
-        if self.pitch_size is not None:
-            if not isinstance(self.pitch_size, (list, tuple, np.ndarray)):
-                raise TypeError(
-                    "pitch_size should be list, tuple or np.ndarray, "
-                    f"not {type(self.pitch_size)}"
-                )
-            if len(self.pitch_size) != 2:
-                raise ValueError(
-                    f"pitch_size should have length 2, not {len(self.pitch_size)}"
-                )
-            if not all(
-                [
-                    isinstance(x, (int, np.integer, float, np.floating))
-                    for x in self.pitch_size
-                ]
-            ):
-                raise TypeError(
-                    "pitch_size should contain only numbers, "
-                    f"not {type(self.pitch_size[0])}"
-                )
+        if not isinstance(self.pitch_size, (list, tuple, np.ndarray)):
+            raise TypeError(
+                "pitch_size should be list, tuple or np.ndarray, "
+                f"not {type(self.pitch_size)}"
+            )
+        if len(self.pitch_size) != 2:
+            raise ValueError(
+                f"pitch_size should have length 2, not {len(self.pitch_size)}"
+            )
+
+        if not all(
+            [
+                isinstance(x, (int, np.integer, float, np.floating))
+                for x in self.pitch_size
+            ]
+        ):
+            raise TypeError(
+                "pitch_size should contain only numbers, "
+                f"not {type(self.pitch_size[0])}"
+            )
+
+        self.pitch_size = [float(x) for x in self.pitch_size]
 
         if not isinstance(self._xt, (float, np.floating, int, np.integer)):
             raise TypeError(f"xT should be float, not {type(self._xt)}")
@@ -191,7 +193,7 @@ class BaseOnBallEvent:
             self.team_id == other.team_id,
             self.team_side == other.team_side,
             self._xt == other._xt,
-            all([x == y for x, y in zip(self.pitch_size, other.pitch_size)])
+            np.allclose(self.pitch_size, other.pitch_size)
             if self.pitch_size is not None
             else other.pitch_size is None,
         ]

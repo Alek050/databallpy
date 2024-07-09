@@ -19,15 +19,23 @@ class TestAddTeamPossession(unittest.TestCase):
                 "event_id": [1, 3, 6, 7, 8],
                 "databallpy_event": ["pass", "tackle", "pass", "interception", "pass"],
                 "team_id": [1, 2, 1, 2, 2],
+                "outcome": [1, 1, 1, 1, 1],
             }
         )
 
     def test_add_team_possession(self):
-        add_team_possession(self.tracking_data, self.event_data, 1)
+        td = self.tracking_data.copy()
+
+        new_td = add_team_possession(td, self.event_data, 1)
+        assert not new_td.equals(td)
+        assert td.equals(self.tracking_data)
+
+        add_team_possession(td, self.event_data, 1, inplace=True)
         self.assertEqual(
-            self.tracking_data.ball_possession.tolist(),
+            td["ball_possession"].tolist(),
             ["home", "home", "home", "home", "away", "away"],
         )
+        assert not td.equals(self.tracking_data)
 
     def test_add_team_possession_no_event_id(self):
         with self.assertRaises(ValueError):

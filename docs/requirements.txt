@@ -1,4 +1,2 @@
-sphinx-autoapi
-sphinx-rtd-theme
-nbsphinx
-myst-parser
+git+https://github.com/Alek050/databallpy.git@develop#egg=databallpy
+jupyter-book

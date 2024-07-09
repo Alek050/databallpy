@@ -1,301 +1,125 @@
 import numpy as np
 import pandas as pd
 
-from databallpy.features.angle import get_smallest_angle
-from databallpy.features.differentiate import _differentiate
-from databallpy.utils.logging import create_logger
-
-LOGGER = create_logger(__name__)
+from databallpy.features import get_smallest_angle
+from databallpy.utils.constants import MISSING_INT
 
 
-def get_individual_player_possessions_and_duels(
+def get_individual_player_possession(
     tracking_data: pd.DataFrame,
-    frame_rate: int,
-    pz_radius: float = 1.0,
-    dz_radius: float = 1.0,
+    pz_radius: float = 1.5,
     bv_threshold: float = 5.0,
     ba_threshold: float = 10.0,
-    bd_threshold: float = 0.1,
-    min_frames: int = 0,
-) -> tuple[pd.Series, pd.Series]:
-    """
-    Function to calculate which player has possesion of the ball in accordance with the
-    article of Vidal-Codina et al (2022) : "Automatic Event Detection in Football Using
-    Tracking Data". The algorithm finds if the ball is within the possession zone (PZ)
-    of a player, it losses the ball when the ball is outside of the PZ in a next frame
-    and a different player gains the ball in his PZ. The ball is only gained when the
-    ball changes direction or speed, to correct for balls that fly over players.
+    min_frames_pz: int = 0,
+    inplace: bool = False,
+) -> None | np.ndarray:
+    """Function to calculate the individual player possession based on the tracking
+    data. The method uses the methodology of the paper of  Vidal-Codina et al. (2022):
+    "Automatic Event Detection in Football Using Tracking Data".
 
-    Note: if tracking and event data is synchronised, the function will also count a
-    gain of possession when a player attempts an on ball action: [pass, shot, dribble].
-    It is assumed that the player performs the action when there is no duel
-    happening at the same time since we have no data here what player performs the
-    action.
-
-    :param tracking_data: pandas df with tracking data over which to calculate the
-        player possession.
-    :param frame_rate: int with the sampling frequency of the tracking data
-    :param pz_radius: float with the radius of the possession zone (PZ) in meters.
-        Default is 1.0 m
-    :param dz_radius: float with the radius of the duel zone (DZ) in meters.
-        Default is 1.0 m
-    :param bv_threshold: float with the threshold for the ball velocity (in m/s) change
-        needed to gain ball possession. Default is 5.0 m/s
-    :param ba_threshold: float with the threshold for the ball angle (in degree) change
-        needed to gain ball possession. Default is 10.0 degree.
-    :param bd_threshold: float with the threshold for the ball displacement (in meters)
-        change needed to lose ball possession. Default is 0.1 m.
-    :param min_frames: int with the minimum number of frames a player needs to have the
-        ball to be considered possession. Default is 0 frames.
-
-    :returns: pd.Series with which player has possession and a pd.Series with duels over
-        time.
-    """
-    try:
-        if not frame_rate > 0:
-            raise ValueError(f"frame rate should be above 0, not {frame_rate}")
-        if "ball_velocity" not in tracking_data.columns:
-            tracking_data = _differentiate(
-                tracking_data,
-                new_name="velocity",
-                metric="",
-                frame_rate=frame_rate,
-                filter_type=None,
-                column_ids=["ball"],
-            )
-
-        distances_df = get_distance_between_ball_and_players(tracking_data).fillna(
-            np.inf
-        )
-        pz_initial = get_initial_possessions(
-            tracking_data, distances_df, pz_radius=pz_radius, min_frames=min_frames
-        )
-        duels = get_duels(tracking_data, distances_df, dz_radius=dz_radius)
-
-        player_possession = pd.Series(index=tracking_data.index, dtype="object")
-        player_possession[:] = None
-
-        # Find intervals of player possessions, can also include intervals
-        # with None values.
-        shifting_idxs = np.where(pz_initial.values[:-1] != pz_initial.values[1:])[0]
-        shifting_idxs = np.concatenate([[-1], shifting_idxs, [len(pz_initial) - 1]])
-        possession_start_idxs = shifting_idxs[:-1] + 1
-        next_possession_start_idxs = possession_start_idxs[1:]
-        next_possession_start_idxs = np.concatenate(
-            [next_possession_start_idxs, [len(pz_initial) - 1]]
-        )
-        possession_end_idxs = shifting_idxs[1:]  # inclusive index, so include it!
-        last_valid_idx = None
-        valid_gains = get_valid_gains(
-            tracking_data,
-            possession_start_idxs,
-            possession_end_idxs,
-            bv_threshold,
-            ba_threshold,
-            duels=duels,
-        )
-
-        for idx, (start_idx, end_idx) in enumerate(
-            zip(possession_start_idxs, possession_end_idxs)
-        ):
-            if pz_initial[start_idx] is None:
-                continue
-
-            player_column_id = pz_initial[start_idx]
-            if valid_gains[idx]:
-                # possession is lost somewhere between last pz index
-                # and the next possession of a player
-                if pz_initial[next_possession_start_idxs[idx]] is None:
-                    next_possession_start_idx = next_possession_start_idxs[idx + 1]
-                else:
-                    next_possession_start_idx = next_possession_start_idxs[idx]
-
-                lost_possession_idx = get_lost_possession_idx(
-                    tracking_data.loc[end_idx:next_possession_start_idx], bd_threshold
-                )
-
-                # check if the player is the same as the last player in possession
-                if last_valid_idx is not None:
-                    last_possession_idx = last_valid_idx
-                    last_player_column_id = pz_initial[last_possession_idx]
-                    if last_player_column_id == player_column_id:
-                        start_idx = last_possession_idx
-
-                # update last_valid_idx
-                last_valid_idx = lost_possession_idx
-
-                player_possession[
-                    start_idx : lost_possession_idx + 1
-                ] = player_column_id
-
-        # Lastly, only apply when ball status is alive
-        alive_mask = tracking_data["ball_status"] == "alive"
-        player_possession[~alive_mask] = None
-        duels[~alive_mask] = None
-
-        return player_possession, duels
-    except Exception as e:
-        LOGGER.exception(
-            "Found unexpected exception in "
-            f"get_individual_player_possessions_and_duels(): \n{e}"
-        )
-        raise e
-
-
-def get_initial_possessions(
-    tracking_data: pd.DataFrame,
-    distances_df: pd.DataFrame,
-    pz_radius: float,
-    min_frames: int,
-) -> pd.Series:
-    """Function to calculate the initial possession of the ball. This is when a player
-    is within the PZ of the ball. Possession is assigned to a player when he is the
-    closest player to the ball and within the PZ of the ball.
-    Note: The duel zones are not taken into account in this function.
 
     Args:
-        tracking_data (pd.DataFrame): pandas df with tracking data over which to
-        calculate the player possession.
-        distances_df (pd.DataFrame): pandas df with the distances between the ball and
-            all players.
-        pz_radius (float): float with the radius of the possession zone (PZ) in meters.
-        min_frames (int): int with the minimum number of frames a player needs to be
-            within the PZ to be considered possession.
+        tracking_data (pd.DataFrame): Tracking data with player positions.
+        pz_radius (float, optional): The radius of the possession zone constant.
+            Defaults to 1.5.
+        bv_threshold (float, optional): The ball velocity threshold in m/s.
+            Defaults to 5.0.
+        ba_threshold (float, optional): The ball angle threshold in degrees.
+            Defaults to 10.0.
+        min_frames_pz (int, optional): The minimum number of frames that the ball
+            has to be in the possession zone to be considered as a possession.
+            Defaults to 0.
+        inplace (bool, optional): If True, the tracking data will get a new column
+            with `player_possession`. Defaults to False.
 
     Returns:
-        pd.Series: pd.Series with which player has possession.
+        None | np.ndarray: If inplace is True, the tracking data will be updated with
+            a new column `player_possession`. If inplace is False, the function will
+            return the player possession as a np.ndarray.
     """
-
-    # find the player_possession player to the ball
-    closest_player = distances_df.idxmin(axis=1, skipna=True)
-    close_enough = distances_df.min(axis=1) < pz_radius
-    initial_possession = np.where(close_enough, closest_player, None)
-
-    # find the players that have possession for at least min_frames
-    # embrace yourself for some pretty abstract thinking...
-    if min_frames > 0:
-        # note that the indexes are the last index where the value is the same as the
-        # last sequence of the same value. [0, 0, 1, 1, 1, 2,] will return [1, 4].
-        shifting_idxs = np.where(initial_possession[:-1] != initial_possession[1:])[0]
-        # add first and last index
-        shifting_idxs = np.concatenate(
-            [[0], shifting_idxs, [len(initial_possession) - 1]]
+    if "ball_velocity" not in tracking_data.columns:
+        raise ValueError(
+            "The tracking data should have a column 'ball_velocity'. Use the "
+            "add_velocity function to add the ball velocity."
         )
-        # get the number of frames per value (can also be None values)
-        frames_per_value = np.diff(shifting_idxs)
-        too_short = frames_per_value < min_frames
-        # get the indexes, in shifting_idxs, where the frames_per_value is too short
-        too_short_idxs = np.where(too_short)[0]
 
-        # value in shifiting_idxs is the index of the last frame of the sequence
-        # before the change, so add 1 to get the first frame of the sequence that
-        # is too short
-        too_short_start_idxs = shifting_idxs[too_short_idxs] + 1
-
-        # add one to too_short_idx to get the index where the sequence is ending
-        # note, this index is the last frame of the sequence, so include it!
-        too_short_end_idxs = shifting_idxs[too_short_idxs + 1]
-        for start_idx, end_idx in zip(too_short_start_idxs, too_short_end_idxs):
-            initial_possession[start_idx : end_idx + 1] = None  # include the end_idx
-
-        # note that some frames_per_value are still < min_frames, these are None values
-        # that is allowed, we only want to shorten the possessions that are too short,
-        # not the in between intervals.
-
-    return pd.Series(initial_possession, index=tracking_data.index)
-
-
-def get_duels(
-    tracking_data: pd.DataFrame, distances_df: pd.DataFrame, dz_radius: float
-) -> pd.Series:
-    """Function to calculate the duels of the ball. This is when two opponent
-    players are within the DZ of the ball. If more than one player of a team is within
-    the duel zone of the ball, the closest player is assigned to the duel.
-
-    Args:
-        tracking_data (pd.DataFrame): pandas df with tracking data over which to
-            calculate the player possession.
-        distances_df (pd.DataFrame): pandas df with the distances between the ball and
-            all players.
-        dz_radius (float): float with the radius of the duel zone (DZ) in meters.
-
-    Returns:
-        pd.Series: pd.Series with which players are in a duel. If 'home_1' and 'home_2'
-            are in a duel, the duel the outcome is 'home_1-home_2'.
-    """
-    home_distances_df = distances_df.filter(like="home")
-    away_distances_df = distances_df.filter(like="away")
-
-    home_closest_player = home_distances_df.idxmin(axis=1, skipna=True)
-    away_closest_player = away_distances_df.idxmin(axis=1, skipna=True)
-
-    # .lt is quicker than using the < operator
-    home_close_enough = home_distances_df.lt(dz_radius)
-    away_close_enough = away_distances_df.lt(dz_radius)
-
-    valid_duel = home_close_enough.any(axis=1) & away_close_enough.any(axis=1)
-    duel = np.where(
-        valid_duel,
-        home_closest_player + "-" + away_closest_player,
-        None,
+    distances_df = get_distance_between_ball_and_players(tracking_data)
+    initial_possession = get_initial_possessions(pz_radius, distances_df)
+    possession_start_idxs, possession_end_idxs = get_start_end_idxs(initial_possession)
+    valid_gains = get_valid_gains(
+        tracking_data,
+        possession_start_idxs,
+        possession_end_idxs,
+        bv_threshold,
+        ba_threshold,
+        min_frames_pz,
+    )
+    valid_gains_start_idxs, ball_losses_idxs = get_ball_losses_and_updated_gain_idxs(
+        possession_start_idxs, possession_end_idxs, valid_gains, initial_possession
     )
 
-    return pd.Series(duel, index=tracking_data.index)
+    possession = np.full(len(tracking_data), None, dtype=object)
+    for start, end in zip(valid_gains_start_idxs, ball_losses_idxs):
+        possession[start:end] = initial_possession[start]
+
+    alive_mask = tracking_data["ball_status"] == "alive"
+    possession[~alive_mask] = None
+
+    if inplace:
+        tracking_data["player_possession"] = possession
+    else:
+        return possession
 
 
 def get_distance_between_ball_and_players(tracking_data: pd.DataFrame) -> pd.DataFrame:
-    """Function to calculate the distances between the ball and all players.
+    """
+    Optimized function to calculate the distances between the ball and all players using
+    vectorized operations.
 
     Args:
-        tracking_data (pd.DataFrame): pandas df with tracking data over which to
-            calculate the distances.
+        tracking_data (pd.DataFrame): DataFrame with tracking data over which to
+        calculate the distances.
 
     Returns:
-        pd.DataFrame: pandas df with the distances between the ball and all players.
+        pd.DataFrame: DataFrame with the distances between the ball and all players.
     """
 
-    player_column_ids = [
-        col[:-2] for col in tracking_data.columns if "_x" in col and "ball" not in col
+    player_columns = [
+        col for col in tracking_data.columns if "_x" in col and "ball" not in col
     ]
-    ball_xy = tracking_data[["ball_x", "ball_y"]].values
-    distances_df = pd.DataFrame(columns=player_column_ids, index=tracking_data.index)
-    for player_column_id in player_column_ids:
-        player_xy = tracking_data[
-            [f"{player_column_id}_x", f"{player_column_id}_y"]
-        ].values
-        distances = np.linalg.norm(ball_xy - player_xy, axis=1)
-        distances_df[player_column_id] = distances
+    ball_x, ball_y = tracking_data["ball_x"].values, tracking_data["ball_y"].values
+
+    distances_df = pd.DataFrame(index=tracking_data.index)
+    for col in player_columns:
+        player_x, player_y = (
+            tracking_data[f"{col}"].values,
+            tracking_data[f"{col[:-2]}_y"].values,
+        )
+        distances = np.sqrt((ball_x - player_x) ** 2 + (ball_y - player_y) ** 2)
+        distances_df[col[:-2]] = distances
 
     return distances_df
 
 
-def get_lost_possession_idx(tracking_data: pd.DataFrame, bd_threshold: float) -> int:
+def get_initial_possessions(
+    pz_radius: float,
+    distances_df: pd.DataFrame,
+) -> pd.Series:
     """
-    Function to check when a player has lost possession of the ball, in accordance with
-    the article of Vidal-Codina et al (2022). The possession of the ball is lost when
-    two conditions are satisfied: (1) the ball is outside the pz_radius of the player
-    and the ball moves above the displacement threshold, and (2), the player is not
-    present in the next frame where there is either a possession or a duel. This
-    function checks conditions 1, condition 2 is checked in
-    get_individual_player_possession()
+    Calculate initial ball possession based on proximity and duration within the
+    possession zone (PZ).
 
     Args:
-        tracking_data (pd.DataFrame): pandas df with tracking data over which to
-            calculate the player possession. Note that the df should be shortened
-            to the time the player is outside the pz, untill the next player gets.
-            in possession
-        bd_threshold (float): float with the threshold for the ball displacement
-            (in meters)
+        pz_radius (float): Radius of the possession zone in meters.
+        distances_df (pd.DataFrame): DataFrame with distances between the
+        ball and players.
 
     Returns:
-        int: int with the index where the player lost possession of the ball.
+        pd.Series: Player possession status for each frame.
     """
-
-    ball_displacement_condition_met = tracking_data["ball_velocity"] > bd_threshold
-    if ball_displacement_condition_met.sum() == 0:
-        return tracking_data.index[-1]
-    else:
-        return ball_displacement_condition_met.idxmax()
+    closest_player = distances_df.idxmin(axis=1, skipna=True)
+    close_enough = distances_df.min(axis=1) < pz_radius
+    return np.where(close_enough, closest_player, None)
 
 
 def get_valid_gains(
@@ -304,36 +128,129 @@ def get_valid_gains(
     possession_end_idxs: np.ndarray,
     bv_threshold: float,
     ba_threshold: float,
-    duels: pd.Series = None,
+    min_frames_pz: int,
 ) -> np.ndarray:
     """Function to check if, within a given period, a player gains possession of the
     ball. Possession is gained if the ball speed changes at least bs_threshold m/s or
     the ball changes direction (> ba_threshold) between the first and the last
     proposed possession frame.
 
-    If tracking and event data is synchronised, the function will also return true for
-    a possession when the player attempts an on ball action: [pass, shot, dribble].
-    It is assumed that the player performs the action when there is no duel happening.
-    at the same time since we have no data here what player performs the action.
-
     Args:
         tracking_data (pd.DataFrame): pandas df with tracking data over which to
             calculate the player possession.
         possession_start_idxs (np.ndarray): array with the starting indexes of the
             proposed possessions.
-        possession_end_idxs (np.ndarray): array with the ending indexes of the
-            proposed possessions.
+        possession_end_idxs (np.ndarray): array with the ending indexes of the proposed
+            possessions.
         bv_threshold (float): minimal velocity change of the ball to gain possession
         ba_threshold (float): minimal angle change of the ball to gain possession
-        duels (pd.Series, optional): pd Series with the duels in the match. Is only used
-        when tracking and event data is synchronised. Default is None.
+        min_frames_pz (int): minimal number of frames the ball has to be in the
+            possession zone to be considered as a possession.
 
     Returns:
         np.ndarray: array with bools with if the player gained possession of the ball
         per possession.
     """
-    # check for every possession if the ball angle changes above threshold from first
-    # to last frame of the proposed possession
+
+    ball_angle_condition = get_ball_angle_condition(
+        tracking_data, possession_start_idxs, possession_end_idxs, ba_threshold
+    )
+
+    ball_speed_condition = get_ball_speed_condition(
+        tracking_data, possession_start_idxs, possession_end_idxs, bv_threshold
+    )
+
+    min_frames_condition = (
+        possession_end_idxs - possession_start_idxs + 1 >= min_frames_pz
+    )
+
+    return np.logical_and(
+        min_frames_condition, np.logical_or(ball_angle_condition, ball_speed_condition)
+    )
+
+
+def get_start_end_idxs(pz_initial: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Function to get the starting and ending indexes of the proposed possessions
+    based on the initial possession of the ball. The proposed possessions are periods
+    where the possession of the ball changes.
+
+    Args:
+        pz_initial (np.ndarray): The initial possession of the ball.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: The starting and ending indexes of the proposed
+        possessions.
+    """
+
+    shifting_idxs = np.where(pz_initial[:-1] != pz_initial[1:])[0]
+    shifting_idxs = np.concatenate([[-1], shifting_idxs, [len(pz_initial) - 1]])
+
+    possession_start_idxs = shifting_idxs[:-1] + 1
+    possession_end_idxs = shifting_idxs[1:]
+
+    none_idxs = np.where(pd.isnull(pz_initial[possession_start_idxs]))[0]
+    possession_start_idxs = np.delete(possession_start_idxs, none_idxs)
+    possession_end_idxs = np.delete(possession_end_idxs, none_idxs)
+
+    return possession_start_idxs, possession_end_idxs
+
+
+def get_ball_speed_condition(
+    tracking_data: pd.DataFrame,
+    possession_start_idxs: np.ndarray,
+    possession_end_idxs: np.ndarray,
+    bv_threshold: float,
+) -> np.ndarray:
+    """Function to check if, within the pz zone period, the ball changes speed
+    enough to count as a possession gain based on the ball speed condition.
+
+    Args:
+        tracking_data (pd.DataFrame): Tracking data with player positions.
+        possession_start_idxs (np.ndarray): The starting indexes of the proposed
+            possessions.
+        possession_end_idxs (np.ndarray): The ending indexes of the proposed
+            possessions.
+        bv_threshold (float): The threshold for the ball speed condition in m/s.
+
+    Returns:
+        np.ndarray: Array with bools indicating if the ball speed condition is met
+            for each proposed possession.
+    """
+    ball_speed_change = tracking_data["ball_velocity"].diff().abs() > bv_threshold
+    intervals = [
+        (start, end) for start, end in zip(possession_start_idxs, possession_end_idxs)
+    ]
+
+    # Prevent index out of bounds
+    if intervals[-1][1] == tracking_data.index[-1]:
+        intervals[-1] = (intervals[-1][0], intervals[-1][1] - 1)
+
+    return np.array(
+        [np.any(ball_speed_change[start : end + 1]) for start, end in intervals]
+    )
+
+
+def get_ball_angle_condition(
+    tracking_data: pd.DataFrame,
+    possession_start_idxs: np.ndarray,
+    possession_end_idxs: np.ndarray,
+    ba_threshold: float,
+) -> np.ndarray:
+    """Function to check if, within the pz zone period, the ball changes direction
+    enough to count as a possession gain based on the ball angle condition.
+
+    Args:
+        tracking_data (pd.DataFrame): Tracking data with player positions.
+        possession_start_idxs (np.ndarray): The starting indexes of the proposed
+            possessions.
+        possession_end_idxs (np.ndarray): The ending indexes of the proposed
+            possessions.
+        ba_threshold (float): The threshold for the ball angle condition in degrees.
+
+    Returns:
+        np.ndarray: Array with bools indicating if the ball angle condition is met
+            for each proposed possession.
+    """
     start_idxs_plus_1 = np.clip(possession_start_idxs + 1, 0, tracking_data.index[-1])
     end_idxs_minus_1 = np.clip(possession_end_idxs - 1, 0, tracking_data.index[-1])
 
@@ -349,42 +266,47 @@ def get_valid_gains(
     ball_angles = get_smallest_angle(
         incomming_vectors, outgoing_vectors, angle_format="degree"
     )
-    ball_angle_above_threshold = ball_angles > ba_threshold
 
-    # check for every possession if the ball speed changes above threshold anywhere
-    # in first to last frame of the proposed possession
-    ball_speed_change = tracking_data["ball_velocity"].diff().abs() > bv_threshold
-    interval_idxs = np.concatenate([[0], possession_end_idxs])
-    intervals = [
-        (start, end) for start, end in zip(interval_idxs[:-1], interval_idxs[1:])
-    ]
-    ball_speed_change_above_threshold = np.array(
-        [np.any(ball_speed_change[start : end + 1]) for start, end in intervals]
-    )
+    return ball_angles > ba_threshold
 
-    # check if the player attempts an on ball action
-    if duels is not None and "databallpy_event" in tracking_data.columns:
-        has_duel_per_frame = ~pd.isnull(duels)
-        on_ball_actions = ["pass", "shot", "dribble"]
-        has_on_ball_action_per_frame = tracking_data["databallpy_event"].isin(
-            on_ball_actions
-        )
-        has_event = np.array(
-            [
-                np.any(has_on_ball_action_per_frame[start : end + 1])
-                for start, end in intervals
-            ]
-        )
-        has_duel = np.array(
-            [np.any(has_duel_per_frame[start : end + 1]) for start, end in intervals]
-        )
-        has_on_ball_action = np.logical_and(has_event, ~has_duel)
-    else:
-        has_on_ball_action = np.zeros_like(ball_speed_change_above_threshold)
 
-    # check for valid gain
-    valid_gains = np.logical_or(
-        ball_angle_above_threshold,
-        np.logical_or(ball_speed_change_above_threshold, has_on_ball_action),
-    )
-    return valid_gains
+def get_ball_losses_and_updated_gain_idxs(
+    possession_start_idxs: np.ndarray,
+    possession_end_idxs: np.ndarray,
+    valid_gains: np.ndarray,
+    initial_possession: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Function to get the ball losses and updated gain indexes based on the
+    initial possession of the ball.
+
+    Args:
+            possession_start_idxs (np.ndarray): The starting indexes of the
+                proposed possessions.
+            possession_end_idxs (np.ndarray): The ending indexes of the
+                proposed possessions.
+            valid_gains (np.ndarray): The valid gains of the ball.
+            initial_possession (np.ndarray): The initial possession of the ball.
+
+    Returns:
+            tuple[np.ndarray, np.ndarray]: The starting indexes of the valid gains and
+            the ball losses.
+    """
+    valid_gains_start_idxs = possession_start_idxs[valid_gains]
+    initial_ball_losses_idxs = possession_end_idxs[valid_gains]
+    ball_losses_idxs = np.full(len(valid_gains_start_idxs), MISSING_INT, dtype=int)
+    last_player = None
+
+    for i, (start, end) in enumerate(
+        zip(valid_gains_start_idxs, initial_ball_losses_idxs)
+    ):
+        player = initial_possession[start]
+        if player == last_player:
+            ball_losses_idxs[i - 1] = end
+        else:
+            ball_losses_idxs[i] = end
+        last_player = player
+
+    valid_gains_start_idxs = valid_gains_start_idxs[ball_losses_idxs != MISSING_INT]
+    ball_losses_idxs = ball_losses_idxs[ball_losses_idxs != MISSING_INT]
+
+    return valid_gains_start_idxs, ball_losses_idxs

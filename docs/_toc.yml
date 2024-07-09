@@ -1,0 +1,21 @@
+format: jb-book
+root: index
+parts:
+  - caption: Introduction
+    chapters:
+      - file: intro_page
+  - caption: Getting Started
+    chapters:
+      - file: installation_page
+      - file: loading_in_a_match_page
+      - file: preprocessing_options
+      - file: visualizations_page
+  - caption: Features
+    chapters:
+      - file: features/pressure_page
+        title: Pressure
+      - file: features/team_and_player_possession
+        title: Team and Player Possession
+      - file: features/simple_xG_models
+      - file: features/xT_models
+      

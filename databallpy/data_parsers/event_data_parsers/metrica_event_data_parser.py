@@ -132,11 +132,9 @@ def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
     ed_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_events.json"
 
-    print("Downloading Metrica open event data...", end="")
     LOGGER.info("Downloading Metrica open event data...")
     raw_ed = requests.get(ed_link).text
     raw_metadata = requests.get(metadata_link).text
-    print(" Done!")
     LOGGER.info("Succesfully downloaded the metrica open event data.")
 
     return load_metrica_event_data(raw_ed, raw_metadata)

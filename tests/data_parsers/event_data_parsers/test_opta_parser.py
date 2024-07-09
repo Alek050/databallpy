@@ -1,3 +1,4 @@
+import copy
 import unittest
 
 import numpy as np
@@ -47,16 +48,22 @@ class TestOptaParser(unittest.TestCase):
 
         # SHOT_EVENTS_OPTA is scaled to a pitch of [106, 68],
         # while here [10, 10] is expected.
-        shot_events_opta = SHOT_EVENTS_OPTA.copy()
-        for shot_event in shot_events_opta.values():
-            shot_event.start_x = shot_event.start_x / 106 * 10
-            shot_event.start_y = shot_event.start_y / 68 * 10
-            shot_event.pitch_size = [10.0, 10.0]
+        expected_shot_events_opta = {}
+        for shot_id, shot_event in SHOT_EVENTS_OPTA.items():
+            expected_shot_events_opta[shot_id] = shot_event.copy()
+            expected_shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 10
+            expected_shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 10
+            expected_shot_events_opta[shot_id].pitch_size = [10.0, 10.0]
+            expected_shot_events_opta[shot_id]._update_shot_angle()
+            expected_shot_events_opta[shot_id]._update_ball_goal_distance()
+            expected_shot_events_opta[shot_id].xG = expected_shot_events_opta[
+                shot_id
+            ].get_xG()
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():
-            assert key in shot_events_opta.keys()
-            assert event == shot_events_opta[key]
+            assert key in expected_shot_events_opta.keys()
+            assert event == expected_shot_events_opta[key]
 
     def test_load_event_data_pass(self):
         event_data, metadata, dbp_events = load_opta_event_data(
@@ -313,8 +320,9 @@ class TestOptaParser(unittest.TestCase):
         self.assertAlmostEqual(y, 34.0)
 
     def test_update_pass_outcome_no_related_event_id(self):
-        shot_events = SHOT_EVENTS_OPTA.copy()
-        pass_events = PASS_EVENTS_OPTA.copy()
+        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+
+        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
@@ -327,8 +335,9 @@ class TestOptaParser(unittest.TestCase):
             assert event == pass_events[key]
 
     def test_update_pass_outcome_pass_not_found(self):
-        shot_events = SHOT_EVENTS_OPTA.copy()
-        pass_events = PASS_EVENTS_OPTA.copy()
+        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+
+        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
@@ -342,8 +351,9 @@ class TestOptaParser(unittest.TestCase):
             assert event == pass_events[key]
 
     def test_update_pass_outcome_multiple_options(self):
-        shot_events = SHOT_EVENTS_OPTA.copy()
-        pass_events = PASS_EVENTS_OPTA.copy()
+        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+
+        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():

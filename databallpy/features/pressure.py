@@ -115,18 +115,21 @@ def calculate_z(
     pitch_length: float = 105.0,
 ) -> float:
     """
-    Function to calculate the z in accordance with the article of Adrienko et al (2016).
-    Note that the formula in the article contains a mistake, therefore the formula is
+    Calculates the z value in accordance with the article of Adrienko et al (2016).
+    Note that the angle calculation is slightly different here, therefore the formula is
     not z = (1 - cos(phi))/2, but z = (1 + cos(phi))/2. Phi is the angle between the
     direction of the player to the target (goal), and the vector of the opponent to the
     player.
 
-    :param td_frame: pd.Series, tracking data frame of all players
-    :param column_id: str, column name of the player of which to calculate the pressure
-    :param opponent_column_id: str, column name of the player which is pressuring the
-        player
-    :param pitch_length: float, length (x-direction) of the the pitch
-    :returns: float, z value of the pressure calculation
+    Args:
+        td_frame (pd.Series): Tracking data frame of all players.
+        column_id (str): Column name of the player for which to calculate the pressure.
+        opponent_column_id (str): Column name of the player which is pressuring the
+            player.
+        pitch_length (float): Length (x-direction) of the pitch. Defaults to 105.0.
+
+    Returns:
+        float: z value of the pressure calculation.
     """
     team = column_id[:4]
 
@@ -152,13 +155,17 @@ def calculate_z(
 
 def calculate_L(d_back: float, d_front: float, z: float) -> float:
     """
-    Function to calculate the L of the formula in accordance with Adrienko et al.
-    (2016).
+    Calculates the L value of the pressure calculation in accordance with
+    Adrienko et al. (2016).
 
-    :param d_back: float, maximal distance to back from where pressure can be measured
-    :param d_front: float, maximal distance in front of which pressure can be measured
-    :param z: list, float values in accordance with formulas in adrienko et al (2016)
-    :returns: float, L value of the pressure calculation
+    Args:
+        d_back (float): Maximal distance to back from where pressure can be measured.
+        d_front (float): Maximal distance in front of which pressure can be measured.
+        z (list of float): Float values in accordance with formulas in Adrienko et al.
+            (2016).
+
+    Returns:
+        float: L value of the pressure calculation.
     """
     L = d_back + (d_front - d_back) * ((z**3 + 0.3 * z) / 1.3)
     L = np.maximum(L, 0.0001)  # set any values less than 0.0001 to 0.0001

@@ -1,0 +1,34 @@
+:py:mod:`databallpy.load_data.tracking_data._add_ball_data_to_dict`
+===================================================================
+
+.. py:module:: databallpy.load_data.tracking_data._add_ball_data_to_dict
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   databallpy.load_data.tracking_data._add_ball_data_to_dict._add_ball_data_to_dict
+
+
+
+.. py:function:: _add_ball_data_to_dict(ball_x: str, ball_y: str, ball_z: str, posession: str, status: str, data: dict, idx: str) -> dict
+
+   Function that adds the data of the ball to the data dict for one frame
+
+   :param ball_info: containing data from the ball
+   :type ball_info: str
+   :param data: data dictionary to write results to
+   :type data: dict
+   :param idx: indicates position in data dictionary
+   :type idx: int
+
+   :returns: contains all tracking data
+   :rtype: dict
+
+

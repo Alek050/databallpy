@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>databallpy.visualize &mdash; databallpy  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="prev" title="databallpy.match" href="../match/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> databallpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html">Example usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#save-match-clip">Save Match Clip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../conduct.html">Code of Conduct</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">databallpy</span></code></a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../match/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">databallpy.match</span></code></a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">databallpy.visualize</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">databallpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">databallpy</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">databallpy.visualize</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/databallpy/visualize/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-databallpy.visualize">
+<span id="databallpy-visualize"></span><h1><a class="reference internal" href="#module-databallpy.visualize" title="databallpy.visualize"><code class="xref py py-mod docutils literal notranslate"><span class="pre">databallpy.visualize</span></code></a><a class="headerlink" href="#module-databallpy.visualize" title="Permalink to this heading"></a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#databallpy.visualize.plot_soccer_pitch" title="databallpy.visualize.plot_soccer_pitch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_soccer_pitch</span></code></a>(, pitch_color, linewidth, ...)</p></td>
+<td><p>A function to plot a soccer pitch</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#databallpy.visualize.save_match_clip" title="databallpy.visualize.save_match_clip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_match_clip</span></code></a>(match, start_idx, end_idx, save_folder, *)</p></td>
+<td><p>Function to save a subset of a match clip of the tracking data.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="databallpy.visualize.plot_soccer_pitch">
+<span class="sig-prename descclassname"><span class="pre">databallpy.visualize.</span></span><span class="sig-name descname"><span class="pre">plot_soccer_pitch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_dimen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(106.0,</span> <span class="pre">68.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pitch_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mediumseagreen'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markersize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">matplotlib.pyplot.figure</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">matplotlib.pyplot.axes</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/databallpy/visualize.html#plot_soccer_pitch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databallpy.visualize.plot_soccer_pitch" title="Permalink to this definition"></a></dt>
+<dd><p>A function to plot a soccer pitch
+Note: relies heavily on <a class="reference external" href="https://github.com/Friends-of-Tracking-Data-FoTD/">https://github.com/Friends-of-Tracking-Data-FoTD/</a>
+LaurieOnTracking/blob/master/Metrica_Viz.py</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>field_dimen</strong> (<em>tuple</em><em>, </em><em>optional</em>) – x and y length of pitch in meters. Defaults to</p></li>
+<li><p><strong>(</strong><strong>106.0</strong> – </p></li>
+<li><p><strong>68.0</strong><strong>)</strong><strong>.</strong> – </p></li>
+<li><p><strong>pitch_color</strong> (<em>str</em><em>, </em><em>optional</em>) – Color of the pitch. Defaults to “mediumseagreen”.</p></li>
+<li><p><strong>linewidth</strong> (<em>int</em><em>, </em><em>optional</em>) – Width of the lines on the pitch. Defaults to 2.</p></li>
+<li><p><strong>markersize</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of the dots on the pitch. Defaults to 20.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>figure and axes with the pitch depicted on it</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple[plt.figure, plt.axes]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databallpy.visualize.save_match_clip">
+<span class="sig-prename descclassname"><span class="pre">databallpy.visualize.</span></span><span class="sig-name descname"><span class="pre">save_match_clip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../match/index.html#databallpy.match.Match" title="databallpy.match.Match"><span class="pre">databallpy.match.Match</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test_clip'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team_colors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['green',</span> <span class="pre">'red']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pitch_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mediumseagreen'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_of_interest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.Series</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/databallpy/visualize.html#save_match_clip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databallpy.visualize.save_match_clip" title="Permalink to this definition"></a></dt>
+<dd><p>Function to save a subset of a match clip of the tracking data.</p>
+<p>Note that making animation is build with FFMPEG. You need to have FFMPEG installed
+on you device before being able to use this function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>match</strong> (<a class="reference internal" href="../match/index.html#databallpy.match.Match" title="databallpy.match.Match"><em>Match</em></a>) – Match with tracking data and ohter info of the match.</p></li>
+<li><p><strong>start_idx</strong> (<em>int</em>) – Start index of what to save of the match.tracking_data df.</p></li>
+<li><p><strong>end_idx</strong> (<em>int</em>) – End index of what to save of the match.tracking_data df.</p></li>
+<li><p><strong>save_folder</strong> (<em>str</em>) – Location where to save the clip.</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – Title of the clip. Defaults to “test_clip”.</p></li>
+<li><p><strong>team_colors</strong> (<em>list</em><em>, </em><em>optional</em>) – Colors of the home and away team. Defaults to</p></li>
+<li><p><strong>[</strong><strong>&quot;green&quot;</strong> – </p></li>
+<li><p><strong>&quot;red&quot;</strong><strong>]</strong><strong>.</strong> – </p></li>
+<li><p><strong>pitch_color</strong> (<em>str</em><em>, </em><em>optional</em>) – Color of the pitch. Defaults to “mediumseagreen”.</p></li>
+<li><p><strong>events</strong> (<em>list</em><em>, </em><em>optional</em>) – What events should be plotted as well. Defaults to [].</p></li>
+<li><p><strong>variable_of_interest</strong> (<em>pd.Series</em><em>, </em><em>optional</em>) – Variable you want to have plotted</p></li>
+<li><p><strong>clip</strong> (<em>in the</em>) – </p></li>
+<li><p><strong>index</strong> (<em>this is a pd.Series that should have the same</em>) – </p></li>
+<li><p><strong>(</strong><strong>start_idx</strong> – end_idx) as the tracking data that will be plotted. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../match/index.html" class="btn btn-neutral float-left" title="databallpy.match" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Alexander Oonk &amp; Daan Grob.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

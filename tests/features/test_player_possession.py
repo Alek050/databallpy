@@ -3,19 +3,22 @@ import unittest
 import numpy as np
 import pandas as pd
 
+from databallpy.features import add_velocity
 from databallpy.features.player_possession import (
+    get_ball_angle_condition,
+    get_ball_losses_and_updated_gain_idxs,
+    get_ball_speed_condition,
     get_distance_between_ball_and_players,
-    get_duels,
-    get_individual_player_possessions_and_duels,
+    get_individual_player_possession,
     get_initial_possessions,
-    get_lost_possession_idx,
+    get_start_end_idxs,
     get_valid_gains,
 )
 
 
 class TestPlayerPossession(unittest.TestCase):
-    def setUp(self):
-        self.tracking_data_full = pd.DataFrame(
+    def setUp(self) -> None:
+        self.tracking_data = pd.DataFrame(
             {
                 "ball_x": [0, 0, 5, 10, 10, 11, 22, 24, 26, 26],
                 "ball_y": [0, 0, 5, 10, 10, 10, 10, 10, 10, 15],
@@ -37,254 +40,162 @@ class TestPlayerPossession(unittest.TestCase):
                 ],
             }
         )
+        add_velocity(self.tracking_data, "ball", 1, inplace=True)
 
-        self.tracking_data = pd.DataFrame(
+        self.expected_distances = pd.DataFrame(
             {
-                "ball_x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "ball_y": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "ball_velocity": [
-                    np.nan,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
-                    1.41,
+                "home_1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    np.sqrt(200),
+                    np.sqrt(200),
+                    np.sqrt(100 + 11**2),
+                    np.sqrt(100 + 22**2),
+                    np.sqrt(100 + 24**2),
+                    0.5,
+                    np.sqrt(26**2 + 15**2),
                 ],
-                "home_1_x": [0, 5, 2, 3, 4, 5, 1, 7, 8, 9],
-                "home_1_y": [0, 5, 2, 3, 4, 5, 1, 7, 8, 9],
-                "home_2_vx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "home_2_vy": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "away_2_x": [0, 1, 6, 3, 4, 5, 6, 11, 8, 9],
-                "away_2_y": [0, 1, 6, 3, 4, 5, 6, 11, 8, 9],
-                "databallpy_event": [
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
+                "away_1": [
+                    np.sqrt(0.5),
+                    np.sqrt(0.5),
+                    np.sqrt(4.5**2 + 4.5**2),
+                    np.sqrt(9.5**2 + 9.5**2),
+                    0,
+                    0,
+                    4,
+                    0,
+                    0,
+                    0,
                 ],
             }
         )
-        self.distances = pd.DataFrame(
-            {
-                "home_1": [10, 1, 2.2, 12, 14, 20, 20, 20, 20, 20],
-                "home_2": [11, 1.3, 12, 1, 2, 20, 20, 20, 20, 20],
-                "away_2": [10.5, 0.3, 14, 15, 16, 20, 20, 1, 0.5, 0.5],
-                "away_3": [13, 14, 1.3, 16, 17, 20, 20, 20, 20, 20],
-            }
-        )
-        self.duels = pd.Series(
-            [None, None, None, None, None, None, None, None, None, None]
-        )
-        self.possession_start_idxs = np.array([0, 6])
-        self.possession_end_idxs = np.array([4, 9])
 
     def test_get_individual_player_possession(self):
-        td = self.tracking_data_full.copy()
-        possessions, duels = get_individual_player_possessions_and_duels(
-            td, 1, bv_threshold=3
-        )
-        expected_possessions = pd.Series(
+        td = self.tracking_data.copy()
+        expected_possession = np.array(
             [
                 None,
                 "home_1",
-                "home_1",
+                None,
                 None,
                 "away_1",
                 "away_1",
                 "away_1",
                 "away_1",
                 "away_1",
-                "away_1",
-            ]
-        )
-        expected_duels = pd.Series(
-            [
-                None,
-                "home_1-away_1",
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                "home_1-away_1",
                 None,
             ]
         )
-        pd.testing.assert_series_equal(possessions, expected_possessions)
-        pd.testing.assert_series_equal(duels, expected_duels)
+        individual_possessions = get_individual_player_possession(td)
+        np.testing.assert_array_equal(individual_possessions, expected_possession)
+
+        assert "player_possession" not in td.columns
+        get_individual_player_possession(td, inplace=True)
+        assert "player_possession" in td.columns
+        np.testing.assert_array_equal(td["player_possession"], expected_possession)
+
+        with self.assertRaises(ValueError):
+            get_individual_player_possession(td.drop(columns=["ball_velocity"]))
+
+    def test_get_distance_between_ball_and_players(self):
+        td = self.tracking_data.copy()
+        distances = get_distance_between_ball_and_players(td)
+        pd.testing.assert_frame_equal(distances, self.expected_distances)
 
     def test_get_initial_possessions(self):
-        possessions_no_min_frames = get_initial_possessions(
-            self.tracking_data, self.distances, pz_radius=1.5, min_frames=0
+        distances_df = pd.DataFrame(
+            {
+                "home_1": [0, 0, 1, 2, 3, 4, 3, 2, 1.0],
+                "away_1": [4, 1.0, 0, 1, 2, 3, 4, 3, 2],
+            }
         )
-        expected_no_min_frames = pd.Series(
+        initial_possessions = get_initial_possessions(2, distances_df)
+        expected_initial_possessions = np.array(
+            ["home_1", "home_1", "away_1", "away_1", None, None, None, None, "home_1"]
+        )
+        np.testing.assert_array_equal(initial_possessions, expected_initial_possessions)
+
+    def test_get_valid_gains(self):
+        start_idxs = np.array([0, 5, 6, 9])
+        end_idxs = np.array([1, 5, 7, 9])
+        td = self.tracking_data.copy()
+
+        valid_gains = get_valid_gains(td, start_idxs, end_idxs, 3.0, 10.0, 1)
+        np.testing.assert_array_equal(valid_gains, [True, True, True, True])
+
+        valid_gains = get_valid_gains(td, start_idxs, end_idxs, 3.0, 10.0, 2)
+        np.testing.assert_array_equal(valid_gains, [True, False, True, False])
+
+    def test_get_start_end_idxs(self):
+        pz_intial = np.array(
             [
-                None,
-                "away_2",
-                "away_3",
+                "home_2",
                 "home_2",
                 None,
                 None,
                 None,
-                "away_2",
-                "away_2",
-                "away_2",
+                "away_6",
+                "away_7",
+                "away_7",
+                None,
+                "home_3",
             ]
         )
-        pd.testing.assert_series_equal(
-            possessions_no_min_frames, expected_no_min_frames
-        )
+        start_idxs, end_idxs = get_start_end_idxs(pz_intial)
+        np.testing.assert_array_equal(start_idxs, [0, 5, 6, 9])
+        np.testing.assert_array_equal(end_idxs, [1, 5, 7, 9])
 
-        possessions_min_frames = get_initial_possessions(
-            self.tracking_data, self.distances, pz_radius=1.5, min_frames=2
-        )
-        expected_min_frames = pd.Series(
-            [None, None, None, None, None, None, None, "away_2", "away_2", "away_2"]
-        )
-        pd.testing.assert_series_equal(possessions_min_frames, expected_min_frames)
-
-    def test_get_duels(self):
-        duels = get_duels(
-            self.tracking_data.iloc[:5], self.distances.iloc[:5], dz_radius=1.5
-        )
-        expected = pd.Series([None, "home_1-away_2", None, None, None])
-        pd.testing.assert_series_equal(duels, expected)
-
-    def test_get_distance_between_ball_and_players(self):
-        distances = get_distance_between_ball_and_players(self.tracking_data)
-        expected = pd.DataFrame(
-            {
-                "home_1": [0, np.sqrt(32), 0, 0, 0, 0, np.sqrt(50), 0, 0, 0],
-                "away_2": [0, 0, np.sqrt(32), 0, 0, 0, 0, np.sqrt(32), 0, 0],
-            }
-        )
-        pd.testing.assert_frame_equal(distances, expected)
-
-    def test_get_lost_possession_idx(self):
-        # ball does not go faster than 2m/s, thus last index should be returned
-        lost_possession_idx = get_lost_possession_idx(self.tracking_data, 2)
-        self.assertEqual(lost_possession_idx, 9)
-
+    def test_get_ball_speed_condition(self):
         td = self.tracking_data.copy()
-        td.loc[[5, 7], "ball_velocity"] = [3, 3]
-        lost_possession_idx = get_lost_possession_idx(td, 2)
-        self.assertEqual(lost_possession_idx, 5)
+        start_idxs = np.array([1, 4])
+        end_idxs = np.array([3, 6])
 
-    def test_get_valid_gains_event_found(self):
-        td = pd.DataFrame(
-            {
-                "ball_x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "ball_y": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "ball_velocity": [np.nan, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                "home_1_x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "home_1_y": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "databallpy_event": [
-                    None,
-                    "pass",
-                    None,
-                    None,
-                    None,
-                    None,
-                    "shot",
-                    "tackle",
-                    None,
-                    None,
-                ],
-            }
-        )
-        duels = pd.Series(
-            [None, None, None, None, None, None, None, "home_1-away_2", None, None]
-        )
+        ball_speed_condition = get_ball_speed_condition(td, start_idxs, end_idxs, 5.0)
+        np.testing.assert_array_equal(ball_speed_condition, [False, True])
 
-        valid_gains = get_valid_gains(
-            td, self.possession_start_idxs, self.possession_end_idxs, 5.0, 10.0, duels
-        )
-        np.testing.assert_allclose(valid_gains, np.array([True, False]))
+        ball_speed_condition = get_ball_speed_condition(td, start_idxs, end_idxs, 1.0)
+        np.testing.assert_array_equal(ball_speed_condition, [True, True])
 
-        # if duels not passed, should not check on databallpy_event
-        valid_gains = get_valid_gains(
-            td, self.possession_start_idxs, self.possession_end_idxs, 5.0, 10.0
-        )
-        np.testing.assert_allclose(valid_gains, np.array([False, False]))
+    def test_ball_angle_condition(self):
+        td = self.tracking_data.copy()
+        start_idxs = np.array([2, 5])
+        end_idxs = np.array([4, 7])
 
-    def test_get_valid_gains_ball_angle_found(self):
-        td = pd.DataFrame(
-            {
-                "ball_x": [0, 1, 2, 3, 4, 5, 6, 7, 8, -9],
-                "ball_y": [0, 1, 2, 3, 4, 5, 6, 7, 8, -9],
-                "ball_velocity": [np.nan, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                "home_1_x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "home_1_y": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "databallpy_event": [
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ],
-            }
+        ball_angle_condition = get_ball_angle_condition(td, start_idxs, end_idxs, 10)
+        np.testing.assert_array_equal(ball_angle_condition, [True, False])
+
+        ball_angle_condition = get_ball_angle_condition(td, start_idxs, end_idxs, 60)
+        np.testing.assert_array_equal(ball_angle_condition, [False, False])
+
+    def test_get_ball_losses_and_updated_gain_idxs(self):
+        start_idxs = np.array([0, 5, 6, 9])
+        end_idxs = np.array([1, 5, 7, 9])
+        valid_gains = np.array([True, True, True, False])
+        initial_possession = np.array(
+            [
+                "home_1",
+                "home_1",
+                None,
+                None,
+                None,
+                "home_1",
+                "away_1",
+                "away_1",
+                None,
+                "home_1",
+            ]
         )
 
-        valid_gains = get_valid_gains(
-            td,
-            self.possession_start_idxs,
-            self.possession_end_idxs,
-            5.0,
-            10.0,
-            self.duels,
-        )
-        np.testing.assert_allclose(valid_gains, np.array([False, True]))
-
-    def test_get_valid_gains_ball_speed_found(self):
-        td = pd.DataFrame(
-            {
-                "ball_x": [0, 1, -20, 3, 4, 5, 6, 7, 8, 9],
-                "ball_y": [0, 1, -20, 3, 4, 5, 6, 7, 8, 9],
-                "ball_velocity": [np.nan, 1, np.sqrt(21**2 * 2), 1, 1, 1, 1, 1, 1, 1],
-                "home_1_x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "home_1_y": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "databallpy_event": [
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ],
-            }
+        valid_gains_idxs, ball_losses_idxs = get_ball_losses_and_updated_gain_idxs(
+            start_idxs,
+            end_idxs,
+            valid_gains,
+            initial_possession,
         )
 
-        valid_gains = get_valid_gains(
-            td,
-            self.possession_start_idxs,
-            self.possession_end_idxs,
-            5.0,
-            10.0,
-            self.duels,
-        )
-        np.testing.assert_allclose(valid_gains, np.array([True, False]))
+        expected_valid_gains_idxs = np.array([0, 6])
+        expected_ball_losses_idxs = np.array([5, 7])
 
-    def test_get_individual_player_possessions_and_duels_wrong_input(self):
-        td = self.tracking_data_full.copy()
-        with self.assertRaises(ValueError):
-            get_individual_player_possessions_and_duels(td, -1.5, bv_threshold=3)
+        np.testing.assert_array_equal(valid_gains_idxs, expected_valid_gains_idxs)
+        np.testing.assert_array_equal(ball_losses_idxs, expected_ball_losses_idxs)

@@ -1,0 +1,93 @@
+:py:mod:`databallpy.load_data.event_data.opta`
+==============================================
+
+.. py:module:: databallpy.load_data.event_data.opta
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   databallpy.load_data.event_data.opta.load_opta_event_data
+   databallpy.load_data.event_data.opta._load_metadata
+   databallpy.load_data.event_data.opta._get_player_info
+   databallpy.load_data.event_data.opta._load_event_data
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   databallpy.load_data.event_data.opta.EVENT_TYPE_IDS
+
+
+.. py:data:: EVENT_TYPE_IDS
+
+   
+
+.. py:function:: load_opta_event_data(f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]) -> Tuple[pandas.DataFrame, databallpy.load_data.metadata.Metadata]
+
+   This function retrieves the metadata and event data of a specific match. The x
+   and y coordinates provided have been scaled to the dimensions of the pitch, with
+   (0, 0) being the center. Additionally, the coordinates have been standardized so
+   that the home team is represented as playing from left to right for the entire
+   match, and the away team is represented as playing from right to left.
+
+   :param f7_loc: location of the f7.xml file.
+   :type f7_loc: str
+   :param f24_loc: location of the f24.xml file.
+   :type f24_loc: str
+   :param pitch_dimensions: the length and width of the pitch in meters
+   :type pitch_dimensions: list, optional
+
+   :returns: the event data of the match and the metadata
+   :rtype: Tuple[pd.DataFrame, Metadata]
+
+
+.. py:function:: _load_metadata(f7_loc: str, pitch_dimensions: list) -> databallpy.load_data.metadata.Metadata
+
+   Function to load metadata from the f7.xml opta file
+
+   :param f7_loc: location of the f7.xml opta file
+   :type f7_loc: str
+   :param pitch_dimensions: the length and width of the pitch in meters
+   :type pitch_dimensions: list
+
+   :returns: all metadata information of the current match
+   :rtype: MetaData
+
+
+.. py:function:: _get_player_info(players_data: list, players_names: dict) -> pandas.DataFrame
+
+   Function to loop over all players and save data in a pd.DataFrame
+
+   :param players_data: for every player a dictionary with info about the player
+   :type players_data: list
+   :param except the player name:
+   :param players_names: dictionary with player id as key and the player name as
+   :type players_names: dict
+   :param value:
+
+   :returns: all information of the players
+   :rtype: pd.DataFrame
+
+
+.. py:function:: _load_event_data(f24_loc: str) -> pandas.DataFrame
+
+   Function to load the f27 .xml, the events of the match.
+   Note: this function does ignore qualifiers for now
+
+   :param f24_loc: location of the f24.xml file
+   :type f24_loc: str
+
+   :returns: all events of the match in a pd dataframe
+   :rtype: pd.DataFrame
+
+

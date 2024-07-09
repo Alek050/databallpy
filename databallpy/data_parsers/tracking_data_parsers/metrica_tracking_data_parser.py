@@ -117,10 +117,12 @@ def load_metrica_open_tracking_data(
     td_metadata_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_metadata.xml"
 
-    print("Downloading Metrica open tracking data...", end="")
+    if verbose:
+        print("Downloading Metrica open tracking data...", end="")
     td_data = io.StringIO(requests.get(td_data_link).text)
     td_metadata = requests.get(td_metadata_link).text
-    print(" Done!")
+    if verbose:
+        print(" Done!")
     return load_metrica_tracking_data(
         tracking_data_loc=td_data, metadata_loc=td_metadata, verbose=verbose
     )

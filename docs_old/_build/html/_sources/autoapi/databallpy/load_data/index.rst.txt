@@ -1,0 +1,25 @@
+:py:mod:`databallpy.load_data`
+==============================
+
+.. py:module:: databallpy.load_data
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   event_data/index.rst
+   tracking_data/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   metadata/index.rst
+
+
