@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.covered_distance import (
+    _parse_intervals,
+    _check_frames,
     get_covered_distance
 )
 
@@ -13,126 +15,150 @@ class TestCoveredDistance(unittest.TestCase):
 
         # set input and expected data
         self.framerate = 1
-        self.vel_intervals = (0, 15, 90, 50, 3, -1)
-        self.acc_intervals = (-2, 30, 0, 10, -2, -50)
+        self.vel_intervals = (-1, 13, 30, 17)
+        self.acc_intervals = (37, 15, 0, 0.75)
 
         self.input = pd.DataFrame(
             {
                 "home_1_x": [10, 20, -30, 40, np.nan, 60],
                 "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "away_2_x": [0, 2, 4, 6, 8, 10],
+                "home_1_vx": [10, -20, 10, np.nan, 10, np.nan],
+                "home_1_vy": [7, -12.5, 9, np.nan, 15, np.nan],                
+                "home_1_velocity": [
+                    np.sqrt(149), 
+                    np.sqrt(556.25), 
+                    np.sqrt(181), 
+                    np.nan, 
+                    np.sqrt(325), 
+                    np.nan
+                ],
+                "home_1_ax": [-30, 0, np.nan, 0, np.nan, np.nan],
+                "home_1_ay": [-19.5, 1, np.nan, 3, np.nan, np.nan],
+                "home_1_acceleration": [
+                    np.sqrt(1280.25), 
+                    1, 
+                    np.nan, 
+                    3, 
+                    np.nan, 
+                    np.nan
+                ],
+                "away_2_x": [2, 3, 1, 1, 3, 2],
                 "away_2_y": [1, 2, 3, 4, 5, 6],
+                "away_2_vx": [2, 3, 1, 1, 3, 2],
+                "away_2_vy": [1, 1, 1, 1, 1, 1],
+                "away_2_velocity": [
+                    np.sqrt(5), 
+                    np.sqrt(10), 
+                    np.sqrt(2), 
+                    np.sqrt(2), 
+                    np.sqrt(10), 
+                    np.sqrt(5)
+                ],
+                "away_2_ax": [1, -0.5, -1, 1, 0.5, -1],
+                "away_2_ay": [0, 0, 0, 0, 0, 0],
+                "away_2_acceleration": [
+                    1, 
+                    0.5, 
+                    1, 
+                    1, 
+                    0.5, 
+                    1]
             }
         )
-        self.expected_covered_distance = {
-            'home_1': {'total_distance': 193.65, 
-                       'total_distance_velocity': [], 
-                       'total_distance_acceleration': []},
-            'away_2': {'total_distance': 11.2, 
-                       'total_distance_velocity': [], 
-                       'total_distance_acceleration': []},
+
+        self.expected_total_distance = {
+            'home_1': {
+                'total_distance': (np.sqrt(149) + np.sqrt(556.25) + np.sqrt(181) + np.sqrt(325))
+            },
+            'away_2': {
+                'total_distance': (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5))
+                }
         }
 
-        
-        self.expected_output_vel = {
-            'home_1': {'total_distance': 193.65, 
-                       'total_distance_velocity': [((0, 15), 12.21),((50, 90), 145.4)], 
-                       'total_distance_acceleration': []},
-            'away_2': {'total_distance': 11.2, 
-                       'total_distance_velocity': [((0, 15), 11.2),((50, 90), 0)], 
-                       'total_distance_acceleration': []},
+        self.expected_output_total_and_vel_distance = {
+            'home_1': {
+                'total_distance': (np.sqrt(149) + np.sqrt(556.25) + np.sqrt(181) + np.sqrt(325)),
+                'total_distance_velocity': [((-1, 13), np.sqrt(149)),((17, 30), (np.sqrt(556.25) + np.sqrt(325)))] 
+            },
+            'away_2': {
+                'total_distance': (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5)), 
+                'total_distance_velocity': [((-1, 13), (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5))),((17, 30), 0)] 
+            }
         }
 
-        self.expected_output_acc = {
-            'home_1': {'total_distance': 193.65, 
-                       'total_distance_velocity': [], 
-                       'total_distance_acceleration': [((-2, 30), 26.66),((0, 10), 0),((-2, -50), 49.967)]},
-            'away_2': {'total_distance': 11.2, 
-                       'total_distance_velocity': [], 
-                       'total_distance_acceleration': [((-2, 30), 0),((0, 10), 0),((-2, -50), 0)]},
+        self.expected_output_total_and_vel_and_acc_distance = {
+            'home_1': {
+                'total_distance': (np.sqrt(149) + np.sqrt(556.25) + np.sqrt(181) + np.sqrt(325)),
+                'total_distance_velocity': [((-1, 13), np.sqrt(149)), ((17, 30), (np.sqrt(556.25) + np.sqrt(325)))], 
+                'total_distance_acceleration': [((15, 37), np.sqrt(149)),((0, 0.75), 0)]
+            },
+            'away_2': {
+                'total_distance': (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5)), 
+                'total_distance_velocity': [((-1, 13), (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5))), ((17, 30), 0)] , 
+                'total_distance_acceleration': [((15, 37), 0), ((0, 0.75), (np.sqrt(10) + np.sqrt(10)))]
+            }
         }
 
     # test covered distance
-    def test_get_covered_distance(self):
+    def test_get_total_distance(self):
+        input_df = self.input.copy()
+        input_df.drop(columns=["home_1_vx"], inplace=True)
+        with self.assertRaises(ValueError):
+            get_covered_distance(input_df, ["home_1","away_2"], self.framerate)
+
         input_df = self.input.copy()
         output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate)
-        pd.testing.assert_frame_equal(output, self.expected_covered_distance)
+        self.assertDictEqual(output, self.expected_total_distance)
 
-    # test covered distance in velocity interval
-    def test_get_covered_distance_vel(self):
+    # test covered distance and velocity interval
+    def test_get_total_and_vel_distance(self):
         input_df = self.input.copy()
-        vel_intervals = self.vel_intervals.copy()
-        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, vel_intervals=vel_intervals)
-        pd.testing.assert_frame_equal(output, self.expected_output_vel)
+        vel_intervals = self.vel_intervals
+        input_df.drop(columns=["home_1_vx"], inplace=True)
+        with self.assertRaises(ValueError):
+            get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals)
 
-    # test covered distance in acceleration interval
-    def test_get_covered_distance_acc(self):
         input_df = self.input.copy()
-        acc_intervals = self.acc_intervals.copy()
-        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, acc_intervals=acc_intervals)
-        pd.testing.assert_frame_equal(output, self.expected_output_acc)
+        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals)
+        self.assertDictEqual(output, self.expected_output_total_and_vel_distance)
 
-    # test check intervals function
-    def test_check_intervals(self):
-        # check type
-        intervals = (0, 15, 90, 'a', 3, -1)
-        with self.assertRaises(TypeError) as cm:
-            get_covered_distance(self.input, "home_1", 1,vel_intervals=intervals)
-        self.assertEqual(
-            str(cm.exception), 
-            "All elements in the tuple must be integers"
-        )
+    # test covered distance, velocity interval, and acceleration interval
+    def test_get_total_and_vel_and_acc_distance(self):
+        input_df = self.input.copy()
+        vel_intervals = self.vel_intervals
+        acc_intervals = self.acc_intervals
+        input_df.drop(columns=["home_1_ax"], inplace=True)
+        with self.assertRaises(ValueError):
+            get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals, acceleration_intervals=acc_intervals)
 
-        # check even number
-        intervals = (0, 15, 90, 3, -1)
-        with self.assertRaises(ValueError) as cm:
-            get_covered_distance(self.input, "home_1", 1,vel_intervals=intervals)
-        self.assertEqual(
-            str(cm.exception), 
-            "Intervals must contain an even number of elements."
-        )
-        """
-    # test frames function
-    def _check_frames(self):
-            # check type
-        intervals = (0, 15, 90, 'a', 3, -1)
-        with self.assertRaises(TypeError) as cm:
-            get_covered_distance(self.input, "home_1", 1,vel_intervals=intervals)
-        self.assertEqual(
-            str(cm.exception), 
-            "All elements in the tuple must be integers"
-        )
+        input_df = self.input.copy()
+        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals, acceleration_intervals=acc_intervals)
+        self.assertDictEqual(output, self.expected_output_total_and_vel_and_acc_distance)
 
-        # check even number
-        intervals = (0, 15, 90, 3, -1)
-        with self.assertRaises(ValueError) as cm:
-            get_covered_distance(self.input, "home_1", 1,vel_intervals=intervals)
-        self.assertEqual(
-            str(cm.exception), 
-            "Intervals must contain an even number of elements."
-        )
-"""
     # check input covered distance
-    def test_get_covered_distance_input(self):
+    def test_get_covered_distance_wrong_input(self):
         
         # tracking_data
         with self.assertRaises(TypeError) as cm:
-            get_covered_distance({"ball_x": [1, 2, 3, 4]}, ["home_1", "away_2"], 1)
+            data = {"ball_x": [1, 2, 3, 4]}
+            get_covered_distance(data, ["home_1", "away_2"], 1)
         self.assertEqual(
             str(cm.exception), 
-            "tracking data must be a pandas DataFrame, not a str"
+            f"tracking data must be a pandas DataFrame, not a {type(data).__name__}"
         )
         
         # player_ids
         with self.assertRaises(TypeError) as cm:
-            get_covered_distance(self.input, "home_1", 1)
+            players = "home_1"
+            get_covered_distance(self.input, players, 1)
         self.assertEqual(
             str(cm.exception), 
-            "player_ids must be a list, not a str"
+            f"player_ids must be a list, not a {type(players).__name__}"
         )
 
         with self.assertRaises(TypeError) as cm:
-            get_covered_distance(self.input, ["home_1", 123], 1)
+            players = ["home_1", 123]
+            get_covered_distance(self.input, [players], 1)
         self.assertEqual(
             str(cm.exception), 
             "All elements in player_ids must be strings"
@@ -140,101 +166,29 @@ class TestCoveredDistance(unittest.TestCase):
         
         # framerate
         with self.assertRaises(TypeError) as cm:
-            get_covered_distance(self.input, ["home_1", "away_2"], "1")
+            framerate = "1"
+            get_covered_distance(self.input, ["home_1", "away_2"], framerate)
         self.assertEqual(
             str(cm.exception), 
-            "framerate must be a int, not a str"
+            f"framerate must be a int, not a {type(framerate).__name__}"
         )
 
-        # intervals
-
-
-
-
-    def test_get_acceleration(self):
-        input_df = self.input.copy()
-        input_df.drop(columns=["home_1_vx"], inplace=True)
-        with self.assertRaises(ValueError):
-            get_acceleration(input_df, ["home_1"], self.framerate)
-       
-        # checkt of snelheid aanwezig is, bij mij niet nodig want snelheid is nodig voor afstand (default)
-        
-        input_df = self.input.copy()
-        output = get_acceleration(input_df, ["home_1"], self.framerate)
-        pd.testing.assert_frame_equal(output, self.expected_output_acc)
-
-        with self.assertRaises(ValueError):
-            get_acceleration(input_df, ["home_1"], self.framerate, filter_type="wrong")
-
-    def test_differentiate_sg_filter(self):
-        output = _differentiate(
-            self.input.copy(),
-            new_name="velocity",
-            metric="",
-            frame_rate=self.framerate,
-            filter_type="savitzky_golay",
-            window=2,
-            max_val=np.nan,
-            poly_order=1,
-            column_ids=["home_1"],
+    # test check intervals function
+    def test_parse_intervals(self):
+        # check type
+        intervals = (0, 15.0, 90, 'a', 3, -1)
+        with self.assertRaises(TypeError) as cm:
+            _parse_intervals(intervals)
+        self.assertEqual(
+            str(cm.exception), 
+            "All elements in the tuple must be integers or floats"
         )
 
-        expected_output = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "home_1_vx": [10.0, -5.0, np.nan, np.nan, np.nan, np.nan],
-                "home_1_vy": [7.0, -1.75, np.nan, np.nan, np.nan, np.nan],
-                "home_1_velocity": [
-                    np.sqrt(149),
-                    np.sqrt(25 + 1.75**2),
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                ],
-            }
+        # check even number
+        intervals = (0, 15, 90, 3, -1)
+        with self.assertRaises(ValueError) as cm:
+            _parse_intervals(intervals)
+        self.assertEqual(
+            str(cm.exception), 
+            "Intervals must contain an even number of elements."
         )
-        pd.testing.assert_frame_equal(output, expected_output)
-
-    def test_differentiate_ma_filter(self):
-        output = _differentiate(
-            self.input.copy(),
-            new_name="velocity",
-            metric="",
-            frame_rate=self.framerate,
-            filter_type="moving_average",
-            window=2,
-            max_val=51,
-            poly_order=1,
-            column_ids=None,
-        )
-
-
-
-
-
-
-
-
-
-
-
-
-        expected_output = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "home_1_vx": [5.0, -5.0, -5.0, np.nan, np.nan, np.nan],
-                "home_1_vy": [3.5, -2.75, -1.75, np.nan, np.nan, np.nan],
-                "home_1_velocity": [
-                    np.sqrt(25 + 3.5**2),
-                    np.sqrt(25 + 2.75**2),
-                    np.sqrt(25 + 1.75**2),
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                ],
-            }
-        )
-        pd.testing.assert_frame_equal(output, expected_output)
