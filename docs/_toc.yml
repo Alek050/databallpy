@@ -18,4 +18,6 @@ parts:
         title: Team and Player Possession
       - file: features/simple_xG_models
       - file: features/xT_models
+      - file: features/space_occupation
+        title: Space Occupation
       
