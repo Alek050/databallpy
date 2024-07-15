@@ -1,6 +1,5 @@
 import os
 import unittest
-from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -137,12 +136,14 @@ class TestVisualize(unittest.TestCase):
     def test_plot_tracking_data(self):
         match = self.match.copy()
         idx = 1
+        x, _ = np.meshgrid(np.linspace(0, 10, 10), np.linspace(0, 10, 10))
         with self.assertRaises(DataBallPyError):
             fig, ax = plot_tracking_data(
                 match,
                 idx,
                 title="My Test Plot",
-                add_player_possession=True,
+                heatmap_overlay=x,
+                overlay_cmap="viridis",
                 add_velocities=True,
             )
 
@@ -162,8 +163,8 @@ class TestVisualize(unittest.TestCase):
             title="My Test Plot",
             add_player_possession=True,
             add_velocities=True,
-            add_pitch_control=True,
-            variable_of_interest="my_variable",
+            heatmap_overlay=x,
+            overlay_cmap="viridis",
             events=["pass", "dribble"],
         )
         self.assertIsInstance(fig, plt.Figure)
@@ -206,7 +207,18 @@ class TestVisualize(unittest.TestCase):
                 3,
                 save_folder="tests/test_data",
                 title="test_clip",
-                add_pitch_control=True,
+                heatmap_overlay=np.zeros((4, 10, 10)),
+            )
+
+        with self.assertRaises(DataBallPyError):
+            save_tracking_video(
+                match,
+                1,
+                3,
+                save_folder="tests/test_data",
+                title="test_clip",
+                heatmap_overlay=np.zeros((3, 10, 10)),
+                overlay_cmap="custom_cmap",
             )
 
         if os.path.exists("tests/test_data/test_clip.mp4"):
@@ -217,6 +229,9 @@ class TestVisualize(unittest.TestCase):
         match.tracking_data.loc[2, "databallpy_event"] = "pass"
         match.tracking_data.loc[2, "event_id"] = match.passes_df["event_id"].iloc[0]
         match._is_synchronised = True
+
+        heatmap = np.zeros((3, 10, 10))
+
         save_tracking_video(
             match,
             1,
@@ -224,15 +239,15 @@ class TestVisualize(unittest.TestCase):
             save_folder="tests/test_data",
             title="test_clip",
             variable_of_interest=series,
-            add_player_possession=True,
+            heatmap_overlay=heatmap,
+            overlay_cmap="viridis",
             events=["pass"],
         )
 
         assert os.path.exists("tests/test_data/test_clip.mp4")
         os.remove("tests/test_data/test_clip.mp4")
 
-    @patch("databallpy.visualize.get_pitch_control_period")
-    def test_save_match_clip_with_events(self, mock_get_pitch_control_period):
+    def test_save_match_clip_with_events(self):
         synced_match = get_match(
             tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
             tracking_metadata_loc="tests/test_data/sync/tracab_metadata_sync_test.xml",
@@ -241,9 +256,6 @@ class TestVisualize(unittest.TestCase):
             event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
             event_data_provider="opta",
             check_quality=False,
-        )
-        mock_get_pitch_control_period.return_value = np.zeros(
-            (len(synced_match.tracking_data), 240, 360)
         )
         for col in (
             synced_match.home_players_column_ids()
@@ -254,19 +266,6 @@ class TestVisualize(unittest.TestCase):
             synced_match.tracking_data.loc[mask, col + "_vy"] = 2
             synced_match.tracking_data.loc[mask, col + "_velocity"] = 2.67
         synced_match.allow_synchronise_tracking_and_event_data = True
-
-        grid_size = [480, 320]
-        x_range = np.linspace(
-            -100 / 2 - 5,
-            100 / 2 + 5,
-            grid_size[0],
-        )
-        y_range = np.linspace(
-            -50 / 2 - 5,
-            50 / 2 + 5,
-            grid_size[1],
-        )
-        grid = np.meshgrid(x_range, y_range)
 
         synced_match.synchronise_tracking_and_event_data(n_batches=2)
         events = [
@@ -285,39 +284,23 @@ class TestVisualize(unittest.TestCase):
             save_folder="tests/test_data",
             title="test_match_with_events",
             events=events,
-            add_pitch_control=True,
+            heatmap_overlay=np.zeros((10, 10, 10)),
             add_velocities=True,
             verbose=False,
         )
 
         assert os.path.exists("tests/test_data/test_match_with_events.mp4")
         os.remove("tests/test_data/test_match_with_events.mp4")
-        grid_res = mock_get_pitch_control_period.call_args.kwargs["grid"]
-        td_res = mock_get_pitch_control_period.call_args.kwargs["tracking_data"]
-        pd.testing.assert_frame_equal(synced_match.tracking_data.loc[1:10], td_res)
-        np.testing.assert_allclose(grid_res, grid)
 
     def test_pre_check_plot_td_inputs(self):
         match = self.match.copy()
         _pre_check_plot_td_inputs(
-            match,
-            match.tracking_data,
-            [],
-            None,
-            False,
-            False,
-            False,
+            match, match.tracking_data, [], None, False, False, None, "viridis"
         )
 
         with self.assertRaises(DataBallPyError):
             _pre_check_plot_td_inputs(
-                "match",
-                match.tracking_data,
-                [],
-                None,
-                False,
-                False,
-                False,
+                "match", match.tracking_data, [], None, False, False, None, "viridis"
             )
 
         with self.assertRaises(DataBallPyError):
@@ -328,17 +311,41 @@ class TestVisualize(unittest.TestCase):
                 [1] * (len(match.tracking_data) + 2),
                 False,
                 False,
-                False,
+                None,
+                "viridis",
             )
 
         match.tracking_data.drop(columns=["player_possession"], inplace=True)
+        with self.assertRaises(DataBallPyError):
+            _pre_check_plot_td_inputs(
+                match, match.tracking_data, [], None, True, False, None, "viridis"
+            )
+
+        with self.assertRaises(DataBallPyError):
+            _pre_check_plot_td_inputs(
+                match, match.tracking_data, [], None, False, True, None, "viridis"
+            )
+
         with self.assertRaises(DataBallPyError):
             _pre_check_plot_td_inputs(
                 match,
                 match.tracking_data,
                 [],
                 None,
-                True,
                 False,
                 False,
+                [[2, 3, 4], [5, 6, 7]],
+                "viridis",
+            )
+
+        with self.assertRaises(DataBallPyError):
+            _pre_check_plot_td_inputs(
+                match,
+                match.tracking_data,
+                [],
+                None,
+                False,
+                False,
+                [[2, 3, 4], [5, 6, 7]],
+                "my_custom_cmap",
             )

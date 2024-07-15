@@ -1,16 +1,15 @@
 import subprocess
-import time
 from functools import wraps
 
+import matplotlib as mpl
 import matplotlib.animation as animation
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.colors import LinearSegmentedColormap, to_rgba
+from matplotlib.colors import Colormap
 from tqdm import tqdm
 
-from databallpy.features.pitch_control import get_pitch_control_period
 from databallpy.match import Match
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
@@ -434,7 +433,8 @@ def plot_tracking_data(
     variable_of_interest: any = None,
     add_player_possession: bool = False,
     add_velocities: bool = False,
-    add_pitch_control: bool = False,
+    heatmap_overlay: np.ndarray | None = None,
+    overlay_cmap: Colormap | str = "viridis",
 ) -> tuple[plt.figure, plt.axes]:
     """Function to plot the tracking data of a specific index in the
     match.tracking_data.
@@ -454,8 +454,10 @@ def plot_tracking_data(
             player that has possession over the ball. Defaults to False.
         add_velocities (bool, optional): Whether to add the velocities to the plot.
             Defaults to False.
-        add_pitch_control (bool, optional): Whether to add the pitch control to the
-            plot.Defaults to False.
+        heatmap_overlay (np.ndarray, optional): A heatmap to overlay on the pitch.
+            Defaults to None.
+        overlay_cmap (Colormap | str, optional): The colormap to use for the heatmap
+            overlay. Defaults to "viridis".
 
     Returns:
         tuple[plt.figure, plt.axes]: The figure and axes with the tracking data
@@ -482,7 +484,8 @@ def plot_tracking_data(
             variable_of_interest=variable_of_interest,
             add_player_possession=add_player_possession,
             add_velocities=add_velocities,
-            add_pitch_control=add_pitch_control,
+            heatmap_overlay=heatmap_overlay,
+            cmap=overlay_cmap,
         )
 
         if fig is None and ax is None:
@@ -508,13 +511,8 @@ def plot_tracking_data(
             zorder=2.5,
         )
 
-        if add_pitch_control:
-            pitch_control_array, x_range, y_range, cmap = _get_pitch_control_variables(
-                match, td, team_colors
-            )
-            _, ax = _plot_pitch_control(
-                ax, pitch_control_array[0], x_range, y_range, cmap, []
-            )
+        if heatmap_overlay is not None:
+            _, ax = _plot_heatmap_overlay(ax, heatmap_overlay, match, overlay_cmap, [])
 
         if add_velocities:
             _, ax = _plot_velocities(ax, td, idx, match, [])
@@ -556,7 +554,8 @@ def save_tracking_video(
     variable_of_interest: pd.Series | list = None,
     add_player_possession: bool = False,
     add_velocities: bool = False,
-    add_pitch_control: bool = False,
+    heatmap_overlay: np.ndarray | None = None,
+    overlay_cmap: Colormap | str = "viridis",
     verbose: bool = True,
 ):
     """Function to save a subset of a match clip of the tracking data.
@@ -582,8 +581,10 @@ def save_tracking_video(
             column 'player_possession' should be in the match.tracking_data.
         add_velocities (bool, optional): Whether or not to add the velocities to the
             clip, will add arrows to show the velocity. Defaults to False.
-        add_pitch_control (bool, optional): Whether or not to add pitch control to the
-            clip, will add a heatmap to show the pitch control. Defaults to False.
+        heatmap_overlay (np.ndarray, optional): A heatmap to overlay on the pitch.
+            Defaults to None.
+        overlay_cmap (Colormap | str, optional): The colormap to use for the heatmap
+            overlay. Defaults to "viridis".
         verbose (bool, optional): Whether or not to print info in the terminal on the
             progress
     """
@@ -608,7 +609,8 @@ def save_tracking_video(
             variable_of_interest=variable_of_interest,
             add_player_possession=add_player_possession,
             add_velocities=add_velocities,
-            add_pitch_control=add_pitch_control,
+            heatmap_overlay=heatmap_overlay,
+            cmap=overlay_cmap,
         )
 
         writer = animation.FFMpegWriter(
@@ -621,15 +623,10 @@ def save_tracking_video(
         )
         video_loc = f"{save_folder}/{title}.mp4"
 
-        pitch_color = "white" if add_pitch_control else "mediumseagreen"
+        pitch_color = "white" if heatmap_overlay is not None else "mediumseagreen"
         fig, ax = plot_soccer_pitch(
             field_dimen=match.pitch_dimensions, pitch_color=pitch_color
         )
-
-        if add_pitch_control:
-            pitch_control_array, x_range, y_range, cmap = _get_pitch_control_variables(
-                match, td, team_colors
-            )
 
         # Set match name, non variable over time
         ax.text(
@@ -657,13 +654,12 @@ def save_tracking_video(
             for idx_loc, idx in enumerate(indexes):
                 variable_fig_objs = []
 
-                if add_pitch_control:
-                    variable_fig_objs, ax = _plot_pitch_control(
+                if heatmap_overlay is not None:
+                    variable_fig_objs, ax = _plot_heatmap_overlay(
                         ax,
-                        pitch_control_array[idx_loc],
-                        x_range,
-                        y_range,
-                        cmap,
+                        heatmap_overlay[idx_loc],
+                        match,
+                        overlay_cmap,
                         variable_fig_objs,
                     )
 
@@ -724,7 +720,8 @@ def _pre_check_plot_td_inputs(
     variable_of_interest: str | None,
     add_player_possession: bool,
     add_velocities: bool,
-    add_pitch_control: bool,
+    heatmap_overlay: np.ndarray | None,
+    cmap: Colormap | str | None,
 ):
     """Function to check if the inputs for the save_match_clip function are correct."""
     if not isinstance(match, Match):
@@ -758,7 +755,7 @@ def _pre_check_plot_td_inputs(
             message = "Match needs to be synchronised to add events."
             raise DataBallPyError(message)
 
-    if add_velocities or add_pitch_control:
+    if add_velocities:
         for player in match.home_players_column_ids() + match.away_players_column_ids():
             if player + "_vx" not in td.columns or player + "_vy" not in td.columns:
                 message = (
@@ -768,71 +765,62 @@ def _pre_check_plot_td_inputs(
                 )
                 raise DataBallPyError(message)
 
+    if heatmap_overlay is not None:
+        if not isinstance(heatmap_overlay, np.ndarray):
+            message = (
+                "heatmap_overlay should be a numpy array."
+                f" Type of heatmap_overlay: {type(heatmap_overlay)}"
+            )
+            raise DataBallPyError(message)
+        if len(td) == 1 and len(heatmap_overlay.shape) != 2:
+            message = (
+                "heatmap_overlay should be a 2D array."
+                f" Heatmap overlay shape: {heatmap_overlay.shape}"
+            )
+            raise DataBallPyError(message)
+        if len(td) > 1 and len(heatmap_overlay.shape) != 3:
+            message = (
+                "heatmap_overlay should be a 3D array."
+                f" Heatmap overlay shape: {heatmap_overlay.shape}"
+            )
+            raise DataBallPyError(message)
+        if len(td) > 1 and heatmap_overlay.shape[0] != len(td):
+            message = (
+                "heatmap_overlay should have the same length as the tracking data."
+                f" Heatmap overlay length: {heatmap_overlay.shape[0]}, "
+                f"tracking data length: {len(td)}"
+            )
+            raise DataBallPyError(message)
 
-def _get_pitch_control_variables(
-    match: Match, td: pd.DataFrame, team_colors: list[str]
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, LinearSegmentedColormap]:
-    """Function to get the pitch control variables for the save_match_clip function."""
-    grid_size = [480, 320]
-    x_range = np.linspace(
-        -match.pitch_dimensions[0] / 2 - 5,
-        match.pitch_dimensions[0] / 2 + 5,
-        grid_size[0],
-    )
-    y_range = np.linspace(
-        -match.pitch_dimensions[1] / 2 - 5,
-        match.pitch_dimensions[1] / 2 + 5,
-        grid_size[1],
-    )
-    grid = np.meshgrid(x_range, y_range)
-
-    c3 = to_rgba(team_colors[0])
-    c2 = (1, 1, 1, 1)
-    c1 = to_rgba(team_colors[1])
-
-    all_colors = [c1, c2, c3]
-
-    cmap = LinearSegmentedColormap.from_list("custom_colormap", all_colors, N=22)
-
-    start_time = time.time()
-    pitch_control_array = get_pitch_control_period(tracking_data=td, grid=grid)
-    n_cells = grid_size[0] * grid_size[1]
-    pitch_control_array = (
-        1 / (1 + np.exp(-n_cells / 50.0 * pitch_control_array))
-    ) * 2 - 1
-    LOGGER.info(
-        f"Pitch control took {time.time() - start_time} "
-        f"seconds, len(td) = {len(td)}"
-    )
-
-    return pitch_control_array, x_range, y_range, cmap
+        if not isinstance(cmap, Colormap) and cmap not in mpl.colormaps:
+            message = "cmap should be a matplotlib.colors.Colomap."
+            raise DataBallPyError(message)
 
 
-def _plot_pitch_control(
+def _plot_heatmap_overlay(
     ax: plt.axes,
-    current_pitch_control: np.ndarray,
-    x_range: np.ndarray,
-    y_range: np.ndarray,
-    cmap: LinearSegmentedColormap,
+    heatmap_overlay: np.ndarray,
+    match: Match,
+    cmap: Colormap,
     variable_fig_objs: list,
-) -> tuple[list, plt.axes]:
-    """Helper function to plot the pitch control of the current frame."""
-    imshow = ax.imshow(
-        current_pitch_control,
+) -> tuple[plt.figure, plt.axes]:
+    """Helper function to plot the heatmap overlay of the current frame."""
+    fig_obj = ax.imshow(
+        heatmap_overlay,
         extent=[
-            x_range.min(),
-            x_range.max(),
-            y_range.min(),
-            y_range.max(),
+            -match.pitch_dimensions[0] / 2.0,
+            match.pitch_dimensions[0] / 2.0,
+            -match.pitch_dimensions[1] / 2.0,
+            match.pitch_dimensions[1] / 2.0,
         ],
-        cmap=cmap,
         origin="lower",
-        aspect="auto",
-        vmin=-1.0,
-        vmax=1.0,
+        cmap=cmap,
+        alpha=0.5,
         zorder=-5,
     )
-    variable_fig_objs.append(imshow)
+
+    variable_fig_objs.append(fig_obj)
+
     return variable_fig_objs, ax
 
 

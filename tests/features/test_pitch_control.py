@@ -5,14 +5,14 @@ import pandas as pd
 
 from databallpy.features.pitch_control import (
     calculate_covariance_matrix,
-    calculate_pitch_control_surface_radius,
     calculate_scaling_matrix,
+    get_approximate_voronoi,
     get_mean_position_of_influence,
-    get_pitch_control_period,
+    get_pitch_control,
     get_pitch_control_single_frame,
+    get_pitch_control_surface_radius,
     get_player_influence,
     get_team_influence,
-    normalize_values,
 )
 
 
@@ -42,29 +42,73 @@ class TestPitchControl(unittest.TestCase):
             index=[1, 2],
         )
 
+    def test_approximate_voronoi(self):
+        td = self.td.copy()
+
+        output_dists, output_col_ids = get_approximate_voronoi(td, [20, 20], 5, 3)
+
+        assert output_dists.shape == output_col_ids.shape == (2, 3, 5)
+
+        expected_dists = np.array(
+            [
+                [
+                    [12.494443, 10.005554, 8.724168, 9.171211, 11.140516],
+                    [9.219544, 5.3851647, 2.236068, 3.6055512, 6.4031243],
+                    [10.137938, 6.839428, 4.013865, 2.8480012, 5.6666665],
+                ],
+                [
+                    [12.494443, 10.005554, 8.724168, 9.171211, 10.46157],
+                    [9.219544, 5.3851647, 2.236068, 3.0, 5.0],
+                    [10.137938, 6.839428, 4.772607, 3.6666667, 5.4262733],
+                ],
+            ]
+        )
+        expected_col_ids = np.array(
+            [
+                [
+                    ["home_1", "home_1", "home_1", "home_1", "home_1"],
+                    ["home_1", "home_1", "home_1", "home_1", "away_1"],
+                    ["home_1", "home_1", "away_1", "away_1", "away_1"],
+                ],
+                [
+                    ["home_1", "home_1", "home_1", "home_1", "away_1"],
+                    ["home_1", "home_1", "home_1", "away_1", "away_1"],
+                    ["home_1", "home_1", "home_1", "away_1", "away_1"],
+                ],
+            ],
+            dtype="U7",
+        )
+        np.testing.assert_array_equal(output_col_ids, expected_col_ids)
+        np.testing.assert_array_almost_equal(output_dists, expected_dists)
+
+        dists, col_ids = get_approximate_voronoi(td.iloc[0], [20, 20], 5, 3)
+
+        assert dists.shape == col_ids.shape == (3, 5)
+        np.testing.assert_array_equal(col_ids, expected_col_ids[0])
+        np.testing.assert_array_almost_equal(dists, expected_dists[0])
+
     def test_get_pitch_control_period(self):
         td = self.td.copy()
-        grid = np.meshgrid(np.linspace(-10, 10, 100), np.linspace(-10, 10, 100))
-        output = get_pitch_control_period(td, grid)
+        output = get_pitch_control(td, [106, 68], 100, 50)
         self.assertIsInstance(output, np.ndarray)
-        self.assertEqual(output.shape, (2, grid[0].shape[0], grid[0].shape[1]))
-        self.assertAlmostEqual(output[0].sum(), 1.0)
-        self.assertAlmostEqual(output[1].sum(), 2.0)
-
-    def test_get_pitch_control_period_errors(self):
-        td = self.td.copy()
-        grid = np.array([[[0, 0], [0, 0]]])
-        with self.assertRaises(IndexError):
-            get_pitch_control_period(td, grid)
+        self.assertEqual(output.shape, (2, 50, 100))
 
     def test_get_pitch_control_single_frame(self):
         frame = self.td.iloc[0].copy()
-        grid = np.meshgrid(np.linspace(-10, 10, 100), np.linspace(-10, 10, 100))
-        output = get_pitch_control_single_frame(frame, grid)
+        output = get_pitch_control_single_frame(frame, [20, 20], 5, 3)
 
         self.assertIsInstance(output, np.ndarray)
-        self.assertEqual(output.shape, grid[0].shape)
-        self.assertAlmostEqual(output.sum(), 1.0)  # 2 home - 1 away
+        self.assertEqual(output.shape, (3, 5))
+
+        expected_output = np.array(
+            [
+                [0.49991558, 0.49894062, 0.49665482, 0.48532451, 0.2688234],
+                [0.49499401, 0.45117795, 0.44971014, 0.57744224, 0.53919029],
+                [0.49954645, 0.50462475, 0.57432872, 0.62120811, 0.53702747],
+            ]
+        )
+
+        np.testing.assert_array_almost_equal(output, expected_output)
 
     def test_get_team_influence(self):
         frame = self.td.iloc[0].copy()
@@ -90,7 +134,6 @@ class TestPitchControl(unittest.TestCase):
         self.assertIsInstance(output, np.ndarray)
         self.assertEqual(output.shape, grid[0].shape)
         np.testing.assert_array_almost_equal(output, home_1 + home_3)
-        self.assertAlmostEqual(output.sum(), 2.0)
         np.testing.assert_array_almost_equal(output_dist, home_1 + home_3)
 
     def test_get_player_influence(self):
@@ -106,13 +149,7 @@ class TestPitchControl(unittest.TestCase):
 
         self.assertIsInstance(output, np.ndarray)
         self.assertEqual(output.shape, grid[0].shape)
-        self.assertEqual(output.sum(), 1.0)
-
-    def test_normalize_values(self):
-        res = normalize_values(np.array([[1, 3, 5], [0, 1, 0]]))
-        np.testing.assert_array_almost_equal(
-            res, np.array([[0.1, 0.3, 0.5], [0.0, 0.1, 0.0]])
-        )
+        self.assertEqual(output.max(), 1.0)
 
     def test_get_mean_position_of_influence(self):
         res = get_mean_position_of_influence(22.0, 23.5, -8.0, 11.0)
@@ -145,33 +182,31 @@ class TestPitchControl(unittest.TestCase):
         speed_magnitude = 10.0
         distance_to_ball = 0.0
         max_speed = 13.0
-        influence_radius = calculate_pitch_control_surface_radius(distance_to_ball)
-        assert influence_radius == 4.0 * 1.8
-        ratio_of_max_speed = 100 / 169.0
+        influence_radius = get_pitch_control_surface_radius(distance_to_ball)
+        assert influence_radius == 4.0
+        ratio_of_max_speed = speed_magnitude**2 / max_speed**2
         expected_output = np.array(
             [
-                [(influence_radius + (influence_radius * ratio_of_max_speed)) / 2, 0],
-                [0, (influence_radius - (influence_radius * ratio_of_max_speed)) / 2],
+                [(influence_radius + (influence_radius * ratio_of_max_speed)), 0],
+                [0, (influence_radius - (influence_radius * ratio_of_max_speed))],
             ]
         )
 
         output = calculate_scaling_matrix(speed_magnitude, distance_to_ball, max_speed)
         np.testing.assert_array_equal(output, expected_output)
 
-    def test_calculate_pitch_control_surface_radius(self):
+    def test_get_pitch_control_surface_radius(self):
         distance_to_ball = 10.0
         min_r = 4.0
         max_r = 10.0
-        expected_output = (
-            min(min_r + 0.00025 * np.power(distance_to_ball, 3.5), max_r) * 1.8
-        )
-        output = calculate_pitch_control_surface_radius(distance_to_ball, min_r, max_r)
+        expected_output = min(min_r + 0.00025 * np.power(distance_to_ball, 3.5), max_r)
+        output = get_pitch_control_surface_radius(distance_to_ball, min_r, max_r)
         self.assertEqual(output, expected_output)
 
-        result1 = calculate_pitch_control_surface_radius(1, min_r, max_r)
-        result2 = calculate_pitch_control_surface_radius(15, min_r, max_r)
-        assert min_r * 1.8 < result1 and result1 < result2 and result2 < max_r * 1.8
+        result1 = get_pitch_control_surface_radius(1, min_r, max_r)
+        result2 = get_pitch_control_surface_radius(15, min_r, max_r)
+        assert min_r < result1 and result1 < result2 and result2 < max_r
 
 
-if __name__ == "__main__":
-    unittest.main()
+# if __name__ == "__main__":
+#     unittest.main()
