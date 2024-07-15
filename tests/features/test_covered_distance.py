@@ -5,19 +5,14 @@ import pandas as pd
 
 from databallpy.features.covered_distance import (
     _parse_intervals,
-    _check_frames,
     get_covered_distance
 )
 
-
 class TestCoveredDistance(unittest.TestCase):
     def setUp(self):
-
-        # set input and expected data
         self.framerate = 1
-        self.vel_intervals = (-1, 13, 30, 17)
-        self.acc_intervals = (37, 15, 0, 0.75)
-
+        self.vel_intervals = ((-1, 13), (30, 17))
+        self.acc_intervals = ((37, 15), (0, 0.75))
         self.input = pd.DataFrame(
             {
                 "home_1_x": [10, 20, -30, 40, np.nan, 60],
@@ -99,46 +94,38 @@ class TestCoveredDistance(unittest.TestCase):
             }
         }
 
-    # test covered distance
     def test_get_total_distance(self):
+        input_df = self.input.copy()
+        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate)
+        self.assertDictEqual(output, self.expected_total_distance)
+
+    def test_get_total_and_vel_distance(self):
+        input_df = self.input.copy()
+        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=self.vel_intervals)
+        self.assertDictEqual(output, self.expected_output_total_and_vel_distance)
+
+    def test_get_total_and_vel_and_acc_distance(self):
+        input_df = self.input.copy()
+        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=self.vel_intervals, acceleration_intervals=self.acc_intervals)
+        self.assertDictEqual(output, self.expected_output_total_and_vel_and_acc_distance)
+
+    def test_get_covered_distance_wrong_input(self):
         input_df = self.input.copy()
         input_df.drop(columns=["home_1_vx"], inplace=True)
         with self.assertRaises(ValueError):
             get_covered_distance(input_df, ["home_1","away_2"], self.framerate)
 
         input_df = self.input.copy()
-        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate)
-        self.assertDictEqual(output, self.expected_total_distance)
-
-    # test covered distance and velocity interval
-    def test_get_total_and_vel_distance(self):
-        input_df = self.input.copy()
-        vel_intervals = self.vel_intervals
         input_df.drop(columns=["home_1_vx"], inplace=True)
         with self.assertRaises(ValueError):
-            get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals)
+            get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=self.vel_intervals)
 
         input_df = self.input.copy()
-        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals)
-        self.assertDictEqual(output, self.expected_output_total_and_vel_distance)
-
-    # test covered distance, velocity interval, and acceleration interval
-    def test_get_total_and_vel_and_acc_distance(self):
-        input_df = self.input.copy()
-        vel_intervals = self.vel_intervals
-        acc_intervals = self.acc_intervals
         input_df.drop(columns=["home_1_ax"], inplace=True)
         with self.assertRaises(ValueError):
-            get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals, acceleration_intervals=acc_intervals)
+            get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=self.vel_intervals, acceleration_intervals=self.acc_intervals)
 
         input_df = self.input.copy()
-        output = get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=vel_intervals, acceleration_intervals=acc_intervals)
-        self.assertDictEqual(output, self.expected_output_total_and_vel_and_acc_distance)
-
-    # check input covered distance
-    def test_get_covered_distance_wrong_input(self):
-        
-        # tracking_data
         with self.assertRaises(TypeError) as cm:
             data = {"ball_x": [1, 2, 3, 4]}
             get_covered_distance(data, ["home_1", "away_2"], 1)
@@ -147,7 +134,6 @@ class TestCoveredDistance(unittest.TestCase):
             f"tracking data must be a pandas DataFrame, not a {type(data).__name__}"
         )
         
-        # player_ids
         with self.assertRaises(TypeError) as cm:
             players = "home_1"
             get_covered_distance(self.input, players, 1)
@@ -164,7 +150,6 @@ class TestCoveredDistance(unittest.TestCase):
             "All elements in player_ids must be strings"
         )
         
-        # framerate
         with self.assertRaises(TypeError) as cm:
             framerate = "1"
             get_covered_distance(self.input, ["home_1", "away_2"], framerate)
@@ -173,22 +158,30 @@ class TestCoveredDistance(unittest.TestCase):
             f"framerate must be a int, not a {type(framerate).__name__}"
         )
 
-    # test check intervals function
     def test_parse_intervals(self):
-        # check type
+        velocity = (1, 4, 2, 9, 0)
+        expected_output_interval = [(1, 4), (2, 4), (2, 9), (0, 9)]
+        output = _parse_intervals(velocity)
+        self.assertListEqual(output, expected_output_interval)
+
+        acceleration = ((8, -2), [3, 3.17])
+        expected_output_interval = [(-2, 8), (3, 3.17)]
+        output = _parse_intervals(acceleration)
+        self.assertListEqual(output, expected_output_interval)
+
+    def test_parse_intervals_wrong_input(self):
         intervals = (0, 15.0, 90, 'a', 3, -1)
         with self.assertRaises(TypeError) as cm:
             _parse_intervals(intervals)
         self.assertEqual(
             str(cm.exception), 
-            "All elements in the tuple must be integers or floats"
+            "Intervals must contain either all floats/integers or all tuples/lists."
         )
 
-        # check even number
-        intervals = (0, 15, 90, 3, -1)
-        with self.assertRaises(ValueError) as cm:
+        intervals = ((0, 15.0), 90, 3, (3, -1))
+        with self.assertRaises(TypeError) as cm:
             _parse_intervals(intervals)
         self.assertEqual(
             str(cm.exception), 
-            "Intervals must contain an even number of elements."
+            "Intervals must contain either all floats/integers or all tuples/lists."
         )
