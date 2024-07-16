@@ -73,24 +73,24 @@ class TestCoveredDistance(unittest.TestCase):
         self.expected_output_total_and_vel_distance = {
             'home_1': {
                 'total_distance': (np.sqrt(149) + np.sqrt(556.25) + np.sqrt(181) + np.sqrt(325)),
-                'total_distance_velocity': [((-1, 13), np.sqrt(149)),((17, 30), (np.sqrt(556.25) + np.sqrt(325)))] 
+                'total_distance_velocity': [{'-1_13': np.sqrt(149)}, {'17_30': np.sqrt(556.25) + np.sqrt(325)}] 
             },
             'away_2': {
                 'total_distance': (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5)), 
-                'total_distance_velocity': [((-1, 13), (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5))),((17, 30), 0)] 
+                'total_distance_velocity': [{'-1_13': np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5)}, {'17_30': 0}] 
             }
         }
 
         self.expected_output_total_and_vel_and_acc_distance = {
             'home_1': {
                 'total_distance': (np.sqrt(149) + np.sqrt(556.25) + np.sqrt(181) + np.sqrt(325)),
-                'total_distance_velocity': [((-1, 13), np.sqrt(149)), ((17, 30), (np.sqrt(556.25) + np.sqrt(325)))], 
-                'total_distance_acceleration': [((15, 37), np.sqrt(149)),((0, 0.75), 0)]
+                'total_distance_velocity': [{'-1_13': np.sqrt(149)}, {'17_30': np.sqrt(556.25) + np.sqrt(325)}], 
+                'total_distance_acceleration': [{'15_37': np.sqrt(149)}, {'0_0.75': 0}]
             },
             'away_2': {
                 'total_distance': (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5)), 
-                'total_distance_velocity': [((-1, 13), (np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5))), ((17, 30), 0)] , 
-                'total_distance_acceleration': [((15, 37), 0), ((0, 0.75), (np.sqrt(10) + np.sqrt(10)))]
+                'total_distance_velocity': [{'-1_13': np.sqrt(5) + np.sqrt(10) + np.sqrt(2) + np.sqrt(2) + np.sqrt(10) + np.sqrt(5)}, {'17_30': 0}] , 
+                'total_distance_acceleration': [{'15_37': 0}, {'0_0.75': np.sqrt(10) + np.sqrt(10)}]
             }
         }
 
@@ -111,14 +111,9 @@ class TestCoveredDistance(unittest.TestCase):
 
     def test_get_covered_distance_wrong_input(self):
         input_df = self.input.copy()
-        input_df.drop(columns=["home_1_vx"], inplace=True)
+        input_df.drop(columns=["home_1_velocity"], inplace=True)
         with self.assertRaises(ValueError):
             get_covered_distance(input_df, ["home_1","away_2"], self.framerate)
-
-        input_df = self.input.copy()
-        input_df.drop(columns=["home_1_vx"], inplace=True)
-        with self.assertRaises(ValueError):
-            get_covered_distance(input_df, ["home_1","away_2"], self.framerate, velocity_intervals=self.vel_intervals)
 
         input_df = self.input.copy()
         input_df.drop(columns=["home_1_ax"], inplace=True)
@@ -131,7 +126,8 @@ class TestCoveredDistance(unittest.TestCase):
             get_covered_distance(data, ["home_1", "away_2"], 1)
         self.assertEqual(
             str(cm.exception), 
-            f"tracking data must be a pandas DataFrame, not a {type(data).__name__}"
+            f"tracking data must be a pandas DataFrame, \
+            not a {type(data).__name__}"
         )
         
         with self.assertRaises(TypeError) as cm:
@@ -175,7 +171,8 @@ class TestCoveredDistance(unittest.TestCase):
             _parse_intervals(intervals)
         self.assertEqual(
             str(cm.exception), 
-            "Intervals must contain either all floats/integers or all tuples/lists."
+            "Intervals must contain either all floats/integers \
+            or all tuples/lists."
         )
 
         intervals = ((0, 15.0), 90, 3, (3, -1))
@@ -183,5 +180,6 @@ class TestCoveredDistance(unittest.TestCase):
             _parse_intervals(intervals)
         self.assertEqual(
             str(cm.exception), 
-            "Intervals must contain either all floats/integers or all tuples/lists."
+            "Intervals must contain either all floats/integers \
+            or all tuples/lists."
         )
