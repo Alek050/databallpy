@@ -46,4 +46,4 @@ test:
 	$(PYTEST) $(PYTEST_ARGS_COV)
 
 documentation: 
-	poetry run make html --directory docs/
+	poetry run jupyter-book build docs/ --all

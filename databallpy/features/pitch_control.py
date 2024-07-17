@@ -153,7 +153,7 @@ def get_pitch_control_surface_radius(
     """
     Calculate the pitch control surface radius based on the distance to the ball.
     Note that the article does not provide the mathematical function for this formula,
-    only a figure (Figure 9 in Appendix 1.). The constants (0.00025 and 3.5) are
+    only a figure (Figure 9 in Appendix 1.). The constants (972 and 3) are
     obtained by visual inspection. The value is refered to as R_i(t) in the article.
 
     Args:
@@ -166,8 +166,7 @@ def get_pitch_control_surface_radius(
     Returns:
         float: Pitch control surface radius.
     """
-    val = min_r + 0.00025 * np.power(distance_to_ball, 3.5)
-    return min(val, max_r)
+    return min(min_r + distance_to_ball**3 / 972, max_r)
 
 
 def calculate_scaling_matrix(

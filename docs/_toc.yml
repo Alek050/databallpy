@@ -3,13 +3,15 @@ root: index
 parts:
   - caption: Introduction
     chapters:
-      - file: intro_page
+      - file: introduction/intro_page
+      - file: introduction/intro_event_data_page
+      - file: introduction/intro_tracking_data_page
   - caption: Getting Started
     chapters:
-      - file: installation_page
-      - file: loading_in_a_match_page
-      - file: preprocessing_options
-      - file: visualizations_page
+      - file: getting_started/installation_page
+      - file: getting_started/loading_in_a_match_page
+      - file: getting_started/preprocessing_options
+      - file: getting_started/visualizations_page
   - caption: Features
     chapters:
       - file: features/pressure_page
@@ -20,4 +22,12 @@ parts:
       - file: features/xT_models
       - file: features/space_occupation
         title: Space Occupation
+  - caption: Contributing
+    chapters:
+      - file: contributing/quick_overview
+      - file: contributing/github
+      - file: contributing/poetry_deps_manager
+      - file: contributing/clean_code_principles
+      - file: contributing/tests
+      - file: contributing/code_of_conduct
       
