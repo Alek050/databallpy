@@ -102,9 +102,9 @@ class TestPitchControl(unittest.TestCase):
 
         expected_output = np.array(
             [
-                [0.49991558, 0.49894062, 0.49665482, 0.48532451, 0.2688234],
-                [0.49499401, 0.45117795, 0.44971014, 0.57744224, 0.53919029],
-                [0.49954645, 0.50462475, 0.57432872, 0.62120811, 0.53702747],
+                [0.499886, 0.498692, 0.49609, 0.484917, 0.268754],
+                [0.494124, 0.448199, 0.450015, 0.575087, 0.537479],
+                [0.499318, 0.503266, 0.57192, 0.619204, 0.536716],
             ]
         )
 
@@ -199,14 +199,10 @@ class TestPitchControl(unittest.TestCase):
         distance_to_ball = 10.0
         min_r = 4.0
         max_r = 10.0
-        expected_output = min(min_r + 0.00025 * np.power(distance_to_ball, 3.5), max_r)
+        expected_output = min(min_r + distance_to_ball**3 / 972, max_r)
         output = get_pitch_control_surface_radius(distance_to_ball, min_r, max_r)
         self.assertEqual(output, expected_output)
 
         result1 = get_pitch_control_surface_radius(1, min_r, max_r)
         result2 = get_pitch_control_surface_radius(15, min_r, max_r)
         assert min_r < result1 and result1 < result2 and result2 < max_r
-
-
-# if __name__ == "__main__":
-#     unittest.main()
