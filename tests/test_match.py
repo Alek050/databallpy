@@ -1597,7 +1597,7 @@ class TestMatch(unittest.TestCase):
     def test_save_match(self):
         assert not os.path.exists(
             os.path.join(
-                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
             )
         )
         match = self.match_to_sync.copy()
@@ -1605,11 +1605,11 @@ class TestMatch(unittest.TestCase):
         match.save_match(path=os.path.join("tests", "test_data"))
         assert os.path.exists(
             os.path.join(
-                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
             )
         )
         os.remove(
             os.path.join(
-                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
             )
         )
