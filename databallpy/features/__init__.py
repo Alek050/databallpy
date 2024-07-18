@@ -1,5 +1,5 @@
 from databallpy.features.angle import get_smallest_angle
-from databallpy.features.differentiate import add_velocity
+from databallpy.features.differentiate import add_acceleration, add_velocity
 from databallpy.features.pitch_control import (
     get_approximate_voronoi,
     get_pitch_control,
