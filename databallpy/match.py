@@ -763,6 +763,8 @@ class Match:
         if path is None:
             path = os.getcwd()
         pickle_path = os.path.join(path, f"{name}.pickle")
+
+        assert os.path.exists(path), f"Path {path} does not exist"
         with open(pickle_path, "wb") as f:
             pickle.dump(self, f)
         if verbose:
