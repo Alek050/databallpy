@@ -1,6 +1,6 @@
 name: CI/CD workflow
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build-and-test:
@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: setup ffmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v2
+        uses: FedericoCarboni/setup-ffmpeg@v3
 
       - name: Install poetry
         uses: snok/install-poetry@v1
@@ -35,7 +35,7 @@ jobs:
           poetry run black --check tests/ databallpy/ 
 
       - name: Test with pytest
-        run: make test
+        run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.2.0
