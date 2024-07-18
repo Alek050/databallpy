@@ -315,7 +315,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     event_data.loc[event_data["period_id"] == 2, "seconds"] -= event_data.loc[
         event_data["period_id"] == 2, "seconds"
     ].min() - (45 * 60)
-    event_data["minutes"] = (event_data["seconds"] // 60).astype(int)
+    event_data["minutes"] = (event_data["seconds"] // 60).astype(np.int64)
     event_data["seconds"] = event_data["seconds"] % 60
     event_data.loc[
         event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
