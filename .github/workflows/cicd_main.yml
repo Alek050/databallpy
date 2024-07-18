@@ -4,15 +4,17 @@ on: [push, pull_request]
 
 jobs:
   build-and-test:
-    # Set up operating system
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
-    # Define job steps
     steps:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: ">=3.10.1"
+          python-version: ${{ matrix.python-version }}
 
       - name: setup
         uses: actions/checkout@v2
@@ -24,10 +26,13 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install packages
-        run:  make deps
+        run: poetry install --with docs,developing
 
       - name: Linters
-        run: make lint
+        run: 
+          poetry run flake8 tests/ databallpy/
+          poetry run isort --check-only --filter-files tests/ databallpy/
+          poetry run black --check tests/ databallpy/ 
 
       - name: Test with pytest
         run: make test
