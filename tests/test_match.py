@@ -19,10 +19,12 @@ from tests.expected_outcomes import (
 
 class TestMatch(unittest.TestCase):
     def setUp(self):
-        td_tracab_loc = "tests/test_data/tracab_td_test.dat"
-        md_tracab_loc = "tests/test_data/tracab_metadata_test.xml"
-        ed_opta_loc = "tests/test_data/f24_test.xml"
-        md_opta_loc = "tests/test_data/f7_test.xml"
+        base_path = os.path.join("tests", "test_data")
+
+        td_tracab_loc = os.path.join(base_path, "tracab_td_test.dat")
+        md_tracab_loc = os.path.join(base_path, "tracab_metadata_test.xml")
+        ed_opta_loc = os.path.join(base_path, "f24_test.xml")
+        md_opta_loc = os.path.join(base_path, "f7_test.xml")
         self.td_provider = "tracab"
         self.ed_provider = "opta"
 
@@ -43,9 +45,9 @@ class TestMatch(unittest.TestCase):
             check_quality=False,
         )
 
-        td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
-        md_metrica_loc = "tests/test_data/metrica_metadata_test.xml"
-        ed_metrica_loc = "tests/test_data/metrica_event_data_test.json"
+        td_metrica_loc = os.path.join(base_path, "metrica_tracking_data_test.txt")
+        md_metrica_loc = os.path.join(base_path, "metrica_metadata_test.xml")
+        ed_metrica_loc = os.path.join(base_path, "metrica_event_data_test.json")
 
         self.expected_match_metrica = get_match(
             tracking_data_loc=td_metrica_loc,
@@ -57,12 +59,17 @@ class TestMatch(unittest.TestCase):
             check_quality=False,
         )
 
+        sync_base_path = os.path.join(base_path, "sync")
         self.match_to_sync = get_match(
-            tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
-            tracking_metadata_loc="tests/test_data/sync/tracab_metadata_sync_test.xml",
+            tracking_data_loc=os.path.join(sync_base_path, "tracab_td_sync_test.dat"),
+            tracking_metadata_loc=os.path.join(
+                sync_base_path, "tracab_metadata_sync_test.xml"
+            ),
             tracking_data_provider="tracab",
-            event_data_loc="tests/test_data/sync/opta_events_sync_test.xml",
-            event_metadata_loc="tests/test_data/sync/opta_metadata_sync_test.xml",
+            event_data_loc=os.path.join(sync_base_path, "opta_events_sync_test.xml"),
+            event_metadata_loc=os.path.join(
+                sync_base_path, "opta_metadata_sync_test.xml"
+            ),
             event_data_provider="opta",
             check_quality=False,
         )
@@ -1589,12 +1596,20 @@ class TestMatch(unittest.TestCase):
 
     def test_save_match(self):
         assert not os.path.exists(
-            "tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
+            os.path.join(
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
+            )
         )
         match = self.match_to_sync.copy()
         match.allow_synchronise_tracking_and_event_data = True
-        match.save_match(path="tests/test_data")
+        match.save_match(path=os.path.join("tests", "test_data"))
         assert os.path.exists(
-            "tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle"
+            os.path.join(
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
+            )
         )
-        os.remove("tests/test_data/TeamOne 3 - 1 TeamTwo 2023-01-22 16:46:39.pickle")
+        os.remove(
+            os.path.join(
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
+            )
+        )

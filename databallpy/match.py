@@ -762,7 +762,10 @@ class Match:
             name = self.name
         if path is None:
             path = os.getcwd()
-        with open(os.path.join(path, name + ".pickle"), "wb") as f:
+        name = name.replace(":", "_")
+        pickle_path = os.path.join(path, f"{name}.pickle")
+        assert os.path.exists(path), f"Path {path} does not exist"
+        with open(pickle_path, "wb") as f:
             pickle.dump(self, f)
         if verbose:
             print(f"Match saved to {os.path.join(path, name)}.pickle")

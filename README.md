@@ -139,6 +139,7 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 - [DaanGro](https://github.com/DaanGro/)
 - [rdghe](https://github.com/rdghe/)
 - [swopper050](https://github.com/Swopper050)
+- [maritsloots](https://github.com/maritsloots)
 
 ## License
 
