@@ -29,7 +29,7 @@ jobs:
         run: poetry install --with docs,developing
 
       - name: Linters
-        run: 
+        run: |
           poetry run flake8 tests/ databallpy/
           poetry run isort --check-only --filter-files tests/ databallpy/
           poetry run black --check tests/ databallpy/ 
