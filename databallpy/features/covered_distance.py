@@ -7,12 +7,10 @@ LOGGER = create_logger(__name__)
 
 def get_covered_distance(
     tracking_data: pd.DataFrame,
-    player_ids: list[str],
-    framerate: int,
-    velocity_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] | None = None,
-    acceleration_intervals: tuple[float, ...]
-    | tuple[tuple[float, ...], ...]
-    | None = None,
+    column_ids: list[str],
+    frame_rate: int,
+    velocity_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] = (),
+    acceleration_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] = (),
     start_idx: int | None = None,
     end_idx: int | None = None,
 ) -> pd.DataFrame:
@@ -23,13 +21,13 @@ def get_covered_distance(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data with player positions.
-        player_ids (list[str]): columns for which covered distance should be
+        column_ids (list[str]): columns for which covered distance should be
             calculated
         frame_rate (int): framerate of the tracking data
         velocity_intervals (optional): tuple that contains the velocity interval(s).
-            Defaults to None
+            Defaults to ()
         acceleration_intervals (optional): tuple that contains the acceleration
-            interval(s). Defaults to None
+            interval(s). Defaults to ()
         start_idx (int, optional): start index of the tracking data. Defaults to None.
         end_idx (int, optional): end index of the tracking data. Defaults to None
 
@@ -49,19 +47,21 @@ def get_covered_distance(
     try:
         _validate_inputs(
             tracking_data,
-            player_ids,
-            framerate,
+            column_ids,
+            frame_rate,
             acceleration_intervals,
             start_idx,
             end_idx,
         )
 
-        player_ids = sorted(player_ids)
+        column_ids = sorted(column_ids)
         velocity_intervals = (
-            _parse_intervals(velocity_intervals) if velocity_intervals else []
+            _parse_intervals(velocity_intervals) if len(velocity_intervals) > 0 else []
         )
         acceleration_intervals = (
-            _parse_intervals(acceleration_intervals) if acceleration_intervals else []
+            _parse_intervals(acceleration_intervals)
+            if len(acceleration_intervals) > 0
+            else []
         )
         result_dict = (
             {"total_distance": []}
@@ -76,12 +76,12 @@ def get_covered_distance(
         )
 
         tracking_data_velocity = pd.concat(
-            [tracking_data[player_id + "_velocity"] for player_id in player_ids], axis=1
+            [tracking_data[player_id + "_velocity"] for player_id in column_ids], axis=1
         ).fillna(0)
         tracking_data_velocity.columns = tracking_data_velocity.columns.str.replace(
             "_velocity", ""
         )
-        distance_per_frame = tracking_data_velocity / framerate
+        distance_per_frame = tracking_data_velocity / frame_rate
 
         start_idx = start_idx if start_idx is not None else tracking_data.index[0]
         end_idx = end_idx if end_idx is not None else tracking_data.index[-1]
@@ -90,26 +90,20 @@ def get_covered_distance(
 
         result_dict["total_distance"] = distance_per_frame.sum().values
 
-        if len(velocity_intervals) > 0:
-            result_dict = _add_covered_distance_interval(
-                result_dict,
-                "velocity",
-                tracking_data,
-                distance_per_frame,
-                velocity_intervals,
-                player_ids,
-            )
-        if len(acceleration_intervals) > 0:
-            result_dict = _add_covered_distance_interval(
-                result_dict,
-                "acceleration",
-                tracking_data,
-                distance_per_frame,
-                acceleration_intervals,
-                player_ids,
-            )
+        for intervals, interval_name in zip(
+            [velocity_intervals, acceleration_intervals], ["velocity", "acceleration"]
+        ):
+            if len(intervals) > 0:
+                result_dict = _add_covered_distance_interval(
+                    result_dict,
+                    interval_name,
+                    tracking_data,
+                    distance_per_frame,
+                    intervals,
+                    column_ids,
+                )
 
-        return pd.DataFrame(result_dict, index=player_ids)
+        return pd.DataFrame(result_dict, index=column_ids)
     except Exception as e:
         LOGGER.exception(f"Found unexpected exception in get_covered_distance(): \n{e}")
         raise e
@@ -148,8 +142,8 @@ def _parse_intervals(intervals):
         ]
     else:
         raise TypeError(
-            "Intervals must contain either all floats/integers \
-            or all tuples/lists."
+            "Intervals must contain either all floats/integers"
+            f"or all tuples/lists, not {intervals}"
         )
     return pairs
 
@@ -159,8 +153,8 @@ def _validate_inputs(
 ):
     if not isinstance(tracking_data, pd.DataFrame):
         raise TypeError(
-            f"tracking data must be a pandas DataFrame, \
-            not a {type(tracking_data).__name__}"
+            "tracking data must be a pandas DataFrame, "
+            f"not a {type(tracking_data).__name__}"
         )
 
     if not isinstance(player_ids, list):
@@ -185,16 +179,15 @@ def _validate_inputs(
                 or player_id + "_acceleration" not in tracking_data.columns
             ):
                 raise ValueError(
-                    f"Acceleration was not found for {player_id} in the DataFrame. \
-                    Please calculate acceleration first using add_acceleration() \
-                    function."
+                    f"Acceleration was not found for {player_id} in the DataFrame. "
+                    "Please calculate acceleration first using add_acceleration() "
+                    "function."
                 )
 
     for idx in [idx for idx in [start_idx, end_idx] if idx is not None]:
         if not isinstance(idx, int):
             raise TypeError(
-                f"start_idx and end_idx must be integers, \
-                            not {type(idx).__name__}"
+                "start_idx and end_idx must be integers, " f"not {type(idx).__name__}"
             )
 
         if idx not in tracking_data.index:

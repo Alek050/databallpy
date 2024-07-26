@@ -15,6 +15,8 @@ parts:
       - file: getting_started/synchronisation_page
   - caption: Features
     chapters:
+      - file: features/covered_distance_page
+        title: Covered Distances
       - file: features/pressure_page
         title: Pressure
       - file: features/team_and_player_possession
