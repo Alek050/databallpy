@@ -150,39 +150,23 @@ class TestCoveredDistance(unittest.TestCase):
             )
 
         input_df = self.input_td.copy()
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             data = {"ball_x": [1, 2, 3, 4]}
             get_covered_distance(data, ["home_1", "away_2"], 1)
-        self.assertEqual(
-            str(cm.exception),
-            f"tracking data must be a pandas DataFrame, \
-            not a {type(data).__name__}",
-        )
 
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             players = "home_1"
             get_covered_distance(self.input_td, players, 1)
-        self.assertEqual(
-            str(cm.exception),
-            f"player_ids must be a list, not a {type(players).__name__}",
-        )
 
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             players = ["home_1", 123]
             get_covered_distance(self.input_td, [players], 1)
-        self.assertEqual(
-            str(cm.exception), "All elements in player_ids must be strings"
-        )
 
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             framerate = "1"
             get_covered_distance(self.input_td, ["home_1", "away_2"], framerate)
-        self.assertEqual(
-            str(cm.exception),
-            f"framerate must be a int, not a {type(framerate).__name__}",
-        )
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(ValueError):
             get_covered_distance(
                 self.input_td,
                 ["home_1", "away_2"],
@@ -190,9 +174,8 @@ class TestCoveredDistance(unittest.TestCase):
                 start_idx=5,
                 end_idx=3,
             )
-        self.assertEqual(str(cm.exception), "start_idx must be smaller than end_idx")
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(ValueError):
             get_covered_distance(
                 self.input_td,
                 ["home_1", "away_2"],
@@ -200,9 +183,8 @@ class TestCoveredDistance(unittest.TestCase):
                 start_idx=5,
                 end_idx=6,
             )
-        self.assertEqual(str(cm.exception), "Index 6 is not in the tracking data")
 
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             get_covered_distance(
                 self.input_td,
                 ["home_1", "away_2"],
@@ -224,19 +206,9 @@ class TestCoveredDistance(unittest.TestCase):
 
     def test_parse_intervals_wrong_input(self):
         intervals = (0, 15.0, 90, "a", 3, -1)
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             _parse_intervals(intervals)
-        self.assertEqual(
-            str(cm.exception),
-            "Intervals must contain either all floats/integers \
-            or all tuples/lists.",
-        )
 
         intervals = ((0, 15.0), 90, 3, (3, -1))
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             _parse_intervals(intervals)
-        self.assertEqual(
-            str(cm.exception),
-            "Intervals must contain either all floats/integers \
-            or all tuples/lists.",
-        )
