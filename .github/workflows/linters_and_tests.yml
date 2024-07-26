@@ -3,14 +3,14 @@ name: Linters and Tests
 on:
   push:
     branches:
-      - '*'  # Push events to all branches'
+      - main
+      - develop  
     paths-ignore:
       - 'docs/**'
       - 'README.md'
   pull_request:
     branches:
-      - main
-      - develop
+      - '*' # Pull requests to all branches'
     paths-ignore:
       - 'docs/**'
       - 'README.md'
