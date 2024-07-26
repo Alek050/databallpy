@@ -1,4 +1,7 @@
-on: pull_request
+on:
+  pull_request:
+    branches:
+      - '*' # Pull requests to all branches'
 
 jobs:
   build-and-test:
