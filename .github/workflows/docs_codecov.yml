@@ -31,6 +31,9 @@ jobs:
       - name: Build documentation (only on ubuntu-latest)
         run: make documentation
 
+      - name: Create coverage report
+        run: make test
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:
