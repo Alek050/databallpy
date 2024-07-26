@@ -51,7 +51,12 @@ jobs:
       - name: Test with pytest
         run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
 
+      - name: Build documentation (only on ubuntu-latest)
+        if: matrix.os == 'ubuntu-latest' && python-version == '3.12'
+        run: make documentation
+
       - name: Upload coverage reports to Codecov
+        if: matrix.os == 'ubuntu-latest' && python-version == '3.12'
         uses: codecov/codecov-action@v4.2.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
