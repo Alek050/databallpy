@@ -1,6 +1,6 @@
 name: Linters and Tests
 
-on
+on:
   push:
     branches:
       - '*'  # Push events to all branches'
