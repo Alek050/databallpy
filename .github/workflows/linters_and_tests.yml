@@ -1,6 +1,19 @@
-name: CI/CD workflow
+name: Linters and Tests
 
-on: [pull_request]
+on
+  push:
+    branches:
+      - '*'  # Push events to all branches'
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
 
 jobs:
   build-and-test:
@@ -50,15 +63,3 @@ jobs:
 
       - name: Test with pytest
         run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
-
-      - name: Build documentation (only on ubuntu-latest)
-        if: matrix.os == 'ubuntu-latest' && python-version == '3.12'
-        run: make documentation
-
-      - name: Upload coverage reports to Codecov
-        if: matrix.os == 'ubuntu-latest' && python-version == '3.12'
-        uses: codecov/codecov-action@v4.2.0
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-

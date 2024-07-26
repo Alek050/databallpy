@@ -4,7 +4,7 @@
 
 Tracking data contains the positions of all players and the ball on the pitch at a certain frequency, usually between 10 and 25 Hz. For matches, the most common way to collect the data is via cameras. Video footage is analyzed by deep learning models that track the players and the ball. Other options for obtaining the data are from LPM (local positioning systems), GPS (global positioning systems), or radio based devices. The data is often provided in text-like files (`.txt`, `.dat`). In this instance, we will utilize a Tracab file, although the majority of tracking data files exhibit similar formats. The unprocessed tracking data will typically resemble the following example:
 
-```txt
+```
 1802276:-1,1,-1,12,-3590,0.00;1,2,15,553,-1529,0.54;3,3,2,-1651,3487,0.03;
 0,4,10,-234,-1661,0.32;1,5,8,838,588,0.28;1,6,37,2339,496,0.00;0,7,9,-27,-944,
 0.00;3,8,0,317,-1222,0.96;0,9,33,-1607,-1,9,0.34;0,10,18,-669,-618,0.09;0,11,

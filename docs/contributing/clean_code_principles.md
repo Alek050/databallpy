@@ -3,9 +3,9 @@
 Sections like this are often skipped by readers, mostly because it is boring. But please do not skip this part as it is extremely important. I will try to make it as interesting as short as possible. 
 
 ```{image} ../static/WhenIWroteThisCode.png
-alt: When I wrote this code
-width: 400px
-align: center
+:alt: When I wrote this code
+:width: 400px
+:align: center
 ```
 
 Whenever you are working on code yourself, on small projects, we tend to write down everthing quick for that specific problem. Most of the time this will lead to buggy, hard coded, ugly, and inefficient code. When working on this code, you still know what everything means and it is not really a big problem. However, it will be when you are working together on bigger projects like DataBallPy. Others will not be able to read the code, optimize it, make changes, and build new features on top of it. However, this is exactly what we want; to improve the package. The most important thing to make this possible is to write clean code, simple as that. Or is it? Whole books have been written on the subject, writing code is like an art if done right. It is readable, efficient, scalable, clear, and short. Below are listed a few points to focus on with regard to writing clean code to get you started. Also try to read other people's code, this will make you appreciate clean code and realise the importance of it. Reading someones bad written code is one of the most frustating things I can think of. So lets get started with the list:
@@ -15,9 +15,9 @@ Whenever you are working on code yourself, on small projects, we tend to write d
 3. **Make Small Functions:** Breaking down complex tasks into smaller functions with well-defined responsibilities enhances code modularity and readability. Each function should perform a single task or a cohesive set of related tasks. This approach not only improves code organization but also enables easier testing, debugging, and reusability. To optimize the efficiency of your code, try to avoid loops as much as possible. In line with this, prevent nesting functions too deep. This will make the code hard to read and understand. 
 
 ```{image} https://remote-tools-images.s3.amazonaws.com/programmer-memes/10.jpg
-alt: Unlimitted nesting
-width: 800px
-align: center
+:alt: Unlimitted nesting
+:width: 800px
+:align: center
 ```
 
 4. **Add Docstrings and Comments:** Including clear and concise docstrings for functions and classes, along with comments throughout the code, helps to document the purpose, behavior, and usage of various components. Docstrings provide a reference for other developers and promote self-documenting code, while comments explain the rationale behind specific implementation choices or highlight important details that may not be immediately apparent. Maintainers will often ask for clear documentation and comments since the written code is less clear to them than to the contributor. This will also avoid the situation that happened in the image above since, in theory, everything in the code is cristal clear.
