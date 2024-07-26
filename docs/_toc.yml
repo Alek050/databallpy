@@ -12,6 +12,7 @@ parts:
       - file: getting_started/loading_in_a_match_page
       - file: getting_started/preprocessing_options
       - file: getting_started/visualizations_page
+      - file: getting_started/synchronisation_page
   - caption: Features
     chapters:
       - file: features/pressure_page
