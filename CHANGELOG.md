@@ -71,7 +71,7 @@
 - Added logging possibilities
 - Refactor of file structure and folder naming
 
-## V0.4.4 (DATE)
+## V0.5.0 (DATE)
 
 - Added event data parser for SciSports
 - Added expected threat model from Karun Singh to on ball events
@@ -80,6 +80,8 @@
 - Added function to obtain acceleration
 - Improved standardization and performance of synchronisation
 - Made save match clip more robust
+- Added function to calculate covered distances in different velocity and acceleration zones
+- Updated the documentation
 
 
 
