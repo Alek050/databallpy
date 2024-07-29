@@ -12,7 +12,9 @@ exclude_patterns: [_build, Thumbs.db, .DS_Store, .env, "**.ipynb_checkpoints",]
 execute:
   execute_notebooks: auto
   exclude_patterns: ["features/*models*"]
-  timeout: 600
+  timeout: 30
+  allow_errors: false
+  nb_output_stderr: error
 
 # Define the name of the latex output file for PDF builds
 latex:

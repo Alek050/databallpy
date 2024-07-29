@@ -1,0 +1,65 @@
+name: Linters and Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop  
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+  pull_request:
+    branches:
+      - '*' # Pull requests to all branches'
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-13, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: setup
+        uses: actions/checkout@v4
+      
+      - name: setup ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      
+      - name: Load cached venv
+        id: cached-pip-wheels
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install packages
+        run: poetry install --with docs,developing
+
+      - name: Linters
+        run: |
+          poetry run flake8 tests/ databallpy/
+          poetry run isort --check-only --filter-files tests/ databallpy/
+          poetry run black --check tests/ databallpy/ 
+
+      - name: Test with pytest
+        run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc

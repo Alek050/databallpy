@@ -1,0 +1,42 @@
+on:
+  pull_request:
+    branches:
+      - '*' # Pull requests to all branches'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: setup
+        uses: actions/checkout@v4
+      
+      - name: setup ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install packages
+        run: poetry install --with docs,developing
+
+      - name: Build documentation (only on ubuntu-latest)
+        run: make documentation
+
+      - name: Create coverage report
+        run: make test
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+
