@@ -39,7 +39,8 @@ def get_match(
     check_quality: bool = True,
     verbose: bool = True,
 ) -> Match:
-    """Function to get all information of a match given its datasources
+    """
+    Function to get all information of a match given its datasources
 
     Args:
         tracking_data_loc (str, optional): location of the tracking data.
@@ -50,21 +51,16 @@ def get_match(
         event_metadata_loc (str, optional): location of the metadata of the event data.
             Defaults to None.
         tracking_data_provider (str, optional): provider of the tracking data. Defaults
-            to None. Supported providers are:
-                - Tracab
-                - Metrica
-                - Inmotio
+            to None. Supported providers are [tracab, metrica, inmotio]
         event_data_provider (str, optional): provider of the event data. Defaults to
-            None. Supported providers are:
-                - Opta
-                - Metrica
-                - Instat
-                - SciSports
+            None. Supported providers are [opta, metrica, instat, scisports]
         check_quality (bool, optional): whether you want to check the quality of the
             tracking data. Defaults to True
         verbose (bool, optional): whether or not to print info about progress
+    
     Returns:
         (Match): a Match object with all information available of the match.
+
     """
     try:
         LOGGER.info(

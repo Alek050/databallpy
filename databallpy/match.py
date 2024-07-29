@@ -60,7 +60,8 @@ def requires_event_data(func):
 
 @dataclass
 class Match:
-    """This is the match class. It contains all information of the match and has
+    """
+    This is the match class. It contains all information of the match and has
     some simple functions to easily obtain information about the match.
 
     Args:
@@ -87,25 +88,6 @@ class Match:
         pass_events (dict): A dictionary with all instances of pass events.
         allow_synchronise_tracking_and_event_data (bool): If True, the tracking and
         event data can be synchronised. If False, it can not. Default = False.
-
-    Iargs:
-        name (str): The home and away team name and score: "nameH 3 - 1 nameA {date}".
-        home_players_column_ids (list): All column ids of the tracking data that refer
-                                        to information about the home team players.
-        away_players_column_ids (list): All column ids of the tracking data that refer
-                                        to information about the away team players.
-        preprocessing_status (dict): A string with the status of the preprocessing.
-        shots_df (pd.DataFrame): A dataframe with all info of shots in the match.
-        dribbles_df (pd.DataFrame): A dataframe with all info of dribbles in the match.
-        passes_df (pd.DataFrame): A dataframe with all info of passes in the match.
-
-
-    Funcs
-        player_column_id_to_full_name: Simple function to get the full name of a player
-                                       from the column id
-        synchronise_tracking_and_event_data: Synchronises the tracking and event data
-        save_match: Saves the match to a pickle file.
-        copy: Creates a copy of the match object.
     """
 
     tracking_data: pd.DataFrame
@@ -150,18 +132,44 @@ class Match:
 
     @property
     def tracking_timestamp_is_precise(self) -> bool:
+        """Function to check if the tracking timestamps are precise or not
+        Timesamp is considered precise if the start of the match is not exactly
+        at the start of the initial match time (e.g. 20:00:00), but at the
+        actual start of the match (e.g. 20:00:03.2378). 
+
+        Returns:
+            bool: True if the tracking timestamps are precise, False otherwise
+        """
         return self._tracking_timestamp_is_precise
 
     @property
     def event_timestamp_is_precise(self) -> bool:
+        """Function to check if the event timestamps are precise or not
+        Timesamp is considered precise if the start of the match is not exactly
+        at the start of the initial match time (e.g. 20:00:00), but at the
+        actual start of the match (e.g. 20:00:03.2378). 
+
+        Returns:
+            bool: True if the event timestamps are precise, False otherwise
+        """
         return self._event_timestamp_is_precise
 
     @property
     def is_synchronised(self) -> bool:
+        """Function to check if the tracking and event data are synchronised
+
+        Returns:
+            bool: True if the tracking and event data are synchronised, False otherwise
+        """
         return self._is_synchronised
 
     @property
     def date(self) -> pd.Timestamp | None:
+        """Function to get the date of the match
+
+        Returns:
+            pd.Timestamp | None: The date of the match
+        """
         if "start_datetime_td" in self.periods.columns:
             return self.periods.loc[
                 self.periods["period_id"] == 1, "start_datetime_td"
@@ -175,6 +183,11 @@ class Match:
 
     @property
     def name(self) -> str:
+        """Function to get the name of the match
+
+        Returns:
+            str: The name of the match
+        """
         home_text = f"{self.home_team_name} {self.home_score}"
         away_text = f"{self.away_score} {self.away_team_name}"
 
@@ -186,6 +199,12 @@ class Match:
 
     @requires_tracking_data
     def home_players_column_ids(self) -> list[str]:
+        """Function to get all column ids of the tracking data that refer to information
+        about the home team players
+
+        Returns:
+            list[str]: All column ids of the home team players
+        """
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -194,6 +213,12 @@ class Match:
 
     @requires_tracking_data
     def away_players_column_ids(self) -> list[str]:
+        """Function to get all column ids of the tracking data that refer to information
+        about the away team players
+
+        Returns:
+            list[str]: All column ids of the away team players
+        """
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -705,8 +730,12 @@ class Match:
         else:
             return False
 
-    def copy(self):
-        """Function to return a copy of the current match object"""
+    def copy(self) -> "Match":
+        """Function to create a copy of the match object
+
+        Returns:
+            Match: copy of the match object
+        """
         allow_sync = self.allow_synchronise_tracking_and_event_data
         return Match(
             tracking_data=self.tracking_data.copy(),

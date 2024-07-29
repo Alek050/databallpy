@@ -53,7 +53,7 @@ def plot_soccer_pitch(
 
     Args:
         field_dimen (tuple, optional): x and y length of pitch in meters. Defaults to
-        (106.0, 68.0).
+            (106.0, 68.0).
         pitch_color (str, optional): Color of the pitch. Defaults to "mediumseagreen".
         linewidth (int, optional): Width of the lines on the pitch. Defaults to 2.
         markersize (int, optional): Size of the dots on the pitch. Defaults to 20.
@@ -272,7 +272,7 @@ def plot_events(
             all events are plotted. Defaults to [].
         outcome (int, optional): Filter if the event should have a succesfull
             outcome (1) or not (0), if None, all outcomes are included.
-                Defaults to None.
+            Defaults to None.
         player_ids (list, optional): Filter for what players to include, if empty,
             all players are included. Defaults to [].
         team_id (int | str, optional): Filter for what team to include, if None,
