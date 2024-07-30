@@ -25,6 +25,12 @@ parts:
       - file: features/xT_models
       - file: features/space_occupation
         title: Space Occupation
+  - caption: API Documentation
+    chapters:
+      - file: api_docs/match_api
+      - file: api_docs/preprocessing_api
+      - file: api_docs/visualize_api
+      - file: api_docs/features_api
   - caption: Contributing
     chapters:
       - file: contributing/quick_overview

@@ -32,3 +32,13 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+  extra_footer: '<p>DataBallPy: Load, Synchronize, and Analyze your soccer data</p>'
+
+# Sphinx configuration
+sphinx:
+  extra_extensions:
+  - 'sphinx.ext.autodoc'
+  - 'sphinx.ext.napoleon'
+  - 'sphinx.ext.viewcode'
+  config:
+    add_module_names: False

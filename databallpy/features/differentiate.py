@@ -40,7 +40,7 @@ def add_acceleration(
 
     Raises:
         ValueError: if filter_type is not one of `moving_average`, `savitzky_golay`,
-        or None.
+            or None.
         ValueError: if velocity was not found in the DataFrame for the input_columns.
 
     Note:
@@ -115,7 +115,7 @@ def add_velocity(
 
     Raises:
         ValueError: if filter_type is not one of `moving_average`, `savitzky_golay`,
-        or None.
+            or None.
 
     Note:
         The function will delete the columns in input_columns with the velocity if
