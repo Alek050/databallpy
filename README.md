@@ -105,9 +105,7 @@ See [the documentation][docs-url] of the `Match` object and the [example usage][
 
 ### Synchronization of tracking and event data
 
-```{note}
 See our elaborate [synchronisation page][synchronisation-url] in the documentation for more information!
-```
 
 Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, you can sync the fist frame with the kick-off pass. Now you can sync the other events with the tracking data based on the time difference between the event and the kick off pass. If you do this, how get something like this:
 
