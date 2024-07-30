@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.4.3"
+version = "0.5.0"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event and tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
@@ -8,7 +8,6 @@ authors = [
 ]
 maintainers = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
-    "Daan Grob <daaniogrob@gmail.com>",
 ]
 license = "MIT"
 readme = "README.md"

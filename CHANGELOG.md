@@ -71,7 +71,7 @@
 - Added logging possibilities
 - Refactor of file structure and folder naming
 
-## V0.5.0 (DATE)
+## V0.5.0 (30/07/2024)
 
 - Added event data parser for SciSports
 - Added expected threat model from Karun Singh to on ball events
