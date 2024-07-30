@@ -135,7 +135,7 @@ class Match:
         """Function to check if the tracking timestamps are precise or not
         Timesamp is considered precise if the start of the match is not exactly
         at the start of the initial match time (e.g. 20:00:00), but at the
-        actual start of the match (e.g. 20:00:03.2378). 
+        actual start of the match (e.g. 20:00:03.2378).
 
         Returns:
             bool: True if the tracking timestamps are precise, False otherwise
@@ -147,7 +147,7 @@ class Match:
         """Function to check if the event timestamps are precise or not
         Timesamp is considered precise if the start of the match is not exactly
         at the start of the initial match time (e.g. 20:00:00), but at the
-        actual start of the match (e.g. 20:00:03.2378). 
+        actual start of the match (e.g. 20:00:03.2378).
 
         Returns:
             bool: True if the event timestamps are precise, False otherwise

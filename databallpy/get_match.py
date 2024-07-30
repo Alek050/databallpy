@@ -57,7 +57,7 @@ def get_match(
         check_quality (bool, optional): whether you want to check the quality of the
             tracking data. Defaults to True
         verbose (bool, optional): whether or not to print info about progress
-    
+
     Returns:
         (Match): a Match object with all information available of the match.
 
