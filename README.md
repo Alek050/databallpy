@@ -9,8 +9,8 @@
 [python-url]: https://pypi.org/project/databallpy/
 [docs-image]: https://readthedocs.org/projects/databallpy/badge/?version=latest
 [docs-url]: https://databallpy.readthedocs.io/en/latest/?badge=latest
-[cicd-image]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml/badge.svg
-[cicd-url]: https://github.com/Alek050/databallpy/actions/workflows/cicd_main.yml
+[cicd-image]: https://github.com/Alek050/databallpy/actions/workflows/linters_and_tests.yml/badge.svg
+[cicd-url]: https://github.com/Alek050/databallpy/actions/workflows/linters_and_tests.yml
 [codecov-image]: https://codecov.io/gh/Alek050/databallpy/branch/develop/graph/badge.svg?token=MBI3380I0H
 [codecov-url]: https://codecov.io/gh/Alek050/databallpy
 
