@@ -183,12 +183,14 @@ class TestSciSportsParser(unittest.TestCase):
             pitch_size=(106.0, 68.0),
             _xt=-1.0,
             player_id=201,
+            jersey=22,
             shot_outcome="goal",
             y_target=np.nan,
             z_target=np.nan,
             body_part="left_foot",
         )
-        result = _get_shot_event(event, 14)
+        players = pd.DataFrame({"id": [201], "shirt_num": [22]})
+        result = _get_shot_event(event, 14, players=players)
         self.assertEqual(result, expected_shot)
 
     def test_get_pass_event(self):
@@ -250,13 +252,15 @@ class TestSciSportsParser(unittest.TestCase):
             _xt=-1.0,
             outcome="unsuccessful",
             player_id=102,
+            jersey=22,
             receiver_id=MISSING_INT,
             end_x=-35.1,
             end_y=-20.8,
             pass_type="cross",
             set_piece="no_set_piece",
         )
-        result = _get_pass_event(event, 13)
+        players = pd.DataFrame({"id": [102], "shirt_num": [22]})
+        result = _get_pass_event(event, 13, players=players)
         self.assertEqual(result, expected_pass)
 
     def test_get_dribble_event(self):
@@ -317,11 +321,12 @@ class TestSciSportsParser(unittest.TestCase):
             pitch_size=(106.0, 68.0),
             _xt=-1.0,
             player_id=102,
+            jersey=32,
             related_event_id=MISSING_INT,
             duel_type="offensive",
             outcome=True,
             has_opponent=False,
         )
-
-        result = _get_dribble_event(event, 12)
+        players = pd.DataFrame({"id": [102], "shirt_num": [32]})
+        result = _get_dribble_event(event, 12, players)
         self.assertEqual(result, expected_dribble)

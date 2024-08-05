@@ -45,6 +45,7 @@ class DribbleEvent(BaseOnBallEvent):
     """
 
     player_id: int
+    jersey: int
     related_event_id: int
     duel_type: str
     outcome: bool
@@ -62,6 +63,7 @@ class DribbleEvent(BaseOnBallEvent):
             result = [
                 super().__eq__(other),
                 self.player_id == other.player_id,
+                self.jersey == other.jersey,
                 self.related_event_id == other.related_event_id,
                 self.duel_type == other.duel_type
                 if not pd.isnull(self.duel_type)
@@ -85,6 +87,7 @@ class DribbleEvent(BaseOnBallEvent):
     def copy(self):
         return DribbleEvent(
             event_id=self.event_id,
+            jersey=self.jersey,
             period_id=self.period_id,
             minutes=self.minutes,
             seconds=self.seconds,
@@ -118,3 +121,6 @@ class DribbleEvent(BaseOnBallEvent):
             )
         if not isinstance(self.outcome, (bool, type(None))):
             raise TypeError(f"outcome should be bool, got {type(self.outcome)} instead")
+
+        if not isinstance(self.jersey, (int, np.integer)):
+            raise TypeError(f"jersey should be int, got {type(self.jersey)} instead")

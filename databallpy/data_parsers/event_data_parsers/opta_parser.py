@@ -216,6 +216,9 @@ def load_opta_event_data(
             raise ValueError(message)
 
     metadata = _load_metadata(f7_loc, pitch_dimensions=pitch_dimensions)
+    all_players = pd.concat(
+        [metadata.home_players, metadata.away_players], ignore_index=True
+    )
     LOGGER.info("Successfully loaded opta metadata.")
     if f24_loc != "pass":
         event_data, databallpy_events = _load_event_data(
@@ -223,6 +226,7 @@ def load_opta_event_data(
             metadata.country,
             metadata.away_team_id,
             pitch_dimensions=pitch_dimensions,
+            players=all_players,
         )
         LOGGER.info("Successfully loaded opta event data")
 
@@ -456,6 +460,7 @@ def _load_event_data(
     f24_loc: str,
     country: str,
     away_team_id: int,
+    players: pd.DataFrame,
     pitch_dimensions: list = [106.0, 68.0],
 ) -> tuple[pd.DataFrame, dict[str, dict[str | int, BaseOnBallEvent]]]:
     """Function to load the f27 .xml, the events of the match.
@@ -465,8 +470,10 @@ def _load_event_data(
         f24_loc (str): location of the f24.xml file
         country (str): country of the match
         away_team_id (int): id of the away team
+        players (pd.DataFrame): dataframe with player information.
         pitch_dimensions (list, optional): dimensions of the pitch.
-                                           Defaults to [106.0, 68.0].
+            Defaults to [106.0, 68.0].
+
 
     Returns:
         pd.DataFrame: all events of the match in a pd dataframe
@@ -547,7 +554,7 @@ def _load_event_data(
 
         if event_name in ["pass", "offside pass"]:
             pass_events[int(event.attrs["id"])] = _make_pass_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions
+                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
             )
 
         if event_name in [
@@ -559,12 +566,12 @@ def _load_event_data(
             "own goal",
         ]:
             shot_events[int(event.attrs["id"])] = _make_shot_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions
+                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
             )
 
         if event_name == "take on":
             dribble_events[int(event.attrs["id"])] = _make_dribble_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions
+                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
             )
 
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
@@ -591,6 +598,7 @@ def _load_event_data(
 def _make_pass_instance(
     event: bs4.element.Tag,
     away_team_id: int,
+    players: pd.DataFrame,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
 ) -> PassEvent:
     """Function to create a pass class based on the qualifiers of the event
@@ -598,8 +606,10 @@ def _make_pass_instance(
     Args:
         event (bs4.element.Tag): pass event from the f24.xml
         away_team_id (int): id of the away team
+        players (pd.DataFrame, optional): dataframe with player information.
         pitch_dimensions (list, optional): size of the pitch in x and y direction.
             Defaults to [106.0, 68.0].
+
 
     Returns:
         PassEvent: Returns a PassEvent instance
@@ -682,6 +692,9 @@ def _make_pass_instance(
         outcome=outcome,
         team_id=int(event.attrs["team_id"]),
         player_id=int(event.attrs["player_id"]),
+        jersey=players.loc[
+            players["id"] == int(event.attrs["player_id"]), "shirt_num"
+        ].iloc[0],
         end_x=x_end,
         end_y=y_end,
         pass_type=pass_type,
@@ -692,6 +705,7 @@ def _make_pass_instance(
 def _make_shot_event_instance(
     event: bs4.element.Tag,
     away_team_id: int,
+    players: pd.DataFrame,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
 ):
     """Function to create a shot class based on the qualifiers of the event
@@ -699,8 +713,10 @@ def _make_shot_event_instance(
     Args:
         event (bs4.element.Tag): shot event from the f24.xml
         away_team_id (int): id of the away team
+        players (pd.DataFrame): dataframe with player information.
         pitch_dimensions (list, optional): size of the pitch in x and y direction.
         Defaults to [106.0, 68.0].
+
 
     Returns:
         dict: Returns a dict with the shot data. The key is the id of the event and
@@ -787,6 +803,9 @@ def _make_shot_event_instance(
 
     return ShotEvent(
         player_id=int(event.attrs["player_id"]),
+        jersey=players.loc[
+            players["id"] == int(event.attrs["player_id"]), "shirt_num"
+        ].iloc[0],
         event_id=int(event.attrs["id"]),
         period_id=int(event.attrs["period_id"]),
         minutes=int(event.attrs["min"]),
@@ -812,6 +831,7 @@ def _make_shot_event_instance(
 def _make_dribble_event_instance(
     event: bs4.element.Tag,
     away_team_id: int,
+    players: pd.DataFrame,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
 ) -> DribbleEvent:
     """Function to create a dribble class based on the qualifiers of the event
@@ -819,6 +839,7 @@ def _make_dribble_event_instance(
     Args:
         event (bs4.element.Tag): dribble event from the f24.xml
         away_team_id (int): id of the away team
+        players (pd.DataFrame): dataframe with player information.
         pitch_dimensions (list, optional): pitch dimensions in x and y direction.
             Defaults to [106.0, 68.0].
 
@@ -853,6 +874,9 @@ def _make_dribble_event_instance(
 
     dribble_event = DribbleEvent(
         player_id=int(event.attrs["player_id"]),
+        jersey=players.loc[
+            players["id"] == int(event.attrs["player_id"]), "shirt_num"
+        ].iloc[0],
         event_id=int(event.attrs["id"]),
         period_id=int(event.attrs["period_id"]),
         minutes=int(event.attrs["min"]),

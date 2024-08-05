@@ -67,6 +67,7 @@ class PassEvent(BaseOnBallEvent):
 
     outcome: str
     player_id: int
+    jersey: int
     end_x: float
     end_y: float
     pass_type: str
@@ -144,6 +145,7 @@ class PassEvent(BaseOnBallEvent):
             team_id=self.team_id,
             outcome=self.outcome,
             player_id=self.player_id,
+            jersey=self.jersey,
             end_x=self.end_x,
             end_y=self.end_y,
             pass_length=self.pass_length,
@@ -166,6 +168,7 @@ class PassEvent(BaseOnBallEvent):
             self.team_id == other.team_id,
             self.outcome == other.outcome,
             self.player_id == other.player_id,
+            self.jersey == other.jersey,
             round(self.end_x, 4) == round(other.end_x, 4)
             if not pd.isnull(self.end_x)
             else pd.isnull(other.end_x),
@@ -225,6 +228,9 @@ class PassEvent(BaseOnBallEvent):
 
         if not isinstance(self.player_id, (int, np.integer, str)):
             raise TypeError(f"player_id should be int, not {type(self.player_id)}")
+
+        if not isinstance(self.jersey, (int, np.integer)):
+            raise TypeError(f"jersey should be int, got {type(self.jersey)} instead")
 
         values = [
             self.end_x,

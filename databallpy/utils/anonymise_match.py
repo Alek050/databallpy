@@ -255,12 +255,13 @@ def anonymise_players(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataF
             )
 
         # update databallpy events
-        for event in (
-            list(match.shot_events.values())
-            + list(match.pass_events.values())
-            + list(match.dribble_events.values())
-        ):
+        for event in match.all_events.values():
             event.player_id = player_id_map[event.player_id]
+
+            if event.team_side == "home":
+                event.jersey = home_players_jersey_map[event.jersey]
+            else:
+                event.jersey = away_players_jersey_map[event.jersey]
 
         if match._passes_df is not None:
             match.passes_df["player_id"] = match.passes_df["player_id"].map(

@@ -39,6 +39,7 @@ class TestBaseOnBallEvent(unittest.TestCase):
             end_x=20.0,
             end_y=21.0,
             player_id=1,
+            jersey=10,
             pass_type="not_specified",
             set_piece="penalty",
             pass_length=10.0,

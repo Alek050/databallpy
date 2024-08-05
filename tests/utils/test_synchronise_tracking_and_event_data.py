@@ -4,15 +4,29 @@ import unittest
 import numpy as np
 import pandas as pd
 
+from databallpy.features.angle import get_smallest_angle
 from databallpy.get_match import get_match
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
+    _validate_cost,
+    _validate_sigmoid_kwargs,
     align_event_data_datetime,
+    base_general_cost_ball_event,
+    base_pass_cost_function,
+    base_shot_cost_function,
+    combine_cost_functions,
     create_smart_batches,
+    get_ball_acceleration_cost,
+    get_ball_goal_angle_cost,
+    get_distance_ball_event_cost,
+    get_distance_ball_player_cost,
+    get_player_ball_distance_increase_cost,
+    get_time_difference_cost,
     pre_compute_synchronisation_variables,
+    synchronise_tracking_and_event_data,
 )
-from databallpy.utils.utils import MISSING_INT
+from databallpy.utils.utils import MISSING_INT, sigmoid
 from tests.expected_outcomes import (
     RES_SIM_MAT,
     RES_SIM_MAT_MISSING_PLAYER,
@@ -181,6 +195,14 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         match_to_sync.tracking_data.loc[:, "ball_status"] = "dead"
         with self.assertRaises(IndexError):
             match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
+    def test_synchonise_tracking_and_event_data_error(self):
+        with self.assertRaises(KeyError):
+            match = self.match_to_sync.copy()
+            match.tracking_data.drop(columns=match.tracking_data.columns, inplace=True)
+            synchronise_tracking_and_event_data(
+                match.tracking_data, match.event_data, match.all_events, verbose=False
+            )
 
     def test_synchronise_tracking_and_event_data_non_aligned_timestamps(self):
         expected_event_data = self.match_to_sync.event_data.copy()
@@ -376,9 +398,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            home_players=self.match_to_sync.home_players,
-            away_players=self.match_to_sync.away_players,
-            home_team_id=self.match_to_sync.home_team_id,
+            all_events=self.match_to_sync.all_events,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
@@ -405,9 +425,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            home_players=self.match_to_sync.home_players,
-            away_players=self.match_to_sync.away_players,
-            home_team_id=self.match_to_sync.home_team_id,
+            all_events=self.match_to_sync.all_events,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05, atol=1e-05)
 
@@ -434,9 +452,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             res = _create_sim_mat(
                 tracking_batch=tracking_data,
                 event_batch=event_data,
-                home_players=self.match_to_sync.home_players,
-                away_players=self.match_to_sync.away_players,
-                home_team_id=self.match_to_sync.home_team_id,
+                all_events=self.match_to_sync.all_events,
             )
             np.testing.assert_allclose(expected_res, res, rtol=1e-05)
 
@@ -568,3 +584,249 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_data, tracking_data, offset=1.0
         )
         pd.testing.assert_frame_equal(res_event_data, expected_event_data)
+
+    def test_get_time_difference_cost(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)  # pass
+
+        time_diff = (
+            (tracking_data["datetime"] - event.datetime).dt.total_seconds().values
+        )
+        expected_res = sigmoid(np.abs(time_diff), e=5)
+        res = get_time_difference_cost(tracking_data, event)
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        res2 = get_time_difference_cost(tracking_data, event, time_diff=time_diff, e=2)
+        expected_res2 = sigmoid(np.abs(time_diff), e=2)
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_get_distance_ball_event_cost(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)
+        ball_event_distance = np.sqrt(
+            (tracking_data["ball_x"] - event.start_x) ** 2
+            + (tracking_data["ball_y"] - event.start_y) ** 2
+        )
+
+        res = get_distance_ball_event_cost(tracking_data, event)
+        expected_res = sigmoid(ball_event_distance, d=5, e=6)
+
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        res2 = get_distance_ball_event_cost(
+            tracking_data, event, ball_event_distance=ball_event_distance + 2, d=2, e=3
+        )
+        expected_res2 = sigmoid(ball_event_distance + 2, d=2, e=3)
+
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_get_distance_ball_player_cost(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)
+        event.jersey = 2
+        event.team_side = "home"
+        ball_player_distance = np.sqrt(
+            (tracking_data["ball_x"] - tracking_data["home_2_x"]) ** 2
+            + (tracking_data["ball_y"] - tracking_data["home_2_y"]) ** 2
+        )
+
+        res = get_distance_ball_player_cost(tracking_data, event)
+        expected_res = sigmoid(ball_player_distance, d=5, e=2.5)
+
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        res2 = get_distance_ball_player_cost(tracking_data, event, d=2, e=3)
+        expected_res2 = sigmoid(ball_player_distance + 2, d=2, e=3)
+
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_get_ball_acceleration_cost(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)
+        ball_acceleration = tracking_data["ball_acceleration"]
+
+        res = get_ball_acceleration_cost(tracking_data, event)
+        expected_res = sigmoid(-ball_acceleration, d=0.2, e=-25.0)
+
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        res2 = get_ball_acceleration_cost(tracking_data, event, d=2, e=3)
+        expected_res2 = sigmoid(ball_acceleration, d=2, e=3)
+
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_get_player_ball_distance_increase_cost(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)
+        event.jersey = 2
+        event.team_side = "home"
+        player_ball_diff = np.sqrt(
+            (tracking_data["home_2_x"] - tracking_data["ball_x"]) ** 2
+            + (tracking_data["home_2_y"] - tracking_data["ball_y"]) ** 2
+        )
+
+        res = get_player_ball_distance_increase_cost(tracking_data, event)
+        expected_res = sigmoid(np.gradient(player_ball_diff), d=-8.0)
+
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        res2 = get_player_ball_distance_increase_cost(tracking_data, event, d=2)
+        expected_res2 = sigmoid(np.gradient(player_ball_diff), d=2)
+
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_get_ball_goal_angle_cost(self):
+        tracking_data = pd.DataFrame(
+            {
+                "ball_x": [-10, -25, -40],
+                "ball_y": [-15, -10, -5],
+            }
+        )
+        event = self.match_to_sync.get_event(2499594225)
+        event.jersey = 2
+        event.team_side = "away"
+
+        goal_loc = [-event.pitch_size[0] / 2, 0]
+
+        ball_moving_vectors = np.array(
+            [
+                [-15, -5],
+                [-15, -5],
+            ]
+        )
+
+        ball_goal_vectors = np.array(
+            [
+                [goal_loc[0] - -10, -15],
+                [goal_loc[0] - -25, -10],
+            ]
+        )
+        goal_angle = get_smallest_angle(
+            ball_moving_vectors,
+            ball_goal_vectors,
+            angle_format="radian",
+        )
+
+        goal_angle = np.concatenate((goal_angle, [goal_angle[-1]]))
+        res = get_ball_goal_angle_cost(tracking_data, event)
+        expected_res = sigmoid(goal_angle, d=6, e=0.2 * np.pi)
+
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        tracking_data["goal_angle_home_team"] = goal_angle
+        tracking_data["goal_angle_away_team"] = goal_angle + np.pi
+
+        res2 = get_ball_goal_angle_cost(tracking_data, event, d=2, e=3)
+        expected_res2 = sigmoid(goal_angle + np.pi, d=2, e=3)
+
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_base_general_cost_ball_event(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)
+
+        res = base_general_cost_ball_event(tracking_data, event)
+        expected_res = combine_cost_functions(
+            [
+                get_time_difference_cost(tracking_data, event),
+                get_distance_ball_event_cost(tracking_data, event),
+                get_distance_ball_player_cost(tracking_data, event),
+            ]
+        )
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+    def test_base_pass_cost_function(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)
+
+        res = base_pass_cost_function(tracking_data, event)
+
+        expected_res = combine_cost_functions(
+            [
+                get_time_difference_cost(tracking_data, event),
+                get_distance_ball_event_cost(tracking_data, event),
+                get_distance_ball_player_cost(tracking_data, event),
+                get_ball_acceleration_cost(tracking_data, event),
+                get_player_ball_distance_increase_cost(tracking_data, event),
+            ]
+        )
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+    def test_base_shot_cost_function(self):
+        tracking_data = self.match_to_sync.tracking_data.copy()
+        event = self.match_to_sync.get_event(2499594225)
+
+        res = base_shot_cost_function(tracking_data, event)
+
+        expected_res = combine_cost_functions(
+            [
+                get_time_difference_cost(tracking_data, event),
+                get_distance_ball_event_cost(tracking_data, event),
+                get_distance_ball_player_cost(tracking_data, event),
+                get_ball_acceleration_cost(tracking_data, event),
+                get_player_ball_distance_increase_cost(tracking_data, event),
+                get_ball_goal_angle_cost(tracking_data, event),
+            ]
+        )
+
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+    def test_combine_cost_functions(self):
+        cost_functions = [
+            [0.2, 0.3, np.nan, 0.4],
+            [0.1, np.nan, np.nan, 0.4],
+            [0.1, 0.2, np.nan, 0.4],
+        ]
+
+        res = combine_cost_functions(cost_functions)
+        expected_res = np.array([0.4 / 3, 0.25, 1.0, 0.4])
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+    def test_validate_cost(self):
+        cost = np.array([0.1, 0.2, 0.3, 0.4])
+        _validate_cost(cost, 4)
+
+        cost = [0.1, 0.2, 0.3, 0.4]
+        with self.assertRaises(TypeError):
+            _validate_cost(cost, 4)
+
+        cost = np.array([[0.1, 0.2, 0.3, 0.4]])
+        with self.assertRaises(ValueError):
+            _validate_cost(cost, 4)
+
+        cost = np.array([0.1, 0.2, 0.3, 0.4])
+        with self.assertRaises(ValueError):
+            _validate_cost(cost, 3)
+
+        cost = np.array([0.1, 0.2, 0.3, np.nan])
+        with self.assertRaises(ValueError):
+            _validate_cost(cost, 4)
+
+        cost = np.array([-0.1, 0.2, 0.3, 0.4])
+        with self.assertRaises(ValueError):
+            _validate_cost(cost, 4)
+
+        cost = np.array([0.1, 0.2, 0.3, 1.4])
+        with self.assertRaises(ValueError):
+            _validate_cost(cost, 4)
+
+    def test_validate_sigmoid_kwargs(self):
+        kwargs = {"d": 0.1, "e": 0.2}
+        _validate_sigmoid_kwargs(kwargs)
+
+        kwargs = {"d": 0.1}
+        _validate_sigmoid_kwargs(kwargs)
+
+        kwargs = {"e": 0.1}
+        _validate_sigmoid_kwargs(kwargs)
+
+        kwargs = {}
+        _validate_sigmoid_kwargs(kwargs)
+
+        kwargs = {"a": 3.0, "b": -4.0, "wrong": 2.0}
+        with self.assertRaises(ValueError):
+            _validate_sigmoid_kwargs(kwargs)
+
+        kwargs = {"d": 0.1, "e": "-0.2"}
+        with self.assertRaises(ValueError):
+            _validate_sigmoid_kwargs(kwargs)

@@ -182,6 +182,16 @@ class Match:
         return None
 
     @property
+    def all_events(self) -> dict[int | str, DribbleEvent | PassEvent | ShotEvent]:
+        """Function to get all events in the match
+
+        Returns:
+            dict[int | str, DribbleEvent | PassEvent | ShotEvent]: All events in the
+                match
+        """
+        return {**self.shot_events, **self.dribble_events, **self.pass_events}
+
+    @property
     def name(self) -> str:
         """Function to get the name of the match
 
@@ -594,6 +604,7 @@ class Match:
         n_batches: int | str = "smart",
         verbose: bool = True,
         offset: int = 1.0,
+        cost_functions: dict = {},
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
@@ -612,6 +623,14 @@ class Match:
                 because this way the event is synced to the last frame the ball is close
                 to a player. Which often corresponds with the event (pass and shots).
                 Defaults to 1.0.
+            cost_functions (dict, optional): Dictionary containing the cost functions
+                that are used to calculate the similarity between the tracking and event
+                data. The keys of the dictionary are the event types, the values are the
+                cost functions. The cost functions will be called with the tracking data
+                and the event as arguments. The cost functions should return an array
+                containing the cost of the similarity between the tracking data and the
+                event, scaled between 0 and 1. If no cost functions are passed, the
+                default cost functions are used.
 
         Currently works for the following databallpy events:
             'pass', 'shot', and 'dribble'
@@ -634,12 +653,13 @@ class Match:
             self.event_data.copy(), self.tracking_data, offset=offset
         )
 
+        all_events = self.shot_events | self.dribble_events | self.pass_events
+
         tracking_info, event_info = synchronise_tracking_and_event_data(
             tracking_data=self.tracking_data,
             event_data=changed_event_data,
-            home_players=self.home_players,
-            away_players=self.away_players,
-            home_team_id=self.home_team_id,
+            all_events=all_events,
+            cost_functions=cost_functions,
             n_batches=n_batches,
             verbose=verbose,
         )
@@ -854,7 +874,7 @@ def check_inputs_match_object(match: Match):
                     f"The ball status is alive for {round(minutes_alive, 2)}"
                     " in the full match. ball status is uses for synchronisation "
                     "check the quality of the data before synchronising event and "
-                    "tracking data.",
+                    "tracking data."
                 )
                 LOGGER.warning(message)
                 warnings.warn(

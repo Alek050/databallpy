@@ -65,8 +65,11 @@ class TestMetricaEventDataParser(unittest.TestCase):
         assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
 
     def test_get_databallpy_events(self):
+        players = pd.concat(
+            [MD_METRICA_ED.home_players, MD_METRICA_ED.away_players], ignore_index=True
+        )
         res_dbpe = _get_databallpy_events(
-            ED_METRICA, pitch_dimensions=(106, 68), home_team_id=1
+            ED_METRICA, pitch_dimensions=(106, 68), home_team_id=1, all_players=players
         )
         shot_events = res_dbpe["shot_events"]
         expected_shot_events = {}

@@ -90,6 +90,7 @@ class ShotEvent(BaseOnBallEvent):
     """
 
     player_id: int
+    jersey: int
     shot_outcome: str
     y_target: float = np.nan
     z_target: float = np.nan
@@ -331,6 +332,7 @@ class ShotEvent(BaseOnBallEvent):
         result = [
             super().__eq__(other),
             self.player_id == other.player_id,
+            self.jersey == other.jersey,
             self.shot_outcome == other.shot_outcome,
             round(self.y_target, 4) == round(other.y_target, 4)
             if not pd.isnull(self.y_target)
@@ -393,6 +395,7 @@ class ShotEvent(BaseOnBallEvent):
             _xt=self._xt,
             team_id=self.team_id,
             player_id=self.player_id,
+            jersey=self.jersey,
             shot_outcome=self.shot_outcome,
             y_target=self.y_target,
             z_target=self.z_target,
@@ -415,6 +418,9 @@ class ShotEvent(BaseOnBallEvent):
     def _check_datatypes(self):
         if not isinstance(self.player_id, (int, np.integer, str)):
             raise TypeError(f"player_id should be int, got {type(self.player_id)}")
+
+        if not isinstance(self.jersey, (int, np.integer)):
+            raise TypeError(f"jersey should be int, got {type(self.jersey)} instead")
         if not isinstance(self.shot_outcome, str):
             raise TypeError(
                 f"shot_outcome should be str, got {type(self.shot_outcome)}"
