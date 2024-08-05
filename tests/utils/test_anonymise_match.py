@@ -198,7 +198,11 @@ class TestAnonymiseMatch(unittest.TestCase):
         input_match._passes_df = pd.DataFrame({"player_id": [45849]})
         input_match._dribbles_df = pd.DataFrame({"player_id": [45849]})
         input_match._shots_df = pd.DataFrame({"player_id": [45849]})
-
+        for event in input_match.all_events.values():
+            if event.team_side == "home" and event.jersey == 2:
+                event.jersey = 34
+            elif event.team_side == "away" and event.jersey == 1:
+                event.jersey = 17
         res_match, res_keys = anonymise_players(input_match, input_keys)
 
         # test the update of the keys df
@@ -238,6 +242,9 @@ class TestAnonymiseMatch(unittest.TestCase):
         # test changes in tracking data column names
         for col in ["home_34_x", "away_17_y"]:
             assert col not in res_match.tracking_data.columns
+
+        for event in res_match.all_events.values():
+            assert event.jersey <= 2
 
     def test_rename_tracking_data_columns(self):
         jersey_map = {34: 1, 1: 2}

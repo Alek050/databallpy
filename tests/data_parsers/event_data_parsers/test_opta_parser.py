@@ -153,8 +153,11 @@ class TestOptaParser(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_result)
 
     def test_load_event_data(self):
+        players = pd.concat(
+            [MD_OPTA.home_players, MD_OPTA.away_players], ignore_index=True
+        )
         event_data, dbp_events = _load_event_data(
-            self.f24_loc, away_team_id=194, country="Netherlands"
+            self.f24_loc, away_team_id=194, country="Netherlands", players=players
         )
 
         # player name is added in other function later in the pipeline
@@ -207,6 +210,7 @@ class TestOptaParser(unittest.TestCase):
         expected_output = ShotEvent(
             player_id=223345,
             event_id=2529877443,
+            jersey=3,
             period_id=1,
             minutes=0,
             seconds=31,
@@ -226,7 +230,15 @@ class TestOptaParser(unittest.TestCase):
             created_oppertunity="regular_play",
             related_event_id=MISSING_INT,
         )
-        actual_output = _make_shot_event_instance(event, 111)
+        players = pd.DataFrame(
+            {
+                "id": [223345],
+                "full_name": ["Player 1"],
+                "team_id": [325],
+                "shirt_num": [3],
+            }
+        )
+        actual_output = _make_shot_event_instance(event, 111, players=players)
         self.assertEqual(actual_output, expected_output)
 
     def test_make_dribble_event_instance(self):
@@ -243,10 +255,21 @@ class TestOptaParser(unittest.TestCase):
         """
         event = BeautifulSoup(event_xml, "xml").find("Event")
 
-        dribble_event = _make_dribble_event_instance(event, away_team_id=325)
+        players = pd.DataFrame(
+            {
+                "id": [223345],
+                "full_name": ["Player 1"],
+                "team_id": [325],
+                "shirt_num": [3],
+            }
+        )
+        dribble_event = _make_dribble_event_instance(
+            event, away_team_id=325, players=players
+        )
 
         expected_dribble_event = DribbleEvent(
             player_id=223345,
+            jersey=3,
             event_id=2529877443,
             period_id=1,
             minutes=0,
@@ -276,7 +299,10 @@ class TestOptaParser(unittest.TestCase):
         </Event>"""
 
         event = BeautifulSoup(event_xml, "xml").find("Event")
-        pass_event = _make_pass_instance(event, away_team_id=1)
+        players = players = pd.DataFrame(
+            {"id": [1], "full_name": ["Player 1"], "team_id": [1], "shirt_num": [4]}
+        )
+        pass_event = _make_pass_instance(event, away_team_id=1, players=players)
 
         expected_pass_event = PassEvent(
             event_id=1,
@@ -292,6 +318,7 @@ class TestOptaParser(unittest.TestCase):
             team_id=1,
             outcome="results_in_shot",
             player_id=1,
+            jersey=4,
             end_x=np.nan,
             end_y=np.nan,
             pass_type="long_ball",

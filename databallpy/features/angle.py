@@ -5,14 +5,21 @@ from databallpy.utils.logging import create_logger
 LOGGER = create_logger(__name__)
 
 
-def get_smallest_angle(a_vec: np.ndarray, b_vec: np.ndarray, angle_format="radian"):
-    """
-    Function to calculate the smallest angle between 2 2D vectors.
+def get_smallest_angle(
+    a_vec: np.ndarray, b_vec: np.ndarray, angle_format="radian"
+) -> np.ndarray | float:
+    """Calculate the smallest angle between two vectors.
 
-    :param a: numpy array, first vector of shape (n, 2)
-    :param b: numpy array, second vector of shape (n, 2)
-    :param angle_format: str, how to return the angle {"degree", "radian"}
-    :returns: numpy array, the smallest angle of shape (n,)
+    Args:
+        a_vec (np.ndarray): A numpy array of shape (n, 2) or (2,). The first column is
+            the x-component and the second column is the y-component.
+        b_vec (np.ndarray): A numpy array of shape (n, 2) or (2,). The first column is
+            the x-component and the second column is the
+        angle_format (str, optional): The angle format, either `radian` or `degree`.
+            Defaults to "radian".
+
+    Returns:
+        np.ndarray | float: The smallest angle between the two vectors.
     """
 
     try:
@@ -21,7 +28,7 @@ def get_smallest_angle(a_vec: np.ndarray, b_vec: np.ndarray, angle_format="radia
                 input_list, np.ndarray
             ):
                 raise TypeError(
-                    f"Input must be a numpy array, not a {type(input_list)}"
+                    f"Input must be a numpy array, not {type(input_list).__name__}"
                 )
 
         a_vec = (
@@ -36,7 +43,10 @@ def get_smallest_angle(a_vec: np.ndarray, b_vec: np.ndarray, angle_format="radia
         )
 
         if not a_vec.shape == b_vec.shape:
-            raise ValueError("a and b should have the same shape")
+            raise ValueError(
+                "a and b should have the same shape a is "
+                f"{a_vec.shape} and b is {b_vec.shape}"
+            )
         if angle_format not in ["degree", "radian"]:
             raise ValueError(
                 f"input 'format' must be 'degree' or 'radian', not '{angle_format}'."

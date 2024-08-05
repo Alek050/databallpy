@@ -266,6 +266,9 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "SHOT": "shot",
         "DRIBBLE": "dribble",
     }
+    all_players = pd.concat(
+        [metadata.home_players, metadata.away_players], ignore_index=True
+    )
     shot_events = {}
     pass_events = {}
     dribble_events = {}
@@ -298,12 +301,12 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
             databallpy_event = databallpy_mapping[event["baseTypeName"]]
             event_data["databallpy_event"].append(databallpy_event)
             event_data["outcome"].append(event["resultId"])
-            if databallpy_event == "shot":
-                shot_events[id] = _get_shot_event(event, id)
-            elif databallpy_event == "pass":
-                pass_events[id] = _get_pass_event(event, id)
-            elif databallpy_event == "dribble":
-                dribble_events[id] = _get_dribble_event(event, id)
+            if databallpy_event == "shot" and not event["playerId"] == -1:
+                shot_events[id] = _get_shot_event(event, id, all_players)
+            elif databallpy_event == "pass" and not event["playerId"] == -1:
+                pass_events[id] = _get_pass_event(event, id, all_players)
+            elif databallpy_event == "dribble" and not event["playerId"] == -1:
+                dribble_events[id] = _get_dribble_event(event, id, all_players)
         else:
             event_data["databallpy_event"].append(None)
             event_data["outcome"].append(MISSING_INT)
@@ -341,12 +344,13 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     }
 
 
-def _get_shot_event(event: dict, id: int) -> ShotEvent:
+def _get_shot_event(event: dict, id: int, players: pd.DataFrame) -> ShotEvent:
     """This function retrieves the shot event of a specific match.
 
     Args:
         event (dict): the shot event.
         id (int): the id of the event.
+        players (pd.DataFrame): the players of the match.
 
     Returns:
         ShotEvent: the shot event of the match.
@@ -371,6 +375,7 @@ def _get_shot_event(event: dict, id: int) -> ShotEvent:
         pitch_size=(106.0, 68.0),
         _xt=-1.0,
         player_id=event["playerId"],
+        jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
         shot_outcome=shot_result_mappping[event["shotTypeName"]]
         if event["resultId"] == 0
         else "goal",
@@ -380,12 +385,13 @@ def _get_shot_event(event: dict, id: int) -> ShotEvent:
     )
 
 
-def _get_pass_event(event: dict, id: int) -> PassEvent:
+def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
     """This function retrieves the pass event of a specific match.
 
     Args:
         event (dict): the pass event.
         id (int): the id of the event.
+        players (pd.DataFrame): the players of the match.
 
     Returns:
         PassEvent: the pass event of the match.
@@ -422,7 +428,6 @@ def _get_pass_event(event: dict, id: int) -> PassEvent:
         "FREE_KICK": "free_kick",
         "GOALKEEPER_THROW": "no_set_piece",
     }
-
     return PassEvent(
         event_id=id,
         period_id=event["partId"],
@@ -439,6 +444,7 @@ def _get_pass_event(event: dict, id: int) -> PassEvent:
         if event["subTypeName"] != "OFFSIDE_PASS"
         else "offside",
         player_id=event["playerId"],
+        jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
         receiver_id=event["receiverId"]
         if event["receiverTeamId"] == event["teamId"]
         else MISSING_INT,
@@ -449,12 +455,13 @@ def _get_pass_event(event: dict, id: int) -> PassEvent:
     )
 
 
-def _get_dribble_event(event: dict, id: int) -> DribbleEvent:
+def _get_dribble_event(event: dict, id: int, players: pd.DataFrame) -> DribbleEvent:
     """This function retrieves the dribble event of a specific match.
 
     Args:
         event (dict): the dribble event.
         id (int): the id of the event.
+        players (pd.DataFrame): the players of the match.
 
     Returns:
         DribbleEvent: the dribble event of the match.
@@ -472,6 +479,7 @@ def _get_dribble_event(event: dict, id: int) -> DribbleEvent:
         pitch_size=(106.0, 68.0),
         _xt=-1.0,
         player_id=event["playerId"],
+        jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
         related_event_id=MISSING_INT,
         duel_type="offensive",
         outcome=event["resultId"] == 1,

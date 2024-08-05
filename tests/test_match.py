@@ -1613,3 +1613,12 @@ class TestMatch(unittest.TestCase):
                 "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
             )
         )
+
+    def test_all_events(self):
+        match = self.expected_match_opta.copy()
+        expected_events = {
+            **match.shot_events,
+            **match.pass_events,
+            **match.dribble_events,
+        }
+        assert match.all_events == expected_events
