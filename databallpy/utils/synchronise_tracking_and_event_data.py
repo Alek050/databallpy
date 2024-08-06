@@ -4,7 +4,12 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from databallpy.events import BaseOnBallEvent, DribbleEvent, PassEvent, ShotEvent
+from databallpy.events import (
+    DribbleEvent,
+    IndividualCloseToBallEvent,
+    PassEvent,
+    ShotEvent,
+)
 from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
@@ -17,7 +22,9 @@ logger = create_logger(__name__)
 def synchronise_tracking_and_event_data(
     tracking_data: pd.DataFrame,
     event_data: pd.DataFrame,
-    all_events: dict[str, BaseOnBallEvent | DribbleEvent | PassEvent | ShotEvent],
+    all_events: dict[
+        str, IndividualCloseToBallEvent | DribbleEvent | PassEvent | ShotEvent
+    ],
     cost_functions: dict = {},
     n_batches: int | str = "smart",
     verbose: bool = True,
@@ -148,7 +155,9 @@ def synchronise_tracking_and_event_data(
 def _create_sim_mat(
     tracking_batch: pd.DataFrame,
     event_batch: pd.DataFrame,
-    all_events: dict[str, BaseOnBallEvent | DribbleEvent | PassEvent | ShotEvent],
+    all_events: dict[
+        str, IndividualCloseToBallEvent | DribbleEvent | PassEvent | ShotEvent
+    ],
     cost_functions: dict = {},
 ) -> np.ndarray:
     """Function that creates similarity matrix between every frame and event in batch
@@ -156,9 +165,8 @@ def _create_sim_mat(
     Args:
         tracking_batch (pd.DataFrame): batch of tracking data
         event_batch (pd.DataFrame): batch of event data
-        home_players (pd.DataFrame): DataFrame containing all the home players
-        away_players (pd.DataFrame): DataFrame containing all the away players
-        home_team_id (int | str): id of the home team
+        all_events (dict): dictionary containing all the events of the match
+        cost_functions (dict, optional): dictionary containing the cost functions that
 
     Returns:
         np.ndarray: array containing similarity scores between every frame and events,

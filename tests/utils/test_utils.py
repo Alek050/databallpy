@@ -7,6 +7,7 @@ from databallpy.utils.utils import (
     MISSING_INT,
     _to_float,
     _to_int,
+    _values_are_equal_,
     get_next_possession_frame,
     sigmoid,
 )
@@ -83,3 +84,107 @@ class TestUtils(unittest.TestCase):
         np.testing.assert_almost_equal(
             sigmoid(np.array([0, 5]), a=1, b=2, c=3, d=4, e=5), np.array([1.0, 1.5])
         )
+
+    def test_values_are_equal(self):
+        # floats and ints
+        self.assertTrue(_values_are_equal_(1.000000, 1.000001))
+        self.assertTrue(_values_are_equal_(1.000000, 1))
+        self.assertTrue(_values_are_equal_(1, 1.0000001))
+        self.assertTrue(_values_are_equal_(1.000000, 1.000000))
+        self.assertTrue(_values_are_equal_(np.nan, np.nan))
+        self.assertFalse(_values_are_equal_(1.000000, 1.0001))
+        self.assertFalse(_values_are_equal_(1.000000, np.nan))
+        self.assertFalse(_values_are_equal_(np.nan, 1))
+        self.assertFalse(_values_are_equal_(1, 1.0001))
+        self.assertFalse(_values_are_equal_(1, 2))
+        self.assertFalse(_values_are_equal_(1.00, "1"))
+
+        # pd.timestamps
+        self.assertTrue(
+            _values_are_equal_(pd.Timestamp("2021-01-01"), pd.Timestamp("2021-01-01"))
+        )
+        self.assertFalse(
+            _values_are_equal_(pd.Timestamp("2021-01-01"), pd.Timestamp("2021-01-02"))
+        )
+        self.assertFalse(_values_are_equal_(pd.Timestamp("2021-01-01"), "2021-01-01"))
+
+        # list and tuple
+        self.assertTrue(_values_are_equal_([1, 2], (1, 2)))
+        self.assertTrue(_values_are_equal_([1, 2], (1, 2.0000001)))
+        self.assertTrue(_values_are_equal_([[1, 2]], [(1, 2)]))
+        self.assertFalse(_values_are_equal_([1, 2], (1, 2, 3)))
+        self.assertFalse(_values_are_equal_([1, 2], (1, 2.0001)))
+        self.assertFalse(_values_are_equal_([[1, 2]], [(1, 2, "nan")]))
+        self.assertFalse(_values_are_equal_([1, 2], "[1, 2]"))
+
+        # dict
+        self.assertTrue(_values_are_equal_({"a": 1, "b": 2}, {"b": 2, "a": 1}))
+        self.assertTrue(
+            _values_are_equal_({"a": [1, 2], "b": 2}, {"a": [1, 2], "b": 2})
+        )
+        self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "b": 3}))
+        self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 3}))
+        self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "b": 2.0001}))
+        self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "b": "2"}))
+        self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "c": 2}))
+        self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, "[1, 2]"))
+
+        # np.ndarray
+        self.assertTrue(_values_are_equal_(np.array([1, 2]), np.array([1, 2])))
+        self.assertFalse(_values_are_equal_(np.array([1, 2]), np.array([1, 3])))
+        self.assertFalse(_values_are_equal_(np.array([1, 2]), np.array([1, 2.0001])))
+        self.assertFalse(_values_are_equal_(np.array([1, 2]), np.array(["1", "2"])))
+        self.assertFalse(_values_are_equal_(np.array([1, 2]), [1, 2]))
+        self.assertFalse(_values_are_equal_(np.array([1, 2]), np.array([[1, 2]])))
+
+        # pd.Series or pd.DataFrame
+        self.assertTrue(_values_are_equal_(pd.Series([1, 2]), pd.Series([1, 2])))
+        self.assertFalse(_values_are_equal_(pd.Series([1, 2]), pd.Series([1, 3])))
+        self.assertTrue(
+            _values_are_equal_(
+                pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+                pd.DataFrame({"b": [3, 4], "a": [1, 2]}),
+            )
+        )
+        self.assertFalse(
+            _values_are_equal_(
+                pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+                pd.DataFrame({"b": [3, 4], "a": [1, 3]}),
+            )
+        )
+        self.assertFalse(
+            _values_are_equal_(pd.Series([1, 2]), pd.DataFrame({"a": [1, 2]}))
+        )
+        self.assertFalse(_values_are_equal_(pd.Series([1, 2]), "[1, 2]"))
+        self.assertFalse(
+            _values_are_equal_(pd.DataFrame({"a": [1, 2], "b": [3, 4]}), "[1, 2]")
+        )
+        self.assertFalse(
+            _values_are_equal_(
+                pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+                pd.DataFrame({"b": [3, 4], "c": [3, 4], "a": [1, 2]}),
+            )
+        )
+        self.assertFalse(
+            _values_are_equal_(
+                pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+                pd.DataFrame({"c": [3, 4], "a": [1, 2]}),
+            )
+        )
+
+        # NaT
+        self.assertTrue(
+            _values_are_equal_(pd.to_datetime("NaT"), pd.to_datetime("NaT"))
+        )
+        self.assertFalse(
+            _values_are_equal_(pd.to_datetime("NaT"), pd.to_datetime("2021-01-01"))
+        )
+        self.assertFalse(_values_are_equal_(pd.to_datetime("NaT"), "NaT"))
+
+        # NotImplementedError
+        class CustomType:
+            def __init__(self, value):
+                self.value = value
+
+        with self.assertRaises(NotImplementedError):
+            _values_are_equal_(CustomType(1), CustomType(1))

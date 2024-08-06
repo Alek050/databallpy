@@ -8,7 +8,12 @@ from bs4 import BeautifulSoup
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
-from databallpy.events import BaseOnBallEvent, DribbleEvent, PassEvent, ShotEvent
+from databallpy.events import (
+    DribbleEvent,
+    IndividualCloseToBallEvent,
+    PassEvent,
+    ShotEvent,
+)
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
@@ -109,9 +114,9 @@ SHOT_OUTCOMES = {
 
 SHOT_ORIGINS_QUALIFIERS = {
     9: "penalty",
-    22: "regular_play",
+    22: "open_play",
     23: "counter_attack",
-    24: "crossed_free_kick",
+    24: "free_kick",
     25: "corner_kick",
     26: "free_kick",
 }
@@ -176,7 +181,9 @@ OPPOSITE_RELATED_EVENT_ID = 233  # used for dribbles
 
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
-) -> tuple[pd.DataFrame, Metadata, dict[str, dict[str, dict[str, BaseOnBallEvent]]]]:
+) -> tuple[
+    pd.DataFrame, Metadata, dict[str, dict[str, dict[str, IndividualCloseToBallEvent]]]
+]:
     """This function retrieves the metadata and event data of a specific match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
@@ -462,7 +469,7 @@ def _load_event_data(
     away_team_id: int,
     players: pd.DataFrame,
     pitch_dimensions: list = [106.0, 68.0],
-) -> tuple[pd.DataFrame, dict[str, dict[str | int, BaseOnBallEvent]]]:
+) -> tuple[pd.DataFrame, dict[str, dict[str | int, IndividualCloseToBallEvent]]]:
     """Function to load the f27 .xml, the events of the match.
     Note: this function does ignore most qualifiers for now.
 
@@ -478,7 +485,7 @@ def _load_event_data(
     Returns:
         pd.DataFrame: all events of the match in a pd dataframe
         dict: dict with "shot_events", "dribble_events", and "pass_events"
-             as key and a dict with the BaseOnBallEvent instances
+             as key and a dict with the BaseIndividualCloseToBallEvent instances
     """
 
     dribble_events = {}
@@ -639,7 +646,7 @@ def _make_pass_instance(
     pass_type_list = [
         PASS_TYPE_QUALIFIERS[q] for q in qualifier_ids if q in PASS_TYPE_QUALIFIERS
     ]
-    pass_type = pass_type_list[0] if len(pass_type_list) > 0 else "not_specified"
+    pass_type = pass_type_list[0] if len(pass_type_list) > 0 else "unspecified"
     pass_type_hiearchy = ["cross", "through_ball", "long_ball"]
     for pass_type_option in pass_type_hiearchy:
         if pass_type_option in pass_type_list:
@@ -686,19 +693,23 @@ def _make_pass_instance(
         datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
-        pitch_size=pitch_dimensions,
-        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
-        _xt=-1.0,
-        outcome=outcome,
         team_id=int(event.attrs["team_id"]),
+        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
+        pitch_size=pitch_dimensions,
         player_id=int(event.attrs["player_id"]),
         jersey=players.loc[
             players["id"] == int(event.attrs["player_id"]), "shirt_num"
         ].iloc[0],
+        outcome=bool(event.attrs["outcome"]),
+        related_event_id=MISSING_INT,
+        body_part="unspecified",
+        possession_type="unspecified",
+        set_piece=set_piece,
+        _xt=-1.0,
+        outcome_str=outcome,
         end_x=x_end,
         end_y=y_end,
         pass_type=pass_type,
-        set_piece=set_piece,
     )
 
 
@@ -758,9 +769,7 @@ def _make_shot_event_instance(
         for q in qualifiers
         if int(q["qualifier_id"]) in SHOT_ORIGINS_QUALIFIERS
     ]
-    type_of_play = (
-        type_of_play_list[0] if len(type_of_play_list) > 0 else "regular_play"
-    )
+    type_of_play = type_of_play_list[0] if len(type_of_play_list) > 0 else "open_play"
 
     body_part_list = [
         BODY_PART_QUALIFIERS[int(q["qualifier_id"])]
@@ -778,18 +787,6 @@ def _make_shot_event_instance(
     first_touch = (
         event.find("Q", {"qualifier_id": str(FIRST_TOUCH_QUALIFIER)}) is not None
     )
-
-    created_oppertunity_list = [
-        int(q["qualifier_id"])
-        for q in qualifiers
-        if int(q["qualifier_id"]) in CREATED_OPPERTUNITY_QUALIFIERS
-    ]
-    created_oppertunity = (
-        CREATED_OPPERTUNITY_QUALIFIERS[created_oppertunity_list[0]]
-        if len(created_oppertunity_list) > 0
-        else "regular_play"
-    )
-
     if event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)}) is not None:
         related_event_id = int(
             event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)})["value"]
@@ -797,15 +794,19 @@ def _make_shot_event_instance(
     else:
         related_event_id = MISSING_INT
 
+    # set piece
+    set_piece_list = [
+        SET_PIECE_QUALIFIERS[int(q["qualifier_id"])]
+        for q in qualifiers
+        if int(q["qualifier_id"]) in SET_PIECE_QUALIFIERS
+    ]
+    set_piece = set_piece_list[0] if len(set_piece_list) > 0 else "no_set_piece"
+
     if int(event.attrs["team_id"]) == away_team_id:
         x_start *= -1
         y_start *= -1
 
     return ShotEvent(
-        player_id=int(event.attrs["player_id"]),
-        jersey=players.loc[
-            players["id"] == int(event.attrs["player_id"]), "shirt_num"
-        ].iloc[0],
         event_id=int(event.attrs["id"]),
         period_id=int(event.attrs["period_id"]),
         minutes=int(event.attrs["min"]),
@@ -813,18 +814,23 @@ def _make_shot_event_instance(
         datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
-        _xt=-1.0,
-        pitch_size=pitch_dimensions,
         team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
         team_id=int(event.attrs["team_id"]),
-        shot_outcome=shot_outcome,
+        pitch_size=pitch_dimensions,
+        player_id=int(event.attrs["player_id"]),
+        jersey=players.loc[
+            players["id"] == int(event.attrs["player_id"]), "shirt_num"
+        ].iloc[0],
+        outcome=shot_outcome == "goal",
+        related_event_id=related_event_id,
+        body_part=body_part,
+        possession_type=type_of_play,
+        set_piece=set_piece,
+        _xt=-1.0,
+        outcome_str=shot_outcome,
         y_target=y_target,
         z_target=z_target,
-        body_part=body_part,
-        type_of_play=type_of_play,
         first_touch=first_touch,
-        created_oppertunity=created_oppertunity,
-        related_event_id=related_event_id,
     )
 
 
@@ -873,10 +879,6 @@ def _make_dribble_event_instance(
         y_start *= -1
 
     dribble_event = DribbleEvent(
-        player_id=int(event.attrs["player_id"]),
-        jersey=players.loc[
-            players["id"] == int(event.attrs["player_id"]), "shirt_num"
-        ].iloc[0],
         event_id=int(event.attrs["id"]),
         period_id=int(event.attrs["period_id"]),
         minutes=int(event.attrs["min"]),
@@ -884,14 +886,21 @@ def _make_dribble_event_instance(
         datetime=_get_valid_opta_datetime(event),
         start_x=x_start,
         start_y=y_start,
-        pitch_size=pitch_dimensions,
-        _xt=-1.0,
-        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
         team_id=int(event.attrs["team_id"]),
-        related_event_id=related_event_id,
-        duel_type=duel_type,
+        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
+        pitch_size=pitch_dimensions,
+        player_id=int(event.attrs["player_id"]),
+        jersey=players.loc[
+            players["id"] == int(event.attrs["player_id"]), "shirt_num"
+        ].iloc[0],
         outcome=bool(event.attrs["outcome"]),
-        has_opponent=True,  # opta take ons are always against an opponent
+        related_event_id=related_event_id,
+        body_part="foot",
+        possession_type="unspecified",
+        set_piece="no_set_piece",
+        _xt=-1.0,
+        duel_type=duel_type,
+        with_opponent=True,  # opta take ons are always against an opponent
     )
 
     return dribble_event
@@ -987,6 +996,6 @@ def _update_pass_outcome(
         else:
             related_pass = related_pass.iloc[0]
         # assign assist to pass
-        pass_events[related_pass["event_id"]].outcome = "assist"
+        pass_events[related_pass["event_id"]].outcome_str = "assist"
 
     return pass_events

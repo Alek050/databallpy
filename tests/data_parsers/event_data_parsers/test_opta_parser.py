@@ -53,6 +53,12 @@ class TestOptaParser(unittest.TestCase):
             expected_shot_events_opta[shot_id] = shot_event.copy()
             expected_shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 10
             expected_shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 10
+            expected_shot_events_opta[shot_id]._xt = -1
+            expected_shot_events_opta[shot_id]._xt = expected_shot_events_opta[
+                shot_id
+            ].xT
+            shot_event._xt = -1
+            shot_event._xt = shot_event.xT
             expected_shot_events_opta[shot_id].pitch_size = [10.0, 10.0]
             expected_shot_events_opta[shot_id]._update_shot_angle()
             expected_shot_events_opta[shot_id]._update_ball_goal_distance()
@@ -208,27 +214,28 @@ class TestOptaParser(unittest.TestCase):
         event = BeautifulSoup(event_xml, "xml").find("Event")
 
         expected_output = ShotEvent(
-            player_id=223345,
             event_id=2529877443,
-            jersey=3,
             period_id=1,
             minutes=0,
             seconds=31,
             datetime=pd.to_datetime("2023-04-07T18:02:07.364", utc=True),
             start_x=-4.0279999,
             start_y=-29.852,
-            pitch_size=[106.0, 68.0],
             team_side="home",
-            _xt=-1.0,
             team_id=325,
-            shot_outcome="goal",
+            pitch_size=[106.0, 68.0],
+            player_id=223345,
+            jersey=3,
+            outcome=True,
+            related_event_id=MISSING_INT,
+            body_part="right_foot",
+            possession_type="open_play",
+            set_piece="no_set_piece",
+            _xt=-1.0,
+            outcome_str="goal",
             y_target=-1.991040,
             z_target=0.17568,
-            body_part="right_foot",
-            type_of_play="regular_play",
             first_touch=False,
-            created_oppertunity="regular_play",
-            related_event_id=MISSING_INT,
         )
         players = pd.DataFrame(
             {
@@ -268,8 +275,6 @@ class TestOptaParser(unittest.TestCase):
         )
 
         expected_dribble_event = DribbleEvent(
-            player_id=223345,
-            jersey=3,
             event_id=2529877443,
             period_id=1,
             minutes=0,
@@ -278,13 +283,18 @@ class TestOptaParser(unittest.TestCase):
             start_x=4.0279999,
             start_y=29.852,
             pitch_size=[106.0, 68.0],
+            player_id=223345,
+            jersey=3,
             team_side="away",
-            _xt=-1.0,
             team_id=325,
+            _xt=-1.0,
             related_event_id=MISSING_INT,
-            duel_type="offensive",
+            set_piece="no_set_piece",
+            possession_type="unspecified",
+            body_part="foot",
             outcome=True,
-            has_opponent=True,
+            with_opponent=True,
+            duel_type="offensive",
         )
         assert dribble_event == expected_dribble_event
 
@@ -314,15 +324,19 @@ class TestOptaParser(unittest.TestCase):
             start_y=0.0,
             pitch_size=[106.0, 68.0],
             team_side="away",
-            _xt=-1.0,
             team_id=1,
-            outcome="results_in_shot",
             player_id=1,
             jersey=4,
+            _xt=-1.0,
+            outcome=True,
+            related_event_id=MISSING_INT,
+            set_piece="no_set_piece",
+            possession_type="unspecified",
+            body_part="unspecified",
+            outcome_str="results_in_shot",
             end_x=np.nan,
             end_y=np.nan,
             pass_type="long_ball",
-            set_piece="no_set_piece",
         )
         assert pass_event == expected_pass_event
 
@@ -384,7 +398,7 @@ class TestOptaParser(unittest.TestCase):
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
-            if event.shot_outcome == "goal":
+            if event.outcome_str == "goal":
                 event.related_event_id = 120
 
         event_data.loc[event_data["databallpy_event"] == "pass", "opta_id"] = 120

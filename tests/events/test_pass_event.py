@@ -1,3 +1,4 @@
+import random
 import unittest
 
 import numpy as np
@@ -5,6 +6,7 @@ import pandas as pd
 
 from databallpy.events.pass_event import PassEvent, get_opponents_in_passing_lane
 from databallpy.features.pressure import get_pressure_on_player
+from databallpy.utils.constants import MISSING_INT
 
 
 class TestPassEvent(unittest.TestCase):
@@ -17,87 +19,59 @@ class TestPassEvent(unittest.TestCase):
             datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
             start_x=1.0,
             start_y=1.0,
-            pitch_size=[105.0, 68.0],
-            team_side="home",
-            _xt=0.02,
             team_id=1,
-            outcome="successful",
+            team_side="home",
+            pitch_size=[105.0, 68.0],
             player_id=1,
             jersey=10,
+            outcome=True,
+            related_event_id=MISSING_INT,
+            body_part="unspecified",
+            possession_type="counter_attack",
+            set_piece="no_set_piece",
+            _xt=0.02,
+            outcome_str="successful",
             end_x=1.0,
             end_y=1.0,
             pass_type="pull_back",
-            set_piece="free_kick",
         )
 
-    def test_pass_event_copy(self):
+    def test_pass_event_copy__eq__(self):
         self.assertEqual(self.pass_event, self.pass_event.copy())
         not_eq_pass_event = self.pass_event.copy()
         not_eq_pass_event.event_id = 2
         self.assertNotEqual(self.pass_event, not_eq_pass_event)
+        self.assertNotEqual(self.pass_event, None)
 
-    def test_pass_event_eq(self):
-        self.assertEqual(self.pass_event, self.pass_event)
-        not_eq_pass_event = self.pass_event.copy()
-
-        # base event different
-        not_eq_pass_event.event_id = 2
-        self.assertNotEqual(self.pass_event, not_eq_pass_event)
-
-        # pass event different
-        not_eq_pass_event = self.pass_event.copy()
-        not_eq_pass_event.outcome = "unsuccesful"
-        self.assertNotEqual(self.pass_event, not_eq_pass_event)
-
-        self.assertNotEqual(self.pass_event, 1)
-
-    def test_pass_event_datatypes(self):
+    def test_pass_event_post_init_(self):
         # super call
         with self.assertRaises(TypeError):
             PassEvent(
-                event_id="1",
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
-                end_x=1.0,
-                end_y=1.0,
-                pass_type="pull_back",
-                set_piece="free_kick",
-            )
-
-        # outcome
-        with self.assertRaises(TypeError):
-            PassEvent(
                 event_id=1,
                 period_id=1,
                 minutes=1,
                 seconds=1,
                 datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
+                start_x="1.0",
                 start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
                 team_id=1,
-                outcome=1,
+                team_side="home",
+                pitch_size=[105.0, 68.0],
                 player_id=1,
                 jersey=10,
+                outcome=True,
+                related_event_id=MISSING_INT,
+                body_part="unspecified",
+                possession_type="counter_attack",
+                set_piece="no_set_piece",
+                _xt=0.02,
+                outcome_str="successful",
                 end_x=1.0,
                 end_y=1.0,
                 pass_type="pull_back",
-                set_piece="free_kick",
             )
 
+        # outcome_str
         with self.assertRaises(ValueError):
             PassEvent(
                 event_id=1,
@@ -107,20 +81,23 @@ class TestPassEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
                 start_x=1.0,
                 start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
                 team_id=1,
-                outcome="rubben_schaken_cross",
+                team_side="home",
+                pitch_size=[105.0, 68.0],
                 player_id=1,
                 jersey=10,
+                outcome=True,
+                related_event_id=MISSING_INT,
+                body_part="unspecified",
+                possession_type="counter_attack",
+                set_piece="no_set_piece",
+                _xt=0.02,
+                outcome_str="failed",
                 end_x=1.0,
                 end_y=1.0,
                 pass_type="pull_back",
-                set_piece="free_kick",
             )
 
-        # player id
         with self.assertRaises(TypeError):
             PassEvent(
                 event_id=1,
@@ -130,21 +107,25 @@ class TestPassEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
                 start_x=1.0,
                 start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
                 team_id=1,
-                outcome="successful",
-                player_id=[1],
+                team_side="home",
+                pitch_size=[105.0, 68.0],
+                player_id=1,
                 jersey=10,
+                outcome=True,
+                related_event_id=MISSING_INT,
+                body_part="unspecified",
+                possession_type="counter_attack",
+                set_piece="no_set_piece",
+                _xt=0.02,
+                outcome_str=1,
                 end_x=1.0,
                 end_y=1.0,
                 pass_type="pull_back",
-                set_piece="free_kick",
             )
 
-        # jersey
-        with self.assertRaises(TypeError):
+        # pass_type
+        with self.assertRaises(ValueError):
             PassEvent(
                 event_id=1,
                 period_id=1,
@@ -153,20 +134,23 @@ class TestPassEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
                 start_x=1.0,
                 start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
                 team_id=1,
-                outcome="successful",
+                team_side="home",
+                pitch_size=[105.0, 68.0],
                 player_id=1,
-                jersey="10",
+                jersey=10,
+                outcome=True,
+                related_event_id=MISSING_INT,
+                body_part="unspecified",
+                possession_type="counter_attack",
+                set_piece="no_set_piece",
+                _xt=0.02,
+                outcome_str="successful",
                 end_x=1.0,
                 end_y=1.0,
-                pass_type="pull_back",
-                set_piece="free_kick",
+                pass_type="invalid",
             )
 
-        # end x
         with self.assertRaises(TypeError):
             PassEvent(
                 event_id=1,
@@ -176,135 +160,64 @@ class TestPassEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
                 start_x=1.0,
                 start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
                 team_id=1,
-                outcome="successful",
+                team_side="home",
+                pitch_size=[105.0, 68.0],
                 player_id=1,
                 jersey=10,
-                end_x=10,
-                end_y=1.0,
-                pass_type="pull_back",
-                set_piece="free_kick",
-            )
-
-        # end y
-        with self.assertRaises(TypeError):
-            PassEvent(
-                event_id=1,
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
+                outcome=True,
+                related_event_id=MISSING_INT,
+                body_part="unspecified",
+                possession_type="counter_attack",
+                set_piece="no_set_piece",
                 _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
-                end_x=1.0,
-                end_y="1.",
-                pass_type="pull_back",
-                set_piece="free_kick",
-            )
-
-        # length
-        with self.assertRaises(TypeError):
-            PassEvent(
-                event_id=1,
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
-                end_x=1.0,
-                end_y=1.0,
-                pass_length="1.",
-                pass_type="pull_back",
-                set_piece="free_kick",
-            )
-
-        # angle
-        with self.assertRaises(TypeError):
-            PassEvent(
-                event_id=1,
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
-                end_x=1.0,
-                end_y=1.0,
-                pass_angle="1.",
-                pass_type="pull_back",
-                set_piece="free_kick",
-            )
-
-        # pass type
-        with self.assertRaises(TypeError):
-            PassEvent(
-                event_id=1,
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
+                outcome_str="successful",
                 end_x=1.0,
                 end_y=1.0,
                 pass_type=1,
-                set_piece="free_kick",
-            )
-        with self.assertRaises(ValueError):
-            PassEvent(
-                event_id=1,
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
-                end_x=1.0,
-                end_y=1.0,
-                pass_type="failed_shot",
-                set_piece="free_kick",
             )
 
-        # set piece
+        float_like_kwargs = {
+            "end_x": 1.0,
+            "end_y": 1.0,
+            "pass_length": 1.0,
+            "forward_distance": 1.0,
+            "passer_goal_distance": 1.0,
+            "pass_end_loc_goal_distance": 1.0,
+            "pressure_on_passer": 1.0,
+            "pressure_on_receiver": 1.0,
+            "pass_goal_angle": 1.0,
+        }
+        invalid_values = [1, "1.", [1], {1}, (1), {"vkey": 1}]
+        for key in float_like_kwargs.keys():
+            current_kwargs = float_like_kwargs.copy()
+            current_kwargs[key] = random.choice(invalid_values)
+            with self.assertRaises(TypeError):
+                PassEvent(
+                    event_id=1,
+                    period_id=1,
+                    minutes=1,
+                    seconds=1,
+                    datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
+                    start_x=1.0,
+                    start_y=1.0,
+                    team_id=1,
+                    team_side="home",
+                    pitch_size=[105.0, 68.0],
+                    player_id=1,
+                    jersey=10,
+                    outcome=True,
+                    related_event_id=MISSING_INT,
+                    body_part="unspecified",
+                    possession_type="counter_attack",
+                    set_piece="no_set_piece",
+                    _xt=0.02,
+                    outcome_str="successful",
+                    pass_type="pull_back",
+                    **current_kwargs
+                )
+
+        # opponents_in_passing_lane
         with self.assertRaises(TypeError):
             PassEvent(
                 event_id=1,
@@ -314,62 +227,57 @@ class TestPassEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
                 start_x=1.0,
                 start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
                 team_id=1,
-                outcome="successful",
+                team_side="home",
+                pitch_size=[105.0, 68.0],
                 player_id=1,
                 jersey=10,
+                outcome=True,
+                related_event_id=MISSING_INT,
+                body_part="unspecified",
+                possession_type="counter_attack",
+                set_piece="no_set_piece",
+                _xt=0.02,
+                outcome_str="successful",
                 end_x=1.0,
                 end_y=1.0,
                 pass_type="pull_back",
-                set_piece=1,
-            )
-        with self.assertRaises(ValueError):
-            PassEvent(
-                event_id=1,
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
-                end_x=1.0,
-                end_y=1.0,
-                pass_type="pull_back",
-                set_piece="tackle",
-            )
-
-        with self.assertRaises(TypeError):
-            PassEvent(
-                event_id=1,
-                period_id=1,
-                minutes=1,
-                seconds=1,
-                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
-                start_x=1.0,
-                start_y=1.0,
-                pitch_size=[105.0, 68.0],
-                team_side="home",
-                _xt=0.02,
-                team_id=1,
-                outcome="successful",
-                player_id=1,
-                jersey=10,
-                end_x=1.0,
-                end_y=1.0,
-                pass_type="pull_back",
-                set_piece="free_kick",
                 opponents_in_passing_lane="1",
             )
+
+    def test_pass_event_df_attributes(self):
+        assert self.pass_event.df_attributes == [
+            "event_id",
+            "period_id",
+            "minutes",
+            "seconds",
+            "datetime",
+            "start_x",
+            "start_y",
+            "team_id",
+            "team_side",
+            "player_id",
+            "jersey",
+            "outcome",
+            "related_event_id",
+            "xT",
+            "body_part",
+            "possession_type",
+            "set_piece",
+            "outcome_str",
+            "end_x",
+            "end_y",
+            "pass_type",
+            "receiver_player_id",
+            "pass_length",
+            "forward_distance",
+            "passer_goal_distance",
+            "pass_end_loc_goal_distance",
+            "opponents_in_passing_lane",
+            "pressure_on_passer",
+            "pressure_on_receiver",
+            "pass_goal_angle",
+        ]
 
     def test_pass_add_tracking_data_features(self):
         pass_ = self.pass_event.copy()
