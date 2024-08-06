@@ -11,6 +11,14 @@ from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
+BODY_PART_MAPPING = {
+    "FEET": "foot",
+    "HEAD": "head",
+    "NOT_APPLICABLE": "unspecified",
+    "RIGHT_FOOT": "right_foot",
+    "LEFT_FOOT": "left_foot",
+}
+
 
 def load_scisports_event_data(
     events_json: str, pitch_dimensions: tuple = (106.0, 68.0)
@@ -373,15 +381,17 @@ def _get_shot_event(event: dict, id: int, players: pd.DataFrame) -> ShotEvent:
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
         pitch_size=(106.0, 68.0),
-        _xt=-1.0,
         player_id=event["playerId"],
         jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
-        shot_outcome=shot_result_mappping[event["shotTypeName"]]
+        outcome=bool(event["resultId"]),
+        related_event_id=MISSING_INT,
+        body_part=BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
+        possession_type="unspecified",
+        set_piece="unspecified",
+        _xt=-1.0,
+        outcome_str=shot_result_mappping[event["shotTypeName"]]
         if event["resultId"] == 0
         else "goal",
-        y_target=np.nan,
-        z_target=np.nan,
-        body_part=event["bodyPartName"].lower(),
     )
 
 
@@ -403,14 +413,14 @@ def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
         "CROSS": "cross",
         "CORNER_CROSSED": "cross",
         "CROSS_CUTBACK": "pull_back",
-        "PASS": "not_specified",
-        "GOAL_KICK": "not_specified",
-        "CORNER_SHORT": "not_specified",
-        "OFFSIDE_PASS": "not_specified",
-        "KICK_OFF": "not_specified",
-        "THROW_IN": "not_specified",
-        "FREE_KICK": "not_specified",
-        "GOALKEEPER_THROW": "not_specified",
+        "PASS": "unspecified",
+        "GOAL_KICK": "unspecified",
+        "CORNER_SHORT": "unspecified",
+        "OFFSIDE_PASS": "unspecified",
+        "KICK_OFF": "unspecified",
+        "THROW_IN": "unspecified",
+        "FREE_KICK": "unspecified",
+        "GOALKEEPER_THROW": "unspecified",
     }
 
     set_piece_mapping = {
@@ -439,19 +449,23 @@ def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
         pitch_size=(106.0, 68.0),
-        _xt=-1.0,
-        outcome=event["resultName"].lower()
-        if event["subTypeName"] != "OFFSIDE_PASS"
-        else "offside",
         player_id=event["playerId"],
         jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
-        receiver_id=event["receiverId"]
-        if event["receiverTeamId"] == event["teamId"]
-        else MISSING_INT,
+        outcome=bool(event["resultId"]),
+        related_event_id=MISSING_INT,
+        body_part=BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
+        possession_type="unspecified",
+        set_piece=set_piece_mapping[event["subTypeName"]],
+        _xt=-1.0,
+        outcome_str=event["resultName"].lower()
+        if event["subTypeName"] != "OFFSIDE_PASS"
+        else "offside",
         end_x=event["endPosXM"],
         end_y=event["endPosYM"],
         pass_type=pass_type_mapping[event["subTypeName"]],
-        set_piece=set_piece_mapping[event["subTypeName"]],
+        receiver_player_id=event["receiverId"]
+        if event["receiverTeamId"] == event["teamId"]
+        else MISSING_INT,
     )
 
 
@@ -477,11 +491,14 @@ def _get_dribble_event(event: dict, id: int, players: pd.DataFrame) -> DribbleEv
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
         pitch_size=(106.0, 68.0),
-        _xt=-1.0,
         player_id=event["playerId"],
         jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
+        outcome=bool(event["resultId"]),
         related_event_id=MISSING_INT,
+        body_part=BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
+        possession_type="unspecified",
+        set_piece="no_set_piece",
+        _xt=-1.0,
         duel_type="offensive",
-        outcome=event["resultId"] == 1,
-        has_opponent=event["subTypeName"] == "TAKE_ON",
+        with_opponent=event["subTypeName"] == "TAKE_ON",
     )

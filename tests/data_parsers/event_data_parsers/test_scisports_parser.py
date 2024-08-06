@@ -181,13 +181,17 @@ class TestSciSportsParser(unittest.TestCase):
             team_id=200,
             team_side="away",
             pitch_size=(106.0, 68.0),
-            _xt=-1.0,
             player_id=201,
             jersey=22,
-            shot_outcome="goal",
+            outcome=True,
+            related_event_id=MISSING_INT,
+            _xt=-1.0,
+            body_part="left_foot",
+            possession_type="unspecified",
+            set_piece="unspecified",
+            outcome_str="goal",
             y_target=np.nan,
             z_target=np.nan,
-            body_part="left_foot",
         )
         players = pd.DataFrame({"id": [201], "shirt_num": [22]})
         result = _get_shot_event(event, 14, players=players)
@@ -249,15 +253,19 @@ class TestSciSportsParser(unittest.TestCase):
             team_id=100,
             team_side="home",
             pitch_size=(106.0, 68.0),
-            _xt=-1.0,
-            outcome="unsuccessful",
             player_id=102,
             jersey=22,
-            receiver_id=MISSING_INT,
+            outcome=False,
+            related_event_id=MISSING_INT,
+            body_part="foot",
+            possession_type="unspecified",
+            set_piece="no_set_piece",
+            _xt=-1.0,
+            outcome_str="unsuccessful",
             end_x=-35.1,
             end_y=-20.8,
             pass_type="cross",
-            set_piece="no_set_piece",
+            receiver_player_id=MISSING_INT,
         )
         players = pd.DataFrame({"id": [102], "shirt_num": [22]})
         result = _get_pass_event(event, 13, players=players)
@@ -319,13 +327,16 @@ class TestSciSportsParser(unittest.TestCase):
             team_id=100,
             team_side="home",
             pitch_size=(106.0, 68.0),
-            _xt=-1.0,
             player_id=102,
             jersey=32,
             related_event_id=MISSING_INT,
+            _xt=-1.0,
+            body_part="foot",
+            possession_type="unspecified",
+            set_piece="no_set_piece",
             duel_type="offensive",
             outcome=True,
-            has_opponent=False,
+            with_opponent=False,
         )
         players = pd.DataFrame({"id": [102], "shirt_num": [32]})
         result = _get_dribble_event(event, 12, players)

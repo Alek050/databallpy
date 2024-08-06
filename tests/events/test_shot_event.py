@@ -1,3 +1,4 @@
+import random
 import unittest
 
 import numpy as np
@@ -17,20 +18,21 @@ class TestShotEvent(unittest.TestCase):
             datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
             start_x=50.0,
             start_y=20.0,
-            pitch_size=(106, 68),
-            team_side="home",
-            _xt=0.1,
             team_id=123,
-            z_target=15.0,
-            y_target=3.5,
+            team_side="home",
+            pitch_size=(106, 68),
             player_id=45849,
             jersey=10,
-            shot_outcome="own_goal",
-            body_part="head",
-            type_of_play="free_kick",
-            first_touch=False,
-            created_oppertunity="regular_play",
+            outcome=False,
             related_event_id=123,
+            _xt=0.1,
+            body_part="head",
+            possession_type="free_kick",
+            set_piece="no_set_piece",
+            z_target=15.0,
+            y_target=3.5,
+            outcome_str="own_goal",
+            first_touch=False,
         )
 
         self.tracking_data_frame = pd.Series(
@@ -48,8 +50,8 @@ class TestShotEvent(unittest.TestCase):
             }
         )
 
-    def test_post_init(self):
-        # super() call
+    def test_shot_event_post_init(self):
+        # super call
         with self.assertRaises(TypeError):
             ShotEvent(
                 event_id="2512690515",
@@ -59,100 +61,24 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
                 team_id=123,
-                z_target=15.0,
-                y_target=3.5,
+                team_side="home",
+                pitch_size=(106, 68),
                 player_id=45849,
                 jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
+                outcome=False,
                 related_event_id=123,
-            )
-
-        # player_id
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
                 _xt=0.1,
-                team_id=123,
+                body_part="head",
+                possession_type="free_kick",
+                set_piece="no_set_piece",
                 z_target=15.0,
                 y_target=3.5,
-                player_id=[22],
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
+                outcome_str="own_goal",
                 first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
             )
 
-        # jersey
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey="10",
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-            )
-
-        # shot_outcome
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome=1,
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-            )
-
+        # outcome_str
         with self.assertRaises(ValueError):
             ShotEvent(
                 event_id=2512690515,
@@ -162,23 +88,23 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
                 team_id=123,
-                z_target=15.0,
-                y_target=3.5,
+                team_side="home",
+                pitch_size=(106, 68),
                 player_id=45849,
                 jersey=10,
-                shot_outcome="wrong_outcome",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
+                outcome=False,
                 related_event_id=123,
+                _xt=0.1,
+                body_part="head",
+                possession_type="free_kick",
+                set_piece="no_set_piece",
+                z_target=15.0,
+                y_target=3.5,
+                outcome_str="unknown_outcome",
+                first_touch=False,
             )
 
-        # y_target and z_target
         with self.assertRaises(TypeError):
             ShotEvent(
                 event_id=2512690515,
@@ -188,144 +114,21 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
                 team_id=123,
-                z_target="15.0",
-                y_target=3.5,
+                team_side="home",
+                pitch_size=(106, 68),
                 player_id=45849,
                 jersey=10,
-                shot_outcome="own_goal",
+                outcome=False,
+                related_event_id=123,
+                _xt=0.1,
                 body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-            )
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-            )
-
-        # body_part
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
+                possession_type="free_kick",
+                set_piece="no_set_piece",
                 z_target=15.0,
                 y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part=3,
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-            )
-        with self.assertRaises(ValueError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="wrong_body_part",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-            )
-
-        # type_of_play
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play=3,
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-            )
-        with self.assertRaises(ValueError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="wrong_type_of_play",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
+                outcome_str=1,
+                first_touch="False",
             )
 
         # first_touch
@@ -338,151 +141,133 @@ class TestShotEvent(unittest.TestCase):
                 datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
                 start_x=50.0,
                 start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
                 team_id=123,
-                z_target=15.0,
-                y_target=3.5,
+                team_side="home",
+                pitch_size=(106, 68),
                 player_id=45849,
                 jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=3,
-                created_oppertunity="regular_play",
+                outcome=False,
                 related_event_id=123,
+                _xt=0.1,
+                body_part="head",
+                possession_type="free_kick",
+                set_piece="no_set_piece",
+                z_target=15.0,
+                y_target=3.5,
+                outcome_str="own_goal",
+                first_touch="False",
             )
 
-        # created_oppertunity
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity=3,
-                related_event_id=123,
-            )
-        with self.assertRaises(ValueError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="wrong_created_oppertunity",
-                related_event_id=123,
-            )
+        float_like_kwargs = {
+            "y_target": 3.5,
+            "z_target": 15.0,
+            "ball_goal_distance": 18.0,
+            "ball_gk_distance": 10.0,
+            "shot_angle": 20.0,
+            "gk_optimal_loc_distance": 10.0,
+            "pressure_on_ball": 1.0,
+            "goal_gk_distance": 10.0,
+        }
+        invalid_values = [1, "1", [1], {1}, {"val": 1}]
+        for key in float_like_kwargs.keys():
+            current_kwargs = float_like_kwargs.copy()
+            current_kwargs[key] = random.choice(invalid_values)
+            with self.assertRaises(TypeError):
+                ShotEvent(
+                    event_id=2512690515,
+                    period_id=1,
+                    minutes=9,
+                    seconds=17,
+                    datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+                    start_x=50.0,
+                    start_y=20.0,
+                    team_id=123,
+                    team_side="home",
+                    pitch_size=(106, 68),
+                    player_id=45849,
+                    jersey=10,
+                    outcome=False,
+                    related_event_id=123,
+                    _xt=0.1,
+                    body_part="head",
+                    possession_type="free_kick",
+                    set_piece="no_set_piece",
+                    outcome_str="own_goal",
+                    first_touch=False,
+                    **current_kwargs
+                )
 
-        # related_event_id
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id="123",
-            )
-        # td_vars float
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-                ball_goal_distance=10,
-            )
-        # td_vars int
-        with self.assertRaises(TypeError):
-            ShotEvent(
-                event_id=2512690515,
-                period_id=1,
-                minutes=9,
-                seconds=17,
-                datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                start_x=50.0,
-                start_y=20.0,
-                pitch_size=(106, 68),
-                team_side="home",
-                _xt=0.1,
-                team_id=123,
-                z_target=15.0,
-                y_target=3.5,
-                player_id=45849,
-                jersey=10,
-                shot_outcome="own_goal",
-                body_part="head",
-                type_of_play="corner_kick",
-                first_touch=False,
-                created_oppertunity="regular_play",
-                related_event_id=123,
-                n_obstructive_defenders=1.5,
-            )
+        int_like_kwargs = {
+            "n_obstructive_players": 1,
+            "n_obstructive_defenders": 1,
+        }
+        invalid_values = [1.0, "1", [1], {1}, {"val": 1}]
+        for key in int_like_kwargs.keys():
+            current_kwargs = int_like_kwargs.copy()
+            for value in invalid_values:
+                current_kwargs[key] = value
+                with self.assertRaises(TypeError):
+                    ShotEvent(
+                        event_id=2512690515,
+                        period_id=1,
+                        minutes=9,
+                        seconds=17,
+                        datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+                        start_x=50.0,
+                        start_y=20.0,
+                        team_id=123,
+                        team_side="home",
+                        pitch_size=(106, 68),
+                        player_id=45849,
+                        jersey=10,
+                        outcome=False,
+                        related_event_id=123,
+                        _xt=0.1,
+                        body_part="head",
+                        possession_type="free_kick",
+                        set_piece="no_set_piece",
+                        z_target=15.0,
+                        y_target=3.5,
+                        outcome_str="own_goal",
+                        first_touch=False,
+                        **current_kwargs
+                    )
 
-    def test_shot_event_eq(self):
+    def test_shot_event_df_attributes(self):
+        assert self.shot_event.df_attributes == [
+            "event_id",
+            "period_id",
+            "minutes",
+            "seconds",
+            "datetime",
+            "start_x",
+            "start_y",
+            "team_id",
+            "team_side",
+            "player_id",
+            "jersey",
+            "outcome",
+            "related_event_id",
+            "xT",
+            "body_part",
+            "possession_type",
+            "set_piece",
+            "outcome_str",
+            "y_target",
+            "z_target",
+            "first_touch",
+            "ball_goal_distance",
+            "ball_gk_distance",
+            "shot_angle",
+            "gk_optimal_loc_distance",
+            "pressure_on_ball",
+            "n_obstructive_players",
+            "n_obstructive_defenders",
+            "goal_gk_distance",
+            "xG",
+        ]
+
+    def test_shot_event_eq__copy(self):
         assert self.shot_event == self.shot_event
 
         shot_event_changed_event_attr = self.shot_event.copy()
@@ -490,7 +275,7 @@ class TestShotEvent(unittest.TestCase):
         assert self.shot_event != shot_event_changed_event_attr
 
         shot_event_changed_shot_attr = self.shot_event.copy()
-        shot_event_changed_shot_attr.shot_outcome = "goal"
+        shot_event_changed_shot_attr.outcome_str = "goal"
         assert self.shot_event != shot_event_changed_shot_attr
 
         assert self.shot_event != 1
@@ -530,27 +315,27 @@ class TestShotEvent(unittest.TestCase):
             shot_event.goal_gk_distance, np.sqrt(43**2 + 10**2), places=4
         )
 
-    def test_shot_event_copy(self):
-        shot_event_copy = self.shot_event.copy()
-        assert shot_event_copy == self.shot_event
-
     def test_get_xG_valid(self):
         shot_event = self.shot_event.copy()
         shot_event.ball_goal_distance = 18.0
         shot_event.shot_angle = 20
         shot_event.body_part = "left_foot"
-        shot_event.type_of_play = "penalty"
+        shot_event.set_piece = "penalty"
+
+        res_own_goal = shot_event.get_xG()
+
+        shot_event.outcome_str = "miss_off_target"
         res_penalty = shot_event.get_xG()
 
-        shot_event.type_of_play = "free_kick"
+        shot_event.set_piece = "free_kick"
         res_free_kick = shot_event.get_xG()
 
-        shot_event.type_of_play = "corner_kick"
+        shot_event.set_piece = "corner_kick"
         res_reg_foot = shot_event.get_xG()
 
         shot_event.body_part = "head"
         res_head = shot_event.get_xG()
-
+        assert res_own_goal == 0.0
         assert res_penalty == 0.79
         assert 0.3 > res_free_kick > res_reg_foot > res_head > 0.0
 
@@ -559,9 +344,10 @@ class TestShotEvent(unittest.TestCase):
         shot_event.ball_goal_distance = np.nan
         shot_event.shot_angle = 20
         shot_event.body_part = "left_foot"
-        shot_event.type_of_play = "penalty"
+        shot_event.set_piece = "penalty"
+        shot_event.outcome_str = "miss_off_target"
         assert pd.isnull(shot_event.get_xG())
 
         shot_event.ball_goal_distance = 18.0
-        shot_event.type_of_play = "unknown_type_of_play"
+        shot_event.set_piece = "unknown_type_of_play"
         assert round(shot_event.get_xG(), 4) == 0.0805

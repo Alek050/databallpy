@@ -20,7 +20,7 @@ from databallpy.data_parsers.tracking_data_parsers import (
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _quality_check_tracking_data,
 )
-from databallpy.events import BaseOnBallEvent, PassEvent
+from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.match import Match
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT
@@ -532,8 +532,8 @@ def rescale_event_data(
     tracking_pitch_dimensions: list[float, float],
     event_pitch_dimensions: list[float, float],
     event_data: pd.DataFrame,
-    databallpy_events: dict[str, dict[str | int, BaseOnBallEvent]] = None,
-) -> tuple[pd.DataFrame, dict[str, dict[str | int, BaseOnBallEvent]]]:
+    databallpy_events: dict[str, dict[str | int,]] = None,
+) -> tuple[pd.DataFrame, dict[str, dict[str | int, IndividualCloseToBallEvent]]]:
     """Function to rescale the event data and databallpy events to the tracking data
     dimensions if the event data is not scaled in the same dimensions of the tracking
     data.

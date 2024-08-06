@@ -1,52 +1,55 @@
 import json
 import math
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
 
-from databallpy.events.base_event import BaseOnBallEvent
+from databallpy.events.base_event import IndividualOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
 from databallpy.models.utils import scale_and_predict_logreg
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import DATABALLPY_SHOT_OUTCOMES, MISSING_INT
+from databallpy.utils.utils import _values_are_equal_
 
 
 @dataclass
-class ShotEvent(BaseOnBallEvent):
+class ShotEvent(IndividualOnBallEvent):
     """Class for shot events, inherits from BaseEvent. Saves all information from a
     shot from the event data, and adds information about the shot using the tracking
     data if available.
 
-    Args:
+     Args:
         event_id (int): distinct id of the event
         period_id (int): id of the period
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
         datetime (pd.Timestamp): datetime at which the event occured
-        start_x (float): x location of the event
-        start_y (float): y location of the event
-        pitch_size (list): dimensions of the pitch
-        team_side (str): side of the team that takes the shot, either "home" or "away"
-        team_id (int): id of the team that takes the shot
-        player_id (int): id of the player who takes the shot
-        shot_outcome (str): whether the shot is a goal or not on target or not.
-            Possible values: "goal", "miss_off_target", "miss_on_target",
-            "blocked", "miss_hit_post" "miss"
+        start_x (float): x coordinate of the start location of the event
+        start_y (float): y coordinate of the start location of the event
+        team_id (int): id of the team that performed the event
+        team_side (str): side of the team that performed the event, either
+            ["home", "away"]
+        pitch_size (tuple): size of the pitch in meters
+        player_id (int | str): id of the player that performed the event
+        jersey (int): jersey number of the player that performed the event
+        outcome (bool): whether the event was successful or not
+        related_event_id (int | str | None): id of the event that the event is related
+            to the current event.
+        body_part (str): body part that the event is related to. Should be in
+            databallpy.utils.constants.DATBALLPY_BODY_PARTS
+        possession_type (str): type of possession that the event is related to.
+            Should be in databallpy.utils.constants.DATABALLPY_POSSESSION_TYPES
+        set_piece (str): type of set piece that the event is related to. Should be in
+            databallpy.utils.constants.DATABALLPY_SET_PIECES
+        outcome_str (str): whether the shot is a goal or not on target or not.
+            Should be in databallpy.utils.constants.DATABALLPY_SHOT_OUTCOMES
         y_target (float, optional): y location of the goal. Defaults to np.nan.
         z_target (float, optional): z location of the goal. Defaults to np.nan.
-        body_part (str, optional): body part with which the shot is taken. Defaults to
-            None.
-        type_of_play (str, optional): open play or type of set piece. Defaults to
-            "regular_play".
         first_touch (bool, optional): whether the shot is taken with the first touch.
             Defaults to False.
-        created_oppertunity (str, optional): how the chance was created, assisted or
-            individual play. Defaults to None.
-        related_event_id (int, optional): id of the event that led to the shot. Defaults
-            to MISSING_INT.
         ball_goal_distance (float, optional): distance between the ball and the goal in
             meters.
         ball_gk_distance (float, optional): distance between the ball and the goalkeeper
@@ -66,20 +69,18 @@ class ShotEvent(BaseOnBallEvent):
             the triangle from the ball and the two posts of the goal.
         goal_gk_distance (float, optional): distance between the goal and the
             goalkeeper in meters.
-        set_piece (str, optional): type of set piece. Defaults to "no_set_piece".
-            Choices: "no_set_piece", "free_kick", "penalty"
 
-    Attributes:
+    Properties:
+        xT (float): expected threat of the event. This is calculated using a model
+            that is trained on the distance and angle to the goal, and the distance
+            times theangle to the goal. See the notebook in the notebooks folder for
+            more information on the model.
+        base_df_attributes (list[str]): list of attributes that are used to create a
+            DataFrame
         xG (float): expected goals of the shot. This is calculated using a model that is
             trained on the distance and angle to the goal, and the distance times the
             angle to the goal. See the notebook in the notebooks folder for more
             information on the model.
-        xT (float): expected threat of the event. This is calculated using a model that
-            is trained on the distance and angle to the goal, and the distance times
-            the angle to the goal. See the notebook in the notebooks folder for more
-            information on the model.
-        df_attributes (list[str]): list of attributes that are used to create a
-            DataFrame.
 
     Returns:
         ShotEvent: instance of the ShotEvent class
@@ -89,18 +90,10 @@ class ShotEvent(BaseOnBallEvent):
         event data, but the "opta_id" in the event data, since opta uses different ids.
     """
 
-    player_id: int
-    jersey: int
-    shot_outcome: str
+    outcome_str: str
     y_target: float = np.nan
     z_target: float = np.nan
-    body_part: str = None
-    type_of_play: str = "regular_play"
     first_touch: bool = False
-    created_oppertunity: str = None
-
-    # id of the event that led to the shot. Note: opta id for opta event data
-    related_event_id: int = MISSING_INT
 
     # tracking data variables
     ball_goal_distance: float = np.nan
@@ -112,14 +105,11 @@ class ShotEvent(BaseOnBallEvent):
     n_obstructive_defenders: int = MISSING_INT
     goal_gk_distance: float = np.nan
     xG: float = np.nan
-    set_piece: str = "no_set_piece"
 
     def __post_init__(self):
         super().__post_init__()
-        self._check_datatypes()
-        if self.type_of_play in ["penalty", "free_kick"]:
-            self.set_piece = self.type_of_play
-        _ = self._xt
+        self._validate_inputs_on_ball_event()
+        _ = self.xT
         if pd.isnull(self.ball_goal_distance):
             self._update_ball_goal_distance()
         if pd.isnull(self.shot_angle):
@@ -130,15 +120,10 @@ class ShotEvent(BaseOnBallEvent):
     def df_attributes(self) -> list[str]:
         base_attributes = super().base_df_attributes
         return base_attributes + [
-            "player_id",
-            "shot_outcome",
+            "outcome_str",
             "y_target",
             "z_target",
-            "body_part",
-            "type_of_play",
             "first_touch",
-            "created_oppertunity",
-            "related_event_id",
             "ball_goal_distance",
             "ball_gk_distance",
             "shot_angle",
@@ -148,7 +133,6 @@ class ShotEvent(BaseOnBallEvent):
             "n_obstructive_defenders",
             "goal_gk_distance",
             "xG",
-            "set_piece",
         ]
 
     def _update_ball_goal_distance(self, ball_xy: np.ndarray | None = None):
@@ -289,6 +273,8 @@ class ShotEvent(BaseOnBallEvent):
         folder.
         """
 
+        if self.outcome_str == "own_goal":
+            return 0.0
         path = os.path.join(os.path.dirname(__file__), "..", "models")
         if pd.isnull(self.ball_goal_distance) or pd.isnull(self.shot_angle):
             return np.nan
@@ -296,25 +282,16 @@ class ShotEvent(BaseOnBallEvent):
         with open(f"{path}/xg_params.json", "r") as f:
             xg_params = json.load(f)
 
-        if self.type_of_play == "penalty":
+        if self.set_piece == "penalty":
             return 0.79
 
-        elif self.type_of_play == "free_kick":
+        elif self.set_piece == "free_kick":
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
                 xg_params["xG_by_free_kick"],
             )[0]
 
-        elif (
-            self.type_of_play
-            in [
-                "regular_play",
-                "corner_kick",
-                "crossed_free_kick",
-                "counter_attack",
-            ]
-            and "foot" not in self.body_part
-        ):
+        elif "foot" not in self.body_part:
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
                 xg_params["xG_by_head"],
@@ -329,83 +306,41 @@ class ShotEvent(BaseOnBallEvent):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ShotEvent):
             return False
-        result = [
-            super().__eq__(other),
-            self.player_id == other.player_id,
-            self.jersey == other.jersey,
-            self.shot_outcome == other.shot_outcome,
-            round(self.y_target, 4) == round(other.y_target, 4)
-            if not pd.isnull(self.y_target)
-            else pd.isnull(other.y_target),
-            round(self.z_target, 4) == round(other.z_target, 4)
-            if not pd.isnull(self.z_target)
-            else pd.isnull(other.z_target),
-            self.body_part == other.body_part
-            if not pd.isnull(self.body_part)
-            else pd.isnull(other.body_part),
-            self.type_of_play == other.type_of_play
-            if not pd.isnull(self.type_of_play)
-            else pd.isnull(other.type_of_play),
-            self.first_touch == other.first_touch
-            if not pd.isnull(self.first_touch)
-            else pd.isnull(other.first_touch),
-            self.created_oppertunity == other.created_oppertunity
-            if not pd.isnull(self.created_oppertunity)
-            else pd.isnull(other.created_oppertunity),
-            self.related_event_id == other.related_event_id,
-            self.ball_gk_distance == other.ball_gk_distance
-            if not pd.isnull(self.ball_gk_distance)
-            else pd.isnull(other.ball_gk_distance),
-            math.isclose(
-                self.ball_goal_distance, other.ball_goal_distance, abs_tol=1e-5
-            )
-            if not pd.isnull(self.ball_goal_distance)
-            else pd.isnull(other.ball_goal_distance),
-            math.isclose(self.shot_angle, other.shot_angle, abs_tol=1e-5)
-            if not pd.isnull(self.shot_angle)
-            else pd.isnull(other.shot_angle),
-            self.gk_optimal_loc_distance == other.gk_optimal_loc_distance
-            if not pd.isnull(self.gk_optimal_loc_distance)
-            else pd.isnull(other.gk_optimal_loc_distance),
-            self.pressure_on_ball == other.pressure_on_ball
-            if not pd.isnull(self.pressure_on_ball)
-            else pd.isnull(other.pressure_on_ball),
-            self.n_obstructive_players == other.n_obstructive_players,
-            self.n_obstructive_defenders == other.n_obstructive_defenders,
-            self.goal_gk_distance == other.goal_gk_distance
-            if not pd.isnull(self.goal_gk_distance)
-            else pd.isnull(other.goal_gk_distance),
-            math.isclose(self.xG, other.xG, abs_tol=1e-5)
-            if not pd.isnull(self.xG)
-            else pd.isnull(other.xG),
-        ]
-        return all(result)
+        for field in fields(self):
+            if not _values_are_equal_(
+                getattr(self, field.name), getattr(other, field.name)
+            ):
+                return False
+
+        return True
 
     def copy(self):
+        super_copy = super().copy()
         return ShotEvent(
-            event_id=self.event_id,
-            period_id=self.period_id,
-            minutes=self.minutes,
-            seconds=self.seconds,
-            datetime=self.datetime,
-            start_x=self.start_x,
-            start_y=self.start_y,
-            pitch_size=self.pitch_size,
-            team_side=self.team_side,
-            _xt=self._xt,
-            team_id=self.team_id,
-            player_id=self.player_id,
-            jersey=self.jersey,
-            shot_outcome=self.shot_outcome,
+            event_id=super_copy.event_id,
+            period_id=super_copy.period_id,
+            minutes=super_copy.minutes,
+            seconds=super_copy.seconds,
+            datetime=super_copy.datetime,
+            start_x=super_copy.start_x,
+            start_y=super_copy.start_y,
+            team_id=super_copy.team_id,
+            team_side=super_copy.team_side,
+            pitch_size=super_copy.pitch_size,
+            player_id=super_copy.player_id,
+            jersey=super_copy.jersey,
+            outcome=super_copy.outcome,
+            related_event_id=super_copy.related_event_id,
+            body_part=super_copy.body_part,
+            possession_type=super_copy.possession_type,
+            set_piece=super_copy.set_piece,
+            _xt=super_copy._xt,
+            outcome_str=self.outcome_str,
             y_target=self.y_target,
             z_target=self.z_target,
-            body_part=self.body_part,
-            type_of_play=self.type_of_play,
             first_touch=self.first_touch,
-            created_oppertunity=self.created_oppertunity,
-            related_event_id=self.related_event_id,
-            ball_gk_distance=self.ball_gk_distance,
             ball_goal_distance=self.ball_goal_distance,
+            ball_gk_distance=self.ball_gk_distance,
             shot_angle=self.shot_angle,
             gk_optimal_loc_distance=self.gk_optimal_loc_distance,
             pressure_on_ball=self.pressure_on_ball,
@@ -415,29 +350,13 @@ class ShotEvent(BaseOnBallEvent):
             xG=self.xG,
         )
 
-    def _check_datatypes(self):
-        if not isinstance(self.player_id, (int, np.integer, str)):
-            raise TypeError(f"player_id should be int, got {type(self.player_id)}")
-
-        if not isinstance(self.jersey, (int, np.integer)):
-            raise TypeError(f"jersey should be int, got {type(self.jersey)} instead")
-        if not isinstance(self.shot_outcome, str):
-            raise TypeError(
-                f"shot_outcome should be str, got {type(self.shot_outcome)}"
-            )
-        if self.shot_outcome not in [
-            "goal",
-            "miss_off_target",
-            "miss_hit_post",
-            "miss_on_target",
-            "blocked",
-            "own_goal",
-            "miss",
-            "not_specified",
-        ]:
+    def _validate_inputs_on_ball_event(self):
+        if not isinstance(self.outcome_str, str):
+            raise TypeError(f"shot_outcome should be str, got {type(self.outcome_str)}")
+        if self.outcome_str not in DATABALLPY_SHOT_OUTCOMES:
             raise ValueError(
-                "shot_outcome should be goal, miss_off_target, miss_hit_post, "
-                f"miss_on_target, blocked or own_goal, got '{self.shot_outcome}'"
+                f"outcome_str should be {DATABALLPY_SHOT_OUTCOMES}"
+                f", got '{self.outcome_str}'"
             )
         if not isinstance(self.y_target, (float, np.floating)):
             raise TypeError(
@@ -447,53 +366,8 @@ class ShotEvent(BaseOnBallEvent):
             raise TypeError(
                 f"z_target should be float or int, got {type(self.z_target)}"
             )
-        if not isinstance(self.body_part, (str, type(None))):
-            raise TypeError(
-                f"body_part should be str or None, got {type(self.body_part)}"
-            )
-        if self.body_part not in ["left_foot", "right_foot", "head", "other", None]:
-            raise ValueError(
-                "body_part should be left_foot, right_foot, head or other, "
-                f"got {self.body_part}"
-            )
-        if not isinstance(self.type_of_play, (str, type(None))):
-            raise TypeError(
-                f"type_of_play should be str, got {type(self.type_of_play)}"
-            )
-        if self.type_of_play not in [
-            "penalty",
-            "regular_play",
-            "counter_attack",
-            "crossed_free_kick",
-            "corner_kick",
-            "free_kick",
-            None,
-        ]:
-            raise ValueError(
-                "type_of_play should be penalty, regular_play, counter_attack, "
-                f"crossed_free_kick, corner_kick or free_kick, got {self.type_of_play}"
-            )
         if not isinstance(self.first_touch, (bool, type(None))):
             raise TypeError(f"first_touch should be bool, got {type(self.first_touch)}")
-        if not isinstance(self.created_oppertunity, (str, type(None))):
-            raise TypeError(
-                "created_oppertunity should be str or None, got "
-                f"{type(self.created_oppertunity)}"
-            )
-        if self.created_oppertunity not in [
-            "assisted",
-            "individual_play",
-            "regular_play",
-            None,
-        ]:
-            raise ValueError(
-                "created_oppertunity should be assisted, regular_play, or "
-                f"individual_play, got {self.created_oppertunity}"
-            )
-        if not isinstance(self.related_event_id, (int, np.integer)):
-            raise TypeError(
-                f"related_event_id should be int, got {type(self.related_event_id)}"
-            )
 
         for name, td_var in zip(
             [

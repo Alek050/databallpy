@@ -111,3 +111,74 @@ def sigmoid(
     """
     in_exp = np.clip(d * -(x - e), a_min=-700, a_max=700)
     return a + (b / (1 + c * np.exp(in_exp)))
+
+
+def _values_are_equal_(input1: any, input2: any) -> bool:
+    """Function to check if two values are equal. The function can check if two values
+    are equal if they are of the same type. The function can check if two values are
+    equal if they are of the following types: float, int, str, pd.Timestamp, list,
+    tuple, dict, np.ndarray, pd.Series, pd.DataFrame. If the values are of another
+    type, a NotImplementedError is raised.
+
+    Args:
+        input1 (any): The first value to check
+        input2 (any): The second value to check
+
+    Raises:
+        NotImplementedError: If the values are of another type than float, int, str,
+            pd.Timestamp, list, tuple, dict, np.ndarray, pd.Series, pd.DataFrame
+
+    Returns:
+        bool: True if the values are equal, False if the values are not equal
+    """
+    if isinstance(input1, (float, np.floating, int, np.integer)):
+        if not isinstance(input2, (float, np.floating, int, np.integer)):
+            return False
+        if pd.isnull(input1):
+            return pd.isnull(input2)
+        return np.isclose(input1, input2, atol=1e-5)
+
+    if isinstance(input1, (str, pd.Timestamp)):
+        return input1 == input2
+
+    if isinstance(input1, (list, tuple)):
+        if not isinstance(input2, (list, tuple)):
+            return False
+        if len(input1) != len(input2):
+            return False
+        return all(_values_are_equal_(i1, i2) for i1, i2 in zip(input1, input2))
+
+    if isinstance(input1, dict):
+        if not isinstance(input2, dict):
+            return False
+        if not set(input1.keys()) == set(input2.keys()):
+            return False
+        return all(_values_are_equal_(input1[k], input2[k]) for k in input1.keys())
+
+    if isinstance(input1, np.ndarray):
+        if not isinstance(input2, np.ndarray):
+            return False
+        if not input1.shape == input2.shape:
+            return False
+        if not input1.dtype == input2.dtype:
+            return False
+        return np.allclose(input1, input2, atol=1e-5)
+
+    if isinstance(input1, (pd.Series, pd.DataFrame)):
+        if not isinstance(input2, type(input1)):
+            return False
+        if not input1.shape == input2.shape:
+            return False
+        if isinstance(input1, pd.DataFrame):
+            if not set(input1.columns) == set(input2.columns):
+                return False
+            return all(_values_are_equal_(input1[c], input2[c]) for c in input1.columns)
+        return input1.sort_index().equals(input2.sort_index())
+
+    if isinstance(input1, type(pd.to_datetime("NaT"))):
+        return isinstance(input2, type(pd.to_datetime("NaT")))
+
+    else:
+        raise NotImplementedError(
+            f"Equality check for {type(input1)} is not implemented"
+        )
