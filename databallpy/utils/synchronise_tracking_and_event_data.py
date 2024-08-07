@@ -59,7 +59,7 @@ def synchronise_tracking_and_event_data(
             in the terminal. Defaults to True.
 
     Currently works for the following databallpy_events:
-        'pass', 'shot', and 'dribble'
+        'pass', 'shot', 'dribble', and 'tackle'
 
     Returns:
         tuple: Tuple containing two DataFrames. The first DataFrame contains
@@ -185,7 +185,7 @@ def _create_sim_mat(
             cost_function = cost_functions.get("pass", base_pass_cost_function)
         elif row.databallpy_event == "shot":
             cost_function = cost_functions.get("shot", base_shot_cost_function)
-        else:
+        else:  # dribble and tackle
             cost_function = cost_functions.get(
                 row.databallpy_event, base_general_cost_ball_event
             )

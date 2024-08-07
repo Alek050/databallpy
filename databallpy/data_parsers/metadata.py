@@ -1,10 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
-import numpy as np
 import pandas as pd
 
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
+from databallpy.utils.utils import _values_are_equal_
 
 LOGGER = create_logger(__name__)
 
@@ -199,42 +199,14 @@ class Metadata:
     LOGGER.info("Passed all Metadata input checks.")
 
     def __eq__(self, other):
-        if isinstance(other, Metadata):
-            result = [
-                self.match_id == other.match_id,
-                all(
-                    [
-                        s == o if not np.isnan(s) else np.isnan(o)
-                        for s, o in zip(self.pitch_dimensions, other.pitch_dimensions)
-                    ]
-                ),
-                self.periods_frames.equals(other.periods_frames),
-                self.frame_rate == other.frame_rate
-                if not pd.isnull(self.frame_rate)
-                else pd.isnull(other.frame_rate),
-                self.home_team_id == other.home_team_id,
-                self.home_team_name == other.home_team_name,
-                self.home_players.equals(other.home_players),
-                self.home_score == other.home_score
-                if not pd.isnull(self.home_score)
-                else pd.isnull(other.home_score),
-                self.home_formation == other.home_formation,
-                self.away_team_id == other.away_team_id,
-                self.away_team_name == other.away_team_name,
-                self.away_players.equals(other.away_players),
-                self.away_score == other.away_score
-                if not pd.isnull(self.away_score)
-                else pd.isnull(other.away_score),
-                self.away_formation == other.away_formation,
-                self.country == other.country,
-                self.periods_changed_playing_direction
-                == other.periods_changed_playing_direction
-                if self.periods_changed_playing_direction is not None
-                else other.periods_changed_playing_direction is None,
-            ]
-            return all(result)
-        else:
+        if not isinstance(other, Metadata):
             return False
+        for field in fields(self):
+            if not _values_are_equal_(
+                getattr(self, field.name), getattr(other, field.name)
+            ):
+                return False
+        return True
 
     def copy(self):
         return Metadata(

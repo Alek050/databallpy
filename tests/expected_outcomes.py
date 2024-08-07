@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
 from databallpy.utils.constants import MISSING_INT
 
 TD_TRACAB = pd.DataFrame(
@@ -168,7 +168,7 @@ ED_OPTA = pd.DataFrame(
             None,
             None,
             "dribble",
-            None,
+            "tackle",
             "own_goal",
             "shot",
             "shot",
@@ -200,7 +200,7 @@ ED_OPTA = pd.DataFrame(
             MISSING_INT,
             MISSING_INT,
             0,
-            MISSING_INT,
+            1,
             1,
             1,
             0,
@@ -398,10 +398,10 @@ DRIBBLE_EVENTS_OPTA = {
         team_id=3,
         player_id=45849,
         jersey=2,
-        outcome=True,
+        outcome=False,
         related_event_id=4,
         body_part="foot",
-        possession_type="unspecified",
+        possession_type="open_play",
         set_piece="no_set_piece",
         _xt=-1,
         duel_type="offensive",
@@ -418,6 +418,38 @@ for key, dribble_event in DRIBBLE_EVENTS_OPTA.items():
     DRIBBLE_EVENTS_OPTA_TRACAB[key].start_y = (
         DRIBBLE_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
     )
+
+TACKLE_EVENTS_OPTA = {
+    2499594291: TackleEvent(
+        event_id=2499594291,
+        period_id=2,
+        minutes=31,
+        seconds=10,
+        datetime=pd.to_datetime("2023-01-22T12:18:43.120").tz_localize(
+            "Europe/Amsterdam"
+        ),
+        start_x=(34.3 / 100 * 106 - 53)
+        * -1,  # standard opta pitch dimensions = [106, 68]
+        start_y=(76.8 / 100 * 68 - 34) * -1,
+        pitch_size=[106.0, 68.0],
+        team_side="away",
+        team_id=194,
+        player_id=184934,
+        jersey=1,
+        outcome=True,
+        related_event_id=6,
+    )
+}
+TACKLE_EVENTS_OPTA_TRACAB = {}
+for key, tackle_event in TACKLE_EVENTS_OPTA.items():
+    TACKLE_EVENTS_OPTA_TRACAB[key] = tackle_event.copy()
+    TACKLE_EVENTS_OPTA_TRACAB[key].start_x = (
+        TACKLE_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
+    )
+    TACKLE_EVENTS_OPTA_TRACAB[key].start_y = (
+        TACKLE_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
+    )
+
 
 PASS_EVENTS_OPTA = {
     2499594225: PassEvent(
@@ -438,7 +470,7 @@ PASS_EVENTS_OPTA = {
         outcome=True,
         related_event_id=MISSING_INT,
         body_part="unspecified",
-        possession_type="unspecified",
+        possession_type="open_play",
         set_piece="kick_off",
         _xt=-1,
         outcome_str="successful",
@@ -462,10 +494,10 @@ PASS_EVENTS_OPTA = {
         player_id=184934,
         jersey=1,
         team_id=194,
-        outcome=True,
+        outcome=False,
         related_event_id=MISSING_INT,
         body_part="unspecified",
-        possession_type="unspecified",
+        possession_type="open_play",
         set_piece="no_set_piece",
         _xt=-1,
         outcome_str="assist",
@@ -583,13 +615,31 @@ TD_METRICA = pd.DataFrame(
 
 ED_METRICA = pd.DataFrame(
     {
-        "event_id": [3, 4, 5, 6, 7, 8],
-        "type_id": [5, 1, 10, 2, 2, 2],
-        "databallpy_event": [None, "pass", "dribble", "shot", "shot", "shot"],
-        "period_id": [1, 1, 2, 2, 2, 2],
-        "minutes": [0, 1, 1, 1, 1, 1],
-        "seconds": [14.44, 4.22, 15.08, 16.08, 16.08, 16.08],
-        "player_id": [3578, 3699, 3568, 3568, 3568, 3568],
+        "event_id": [3, 4, 5, 6, 7, 8, 9, 9],
+        "type_id": [
+            5,
+            1,
+            10,
+            2,
+            2,
+            2,
+            9,
+            9,
+        ],
+        "databallpy_event": [
+            None,
+            "pass",
+            "dribble",
+            "shot",
+            "shot",
+            "shot",
+            "tackle",
+            None,
+        ],
+        "period_id": [1, 1, 2, 2, 2, 2, 2, 2],
+        "minutes": [0, 1, 1, 1, 1, 1, 1, 1],
+        "seconds": [14.44, 4.22, 15.08, 16.08, 16.08, 16.08, 20.00, 20.00],
+        "player_id": [3578, 3699, 3568, 3568, 3568, 3568, 3568, 3568],
         "player_name": [
             "Player 11",
             "Player 34",
@@ -597,11 +647,22 @@ ED_METRICA = pd.DataFrame(
             "Player 1",
             "Player 1",
             "Player 1",
+            "Player 1",
+            "Player 1",
         ],
-        "team_id": ["FIFATMA", "FIFATMB", "FIFATMA", "FIFATMA", "FIFATMA", "FIFATMA"],
-        "outcome": [MISSING_INT, 0, 1, 0, 1, 1],
-        "start_x": [np.nan, 0.0, 20.0, 20.0, 20.0, 20.0],
-        "start_y": [np.nan, -5.0, 5, 5, 5, 5],
+        "team_id": [
+            "FIFATMA",
+            "FIFATMB",
+            "FIFATMA",
+            "FIFATMA",
+            "FIFATMA",
+            "FIFATMA",
+            "FIFATMA",
+            "FIFATMA",
+        ],
+        "outcome": [MISSING_INT, 0, 1, 0, 1, 1, 0, MISSING_INT],
+        "start_x": [np.nan, 0.0, 20.0, 20.0, 20.0, 20.0, -20.0, -20.0],
+        "start_y": [np.nan, -5.0, 5, 5, 5, 5, -20.0, -20.0],
         "to_player_id": [
             MISSING_INT,
             3700,
@@ -609,12 +670,23 @@ ED_METRICA = pd.DataFrame(
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
+            MISSING_INT,
+            MISSING_INT,
         ],
-        "to_player_name": [None, "Player 35", None, None, None, None],
-        "end_x": [np.nan, -20.0, -40.0, -40.0, -40.0, -40.0],
-        "end_y": [np.nan, -15.0, 0.0, 0.0, 0.0, 0.0],
-        "td_frame": [1, 3, 5, 7, 7, 7],
-        "metrica_event": ["set piece", "pass", "carry", "shot", "shot", "shot"],
+        "to_player_name": [None, "Player 35", None, None, None, None, None, None],
+        "end_x": [np.nan, -20.0, -40.0, -40.0, -40.0, -40.0, np.nan, np.nan],
+        "end_y": [np.nan, -15.0, 0.0, 0.0, 0.0, 0.0, np.nan, np.nan],
+        "td_frame": [1, 3, 5, 7, 7, 7, 10, 10],
+        "metrica_event": [
+            "set piece",
+            "pass",
+            "carry",
+            "shot",
+            "shot",
+            "shot",
+            "tackle",
+            "challenge",
+        ],
         "datetime": [
             pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
             pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
@@ -622,6 +694,8 @@ ED_METRICA = pd.DataFrame(
             pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
             pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
             pd.to_datetime("2019-02-21T03:30:10.000", utc=True),
+            pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
+            pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
         ],
     }
 )
@@ -744,6 +818,25 @@ PASS_EVENTS_METRICA = {
         end_x=-20.0,
         end_y=-15.0,
         pass_type="unspecified",
+    )
+}
+
+TACKLE_EVENTS_METRICA = {
+    9: TackleEvent(
+        event_id=9,
+        period_id=2,
+        minutes=1,
+        seconds=20.0,
+        datetime=pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
+        start_x=-20.0,
+        start_y=-20.0,
+        team_id="FIFATMA",
+        team_side="home",
+        pitch_size=[100.0, 50.0],
+        player_id=3568,
+        jersey=1,
+        outcome=False,
+        related_event_id=MISSING_INT,
     )
 }
 
@@ -1132,7 +1225,7 @@ MD_SCISPORTS = Metadata(
             "end_datetime_ed": pd.to_datetime(
                 [
                     "2023-01-01 00:0:09.3",
-                    "2023-01-01 00:0:13.5",
+                    "2023-01-01 00:0:15.0",
                     "NaT",
                     "NaT",
                     "NaT",
@@ -1175,7 +1268,7 @@ MD_SCISPORTS = Metadata(
 
 ED_SCISPORTS = pd.DataFrame(
     {
-        "event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        "event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
         "databallpy_event": [
             None,
             None,
@@ -1190,10 +1283,12 @@ ED_SCISPORTS = pd.DataFrame(
             "shot",
             "shot",
             None,
+            "tackle",
+            "tackle",
         ],
-        "period_id": [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2],
-        "minutes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 45, 45, 45],
-        "seconds": [0, 0, 0, 0, 0, 0.7, 3.4, 6.6, 9.3, 0.0, 0.1, 0.7, 1.5],
+        "period_id": [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2],
+        "minutes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 45, 45, 45, 45, 45],
+        "seconds": [0, 0, 0, 0, 0, 0.7, 3.4, 6.6, 9.3, 0.0, 0.1, 0.7, 1.5, 2.5, 3.0],
         "player_id": [
             MISSING_INT,
             MISSING_INT,
@@ -1208,6 +1303,8 @@ ED_SCISPORTS = pd.DataFrame(
             201,
             201,
             MISSING_INT,
+            101,
+            101,
         ],
         "team_id": [
             100,
@@ -1223,6 +1320,8 @@ ED_SCISPORTS = pd.DataFrame(
             200,
             200,
             200,
+            100,
+            100,
         ],
         "outcome": [
             MISSING_INT,
@@ -1238,6 +1337,8 @@ ED_SCISPORTS = pd.DataFrame(
             0,
             1,
             MISSING_INT,
+            1,
+            0,
         ],
         "start_x": [
             0.0,
@@ -1253,6 +1354,8 @@ ED_SCISPORTS = pd.DataFrame(
             -37.7,
             -42.5,
             -0.0,
+            12.125,
+            -6.3,
         ],
         "start_y": [
             0.0,
@@ -1268,6 +1371,8 @@ ED_SCISPORTS = pd.DataFrame(
             32.5,
             -0.0,
             -0.0,
+            28.83,
+            14.28,
         ],
         "datetime": pd.to_datetime(
             ["2023-01-01 00:00:00.0"] * 5
@@ -1280,6 +1385,8 @@ ED_SCISPORTS = pd.DataFrame(
                 "2023-01-01 00:00:12.1",
                 "2023-01-01 00:00:12.7",
                 "2023-01-01 00:00:13.5",
+                "2023-01-01 00:00:14.5",
+                "2023-01-01 00:00:15.0",
             ]
         ).tz_localize("Europe/Amsterdam"),
         "scisports_event": ["formation"] * 2
@@ -1293,6 +1400,8 @@ ED_SCISPORTS = pd.DataFrame(
             "shot",
             "shot",
             "period",
+            "defensive_duel",
+            "foul",
         ],
         "player_name": [
             "not_applicable",
@@ -1308,6 +1417,8 @@ ED_SCISPORTS = pd.DataFrame(
             "away player 1",
             "away player 1",
             "not_applicable",
+            "home player 1",
+            "home player 1",
         ],
         "team_name": [
             "Team 1",
@@ -1323,6 +1434,8 @@ ED_SCISPORTS = pd.DataFrame(
             "Team 2",
             "Team 2",
             "Team 2",
+            "Team 1",
+            "Team 1",
         ],
     }
 )

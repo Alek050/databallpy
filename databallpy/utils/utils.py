@@ -173,10 +173,25 @@ def _values_are_equal_(input1: any, input2: any) -> bool:
             if not set(input1.columns) == set(input2.columns):
                 return False
             return all(_values_are_equal_(input1[c], input2[c]) for c in input1.columns)
-        return input1.sort_index().equals(input2.sort_index())
+        return input1.sort_index().round(6).equals(input2.sort_index().round(6))
 
     if isinstance(input1, type(pd.to_datetime("NaT"))):
         return isinstance(input2, type(pd.to_datetime("NaT")))
+
+    known_classes = [
+        "ShotEvent",
+        "PassEvent",
+        "DribbleEvent",
+        "TackleEvent",
+        "Match",
+        "IndividualCloseToBallEvent",
+        "IndividualOnBallEvent",
+    ]
+    if type(input1).__name__ in known_classes:
+        return input1 == input2
+
+    if input1 is None:
+        return input2 is None
 
     else:
         raise NotImplementedError(

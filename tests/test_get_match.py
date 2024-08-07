@@ -33,6 +33,9 @@ from tests.expected_outcomes import (
     SHOT_EVENTS_METRICA,
     SHOT_EVENTS_OPTA,
     SHOT_EVENTS_OPTA_TRACAB,
+    TACKLE_EVENTS_METRICA,
+    TACKLE_EVENTS_OPTA,
+    TACKLE_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
 )
 
@@ -165,6 +168,7 @@ class TestGetMatch(unittest.TestCase):
             shot_events=SHOT_EVENTS_OPTA_TRACAB.copy(),
             dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB.copy(),
             pass_events=PASS_EVENTS_OPTA_TRACAB.copy(),
+            other_events=TACKLE_EVENTS_OPTA_TRACAB.copy(),
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
@@ -211,6 +215,7 @@ class TestGetMatch(unittest.TestCase):
             pass_events=PASS_EVENTS_METRICA,
             shot_events=SHOT_EVENTS_METRICA,
             dribble_events=DRIBBLE_EVENTS_METRICA,
+            other_events=TACKLE_EVENTS_METRICA,
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
@@ -440,6 +445,7 @@ class TestGetMatch(unittest.TestCase):
             shot_events=SHOT_EVENTS_OPTA,
             dribble_events=DRIBBLE_EVENTS_OPTA,
             pass_events=PASS_EVENTS_OPTA,
+            other_events=TACKLE_EVENTS_OPTA,
             _event_timestamp_is_precise=True,
         )
 

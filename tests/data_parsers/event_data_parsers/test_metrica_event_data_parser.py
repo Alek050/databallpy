@@ -15,6 +15,7 @@ from tests.expected_outcomes import (
     MD_METRICA_ED,
     PASS_EVENTS_METRICA,
     SHOT_EVENTS_METRICA,
+    TACKLE_EVENTS_METRICA,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW
 
@@ -63,6 +64,7 @@ class TestMetricaEventDataParser(unittest.TestCase):
         assert dbpe["shot_events"] == SHOT_EVENTS_METRICA
         assert dbpe["pass_events"] == PASS_EVENTS_METRICA
         assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
+        assert dbpe["other_events"] == TACKLE_EVENTS_METRICA
 
     def test_get_databallpy_events(self):
         players = pd.concat(
@@ -88,6 +90,13 @@ class TestMetricaEventDataParser(unittest.TestCase):
             expected_dribble_events[event_id] = event.copy()
             expected_dribble_events[event_id].pitch_size = (106, 68)
 
+        tackle_events = res_dbpe["other_events"]
+        expected_tackle_events = {}
+        for event_id, event in tackle_events.items():
+            expected_tackle_events[event_id] = event.copy()
+            expected_tackle_events[event_id].pitch_size = (106, 68)
+
         assert res_dbpe["shot_events"] == expected_shot_events
         assert res_dbpe["pass_events"] == expected_pass_events
         assert res_dbpe["dribble_events"] == expected_dribble_events
+        assert res_dbpe["other_events"] == expected_tackle_events
