@@ -1,7 +1,7 @@
 from dataclasses import dataclass, fields
 
 from databallpy.events.base_event import IndividualOnBallEvent
-from databallpy.utils.utils import _values_are_equal_
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 
 @dataclass
@@ -68,29 +68,10 @@ class DribbleEvent(IndividualOnBallEvent):
         return base_attributes + ["duel_type", "with_opponent"]
 
     def copy(self):
-        super_copy = super().copy()
-        return DribbleEvent(
-            event_id=super_copy.event_id,
-            period_id=super_copy.period_id,
-            minutes=super_copy.minutes,
-            seconds=super_copy.seconds,
-            datetime=super_copy.datetime,
-            start_x=super_copy.start_x,
-            start_y=super_copy.start_y,
-            team_id=super_copy.team_id,
-            team_side=super_copy.team_side,
-            pitch_size=super_copy.pitch_size,
-            player_id=super_copy.player_id,
-            jersey=super_copy.jersey,
-            outcome=super_copy.outcome,
-            related_event_id=super_copy.related_event_id,
-            body_part=super_copy.body_part,
-            possession_type=super_copy.possession_type,
-            set_piece=super_copy.set_piece,
-            _xt=super_copy._xt,
-            duel_type=self.duel_type,
-            with_opponent=self.with_opponent,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return DribbleEvent(**copied_kwargs)
 
     def _validate_inputs_dribble_event(self):
         if not isinstance(self.duel_type, (str, type(None))):

@@ -4,7 +4,7 @@ import pandas as pd
 
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
-from databallpy.utils.utils import _values_are_equal_
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 LOGGER = create_logger(__name__)
 
@@ -209,25 +209,7 @@ class Metadata:
         return True
 
     def copy(self):
-        return Metadata(
-            match_id=self.match_id,
-            pitch_dimensions=list(self.pitch_dimensions),
-            periods_frames=self.periods_frames.copy(),
-            frame_rate=self.frame_rate,
-            home_team_id=self.home_team_id,
-            home_team_name=self.home_team_name,
-            home_players=self.home_players.copy(),
-            home_score=self.home_score,
-            home_formation=self.home_formation,
-            away_team_id=self.away_team_id,
-            away_team_name=self.away_team_name,
-            away_players=self.away_players.copy(),
-            away_score=self.away_score,
-            away_formation=self.away_formation,
-            country=self.country,
-            periods_changed_playing_direction=list(
-                self.periods_changed_playing_direction
-            )
-            if self.periods_changed_playing_direction is not None
-            else None,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return Metadata(**copied_kwargs)

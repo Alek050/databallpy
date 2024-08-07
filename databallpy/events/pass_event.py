@@ -12,7 +12,7 @@ from databallpy.utils.constants import (
     DATABALLPY_PASS_TYPES,
     MISSING_INT,
 )
-from databallpy.utils.utils import _values_are_equal_
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 
 @dataclass
@@ -140,40 +140,10 @@ class PassEvent(IndividualOnBallEvent):
         )
 
     def copy(self):
-        super_copy = super().copy()
-        return PassEvent(
-            event_id=super_copy.event_id,
-            period_id=super_copy.period_id,
-            minutes=super_copy.minutes,
-            seconds=super_copy.seconds,
-            datetime=super_copy.datetime,
-            start_x=super_copy.start_x,
-            start_y=super_copy.start_y,
-            team_id=super_copy.team_id,
-            team_side=super_copy.team_side,
-            pitch_size=super_copy.pitch_size,
-            player_id=super_copy.player_id,
-            jersey=super_copy.jersey,
-            outcome=super_copy.outcome,
-            related_event_id=super_copy.related_event_id,
-            body_part=super_copy.body_part,
-            possession_type=super_copy.possession_type,
-            set_piece=super_copy.set_piece,
-            _xt=super_copy._xt,
-            outcome_str=self.outcome_str,
-            end_x=self.end_x,
-            end_y=self.end_y,
-            pass_type=self.pass_type,
-            receiver_player_id=self.receiver_player_id,
-            pass_length=self.pass_length,
-            forward_distance=self.forward_distance,
-            passer_goal_distance=self.passer_goal_distance,
-            pass_end_loc_goal_distance=self.pass_end_loc_goal_distance,
-            opponents_in_passing_lane=self.opponents_in_passing_lane,
-            pressure_on_passer=self.pressure_on_passer,
-            pressure_on_receiver=self.pressure_on_receiver,
-            pass_goal_angle=self.pass_goal_angle,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return PassEvent(**copied_kwargs)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PassEvent):

@@ -114,7 +114,7 @@ class TestSciSportsParser(unittest.TestCase):
             self.assertEqual(
                 event.team_side, "home" if row["team_id"] == 100 else "away"
             )
-            self.assertAlmostEqual(event.pitch_size, [106.0, 68.0])
+            self.assertAlmostEqual(event.pitch_size, (106.0, 68.0))
 
             if databallpy_event == "shot":
                 self.assertIsInstance(event, ShotEvent)

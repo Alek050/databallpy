@@ -27,7 +27,11 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     pre_compute_synchronisation_variables,
     synchronise_tracking_and_event_data,
 )
-from databallpy.utils.utils import _values_are_equal_, get_next_possession_frame
+from databallpy.utils.utils import (
+    _copy_value_,
+    _values_are_equal_,
+    get_next_possession_frame,
+)
 from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__name__)
@@ -753,48 +757,10 @@ class Match:
         Returns:
             Match: copy of the match object
         """
-        allow_sync = self.allow_synchronise_tracking_and_event_data
-        return Match(
-            tracking_data=self.tracking_data.copy(),
-            tracking_data_provider=self.tracking_data_provider,
-            event_data=self.event_data.copy(),
-            event_data_provider=self.event_data_provider,
-            pitch_dimensions=list(self.pitch_dimensions),
-            periods=self.periods.copy(),
-            frame_rate=self.frame_rate,
-            home_team_id=self.home_team_id,
-            home_formation=self.home_formation,
-            home_score=self.home_score,
-            home_team_name=self.home_team_name,
-            home_players=self.home_players.copy(),
-            away_team_id=self.away_team_id,
-            away_formation=self.away_formation,
-            away_score=self.away_score,
-            away_team_name=self.away_team_name,
-            away_players=self.away_players.copy(),
-            shot_events={x: y.copy() for x, y in self.shot_events.items()},
-            _shots_df=self._shots_df.copy() if self._shots_df is not None else None,
-            dribble_events={x: y.copy() for x, y in self.dribble_events.items()},
-            _dribbles_df=self._dribbles_df.copy()
-            if self._dribbles_df is not None
-            else None,
-            pass_events={x: y.copy() for x, y in self.pass_events.items()},
-            _passes_df=self._passes_df.copy() if self._passes_df is not None else None,
-            other_events={x: y.copy() for x, y in self.other_events.items()},
-            _other_events_df=self._other_events_df.copy()
-            if self._other_events_df is not None
-            else None,
-            country=self.country,
-            allow_synchronise_tracking_and_event_data=allow_sync,
-            _tracking_timestamp_is_precise=self._tracking_timestamp_is_precise,
-            _event_timestamp_is_precise=self._event_timestamp_is_precise,
-            _is_synchronised=self._is_synchronised,
-            _periods_changed_playing_direction=list(
-                self._periods_changed_playing_direction
-            )
-            if self._periods_changed_playing_direction is not None
-            else None,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return Match(**copied_kwargs)
 
     def save_match(
         self, name: str = None, path: str = None, verbose: bool = True

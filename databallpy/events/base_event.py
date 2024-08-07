@@ -10,7 +10,7 @@ from databallpy.utils.constants import (
     DATABALLPY_SET_PIECES,
     DATBALLPY_BODY_PARTS,
 )
-from databallpy.utils.utils import _values_are_equal_
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 path = os.path.join(os.path.dirname(__file__), "..", "models")
 FREE_KICK_XT = np.load(f"{path}/free_kick_xT.npy")
@@ -84,22 +84,10 @@ class IndividualCloseToBallEvent:
         self._validate_inputs_close_to_ball_event()
 
     def copy(self):
-        return IndividualCloseToBallEvent(
-            event_id=self.event_id,
-            period_id=self.period_id,
-            minutes=self.minutes,
-            seconds=self.seconds,
-            datetime=self.datetime,
-            start_x=self.start_x,
-            start_y=self.start_y,
-            team_id=self.team_id,
-            team_side=self.team_side,
-            pitch_size=self.pitch_size,
-            player_id=self.player_id,
-            jersey=self.jersey,
-            outcome=self.outcome,
-            related_event_id=self.related_event_id,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return IndividualCloseToBallEvent(**copied_kwargs)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, IndividualCloseToBallEvent):
@@ -278,27 +266,10 @@ class IndividualOnBallEvent(IndividualCloseToBallEvent):
         return self._xt
 
     def copy(self):
-        base_copy = super().copy()
-        return IndividualOnBallEvent(
-            event_id=base_copy.event_id,
-            period_id=base_copy.period_id,
-            minutes=base_copy.minutes,
-            seconds=base_copy.seconds,
-            datetime=base_copy.datetime,
-            start_x=base_copy.start_x,
-            start_y=base_copy.start_y,
-            team_id=base_copy.team_id,
-            team_side=base_copy.team_side,
-            pitch_size=base_copy.pitch_size,
-            player_id=base_copy.player_id,
-            jersey=base_copy.jersey,
-            outcome=base_copy.outcome,
-            related_event_id=base_copy.related_event_id,
-            body_part=self.body_part,
-            possession_type=self.possession_type,
-            set_piece=self.set_piece,
-            _xt=self._xt,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return IndividualOnBallEvent(**copied_kwargs)
 
     def __eq__(self, other):
         if not isinstance(other, IndividualOnBallEvent):
