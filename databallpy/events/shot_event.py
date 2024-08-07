@@ -12,7 +12,7 @@ from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
 from databallpy.models.utils import scale_and_predict_logreg
 from databallpy.utils.constants import DATABALLPY_SHOT_OUTCOMES, MISSING_INT
-from databallpy.utils.utils import _values_are_equal_
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 
 @dataclass
@@ -315,40 +315,10 @@ class ShotEvent(IndividualOnBallEvent):
         return True
 
     def copy(self):
-        super_copy = super().copy()
-        return ShotEvent(
-            event_id=super_copy.event_id,
-            period_id=super_copy.period_id,
-            minutes=super_copy.minutes,
-            seconds=super_copy.seconds,
-            datetime=super_copy.datetime,
-            start_x=super_copy.start_x,
-            start_y=super_copy.start_y,
-            team_id=super_copy.team_id,
-            team_side=super_copy.team_side,
-            pitch_size=super_copy.pitch_size,
-            player_id=super_copy.player_id,
-            jersey=super_copy.jersey,
-            outcome=super_copy.outcome,
-            related_event_id=super_copy.related_event_id,
-            body_part=super_copy.body_part,
-            possession_type=super_copy.possession_type,
-            set_piece=super_copy.set_piece,
-            _xt=super_copy._xt,
-            outcome_str=self.outcome_str,
-            y_target=self.y_target,
-            z_target=self.z_target,
-            first_touch=self.first_touch,
-            ball_goal_distance=self.ball_goal_distance,
-            ball_gk_distance=self.ball_gk_distance,
-            shot_angle=self.shot_angle,
-            gk_optimal_loc_distance=self.gk_optimal_loc_distance,
-            pressure_on_ball=self.pressure_on_ball,
-            n_obstructive_players=self.n_obstructive_players,
-            n_obstructive_defenders=self.n_obstructive_defenders,
-            goal_gk_distance=self.goal_gk_distance,
-            xG=self.xG,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return ShotEvent(**copied_kwargs)
 
     def _validate_inputs_on_ball_event(self):
         if not isinstance(self.outcome_str, str):

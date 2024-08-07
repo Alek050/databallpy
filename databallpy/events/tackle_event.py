@@ -1,7 +1,7 @@
 from dataclasses import dataclass, fields
 
 from databallpy.events import IndividualCloseToBallEvent
-from databallpy.utils.utils import _values_are_equal_
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 
 @dataclass
@@ -43,22 +43,10 @@ class TackleEvent(IndividualCloseToBallEvent):
         return True
 
     def copy(self):
-        return TackleEvent(
-            event_id=self.event_id,
-            period_id=self.period_id,
-            minutes=self.minutes,
-            seconds=self.seconds,
-            datetime=self.datetime,
-            start_x=self.start_x,
-            start_y=self.start_y,
-            team_id=self.team_id,
-            team_side=self.team_side,
-            pitch_size=self.pitch_size,
-            player_id=self.player_id,
-            jersey=self.jersey,
-            outcome=self.outcome,
-            related_event_id=self.related_event_id,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return TackleEvent(**copied_kwargs)
 
     @property
     def df_attributes(self):

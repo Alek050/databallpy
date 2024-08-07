@@ -5,6 +5,7 @@ import pandas as pd
 
 from databallpy.utils.utils import (
     MISSING_INT,
+    _copy_value_,
     _to_float,
     _to_int,
     _values_are_equal_,
@@ -188,3 +189,47 @@ class TestUtils(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             _values_are_equal_(CustomType(1), CustomType(1))
+
+    def test_copy_value(self):
+        self.assertEqual(_copy_value_(1.23), 1.23)
+        self.assertEqual(_copy_value_(123), 123)
+        self.assertEqual(_copy_value_("test"), "test")
+        timestamp = pd.Timestamp("2023-01-01")
+        self.assertEqual(_copy_value_(timestamp), timestamp)
+
+        original = [1, 2, 3]
+        copied = _copy_value_(original)
+        self.assertEqual(copied, original)
+        self.assertIsNot(copied, original)
+
+        original = (1, 2, 3)
+        copied = _copy_value_(original)
+        self.assertEqual(copied, original)
+        self.assertIsNot(copied, original)
+
+        original = {"a": 1, "b": 2}
+        copied = _copy_value_(original)
+        self.assertEqual(copied, original)
+        self.assertIsNot(copied, original)
+
+        original = np.array([1, 2, 3])
+        copied = _copy_value_(original)
+        np.testing.assert_array_equal(copied, original)
+        self.assertIsNot(copied, original)
+
+        original = pd.Series([1, 2, 3])
+        copied = _copy_value_(original)
+        pd.testing.assert_series_equal(copied, original)
+        self.assertIsNot(copied, original)
+
+        original = pd.DataFrame({"a": [1, 2, 3]})
+        copied = _copy_value_(original)
+        pd.testing.assert_frame_equal(copied, original)
+        self.assertIsNot(copied, original)
+
+        class CustomType:
+            def __init__(self, value):
+                self.value = value
+
+        with self.assertRaises(NotImplementedError):
+            _copy_value_(CustomType(1))

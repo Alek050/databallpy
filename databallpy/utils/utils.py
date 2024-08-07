@@ -197,3 +197,53 @@ def _values_are_equal_(input1: any, input2: any) -> bool:
         raise NotImplementedError(
             f"Equality check for {type(input1)} is not implemented"
         )
+
+
+def _copy_value_(value: any) -> any:
+    """Function to copy a value. The function can copy a value if the value is of the
+    following types: float, int, str, pd.Timestamp, list, tuple, dict, np.ndarray,
+    pd.Series, pd.DataFrame. If the value is of another type, a NotImplementedError is
+    raised.
+
+    Args:
+        value (any): The value to copy
+
+    Raises:
+        NotImplementedError: If the value is of another type than float, int, str,
+            pd.Timestamp, list, tuple, dict, np.ndarray, pd.Series, pd.DataFrame
+
+    Returns:
+        any: The copied value
+    """
+    if isinstance(value, (float, np.floating, int, np.integer, str, pd.Timestamp)):
+        return value
+
+    if isinstance(value, (list, tuple)):
+        return type(value)(_copy_value_(i) for i in value)
+
+    if isinstance(value, dict):
+        return {k: _copy_value_(v) for k, v in value.items()}
+
+    if isinstance(value, np.ndarray):
+        return value.copy()
+
+    if isinstance(value, (pd.Series, pd.DataFrame)):
+        return value.copy()
+
+    if value is None:
+        return None
+
+    known_classes = [
+        "ShotEvent",
+        "PassEvent",
+        "DribbleEvent",
+        "TackleEvent",
+        "Match",
+        "IndividualCloseToBallEvent",
+        "IndividualOnBallEvent",
+    ]
+    if type(value).__name__ in known_classes:
+        return value.copy()
+
+    else:
+        raise NotImplementedError(f"Copying of {type(value)} is not implemented")
