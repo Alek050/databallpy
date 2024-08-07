@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
 
@@ -268,11 +268,13 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "team_name": [],
     }
 
-    databallpy_mapping = {
+    DATABALLPY_EVENT_MAPPING = {
         "PASS": "pass",
         "CROSS": "pass",
         "SHOT": "shot",
         "DRIBBLE": "dribble",
+        "DEFENSIVE_DUEL": "tackle",
+        "FOUL": "tackle",
     }
     all_players = pd.concat(
         [metadata.home_players, metadata.away_players], ignore_index=True
@@ -280,6 +282,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     shot_events = {}
     pass_events = {}
     dribble_events = {}
+    other_events = {}
     date = pd.to_datetime(
         metadata.periods_frames["start_datetime_ed"].iloc[0].date()
     ).tz_localize(metadata.periods_frames["start_datetime_ed"].iloc[0].tz)
@@ -305,16 +308,24 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         event_data["player_name"].append(event["playerName"])
         event_data["team_name"].append(event["teamName"])
 
-        if event["baseTypeName"] in databallpy_mapping:
-            databallpy_event = databallpy_mapping[event["baseTypeName"]]
+        if event["baseTypeName"] in DATABALLPY_EVENT_MAPPING:
+            databallpy_event = DATABALLPY_EVENT_MAPPING[event["baseTypeName"]]
+            if databallpy_event == "tackle":
+                databallpy_event = (
+                    None
+                    if "TACKLE" not in [event["subTypeName"], event["foulTypeName"]]
+                    else "tackle"
+                )
             event_data["databallpy_event"].append(databallpy_event)
-            event_data["outcome"].append(event["resultId"])
+            event_data["outcome"].append(event["resultId"] == 1)
             if databallpy_event == "shot" and not event["playerId"] == -1:
                 shot_events[id] = _get_shot_event(event, id, all_players)
             elif databallpy_event == "pass" and not event["playerId"] == -1:
                 pass_events[id] = _get_pass_event(event, id, all_players)
             elif databallpy_event == "dribble" and not event["playerId"] == -1:
                 dribble_events[id] = _get_dribble_event(event, id, all_players)
+            elif databallpy_event == "tackle" and not event["playerId"] == -1:
+                other_events[id] = _get_tackle_event(event, id, all_players)
         else:
             event_data["databallpy_event"].append(None)
             event_data["outcome"].append(MISSING_INT)
@@ -331,8 +342,14 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     event_data.loc[
         event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
     ] *= -1
+    event_data["outcome"] = event_data["outcome"].astype("int64")
 
-    for event in {**shot_events, **pass_events, **dribble_events}.values():
+    for event in {
+        **shot_events,
+        **pass_events,
+        **dribble_events,
+        **other_events,
+    }.values():
         row = event_data.loc[event_data["event_id"] == event.event_id]
         event.minutes = row["minutes"].iloc[0]
         event.seconds = row["seconds"].iloc[0]
@@ -349,6 +366,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "shot_events": shot_events,
         "pass_events": pass_events,
         "dribble_events": dribble_events,
+        "other_events": other_events,
     }
 
 
@@ -466,6 +484,35 @@ def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
         receiver_player_id=event["receiverId"]
         if event["receiverTeamId"] == event["teamId"]
         else MISSING_INT,
+    )
+
+
+def _get_tackle_event(event: dict, id: int, players: pd.DataFrame) -> TackleEvent:
+    """This function retrieves the tackle event of a specific match.
+
+    Args:
+        event (dict): the pass event.
+        id (int): the id of the event.
+        players (pd.DataFrame): the players of the match.
+
+    Returns:
+        TackleEvent: the tackle event of the match.
+    """
+    return TackleEvent(
+        event_id=id,
+        period_id=event["partId"],
+        minutes=MISSING_INT,
+        seconds=MISSING_INT,
+        datetime=pd.to_datetime("NaT"),
+        start_x=event["startPosXM"],
+        start_y=event["startPosYM"],
+        team_id=event["teamId"],
+        team_side=event["groupName"].lower(),
+        pitch_size=(106.0, 68.0),
+        player_id=event["playerId"],
+        jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
+        outcome=event["resultId"] == 1,
+        related_event_id=MISSING_INT,
     )
 
 

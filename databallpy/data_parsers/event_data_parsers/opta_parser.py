@@ -13,6 +13,7 @@ from databallpy.events import (
     IndividualCloseToBallEvent,
     PassEvent,
     ShotEvent,
+    TackleEvent,
 )
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
@@ -103,6 +104,7 @@ OPTA_TO_DATABALLPY_MAP = {
     "attempt saved": "shot",
     "goal": "shot",
     "own goal": "own_goal",
+    "tackle": "tackle",
 }
 
 SHOT_OUTCOMES = {
@@ -484,13 +486,14 @@ def _load_event_data(
 
     Returns:
         pd.DataFrame: all events of the match in a pd dataframe
-        dict: dict with "shot_events", "dribble_events", and "pass_events"
+        dict: dict with "shot_events", "dribble_events", "pass_events", "other_events"
              as key and a dict with the BaseIndividualCloseToBallEvent instances
     """
 
     dribble_events = {}
     shot_events = {}
     pass_events = {}
+    other_events = {}
 
     with open(f24_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -547,7 +550,7 @@ def _load_event_data(
             result_dict["player_id"].append(MISSING_INT)
 
         result_dict["team_id"].append(int(event.attrs["team_id"]))
-        if event_name in ["pass", "take on"]:
+        if event_name in ["pass", "take on", "tackle"]:
             result_dict["outcome"].append(int(event.attrs["outcome"]))
         else:
             result_dict["outcome"].append(MISSING_INT)
@@ -581,6 +584,11 @@ def _load_event_data(
                 event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
             )
 
+        if event_name == "tackle":
+            other_events[int(event.attrs["id"])] = _make_tackle_event_instance(
+                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
+            )
+
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
     event_data["databallpy_event"] = (
@@ -599,6 +607,7 @@ def _load_event_data(
         "shot_events": shot_events,
         "pass_events": pass_events,
         "dribble_events": dribble_events,
+        "other_events": other_events,
     }
 
 
@@ -621,23 +630,26 @@ def _make_pass_instance(
     Returns:
         PassEvent: Returns a PassEvent instance
     """
-    pass_id = int(event.attrs["id"])
+    on_ball_info = _get_on_ball_event_info(event)
+    on_ball_info.update(
+        _get_close_to_ball_event_info(event, pitch_dimensions, away_team_id, players)
+    )
 
-    outcome = "successful" if int(event.attrs["outcome"]) else "unsuccessful"
-    outcome = "offside" if int(event.attrs["type_id"]) == 2 else outcome
+    outcome_str = "successful" if int(event.attrs["outcome"]) else "unsuccessful"
+    outcome_str = "offside" if int(event.attrs["type_id"]) == 2 else outcome_str
 
     qualifiers = event.find_all("Q")
     qualifier_ids = [int(q["qualifier_id"]) for q in qualifiers]
 
-    outcome = (
+    outcome_str = (
         "results_in_shot"
         if any([q == ASSIST_TO_SHOT_QUALIFIER for q in qualifier_ids])
-        else outcome
+        else outcome_str
     )
-    outcome = (
+    outcome_str = (
         "fair_play"
         if any([q == FAIR_PLAY_QUALIFIER for q in qualifier_ids])
-        else outcome
+        else outcome_str
     )
 
     # sometimes there are multiple pass type qualifiers added to the event
@@ -652,17 +664,6 @@ def _make_pass_instance(
         if pass_type_option in pass_type_list:
             pass_type = pass_type_option
             break
-
-    set_piece_list = [
-        SET_PIECE_QUALIFIERS[q] for q in qualifier_ids if q in SET_PIECE_QUALIFIERS
-    ]
-    set_piece = set_piece_list[0] if len(set_piece_list) > 0 else "no_set_piece"
-
-    x_start, y_start = _rescale_opta_dimensions(
-        float(event.attrs["x"]),
-        float(event.attrs["y"]),
-        pitch_dimensions=pitch_dimensions,
-    )
 
     if event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)}) and event.find(
         "Q", attrs={"qualifier_id": str(Y_END_QUALIFIER)}
@@ -680,33 +681,13 @@ def _make_pass_instance(
         x_end, y_end = np.nan, np.nan
 
     if int(event.attrs["team_id"]) == away_team_id:
-        x_start *= -1
-        y_start *= -1
         x_end *= -1
         y_end *= -1
 
     return PassEvent(
-        event_id=pass_id,
-        period_id=int(event.attrs["period_id"]),
-        minutes=int(event.attrs["min"]),
-        seconds=int(event.attrs["sec"]),
-        datetime=_get_valid_opta_datetime(event),
-        start_x=x_start,
-        start_y=y_start,
-        team_id=int(event.attrs["team_id"]),
-        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
-        pitch_size=pitch_dimensions,
-        player_id=int(event.attrs["player_id"]),
-        jersey=players.loc[
-            players["id"] == int(event.attrs["player_id"]), "shirt_num"
-        ].iloc[0],
-        outcome=bool(event.attrs["outcome"]),
-        related_event_id=MISSING_INT,
-        body_part="unspecified",
-        possession_type="unspecified",
-        set_piece=set_piece,
+        **on_ball_info,
         _xt=-1.0,
-        outcome_str=outcome,
+        outcome_str=outcome_str,
         end_x=x_end,
         end_y=y_end,
         pass_type=pass_type,
@@ -762,76 +743,49 @@ def _make_shot_event_instance(
     else:
         y_target, z_target = np.nan, np.nan
 
-    qualifiers = event.find_all("Q")
-
-    type_of_play_list = [
-        SHOT_ORIGINS_QUALIFIERS[int(q["qualifier_id"])]
-        for q in qualifiers
-        if int(q["qualifier_id"]) in SHOT_ORIGINS_QUALIFIERS
-    ]
-    type_of_play = type_of_play_list[0] if len(type_of_play_list) > 0 else "open_play"
-
-    body_part_list = [
-        BODY_PART_QUALIFIERS[int(q["qualifier_id"])]
-        for q in qualifiers
-        if int(q["qualifier_id"]) in BODY_PART_QUALIFIERS
-    ]
-    body_part = body_part_list[0] if len(body_part_list) > 0 else None
-
-    x_start, y_start = _rescale_opta_dimensions(
-        float(event.attrs["x"]),
-        float(event.attrs["y"]),
-        pitch_dimensions=pitch_dimensions,
-    )
-
     first_touch = (
         event.find("Q", {"qualifier_id": str(FIRST_TOUCH_QUALIFIER)}) is not None
     )
-    if event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)}) is not None:
-        related_event_id = int(
-            event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)})["value"]
-        )
-    else:
-        related_event_id = MISSING_INT
 
-    # set piece
-    set_piece_list = [
-        SET_PIECE_QUALIFIERS[int(q["qualifier_id"])]
-        for q in qualifiers
-        if int(q["qualifier_id"]) in SET_PIECE_QUALIFIERS
-    ]
-    set_piece = set_piece_list[0] if len(set_piece_list) > 0 else "no_set_piece"
-
-    if int(event.attrs["team_id"]) == away_team_id:
-        x_start *= -1
-        y_start *= -1
+    on_ball_info = _get_on_ball_event_info(event)
+    on_ball_info.update(
+        _get_close_to_ball_event_info(event, pitch_dimensions, away_team_id, players)
+    )
+    on_ball_info.pop("outcome")
 
     return ShotEvent(
-        event_id=int(event.attrs["id"]),
-        period_id=int(event.attrs["period_id"]),
-        minutes=int(event.attrs["min"]),
-        seconds=int(event.attrs["sec"]),
-        datetime=_get_valid_opta_datetime(event),
-        start_x=x_start,
-        start_y=y_start,
-        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
-        team_id=int(event.attrs["team_id"]),
-        pitch_size=pitch_dimensions,
-        player_id=int(event.attrs["player_id"]),
-        jersey=players.loc[
-            players["id"] == int(event.attrs["player_id"]), "shirt_num"
-        ].iloc[0],
+        **on_ball_info,
         outcome=shot_outcome == "goal",
-        related_event_id=related_event_id,
-        body_part=body_part,
-        possession_type=type_of_play,
-        set_piece=set_piece,
         _xt=-1.0,
         outcome_str=shot_outcome,
         y_target=y_target,
         z_target=z_target,
         first_touch=first_touch,
     )
+
+
+def _make_tackle_event_instance(
+    event: bs4.element.Tag,
+    away_team_id: int,
+    players: pd.DataFrame,
+    pitch_dimensions: list[float, float] = [106.0, 68.0],
+) -> TackleEvent:
+    """Function to create a tackle class based on the qualifiers of the event
+
+    Args:
+        event (bs4.element.Tag): tackle event from the f24.xml
+        away_team_id (int): id of the away team
+        players (pd.DataFrame): dataframe with player information.
+        pitch_dimensions (list[float, float], optional): The dimensions of the pitch in
+            x and y direction. Defaults to [106.0, 68.0].
+
+    Returns:
+        TackleEvent: instance of the TackleEvent class
+    """
+    close_to_ball_info = _get_close_to_ball_event_info(
+        event, pitch_dimensions, away_team_id, players
+    )
+    return TackleEvent(**close_to_ball_info)
 
 
 def _make_dribble_event_instance(
@@ -852,21 +806,103 @@ def _make_dribble_event_instance(
     Returns:
         DribbleEvent: instance of the DribbleEvent class
     """
+
+    close_to_ball_info = _get_close_to_ball_event_info(
+        event, pitch_dimensions, away_team_id, players
+    )
+
     qualifiers = event.find_all("Q")
-
-    if event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)}) is not None:
-        related_event_id = int(
-            event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)})["value"]
-        )
-    else:
-        related_event_id = MISSING_INT
-
     duel_type_list = [
         DRIBBLE_DUEL_TYPE_QUALIFIERS[int(q["qualifier_id"])]
         for q in qualifiers
         if int(q["qualifier_id"]) in DRIBBLE_DUEL_TYPE_QUALIFIERS
     ]
     duel_type = duel_type_list[0] if len(duel_type_list) > 0 else None
+
+    dribble_event = DribbleEvent(
+        **close_to_ball_info,
+        body_part="foot",
+        possession_type="open_play",
+        set_piece="no_set_piece",
+        _xt=-1.0,
+        duel_type=duel_type,
+        with_opponent=True,  # opta take ons are always against an opponent
+    )
+
+    return dribble_event
+
+
+def _get_on_ball_event_info(event: bs4.element.Tag) -> dict:
+    """Function to get the base event data from the event based on
+    the OnBallEvent class.
+
+    Args:
+        event (bs4.element.Tag): event from the f24.xml
+
+    Returns:
+        dict: the body_part, set_piece, and possession_type of the event
+    """
+    qualifiers = event.find_all("Q")
+    qualifier_ids = [int(q["qualifier_id"]) for q in qualifiers]
+
+    set_piece_list = [
+        SET_PIECE_QUALIFIERS[q] for q in qualifier_ids if q in SET_PIECE_QUALIFIERS
+    ]
+    set_piece = set_piece_list[0] if len(set_piece_list) > 0 else "no_set_piece"
+    possession_type_list = [
+        SHOT_ORIGINS_QUALIFIERS[int(q["qualifier_id"])]
+        for q in qualifiers
+        if int(q["qualifier_id"]) in SHOT_ORIGINS_QUALIFIERS
+    ]
+    possession_type = (
+        possession_type_list[0] if len(possession_type_list) > 0 else "open_play"
+    )
+
+    body_part_list = [
+        BODY_PART_QUALIFIERS[int(q["qualifier_id"])]
+        for q in qualifiers
+        if int(q["qualifier_id"]) in BODY_PART_QUALIFIERS
+    ]
+    body_part = body_part_list[0] if len(body_part_list) > 0 else "unspecified"
+
+    return {
+        "body_part": body_part,
+        "set_piece": set_piece,
+        "possession_type": possession_type,
+    }
+
+
+def _get_close_to_ball_event_info(
+    event: bs4.element.Tag,
+    pitch_dimensions: list | tuple,
+    away_team_id: int | str,
+    players: pd.DataFrame,
+) -> dict:
+    """Function to get the base event data from the event based on
+    the CloseToBallEvent class.
+
+    Args:
+        event (bs4.element.Tag): dribble event from the f24.xml
+        pitch_dimensions (list, optional): pitch dimensions in x and y direction.
+            Defaults to [106.0, 68.0].
+        away_team_id (int): id of the away team
+        players (pd.DataFrame): dataframe with player information.
+
+
+    Returns:
+        dict: dictionary with the base event data: start_x, start_y, related_event_id
+    """
+
+    if event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)}) is not None:
+        related_event_id = int(
+            event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)})["value"]
+        )
+    elif event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)}) is not None:
+        related_event_id = int(
+            event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)})["value"]
+        )
+    else:
+        related_event_id = MISSING_INT
 
     x_start, y_start = _rescale_opta_dimensions(
         float(event.attrs["x"]),
@@ -878,32 +914,24 @@ def _make_dribble_event_instance(
         x_start *= -1
         y_start *= -1
 
-    dribble_event = DribbleEvent(
-        event_id=int(event.attrs["id"]),
-        period_id=int(event.attrs["period_id"]),
-        minutes=int(event.attrs["min"]),
-        seconds=int(event.attrs["sec"]),
-        datetime=_get_valid_opta_datetime(event),
-        start_x=x_start,
-        start_y=y_start,
-        team_id=int(event.attrs["team_id"]),
-        team_side="home" if int(event.attrs["team_id"]) != away_team_id else "away",
-        pitch_size=pitch_dimensions,
-        player_id=int(event.attrs["player_id"]),
-        jersey=players.loc[
+    return {
+        "start_x": x_start,
+        "start_y": y_start,
+        "related_event_id": related_event_id,
+        "event_id": int(event.attrs["id"]),
+        "period_id": int(event.attrs["period_id"]),
+        "minutes": int(event.attrs["min"]),
+        "seconds": int(event.attrs["sec"]),
+        "datetime": _get_valid_opta_datetime(event),
+        "team_id": int(event.attrs["team_id"]),
+        "team_side": "home" if int(event.attrs["team_id"]) != away_team_id else "away",
+        "pitch_size": pitch_dimensions,
+        "player_id": int(event.attrs["player_id"]),
+        "jersey": players.loc[
             players["id"] == int(event.attrs["player_id"]), "shirt_num"
         ].iloc[0],
-        outcome=bool(event.attrs["outcome"]),
-        related_event_id=related_event_id,
-        body_part="foot",
-        possession_type="unspecified",
-        set_piece="no_set_piece",
-        _xt=-1.0,
-        duel_type=duel_type,
-        with_opponent=True,  # opta take ons are always against an opponent
-    )
-
-    return dribble_event
+        "outcome": bool(int(event.attrs["outcome"])),
+    }
 
 
 def _get_valid_opta_datetime(event: bs4.element.Tag) -> Timestamp:

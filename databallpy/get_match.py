@@ -261,6 +261,9 @@ def get_match(
             pass_events=databallpy_events["pass_events"]
             if "pass_events" in databallpy_events.keys()
             else {},
+            other_events=databallpy_events["other_events"]
+            if "other_events" in databallpy_events.keys()
+            else {},
             _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
             if uses_event_data
             else False,
@@ -488,6 +491,9 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
             else {},
             pass_events=databallpy_events["pass_events"]
             if "pass_events" in databallpy_events.keys()
+            else {},
+            other_events=databallpy_events["other_events"]
+            if "other_events" in databallpy_events.keys()
             else {},
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,

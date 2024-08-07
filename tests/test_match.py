@@ -13,6 +13,7 @@ from tests.expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
     PASS_EVENTS_OPTA_TRACAB,
     SHOT_EVENTS_OPTA_TRACAB,
+    TACKLE_EVENTS_OPTA_TRACAB,
 )
 
 
@@ -1428,6 +1429,35 @@ class TestMatch(unittest.TestCase):
         passes_df = self.expected_match_tracab_opta.passes_df
         pd.testing.assert_frame_equal(passes_df, expected_df)
 
+    def test_match_other_events_df(self):
+        other_event_attribute_names = [
+            "event_id",
+            "period_id",
+            "minutes",
+            "seconds",
+            "datetime",
+            "start_x",
+            "start_y",
+            "team_id",
+            "team_side",
+            "player_id",
+            "jersey",
+            "outcome",
+            "related_event_id",
+        ]
+        expected_df = pd.DataFrame(
+            {
+                attr: [
+                    getattr(other_event, attr)
+                    for other_event in TACKLE_EVENTS_OPTA_TRACAB.values()
+                ]
+                for attr in other_event_attribute_names
+            }
+        )
+        expected_df["name"] = "TackleEvent"
+        other_events_df = self.expected_match_tracab_opta.other_events_df
+        pd.testing.assert_frame_equal(other_events_df, expected_df)
+
     def test_match_get_event(self):
         match = self.expected_match_tracab_opta.copy()
         event = match.get_event(2512690515)
@@ -1478,5 +1508,6 @@ class TestMatch(unittest.TestCase):
             **match.shot_events,
             **match.pass_events,
             **match.dribble_events,
+            **match.other_events,
         }
         assert match.all_events == expected_events
