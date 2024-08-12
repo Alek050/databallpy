@@ -310,9 +310,6 @@ class Match:
         if self._shots_df is None:
             LOGGER.info("Creating the match._shots_df dataframe in match.shots_df")
 
-            if self.is_synchronised:
-                self.add_tracking_data_features_to_shots()
-
             self._shots_df = create_event_attributes_dataframe(self.shot_events)
 
             LOGGER.info(
@@ -477,8 +474,6 @@ class Match:
 
             shot.add_tracking_data_features(
                 tracking_data_frame,
-                team_side,
-                self.pitch_dimensions,
                 column_id,
                 gk_column_id,
             )

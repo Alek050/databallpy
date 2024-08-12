@@ -1117,22 +1117,16 @@ class TestMatch(unittest.TestCase):
         match.shot_events = {2512690516: match.shot_events[2512690516]}
         match.add_tracking_data_features_to_shots()
 
-        expected_team_side = "away"
         expected_td_frame = match.tracking_data.iloc[-1]
-        pitch_dimension = match.pitch_dimensions
         expected_column_id = "away_1"
         expected_gk_column_id = "home_1"
 
         called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
         called_td_frame = called_args[0]
-        called_team_side = called_args[1]
-        called_pitch_dimension = called_args[2]
-        called_column_id = called_args[3]
-        called_gk_column_id = called_args[4]
+        called_column_id = called_args[1]
+        called_gk_column_id = called_args[2]
 
         pd.testing.assert_series_equal(called_td_frame, expected_td_frame)
-        assert called_team_side == expected_team_side
-        assert called_pitch_dimension == pitch_dimension
         assert called_column_id == expected_column_id
         assert called_gk_column_id == expected_gk_column_id
 
@@ -1150,22 +1144,16 @@ class TestMatch(unittest.TestCase):
         match.shot_events = {2512690515: match.shot_events[2512690515]}
         match.add_tracking_data_features_to_shots()
 
-        expected_team_side = "home"
         expected_td_frame = match.tracking_data.iloc[-3]
-        pitch_dimension = match.pitch_dimensions
         expected_column_id = "home_2"
         expected_gk_column_id = "away_2"
 
         called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
         called_td_frame = called_args[0]
-        called_team_side = called_args[1]
-        called_pitch_dimension = called_args[2]
-        called_column_id = called_args[3]
-        called_gk_column_id = called_args[4]
+        called_column_id = called_args[1]
+        called_gk_column_id = called_args[2]
 
         pd.testing.assert_series_equal(called_td_frame, expected_td_frame)
-        assert called_team_side == expected_team_side
-        assert called_pitch_dimension == pitch_dimension
         assert called_column_id == expected_column_id
         assert called_gk_column_id == expected_gk_column_id
 
