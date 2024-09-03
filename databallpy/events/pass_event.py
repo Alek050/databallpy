@@ -1,44 +1,56 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
 
-from databallpy.events.base_event import BaseOnBallEvent
+from databallpy.events.base_event import IndividualOnBallEvent
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import get_pressure_on_player
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import (
+    DATABALLPY_PASS_OUTCOMES,
+    DATABALLPY_PASS_TYPES,
+    MISSING_INT,
+)
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 
 @dataclass
-class PassEvent(BaseOnBallEvent):
+class PassEvent(IndividualOnBallEvent):
     """This is the pass event class. It contains all the information that is available
     for a pass event.
 
-    Args:
-        event_id (int): distinct id of the pass event
+     Args:
+        event_id (int): distinct id of the event
         period_id (int): id of the period
-        minutes (int): minute in which the pass occurs
-        seconds (int): seconds within the aforementioned minute where the pass occurs
-        datetime (pd.Timestamp): datetime at which the pass occured
-        start_x (float): x coordinate of the start location of the pass
-        start_y (float): y coordinate of the start location of the pass
-        pitch_size (tuple): size of the pitch in meters.
-        team_side (str): side of the team that performed the pass, either
+        minutes (int): minute in which the event occurs
+        seconds (int): seconds within the aforementioned minute where the event occurs
+        datetime (pd.Timestamp): datetime at which the event occured
+        start_x (float): x coordinate of the start location of the event
+        start_y (float): y coordinate of the start location of the event
+        team_id (int): id of the team that performed the event
+        team_side (str): side of the team that performed the event, either
             ["home", "away"]
-        team_id (int): id of the team that performed the pass
-        outcome (str): outcome of the pass, options are:
-            ['successful', 'unsuccessful', 'offside', 'results_in_shot',
-            'assist', 'fair_play', 'not_specified']
-        player_id (int): id of the player that performed the pass
+        pitch_size (tuple): size of the pitch in meters
+        player_id (int | str): id of the player that performed the event
+        jersey (int): jersey number of the player that performed the event
+        outcome (bool): whether the event was successful or not
+        related_event_id (int | str | None): id of the event that the event is related
+            to the current event.
+        body_part (str): body part that the event is related to. Should be in
+            databallpy.utils.constants.DATBALLPY_BODY_PARTS
+        possession_type (str): type of possession that the event is related to.
+            Should be in databallpy.utils.constants.DATABALLPY_POSSESSION_TYPES
+        set_piece (str): type of set piece that the event is related to. Should be in
+            databallpy.utils.constants.DATABALLPY_SET_PIECES
+        outcome_str (str): outcome of the pass, should be in
+            databallpy.utils.constants.DATABALLPY_PASS_OUTCOMES
         end_x (float): x coordinate of the end location of the pass
         end_y (float): y coordinate of the end location of the pass
-        pass_type (str): type of the pass, options are:
-            ['long_ball', 'cross', 'through_ball', 'chipped', 'lay-off', 'lounge',
-            'flick_on', 'pull_back', 'switch_off_play', 'not_specified']
-        set_piece (str): type of set piece, options are:
-            ['goal_kick', 'free_kick', 'throw_in', 'corner_kick', 'kick_off',
-            'penalty', 'no_set_piece', unspecified_set_piece]
+        pass_type (str): type of the pass, should be in
+            databallpy.utils.constants.DATABALLPY_PASS_TYPES
+        receiver_id (int): id of the player that receives the pass. Default is
+            databallpy.utils.constants.MISSING_INT
         pass_length (float): length of the pass
         forward_distance (float): distance the pass is made forward.
             Default is np.nan.
@@ -65,19 +77,16 @@ class PassEvent(BaseOnBallEvent):
         TypeError: If any of the inputtypes is not correct
     """
 
-    outcome: str
-    player_id: int
-    jersey: int
+    outcome_str: str
     end_x: float
     end_y: float
     pass_type: str
-    set_piece: str
-    receiver_id: int = MISSING_INT
+    receiver_player_id: int = MISSING_INT
     pass_length: float = np.nan
     forward_distance: float = np.nan
     passer_goal_distance: float = np.nan
     pass_end_loc_goal_distance: float = np.nan
-    opponents_in_passing_lane: int = np.nan
+    opponents_in_passing_lane: int = MISSING_INT
     pressure_on_passer: float = np.nan
     pressure_on_receiver: float = np.nan
     pass_goal_angle: float = np.nan
@@ -131,118 +140,55 @@ class PassEvent(BaseOnBallEvent):
         )
 
     def copy(self):
-        return PassEvent(
-            event_id=self.event_id,
-            period_id=self.period_id,
-            minutes=self.minutes,
-            seconds=self.seconds,
-            datetime=self.datetime,
-            start_x=self.start_x,
-            start_y=self.start_y,
-            pitch_size=self.pitch_size,
-            team_side=self.team_side,
-            _xt=self._xt,
-            team_id=self.team_id,
-            outcome=self.outcome,
-            player_id=self.player_id,
-            jersey=self.jersey,
-            end_x=self.end_x,
-            end_y=self.end_y,
-            pass_length=self.pass_length,
-            pass_type=self.pass_type,
-            set_piece=self.set_piece,
-            forward_distance=self.forward_distance,
-            passer_goal_distance=self.passer_goal_distance,
-            pass_end_loc_goal_distance=self.pass_end_loc_goal_distance,
-            opponents_in_passing_lane=self.opponents_in_passing_lane,
-            pressure_on_passer=self.pressure_on_passer,
-            pressure_on_receiver=self.pressure_on_receiver,
-            pass_goal_angle=self.pass_goal_angle,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return PassEvent(**copied_kwargs)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PassEvent):
             return False
-        result = [
-            super().__eq__(other),
-            self.team_id == other.team_id,
-            self.outcome == other.outcome,
-            self.player_id == other.player_id,
-            self.jersey == other.jersey,
-            round(self.end_x, 4) == round(other.end_x, 4)
-            if not pd.isnull(self.end_x)
-            else pd.isnull(other.end_x),
-            round(self.end_y, 4) == round(other.end_y, 4)
-            if not pd.isnull(self.end_y)
-            else pd.isnull(other.end_y),
-            self.pass_length == other.pass_length
-            if not pd.isnull(self.pass_length)
-            else pd.isnull(other.pass_length),
-            self.pass_type == other.pass_type,
-            self.set_piece == other.set_piece,
-            round(self.forward_distance, 4) == round(other.forward_distance, 4)
-            if not pd.isnull(self.forward_distance)
-            else pd.isnull(other.forward_distance),
-            round(self.passer_goal_distance, 4) == round(other.passer_goal_distance, 4)
-            if not pd.isnull(self.passer_goal_distance)
-            else pd.isnull(other.passer_goal_distance),
-            round(self.pass_end_loc_goal_distance, 4)
-            == round(other.pass_end_loc_goal_distance, 4)
-            if not pd.isnull(self.pass_end_loc_goal_distance)
-            else pd.isnull(other.pass_end_loc_goal_distance),
-            self.opponents_in_passing_lane == other.opponents_in_passing_lane
-            if not pd.isnull(self.opponents_in_passing_lane)
-            else pd.isnull(other.opponents_in_passing_lane),
-            round(self.pressure_on_passer, 4) == round(other.pressure_on_passer, 4)
-            if not pd.isnull(self.pressure_on_passer)
-            else pd.isnull(other.pressure_on_passer),
-            round(self.pressure_on_receiver, 4) == round(other.pressure_on_receiver, 4)
-            if not pd.isnull(self.pressure_on_receiver)
-            else pd.isnull(other.pressure_on_receiver),
-            round(self.pass_goal_angle, 4) == round(other.pass_goal_angle, 4)
-            if not pd.isnull(self.pass_goal_angle)
-            else pd.isnull(other.pass_goal_angle),
-        ]
-        return all(result)
+        for field in fields(self):
+            if not _values_are_equal_(
+                getattr(self, field.name), getattr(other, field.name)
+            ):
+                return False
+
+        return True
 
     def __post_init__(self):
         super().__post_init__()
+        self._validate_inputs_on_ball_event()
 
-        if not isinstance(self.outcome, (str, type(None))):
-            raise TypeError(f"outcome should be str, not {type(self.outcome)}")
-
-        valid_outcomes = [
-            "successful",
-            "unsuccessful",
-            "offside",
-            "results_in_shot",
-            "assist",
-            "fair_play",
-            "not_specified",
-            None,
+    @property
+    def df_attributes(self) -> list[str]:
+        base_attributes = super().base_df_attributes
+        return base_attributes + [
+            "outcome_str",
+            "end_x",
+            "end_y",
+            "pass_type",
+            "receiver_player_id",
+            "pass_length",
+            "forward_distance",
+            "passer_goal_distance",
+            "pass_end_loc_goal_distance",
+            "opponents_in_passing_lane",
+            "pressure_on_passer",
+            "pressure_on_receiver",
+            "pass_goal_angle",
         ]
-        if self.outcome not in valid_outcomes:
+
+    def _validate_inputs_on_ball_event(self):
+        if not isinstance(self.outcome_str, (str, type(None))):
+            raise TypeError(f"outcome should be str, not {type(self.outcome_str)}")
+
+        if self.outcome_str not in DATABALLPY_PASS_OUTCOMES:
             raise ValueError(
-                f"outcome should be one of {valid_outcomes}, not {self.outcome}"
+                f"outcome_str should be one of {DATABALLPY_PASS_OUTCOMES},"
+                f" not {self.outcome_str}"
             )
 
-        if not isinstance(self.player_id, (int, np.integer, str)):
-            raise TypeError(f"player_id should be int, not {type(self.player_id)}")
-
-        if not isinstance(self.jersey, (int, np.integer)):
-            raise TypeError(f"jersey should be int, got {type(self.jersey)} instead")
-
-        values = [
-            self.end_x,
-            self.end_y,
-            self.pass_length,
-            self.forward_distance,
-            self.passer_goal_distance,
-            self.pass_end_loc_goal_distance,
-            self.pressure_on_passer,
-            self.pressure_on_receiver,
-            self.pass_goal_angle,
-        ]
         names = [
             "end_x",
             "end_y",
@@ -254,7 +200,8 @@ class PassEvent(BaseOnBallEvent):
             "pressure_on_receiver",
             "pass_goal_angle",
         ]
-        for value, name in zip(values, names):
+        for name in names:
+            value = getattr(self, name)
             if not isinstance(value, (float, np.floating)):
                 raise TypeError(f"{name} should be float, not {type(value)}")
 
@@ -268,63 +215,12 @@ class PassEvent(BaseOnBallEvent):
 
         if not isinstance(self.pass_type, str):
             raise TypeError(f"pass_type should be str, not {type(self.pass_type)}")
-        valid_pass_types = [
-            "long_ball",
-            "cross",
-            "through_ball",
-            "chipped",
-            "lay-off",
-            "lounge",
-            "flick_on",
-            "pull_back",
-            "switch_off_play",
-            "not_specified",
-            "assist",
-        ]
-        if self.pass_type not in valid_pass_types:
+
+        if self.pass_type not in DATABALLPY_PASS_TYPES:
             raise ValueError(
-                f"pass_type should be one of {valid_pass_types}, not {self.pass_type}"
+                f"pass_type should be one of {DATABALLPY_PASS_TYPES}, "
+                f"not {self.pass_type}"
             )
-
-        if not isinstance(self.set_piece, str):
-            raise TypeError(f"set_piece should be str, not {type(self.set_piece)}")
-
-        valid_set_pieces = [
-            "goal_kick",
-            "free_kick",
-            "throw_in",
-            "corner_kick",
-            "kick_off",
-            "penalty",
-            "no_set_piece",
-            "unspecified_set_piece",
-        ]
-        if self.set_piece not in valid_set_pieces:
-            raise ValueError(
-                f"set_piece should be one of {valid_set_pieces}, not {self.set_piece}"
-            )
-        _ = self._xt
-
-    @property
-    def df_attributes(self) -> list[str]:
-        base_attributes = super().base_df_attributes
-        return base_attributes + [
-            "outcome",
-            "player_id",
-            "end_x",
-            "end_y",
-            "pass_type",
-            "set_piece",
-            "receiver_id",
-            "pass_length",
-            "forward_distance",
-            "passer_goal_distance",
-            "pass_end_loc_goal_distance",
-            "opponents_in_passing_lane",
-            "pressure_on_passer",
-            "pressure_on_receiver",
-            "pass_goal_angle",
-        ]
 
 
 def get_opponents_in_passing_lane(

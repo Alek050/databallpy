@@ -10,11 +10,12 @@ from databallpy.data_parsers.event_data_parsers.scisports_parser import (
     _get_periods_frames,
     _get_players,
     _get_shot_event,
+    _get_tackle_event,
     _load_event_data,
     _load_metadata,
     load_scisports_event_data,
 )
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
 from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import ED_SCISPORTS, MD_SCISPORTS
 
@@ -113,7 +114,7 @@ class TestSciSportsParser(unittest.TestCase):
             self.assertEqual(
                 event.team_side, "home" if row["team_id"] == 100 else "away"
             )
-            self.assertAlmostEqual(event.pitch_size, [106.0, 68.0])
+            self.assertAlmostEqual(event.pitch_size, (106.0, 68.0))
 
             if databallpy_event == "shot":
                 self.assertIsInstance(event, ShotEvent)
@@ -181,13 +182,17 @@ class TestSciSportsParser(unittest.TestCase):
             team_id=200,
             team_side="away",
             pitch_size=(106.0, 68.0),
-            _xt=-1.0,
             player_id=201,
             jersey=22,
-            shot_outcome="goal",
+            outcome=True,
+            related_event_id=MISSING_INT,
+            _xt=-1.0,
+            body_part="left_foot",
+            possession_type="unspecified",
+            set_piece="unspecified",
+            outcome_str="goal",
             y_target=np.nan,
             z_target=np.nan,
-            body_part="left_foot",
         )
         players = pd.DataFrame({"id": [201], "shirt_num": [22]})
         result = _get_shot_event(event, 14, players=players)
@@ -249,15 +254,19 @@ class TestSciSportsParser(unittest.TestCase):
             team_id=100,
             team_side="home",
             pitch_size=(106.0, 68.0),
-            _xt=-1.0,
-            outcome="unsuccessful",
             player_id=102,
             jersey=22,
-            receiver_id=MISSING_INT,
+            outcome=False,
+            related_event_id=MISSING_INT,
+            body_part="foot",
+            possession_type="unspecified",
+            set_piece="no_set_piece",
+            _xt=-1.0,
+            outcome_str="unsuccessful",
             end_x=-35.1,
             end_y=-20.8,
             pass_type="cross",
-            set_piece="no_set_piece",
+            receiver_player_id=MISSING_INT,
         )
         players = pd.DataFrame({"id": [102], "shirt_num": [22]})
         result = _get_pass_event(event, 13, players=players)
@@ -319,14 +328,149 @@ class TestSciSportsParser(unittest.TestCase):
             team_id=100,
             team_side="home",
             pitch_size=(106.0, 68.0),
-            _xt=-1.0,
             player_id=102,
             jersey=32,
             related_event_id=MISSING_INT,
+            _xt=-1.0,
+            body_part="foot",
+            possession_type="unspecified",
+            set_piece="no_set_piece",
             duel_type="offensive",
             outcome=True,
-            has_opponent=False,
+            with_opponent=False,
         )
         players = pd.DataFrame({"id": [102], "shirt_num": [32]})
         result = _get_dribble_event(event, 12, players)
         self.assertEqual(result, expected_dribble)
+
+    def test_get_tackle_event(self):
+        event = {
+            "eventId": 380,
+            "playerId": 1,
+            "playerName": "Alek050",
+            "groupId": 1,
+            "groupName": "HOME",
+            "teamId": 2,
+            "teamName": "ASV Arkel",
+            "receiverId": -1,
+            "receiverName": "NOT_APPLICABLE",
+            "receiverTeamId": -1,
+            "receiverTeamName": "NOT_APPLICABLE",
+            "baseTypeId": 4,
+            "baseTypeName": "DEFENSIVE_DUEL",
+            "subTypeId": 400,
+            "subTypeName": "TACKLE",
+            "resultId": 1,
+            "resultName": "SUCCESSFUL",
+            "bodyPartId": 0,
+            "bodyPartName": "FEET",
+            "shotTypeId": -1,
+            "shotTypeName": "NOT_APPLICABLE",
+            "foulTypeId": -1,
+            "foulTypeName": "NOT_APPLICABLE",
+            "positionTypeId": 4,
+            "positionTypeName": "CB",
+            "formationTypeId": -2,
+            "formationTypeName": "UNKNOWN",
+            "partId": 1,
+            "partName": "FIRST_HALF",
+            "startTimeMs": 1205700,
+            "endTimeMs": 1205700,
+            "startPosXM": 12.125,
+            "startPosYM": 28.830000000000002,
+            "endPosXM": 12.125,
+            "endPosYM": 28.830000000000002,
+            "sequenceId": 3,
+            "sequenceEvent": 1,
+            "possessionTypeId": 1,
+            "possessionTypeName": "THROW_IN",
+            "sequenceStart": 0,
+            "sequenceEnd": 0,
+            "synced": True,
+        }
+        expected_tackle_event = TackleEvent(
+            event_id=380,
+            period_id=1,
+            minutes=MISSING_INT,
+            seconds=MISSING_INT,
+            datetime=pd.to_datetime("NaT"),
+            start_x=12.125,
+            start_y=28.830000000000002,
+            team_id=2,
+            team_side="home",
+            pitch_size=(106.0, 68.0),
+            player_id=1,
+            jersey=1,
+            outcome=True,
+            related_event_id=MISSING_INT,
+        )
+
+        players = pd.DataFrame({"id": [1], "shirt_num": [1]})
+        result = _get_tackle_event(event, 380, players)
+
+        self.assertEqual(result, expected_tackle_event)
+
+        event = {
+            "eventId": 439,
+            "playerId": 1,
+            "playerName": "Alek050",
+            "groupId": 1,
+            "groupName": "HOME",
+            "teamId": 2,
+            "teamName": "ASV Arkel",
+            "receiverId": -1,
+            "receiverName": "NOT_APPLICABLE",
+            "receiverTeamId": -1,
+            "receiverTeamName": "NOT_APPLICABLE",
+            "baseTypeId": 7,
+            "baseTypeName": "FOUL",
+            "subTypeId": 700,
+            "subTypeName": "FOUL",
+            "resultId": -1,
+            "resultName": "NOT_APPLICABLE",
+            "bodyPartId": -1,
+            "bodyPartName": "NOT_APPLICABLE",
+            "shotTypeId": -1,
+            "shotTypeName": "NOT_APPLICABLE",
+            "foulTypeId": 2,
+            "foulTypeName": "TACKLE",
+            "positionTypeId": 20,
+            "positionTypeName": "AMF",
+            "formationTypeId": -2,
+            "formationTypeName": "UNKNOWN",
+            "partId": 1,
+            "partName": "FIRST_HALF",
+            "startTimeMs": 1379000,
+            "endTimeMs": 1379000,
+            "startPosXM": -6.3,
+            "startPosYM": 14.28,
+            "endPosXM": -6.3,
+            "endPosYM": 14.28,
+            "sequenceId": -1,
+            "sequenceEvent": -1,
+            "possessionTypeId": 0,
+            "possessionTypeName": "OPEN_PLAY",
+            "sequenceStart": 0,
+            "sequenceEnd": 0,
+            "synced": False,
+        }
+
+        expected_tackle_event = TackleEvent(
+            event_id=439,
+            period_id=1,
+            minutes=MISSING_INT,
+            seconds=MISSING_INT,
+            datetime=pd.to_datetime("NaT"),
+            start_x=-6.3,
+            start_y=14.28,
+            team_id=2,
+            team_side="home",
+            pitch_size=(106.0, 68.0),
+            player_id=1,
+            jersey=1,
+            outcome=False,
+            related_event_id=MISSING_INT,
+        )
+
+        result = _get_tackle_event(event, 439, players)
+        self.assertEqual(result, expected_tackle_event)

@@ -1,14 +1,19 @@
 import os
 import pickle
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from functools import wraps
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.events import (
+    DribbleEvent,
+    IndividualCloseToBallEvent,
+    PassEvent,
+    ShotEvent,
+)
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
@@ -22,7 +27,11 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
     pre_compute_synchronisation_variables,
     synchronise_tracking_and_event_data,
 )
-from databallpy.utils.utils import get_next_possession_frame
+from databallpy.utils.utils import (
+    _copy_value_,
+    _values_are_equal_,
+    get_next_possession_frame,
+)
 from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__name__)
@@ -86,6 +95,7 @@ class Match:
         shot_events (dict): A dictionary with all instances of shot events.
         dribble_events (dict): A dictionary with all instances of dribble events.
         pass_events (dict): A dictionary with all instances of pass events.
+        other_events (dict): A dictionary with all instances of other supported events.
         allow_synchronise_tracking_and_event_data (bool): If True, the tracking and
         event data can be synchronised. If False, it can not. Default = False.
     """
@@ -111,10 +121,14 @@ class Match:
     shot_events: dict[int | str, ShotEvent] = field(default_factory=dict)
     dribble_events: dict[int | str, DribbleEvent] = field(default_factory=dict)
     pass_events: dict[int | str, PassEvent] = field(default_factory=dict)
+    other_events: dict[int | str, IndividualCloseToBallEvent] = field(
+        default_factory=dict
+    )
     allow_synchronise_tracking_and_event_data: bool = False
     _shots_df: pd.DataFrame = None
     _dribbles_df: pd.DataFrame = None
     _passes_df: pd.DataFrame = None
+    _other_events_df: pd.DataFrame = None
     # to save the preprocessing status
     _is_synchronised: bool = False
     # to indicate if the timestamps are precise or just the proposed timestamps of the
@@ -182,14 +196,25 @@ class Match:
         return None
 
     @property
-    def all_events(self) -> dict[int | str, DribbleEvent | PassEvent | ShotEvent]:
+    def all_events(
+        self,
+    ) -> dict[
+        int | str, DribbleEvent | PassEvent | ShotEvent | IndividualCloseToBallEvent
+    ]:
         """Function to get all events in the match
 
         Returns:
-            dict[int | str, DribbleEvent | PassEvent | ShotEvent]: All events in the
-                match
+            dict[
+                int | str,
+                DribbleEvent | PassEvent | ShotEvent | IndividualCloseToBallEvent
+                ]: All events in the match
         """
-        return {**self.shot_events, **self.dribble_events, **self.pass_events}
+        return {
+            **self.shot_events,
+            **self.dribble_events,
+            **self.pass_events,
+            **self.other_events,
+        }
 
     @property
     def name(self) -> str:
@@ -285,9 +310,6 @@ class Match:
         if self._shots_df is None:
             LOGGER.info("Creating the match._shots_df dataframe in match.shots_df")
 
-            if self.is_synchronised:
-                self.add_tracking_data_features_to_shots()
-
             self._shots_df = create_event_attributes_dataframe(self.shot_events)
 
             LOGGER.info(
@@ -334,6 +356,30 @@ class Match:
         LOGGER.info("Returning the pre-loaded match._passes_df in match.passes_df")
         return self._passes_df
 
+    @property
+    @requires_event_data
+    def other_events_df(self) -> pd.DataFrame:
+        """Function to get all info of the other events in the match
+
+        Returns:
+            pd.DataFrame: DataFrame with all information of the other events in the
+                match
+        """
+
+        if self._other_events_df is None:
+            LOGGER.info(
+                "Creating the match.other_events_df dataframe in match.other_events_df"
+            )
+            other_events_df = create_event_attributes_dataframe(
+                self.other_events, add_name=True
+            )
+
+            LOGGER.info(
+                "Successfully created match.other_events_df dataframe in "
+                "match.other_events_df"
+            )
+        return other_events_df
+
     @requires_event_data
     def get_event(self, event_id: int):
         """Function to get the event with the given event_id
@@ -347,12 +393,8 @@ class Match:
         Returns:
             Databallpy Event: The event with the given event_id
         """
-        if event_id in self.shot_events.keys():
-            return self.shot_events[event_id]
-        elif event_id in self.dribble_events.keys():
-            return self.dribble_events[event_id]
-        elif event_id in self.pass_events.keys():
-            return self.pass_events[event_id]
+        if event_id in self.all_events.keys():
+            return self.all_events[event_id]
         else:
             raise ValueError(f"Event with id {event_id} not found in the match.")
 
@@ -432,8 +474,6 @@ class Match:
 
             shot.add_tracking_data_features(
                 tracking_data_frame,
-                team_side,
-                self.pitch_dimensions,
                 column_id,
                 gk_column_id,
             )
@@ -633,7 +673,7 @@ class Match:
                 default cost functions are used.
 
         Currently works for the following databallpy events:
-            'pass', 'shot', and 'dribble'
+            'pass', 'shot', 'dribble', and 'tackle'
 
         """
         LOGGER.info(f"Trying to synchronise tracking and event data of {self.name}.")
@@ -653,12 +693,10 @@ class Match:
             self.event_data.copy(), self.tracking_data, offset=offset
         )
 
-        all_events = self.shot_events | self.dribble_events | self.pass_events
-
         tracking_info, event_info = synchronise_tracking_and_event_data(
             tracking_data=self.tracking_data,
             event_data=changed_event_data,
-            all_events=all_events,
+            all_events=self.all_events,
             cost_functions=cost_functions,
             n_batches=n_batches,
             verbose=verbose,
@@ -698,57 +736,15 @@ class Match:
         self._is_synchronised = True
 
     def __eq__(self, other):
-        if isinstance(other, Match):
-            result = [
-                self.tracking_data.equals(other.tracking_data),
-                self.tracking_data_provider == other.tracking_data_provider,
-                self.event_data.round(6).equals(other.event_data.round(6)),
-                self.pitch_dimensions == other.pitch_dimensions,
-                self.periods.equals(other.periods),
-                self.frame_rate == other.frame_rate
-                if not pd.isnull(self.frame_rate)
-                else pd.isnull(other.frame_rate),
-                self.home_team_id == other.home_team_id,
-                self.home_team_name == other.home_team_name,
-                self.home_formation == other.home_formation,
-                self.home_players.equals(other.home_players),
-                self.home_score == other.home_score
-                if not pd.isnull(self.home_score)
-                else pd.isnull(other.home_score),
-                self.away_team_id == other.away_team_id,
-                self.away_team_name == other.away_team_name,
-                self.away_formation == other.away_formation,
-                self.away_players.equals(other.away_players),
-                self.away_score == other.away_score
-                if not pd.isnull(self.away_score)
-                else pd.isnull(other.away_score),
-                self.shot_events == other.shot_events,
-                self._shots_df.equals(other._shots_df)
-                if self._shots_df is not None
-                else other._shots_df is None,
-                self.dribble_events == other.dribble_events,
-                self._dribbles_df.equals(other._dribbles_df)
-                if self._dribbles_df is not None
-                else other._dribbles_df is None,
-                self.pass_events == other.pass_events,
-                self._passes_df.equals(other._passes_df)
-                if self._passes_df is not None
-                else other._passes_df is None,
-                self.country == other.country,
-                self.allow_synchronise_tracking_and_event_data
-                == other.allow_synchronise_tracking_and_event_data,
-                self._tracking_timestamp_is_precise
-                == other._tracking_timestamp_is_precise,
-                self._event_timestamp_is_precise == other._event_timestamp_is_precise,
-                self._periods_changed_playing_direction
-                == other._periods_changed_playing_direction
-                if not isinstance(self._periods_changed_playing_direction, type(None))
-                else pd.isnull(other._periods_changed_playing_direction),
-                self._is_synchronised == other._is_synchronised,
-            ]
-            return all(result)
-        else:
+        if not isinstance(other, Match):
             return False
+        for current_field in fields(self):
+            if not _values_are_equal_(
+                getattr(self, current_field.name), getattr(other, current_field.name)
+            ):
+                return False
+
+        return True
 
     def copy(self) -> "Match":
         """Function to create a copy of the match object
@@ -756,44 +752,10 @@ class Match:
         Returns:
             Match: copy of the match object
         """
-        allow_sync = self.allow_synchronise_tracking_and_event_data
-        return Match(
-            tracking_data=self.tracking_data.copy(),
-            tracking_data_provider=self.tracking_data_provider,
-            event_data=self.event_data.copy(),
-            event_data_provider=self.event_data_provider,
-            pitch_dimensions=list(self.pitch_dimensions),
-            periods=self.periods.copy(),
-            frame_rate=self.frame_rate,
-            home_team_id=self.home_team_id,
-            home_formation=self.home_formation,
-            home_score=self.home_score,
-            home_team_name=self.home_team_name,
-            home_players=self.home_players.copy(),
-            away_team_id=self.away_team_id,
-            away_formation=self.away_formation,
-            away_score=self.away_score,
-            away_team_name=self.away_team_name,
-            away_players=self.away_players.copy(),
-            shot_events={x: y.copy() for x, y in self.shot_events.items()},
-            _shots_df=self._shots_df.copy() if self._shots_df is not None else None,
-            dribble_events={x: y.copy() for x, y in self.dribble_events.items()},
-            _dribbles_df=self._dribbles_df.copy()
-            if self._dribbles_df is not None
-            else None,
-            pass_events={x: y.copy() for x, y in self.pass_events.items()},
-            _passes_df=self._passes_df.copy() if self._passes_df is not None else None,
-            country=self.country,
-            allow_synchronise_tracking_and_event_data=allow_sync,
-            _tracking_timestamp_is_precise=self._tracking_timestamp_is_precise,
-            _event_timestamp_is_precise=self._event_timestamp_is_precise,
-            _is_synchronised=self._is_synchronised,
-            _periods_changed_playing_direction=list(
-                self._periods_changed_playing_direction
-            )
-            if self._periods_changed_playing_direction is not None
-            else None,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return Match(**copied_kwargs)
 
     def save_match(
         self, name: str = None, path: str = None, verbose: bool = True

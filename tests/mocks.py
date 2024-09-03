@@ -207,6 +207,84 @@ ED_METRICA_RAW = """{
 				"id": "P3568"
 			},
 			"to": null
+		},
+        {
+			"index": 9,
+			"team": {
+				"name": "Team A",
+				"id": "FIFATMA"
+			},
+			"type": {
+				"name": "CHALLENGE",
+				"id": 9
+			},
+			"subtypes": [
+				{
+					"name": "TACKLE",
+					"id": 44
+				},
+				{
+					"name": "LOST",
+					"id": 49
+				}
+			],
+			"start": {
+				"frame": 10,
+				"time": 80,
+				"x": 0.3,
+				"y": 0.1
+			},
+			"end": {
+				"frame": 10,
+				"time":80,
+				"x": null,
+				"y": null
+			},
+			"period": 2,
+			"from": {
+				"name": "Player 1",
+				"id": "P3568"
+			},
+			"to": null
+		},
+        {
+			"index": 9,
+			"team": {
+				"name": "Team A",
+				"id": "FIFATMA"
+			},
+			"type": {
+				"name": "CHALLENGE",
+				"id": 9
+			},
+			"subtypes": [
+				{
+					"name": "FOUL",
+					"id": 44
+				},
+				{
+					"name": "LOST",
+					"id": 49
+				}
+			],
+			"start": {
+				"frame": 10,
+				"time": 80,
+				"x": 0.3,
+				"y": 0.1
+			},
+			"end": {
+				"frame": 10,
+				"time":80,
+				"x": null,
+				"y": null
+			},
+			"period": 2,
+			"from": {
+				"name": "Player 1",
+				"id": "P3568"
+			},
+			"to": null
 		}
     ]
 }"""

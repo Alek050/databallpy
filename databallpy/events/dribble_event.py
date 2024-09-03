@@ -1,13 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
-import numpy as np
-import pandas as pd
-
-from databallpy.events.base_event import BaseOnBallEvent
+from databallpy.events.base_event import IndividualOnBallEvent
+from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 
 @dataclass
-class DribbleEvent(BaseOnBallEvent):
+class DribbleEvent(IndividualOnBallEvent):
     """Class for dribble events
 
     Args:
@@ -18,109 +16,74 @@ class DribbleEvent(BaseOnBallEvent):
         datetime (pd.Timestamp): datetime at which the event occured
         start_x (float): x coordinate of the start location of the event
         start_y (float): y coordinate of the start location of the event
-        pitch_size (tuple): size of the pitch in meters.
+        team_id (int): id of the team that performed the event
         team_side (str): side of the team that performed the event, either
             ["home", "away"]
-        team_id (int): id of the team that performed the event
-        player_id (int): id of the player that performed the event
-        related_event_id (int): id of the event that the dribble is related to
-        duel_type (str): type of duel that the dribble is related to, either
-            ["offensive", "defensive"].
-        outcome (bool): whether the dribble was successful or not
-        has_opponent (bool): whether the dribble has an opponent in the area or not
+        pitch_size (tuple): size of the pitch in meters
+        player_id (int | str): id of the player that performed the event
+        jersey (int): jersey number of the player that performed the event
+        outcome (bool): whether the event was successful or not
+        related_event_id (int | str | None): id of the event that the event is related
+            to the current event.
+        body_part (str): body part that the event is related to. Should be in
+            databallpy.utils.constants.DATBALLPY_BODY_PARTS
+        possession_type (str): type of possession that the event is related to.
+            Should be in databallpy.utils.constants.DATABALLPY_POSSESSION_TYPES
+        set_piece (str): type of set piece that the event is related to. Should be in
+            databallpy.utils.constants.DATABALLPY_SET_PIECES
+        duel_type (str): type of duel that the event is related to. Should be in
+            ["offensive", "defensive", "unspecified"].
+        with_opponent (bool): whether the event was performed with an opponent or not
 
-    Attributes:
+    Properties:
         xT (float): expected threat of the event. This is calculated using a model
             that is trained on the distance and angle to the goal, and the distance
-            times the angle to the goal. See the notebook in the notebooks folder for
+            times theangle to the goal. See the notebook in the notebooks folder for
             more information on the model.
-        df_attributes (list[str]): list of attributes that are used to create a
+        base_df_attributes (list[str]): list of attributes that are used to create a
             DataFrame
-
-    Raises:
-        TypeError: when one of the input arguments is of the wrong type
-
-    Returns:
-        DribbleEvent: Dribble event
     """
 
-    player_id: int
-    jersey: int
-    related_event_id: int
     duel_type: str
-    outcome: bool
-    has_opponent: bool = False
+    with_opponent: bool
 
     def __post_init__(self):
         super().__post_init__()
-        self._check_datatypes()
-        _ = self._xt
+        self._validate_inputs_dribble_event()
 
     def __eq__(self, other):
         if not isinstance(other, DribbleEvent):
             return False
-        else:
-            result = [
-                super().__eq__(other),
-                self.player_id == other.player_id,
-                self.jersey == other.jersey,
-                self.related_event_id == other.related_event_id,
-                self.duel_type == other.duel_type
-                if not pd.isnull(self.duel_type)
-                else pd.isnull(other.duel_type),
-                self.outcome == other.outcome,
-                self.has_opponent == other.has_opponent,
-            ]
-            return all(result)
+        for field in fields(self):
+            if not _values_are_equal_(
+                getattr(self, field.name), getattr(other, field.name)
+            ):
+                return False
+
+        return True
 
     @property
     def df_attributes(self) -> list[str]:
         base_attributes = super().base_df_attributes
-        return base_attributes + [
-            "player_id",
-            "related_event_id",
-            "duel_type",
-            "outcome",
-            "has_opponent",
-        ]
+        return base_attributes + ["duel_type", "with_opponent"]
 
     def copy(self):
-        return DribbleEvent(
-            event_id=self.event_id,
-            jersey=self.jersey,
-            period_id=self.period_id,
-            minutes=self.minutes,
-            seconds=self.seconds,
-            datetime=self.datetime,
-            start_x=self.start_x,
-            start_y=self.start_y,
-            pitch_size=self.pitch_size,
-            team_side=self.team_side,
-            _xt=self._xt,
-            team_id=self.team_id,
-            player_id=self.player_id,
-            related_event_id=self.related_event_id,
-            duel_type=self.duel_type,
-            outcome=self.outcome,
-            has_opponent=self.has_opponent,
-        )
+        copied_kwargs = {
+            f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
+        }
+        return DribbleEvent(**copied_kwargs)
 
-    def _check_datatypes(self):
-        if not isinstance(self.player_id, (int, np.integer, str)):
-            raise TypeError(
-                f"player_id should be int, got {type(self.player_id)} instead"
-            )
-        if not isinstance(self.related_event_id, (int, np.integer)):
-            raise TypeError(
-                f"related_event_id should be int, got {type(self.related_event_id)} "
-                "instead"
-            )
+    def _validate_inputs_dribble_event(self):
         if not isinstance(self.duel_type, (str, type(None))):
             raise TypeError(
                 f"duel_type should be str, got {type(self.duel_type)} instead"
             )
-        if not isinstance(self.outcome, (bool, type(None))):
-            raise TypeError(f"outcome should be bool, got {type(self.outcome)} instead")
-
-        if not isinstance(self.jersey, (int, np.integer)):
-            raise TypeError(f"jersey should be int, got {type(self.jersey)} instead")
+        if self.duel_type not in ["offensive", "defensive", "unspecified"]:
+            raise ValueError(
+                "duel_type should be in ['offensive', 'defensive', 'unspecified'],"
+                f" got {self.duel_type} instead"
+            )
+        if not isinstance(self.with_opponent, bool):
+            raise TypeError(
+                f"with_opponent should be bool, got {type(self.with_opponent)} instead"
+            )

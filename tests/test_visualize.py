@@ -125,7 +125,7 @@ class TestVisualize(unittest.TestCase):
         with self.assertRaises(TypeError):
             plot_events(self.match.copy(), events="passes")
         with self.assertRaises(ValueError):
-            plot_events(self.match.copy(), events=["tackle"])
+            plot_events(self.match.copy(), events=["wrong_event"])
         with self.assertRaises(ValueError):
             plot_events(self.match.copy(), outcome="false")
         with self.assertRaises(ValueError):
