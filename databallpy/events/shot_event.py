@@ -244,12 +244,17 @@ class ShotEvent(IndividualOnBallEvent):
         n_obstructive_defenders = (triangle.find_simplex(opponent_xy) >= 0).sum()
 
         # add variables
+        goal_xyz = np.append(goal_xy, 0)
+        ball_xyz = np.append(ball_xy, 0)
+        gk_xyz = np.append(gk_xy, 0)
+
+        # add variables
         self._update_ball_goal_distance(ball_xy)
         self.ball_gk_distance = math.dist(ball_xy, gk_xy)
         self._update_shot_angle(ball_xy)
         self.gk_optimal_loc_distance = float(
-            np.linalg.norm(np.cross(goal_xy - ball_xy, ball_xy - gk_xy))
-            / np.linalg.norm(goal_xy - ball_xy)
+            np.linalg.norm(np.cross(goal_xyz - ball_xyz, ball_xyz - gk_xyz))
+            / np.linalg.norm(goal_xyz - ball_xyz)
         )
         self.pressure_on_ball = float(
             get_pressure_on_player(
