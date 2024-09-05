@@ -104,7 +104,7 @@ def get_distance_between_ball_and_players(tracking_data: pd.DataFrame) -> pd.Dat
 def get_initial_possessions(
     pz_radius: float,
     distances_df: pd.DataFrame,
-) -> pd.Series:
+) -> np.ndarray:
     """
     Calculate initial ball possession based on proximity and duration within the
     possession zone (PZ).
@@ -115,10 +115,11 @@ def get_initial_possessions(
         ball and players.
 
     Returns:
-        pd.Series: Player possession status for each frame.
+        np.ndarray: Array with the initial possession of the ball.
     """
-    closest_player = distances_df.idxmin(axis=1, skipna=True)
-    close_enough = distances_df.min(axis=1) < pz_radius
+    filled_distances_df = distances_df.fillna(np.inf)
+    closest_player = filled_distances_df.idxmin(axis=1)
+    close_enough = filled_distances_df.min(axis=1) < pz_radius
     return np.where(close_enough, closest_player, None)
 
 
