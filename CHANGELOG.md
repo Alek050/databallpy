@@ -83,5 +83,11 @@
 - Added function to calculate covered distances in different velocity and acceleration zones
 - Updated the documentation
 
+## V0.5.1 (10/10/2024)
+
+- Fixed bug in calculating covered distances when no accelerations are present
+- Fixed bug in rare cases where _filter_data does not work as expected and returns errors
+- Fixed bug in match.add_tracking_data_features_to_shots, did not update properly after last release
+
 
 

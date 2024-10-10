@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 from scipy.signal import savgol_filter
@@ -23,8 +25,6 @@ def _filter_data(
 
     Returns:
         np.ndarray: filtered data
-
-
     """
     if not isinstance(array, np.ndarray):
         raise TypeError("array should be of type np.ndarray")
@@ -47,12 +47,28 @@ def _filter_data(
         raise ValueError("length of data should be greater than the window length")
 
     if filter_type == "savitzky_golay":
-        return savgol_filter(
-            array, axis=0, window_length=window_length, polyorder=polyorder
-        )
+        try:
+            return savgol_filter(
+                array, window_length=window_length, polyorder=polyorder, mode="interp"
+            )
+        except Exception as e:
+            warnings.warn(
+                "An unexpected error occurred while filtering "
+                f"the data: {e}. /nReturning the original data."
+            )
+            return array
 
     elif filter_type == "moving_average":
-        return np.convolve(array, np.ones(window_length) / window_length, mode="same")
+        try:
+            return np.convolve(
+                array, np.ones(window_length) / window_length, mode="same"
+            )
+        except Exception as e:
+            warnings.warn(
+                "An unexpected error occurred while filtering "
+                f"the data: {e}. /nReturning the original data."
+            )
+            return array
 
 
 def filter_tracking_data(

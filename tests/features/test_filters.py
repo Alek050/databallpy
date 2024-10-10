@@ -1,4 +1,6 @@
 import unittest
+import warnings
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -80,6 +82,36 @@ class TestFilters(unittest.TestCase):
             filter_tracking_data(
                 tracking_data, column_ids="home_1", filter_type="invalid"
             )
+
+    @patch(
+        "databallpy.features.filters.savgol_filter",
+        side_effect=TypeError("Mocked ValueError"),
+    )
+    @patch("numpy.convolve", side_effect=ValueError("Mocked ValueError"))
+    def test_filter_data_error(self, mock_savgol_filter, mock_convolve):
+        arr = np.array([1, 2, 3, 8, 5])
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = _filter_data(arr, "savitzky_golay", window_length=3)
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, UserWarning))
+            self.assertIn(
+                "An unexpected error occurred while filtering the data",
+                str(w[-1].message),
+            )
+            np.testing.assert_array_equal(result, arr)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = _filter_data(arr, "moving_average", window_length=3)
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, UserWarning))
+            self.assertIn(
+                "An unexpected error occurred while filtering the data",
+                str(w[-1].message),
+            )
+            np.testing.assert_array_equal(result, arr)
 
     def test_filter_tracking_data_ma_inplace(self):
         tracking_data = pd.DataFrame(
