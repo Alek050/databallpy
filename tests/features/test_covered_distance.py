@@ -80,7 +80,13 @@ class TestCoveredDistance(unittest.TestCase):
         )
 
     def test_get_total_distance(self):
-        input_df = self.input_td.copy()
+        input_df = self.input_td.copy().drop(
+            columns=[
+                col
+                for col in self.input_td.columns
+                if "_ax" in col or "_ay" in col or "acceleration" in col
+            ]
+        )
         expected_output_df = self.expected_total_distance.copy()
         expected_output_df.drop(
             columns=[

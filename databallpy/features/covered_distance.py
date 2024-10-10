@@ -172,7 +172,7 @@ def _validate_inputs(
                 f"Velocity was not found for {player_id} in the DataFrame. "
                 "Please calculate velocity first using add_velocity() function."
             )
-        elif acceleration_intervals is not None:
+        elif acceleration_intervals is not None and len(acceleration_intervals) > 0:
             if (
                 player_id + "_ax" not in tracking_data.columns
                 or player_id + "_ay" not in tracking_data.columns
