@@ -398,6 +398,105 @@ class Match:
         else:
             raise ValueError(f"Event with id {event_id} not found in the match.")
 
+    def get_frames(
+        self, frames: int | list[int], playing_direction: str = "team_oriented"
+    ) -> pd.DataFrame:
+        """Function to get the frame of the match with the given frame
+
+        Args:
+            frames (int|list[int]): The frames of the match
+            playing_direction (str, optional): The coordinate system of the frame.
+                Defaults to "team_oriented", options are {team_oriented,
+                possession_oriented}. For more info on the coordinate systems, see
+                the documentation
+
+        Returns:
+            pd.DataFrame: The frame of the match with the given frames
+        """
+        if isinstance(frames, (int, np.integer)):
+            frames = [frames]
+
+        unrecognized_frames = [
+            frame for frame in frames if frame not in self.tracking_data["frame"].values
+        ]
+        if len(unrecognized_frames) > 0:
+            raise ValueError(f"Frame(s) {unrecognized_frames} not found in the match.")
+
+        if playing_direction == "team_oriented":
+            return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
+        elif playing_direction == "possession_oriented":
+            if (
+                "ball_possession" not in self.tracking_data.columns
+                or pd.isna(self.tracking_data["ball_possession"]).all()
+            ):
+                raise ValueError(
+                    "No `ball_possession` column found in tracking data, can not get"
+                    " frames in possession coordinate system without this column. "
+                    "Please run the add_team_possession() function first."
+                )
+
+            # current coordinate system: home from left to right, away right to left
+            suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+            cols_to_swap = [
+                col for col in self.tracking_data.columns if col.endswith(suffixes)
+            ]
+            temp_td = self.tracking_data.loc[
+                self.tracking_data["frame"].isin(frames)
+            ].copy()
+            temp_td.loc[
+                self.tracking_data["ball_possession"] == "away", cols_to_swap
+            ] *= -1
+            return temp_td
+
+        else:
+            raise ValueError(f"Coordinate system {playing_direction} is not supported.")
+
+    def get_event_frame(
+        self, event_id: int | str, playing_direction: str = "team_oriented"
+    ) -> pd.DataFrame:
+        """Function to get the frame of the event with the given event_id
+
+        Args:
+            event_id (int | str): The id of the event
+            playing_direction (str, optional): The coordinate system of the frame.
+                Defaults to "team_oriented", options are {team_oriented,
+                possession_oriented}. For more info on the coordinate systems, see
+                the databallpy documentation
+
+        Raises:
+            ValueError: if the event with the given event_id is not found in the match
+            ValueError: if the event with the given event_id is not found in the
+                tracking data
+
+        Returns:
+            pd.DataFrame: The frame of the match with the given event_id
+        """
+        if not self._is_synchronised:
+            raise DataBallPyError(
+                "Tracking and event data are not synchronised yet. Please run the"
+                " synchronise_tracking_and_event_data() method first."
+            )
+        event = self.get_event(event_id)
+        frame_id = self.tracking_data.loc[
+            self.tracking_data["event_id"] == event.event_id, "frame"
+        ].iloc[0]
+        frame = self.get_frames(frame_id, playing_direction="team_oriented")
+        if playing_direction == "team_oriented":
+            return frame
+        elif playing_direction == "possession_oriented":
+            if event.team_side == "away":
+                suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+                cols_to_swap = [
+                    col for col in self.tracking_data.columns if col.endswith(suffixes)
+                ]
+                frame = self.tracking_data.loc[
+                    self.tracking_data["frame"] == frame_id
+                ].copy()
+                frame.loc[:, cols_to_swap] *= -1
+        else:
+            raise ValueError(f"Coordinate system {playing_direction} is not supported.")
+        return frame
+
     @requires_event_data
     @requires_tracking_data
     def add_tracking_data_features_to_shots(self):
