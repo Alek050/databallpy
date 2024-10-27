@@ -437,7 +437,7 @@ def anonymise_datetime(
 
         new_frames = np.arange(len(match.tracking_data)) + 1
         frame_map = dict(zip(match.tracking_data["frame"], new_frames))
-        max_frame =frame_map[match.tracking_data["frame"].max()]
+        max_frame = frame_map[match.tracking_data["frame"].max()]
         match.tracking_data["frame"] = np.arange(len(match.tracking_data)) + 1
         match.periods["start_frame"] = (
             match.periods["start_frame"].map(frame_map).fillna(max_frame).astype(int)
@@ -453,10 +453,7 @@ def anonymise_datetime(
             .astype(int)
         )
         match.home_players["end_frame"] = (
-            match.home_players["end_frame"]
-            .map(frame_map)
-            .fillna(max_frame)
-            .astype(int)
+            match.home_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
         match.away_players["start_frame"] = (
             match.away_players["start_frame"]
@@ -465,10 +462,7 @@ def anonymise_datetime(
             .astype(int)
         )
         match.away_players["end_frame"] = (
-            match.away_players["end_frame"]
-            .map(frame_map)
-            .fillna(max_frame)
-            .astype(int)
+            match.away_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
 
     if len(match.event_data) > 0:
