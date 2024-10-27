@@ -14,7 +14,7 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
 from databallpy.utils.match_utils import (
@@ -233,13 +233,87 @@ class Match:
         return f"{home_text} - {away_text} {date.strftime('%Y-%m-%d %H:%M:%S')}"
 
     @requires_tracking_data
+    def get_column_ids(
+        self,
+        team: str | None = None,
+        positions: list[str] = [],
+        min_minutes_played: float | int = 0.1,
+    ) -> list[str]:
+        """Function to get the column ids that are used in the tracking data. With this
+        function you can filter on team side, position, or minimum minutes played.
+        If no arguments are specified, all column ids are returned of players that j
+        played at least 0.1 minute.
+
+        Args:
+            team (str | None, optional): Which team to add, can be {home, away, None}.
+                If None, both teams are added. Defaults to None.
+            positions (list[str], optional): The positions to include
+                {goalkeeper, defender, midfielder, forward}. If the list is empty, all
+                positions are returned. Defaults to [].
+            min_minutes_played (float | int, optional): The minimum number of minutes a
+                player needs to have played during the match to be returned.
+                Defaults to 1.0.
+
+        Raises:
+            ValueError: If team is not in {None, home, away}
+            ValueError: If there is an unknown position
+            TypeError: if min_minutes_played is not numeric
+
+        Returns:
+            list[str]: The column ids of the players.
+        """
+        if team and team not in ["home", "away"]:
+            raise ValueError(f"team should be either 'home' or 'away', not {team}")
+
+        for pos in positions:
+            if pos not in DATABALLPY_POSITIONS:
+                raise ValueError(
+                    f"Position {pos} is not supported in databallpy, should be in "
+                    f"{DATABALLPY_POSITIONS}"
+                )
+
+        if not isinstance(min_minutes_played, (float, int, np.floating, np.integer)):
+            raise TypeError("min_minutes_played should be a float or integer")
+
+        if team:
+            players = self.home_players if team == "home" else self.away_players
+        else:
+            players = pd.concat(
+                [self.home_players, self.away_players], ignore_index=True
+            )
+
+        if len(positions) > 0:
+            players = players[players["position"].isin(positions)]
+
+        players = players[
+            (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
+            >= min_minutes_played
+        ]
+
+        return [
+            f"home_{row.shirt_num}"
+            if row.id in self.home_players["id"].to_list()
+            else f"away_{row.shirt_num}"
+            for row in players.itertuples(index=False)
+        ]
+
+    @requires_tracking_data
     def home_players_column_ids(self) -> list[str]:
         """Function to get all column ids of the tracking data that refer to information
         about the home team players
 
+        Depreciation: This function is depreciated and will be removed in version
+        0.7.0. Please use match.get_column_ids(team="home").
+
         Returns:
             list[str]: All column ids of the home team players
         """
+
+        warnings.warn(
+            "match.home_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use match.get_column_ids(team='home')",
+            DeprecationWarning,
+        )
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -251,9 +325,18 @@ class Match:
         """Function to get all column ids of the tracking data that refer to information
         about the away team players
 
+        Depreciation: This function is depreciated and will be removed in version
+        0.7.0. Please use match.get_column_ids(team="away").
+
         Returns:
             list[str]: All column ids of the away team players
         """
+
+        warnings.warn(
+            "match.away_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use match.get_column_ids(team='away')",
+            DeprecationWarning,
+        )
         return [
             id[:-2]
             for id in self.tracking_data.columns
