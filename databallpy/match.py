@@ -283,7 +283,14 @@ class Match:
             )
 
         if len(positions) > 0:
-            players = players[players["position"].isin(positions)]
+            if "position" not in players.columns:
+                warnings.warn(
+                    "No position information found in players, can not filter on "
+                    "positions. Returning all positions.",
+                    DataBallPyWarning,
+                )
+            else:
+                players = players[players["position"].isin(positions)]
 
         players = players[
             (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
@@ -1242,10 +1249,20 @@ def check_inputs_match_object(match: Match):
             if col not in players.columns:
                 message = (
                     f"{team} team players should contain at least the column "
-                    f"['id', 'full_name', 'shirt_num'], {col} is missing."
+                    f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
                 )
                 LOGGER.error(message)
                 raise ValueError(message)
+        if (
+            "position" in players.columns
+            and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
+        ):
+            message = (
+                f"{team} team players should have a position that is in "
+                f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
+            )
+            LOGGER.error(message)
+            raise ValueError(message)
 
         # check for direction of play
         for _, period_row in match.periods.iterrows():

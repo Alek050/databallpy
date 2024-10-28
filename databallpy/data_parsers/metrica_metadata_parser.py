@@ -7,7 +7,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.data_parsers import Metadata
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.utils import _to_float, _to_int
 
 
@@ -242,7 +242,11 @@ def _get_metadata(
                 res_dict["end_frame"].append(MISSING_INT)
                 for param in player.findChildren("ProviderParameter"):
                     if param.find("Name").text == "position_type":
-                        res_dict["position"].append(param.find("Value").text.lower())
+                        res_dict["position"].append(
+                            _metrica_position_to_databallpy_position(
+                                param.find("Value").text.lower()
+                            )
+                        )
                     elif param.find("Name").text == "position_index":
                         res_dict["formation_place"].append(
                             _to_int(param.find("Value").text)
@@ -270,6 +274,14 @@ def _get_metadata(
         periods_changed_playing_direction=None,
     )
     return metadata
+
+
+def _metrica_position_to_databallpy_position(position: str) -> str:
+    for pos in [pos for pos in DATABALLPY_POSITIONS if pos != "defender"]:
+        if pos in position:
+            return pos
+    if "back" in position:
+        return "defender"
 
 
 def _update_metadata(td_channels: pd.DataFrame, metadata: Metadata) -> Metadata:

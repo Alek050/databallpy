@@ -92,3 +92,7 @@
 
 
 
+## new version
+
+- Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
+
