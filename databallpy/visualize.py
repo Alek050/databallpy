@@ -468,12 +468,12 @@ def plot_tracking_data(
         td = match.tracking_data.loc[[idx]]
         td_ht = td[
             np.array(
-                [[x + "_x", x + "_y"] for x in match.home_players_column_ids()]
+                [[x + "_x", x + "_y"] for x in match.get_column_ids(team="home")]
             ).reshape(1, -1)[0]
         ]
         td_at = td[
             np.array(
-                [[x + "_x", x + "_y"] for x in match.away_players_column_ids()]
+                [[x + "_x", x + "_y"] for x in match.get_column_ids(team="away")]
             ).reshape(1, -1)[0]
         ]
 
@@ -593,12 +593,12 @@ def save_tracking_video(
         td = match.tracking_data.loc[start_idx:end_idx]
         td_ht = td[
             np.array(
-                [[x + "_x", x + "_y"] for x in match.home_players_column_ids()]
+                [[x + "_x", x + "_y"] for x in match.get_column_ids(team="home")]
             ).reshape(1, -1)[0]
         ]
         td_at = td[
             np.array(
-                [[x + "_x", x + "_y"] for x in match.away_players_column_ids()]
+                [[x + "_x", x + "_y"] for x in match.get_column_ids(team="away")]
             ).reshape(1, -1)[0]
         ]
 
@@ -756,7 +756,7 @@ def _pre_check_plot_td_inputs(
             raise DataBallPyError(message)
 
     if add_velocities:
-        for player in match.home_players_column_ids() + match.away_players_column_ids():
+        for player in match.get_column_ids() + ["ball"]:
             if player + "_vx" not in td.columns or player + "_vy" not in td.columns:
                 message = (
                     f"Player vx and/or vy of {player} not found in "
@@ -829,22 +829,18 @@ def _plot_velocities(
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the velocities of the current frame."""
     # Player velocities
-    for col_ids in [
-        match.home_players_column_ids(),
-        match.away_players_column_ids(),
-    ]:
-        for col_id in col_ids:
-            if pd.isnull(td.loc[idx, [col_id + "_vx", col_id + "_x"]]).any():
-                continue
+    for col_id in match.get_column_ids():
+        if pd.isnull(td.loc[idx, [col_id + "_vx", col_id + "_x"]]).any():
+            continue
 
-            arrow = mpatches.FancyArrowPatch(
-                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values,
-                td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values
-                + td.loc[idx, [f"{col_id}_vx", f"{col_id}_vy"]].values,
-                mutation_scale=10,
-            )
-            fig_obj = ax.add_patch(arrow)
-            variable_fig_objs.append(fig_obj)
+        arrow = mpatches.FancyArrowPatch(
+            td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values,
+            td.loc[idx, [f"{col_id}_x", f"{col_id}_y"]].values
+            + td.loc[idx, [f"{col_id}_vx", f"{col_id}_vy"]].values,
+            mutation_scale=10,
+        )
+        fig_obj = ax.add_patch(arrow)
+        variable_fig_objs.append(fig_obj)
 
     # Ball velocity
     if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():

@@ -873,7 +873,7 @@ MD_METRICA_TD = Metadata(
             "id": [3578, 3568],
             "full_name": ["Player 11", "Player 1"],
             "formation_place": [0, 1],
-            "position": ["goalkeeper", "right back"],
+            "position": ["goalkeeper", "defender"],
             "starter": [True, True],
             "shirt_num": [11, 1],
             "start_frame": [MISSING_INT, MISSING_INT],
@@ -889,7 +889,7 @@ MD_METRICA_TD = Metadata(
             "id": [3699, 3700],
             "full_name": ["Player 34", "Player 35"],
             "formation_place": [3, 1],
-            "position": ["left forward (2)", "left back"],
+            "position": ["forward", "defender"],
             "starter": [True, False],
             "shirt_num": [34, 35],
             "start_frame": [MISSING_INT, MISSING_INT],
@@ -935,7 +935,7 @@ MD_METRICA_ED = Metadata(
             "id": [3578, 3568],
             "full_name": ["Player 11", "Player 1"],
             "formation_place": [0, 1],
-            "position": ["goalkeeper", "right back"],
+            "position": ["goalkeeper", "defender"],
             "starter": [True, True],
             "shirt_num": [11, 1],
             "start_frame": [MISSING_INT, MISSING_INT],
@@ -951,7 +951,7 @@ MD_METRICA_ED = Metadata(
             "id": [3699, 3700],
             "full_name": ["Player 34", "Player 35"],
             "formation_place": [3, 1],
-            "position": ["left forward (2)", "left back"],
+            "position": ["forward", "defender"],
             "starter": [True, False],
             "shirt_num": [34, 35],
             "start_frame": [MISSING_INT, MISSING_INT],
@@ -1099,7 +1099,7 @@ MD_INSTAT = Metadata(
         {
             "id": [1, 2],
             "full_name": ["Player 1", "Player 2"],
-            "position": ["Goalkeeper", "Defender"],
+            "position": ["goalkeeper", "defender"],
             "starter": [True, True],
             "shirt_num": [1, 2],
         }
@@ -1112,7 +1112,7 @@ MD_INSTAT = Metadata(
         {
             "id": [3, 4],
             "full_name": ["Player 11", "Player 12"],
-            "position": ["Goalkeeper", "Substitute player"],
+            "position": ["goalkeeper", ""],
             "starter": [True, False],
             "shirt_num": [1, 3],
         }
@@ -1255,7 +1255,7 @@ MD_SCISPORTS = Metadata(
             "id": [201, 203],
             "full_name": ["away player 1", "away player 2"],
             "formation_place": [7, 9],
-            "position": ["defender", "striker"],
+            "position": ["defender", "forward"],
             "starter": [True, False],
             "shirt_num": [4, 17],
         }

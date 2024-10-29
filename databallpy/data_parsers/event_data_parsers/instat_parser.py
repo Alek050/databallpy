@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers import Metadata
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.logging import create_logger
 from databallpy.utils.tz_modification import utc_to_local_datetime
 
@@ -188,7 +188,9 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
             if int(event["player_id"]) not in players_dict["id"]:
                 players_dict["id"].append(int(event["player_id"]))
                 players_dict["full_name"].append(str(event["player_name"]))
-                players_dict["position"].append(str(event["position_name"]))
+                players_dict["position"].append(
+                    _parse_instat_position(str(event["position_name"]))
+                )
                 if str(event["position_name"]) == "Substitute player":
                     players_dict["starter"].append(False)
                 else:
@@ -222,6 +224,13 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
     metadata.home_players = home_players
     metadata.away_players = away_players
     return metadata
+
+
+def _parse_instat_position(position: str) -> str:
+    for pos in DATABALLPY_POSITIONS:
+        if pos in position.lower():
+            return pos
+    return ""
 
 
 def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
