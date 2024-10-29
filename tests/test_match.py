@@ -1099,6 +1099,11 @@ class TestMatch(unittest.TestCase):
         with self.assertRaises(TypeError):
             match.get_column_ids(min_minutes_played="fifteen")
 
+        with self.assertWarns(DataBallPyWarning):
+            match.away_players.drop(columns=["position"], inplace=True)
+            away = match.get_column_ids(team="away", positions=["defender"])
+            self.assertSetEqual(set(away), {"away_55", "away_66", "away_77"})
+
     def test_match_player_column_id_to_full_name(self):
         res_name_home = self.expected_match_tracab_opta.player_column_id_to_full_name(
             "home_1"
