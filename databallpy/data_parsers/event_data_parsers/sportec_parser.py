@@ -7,7 +7,10 @@ import pandas as pd
 import requests
 
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.data_parsers.sportec_metadata_parser import _get_sportec_metadata, _get_sportec_open_data_url
+from databallpy.data_parsers.sportec_metadata_parser import (
+    _get_sportec_metadata,
+    _get_sportec_open_data_url,
+)
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger
@@ -43,7 +46,7 @@ SPORTEC_SHOT_OUTCOMES = {
     "SuccessfulShot": "goal",
     "ShotWide": "miss_off_target",
     "ShotWoodWork": "miss_hit_post",
-    "OtherShot": "unspecified"
+    "OtherShot": "unspecified",
 }
 SPORTEC_BODY_PARTS = {
     "head": "head",
@@ -81,7 +84,7 @@ def load_sportec_event_data(
         FileNotFoundError: If the event or metadata location is not found
 
     Returns:
-        tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event 
+        tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
             metadata, and the databallpy events dictionary.
     """
     LOGGER.info("Trying to load sportec event data.")
@@ -127,12 +130,12 @@ def load_sportec_open_event_data(match_id: str):
         event_data = requests.get(_get_sportec_open_data_url(match_id, "event_data"))
         with open(os.path.join(save_path, "event_data.xml"), "wb") as f:
             f.write(event_data.content)
-    
+
     return load_sportec_event_data(
         os.path.join(save_path, "event_data.xml"),
-        os.path.join(save_path, "metadata.xml")
+        os.path.join(save_path, "metadata.xml"),
     )
-    
+
 
 def _get_sportec_event_data(
     event_data_loc: str, metadata: Metadata
@@ -176,7 +179,9 @@ def _get_sportec_event_data(
         "sportec_event": [None] * len(all_events),
     }
 
-    pitch_center, period_start_times, swap_half = _initialize_search_variables(soup, metadata.home_team_id)
+    pitch_center, period_start_times, swap_half = _initialize_search_variables(
+        soup, metadata.home_team_id
+    )
     metadata.periods_changed_playing_direction = [swap_half]
 
     databallpy_events = {
@@ -204,8 +209,8 @@ def _get_sportec_event_data(
         kwargs["seconds"] = time_diff_s % 60
         kwargs["event_id"] = int(event["EventId"])
 
-        kwargs["start_x"] = (float(event["X-Position"]) - pitch_center[0]) 
-        kwargs["start_y"] = (float(event["Y-Position"]) - pitch_center[1]) 
+        kwargs["start_x"] = float(event["X-Position"]) - pitch_center[0]
+        kwargs["start_y"] = float(event["Y-Position"]) - pitch_center[1]
 
         if kwargs["period_id"] == swap_half:
             kwargs["start_x"] *= -1
@@ -255,7 +260,9 @@ def _get_sportec_event_data(
     return event_data, databallpy_events
 
 
-def _initialize_search_variables(soup:bs4.element.Tag, home_team_id:str) -> tuple[list[float], list]:
+def _initialize_search_variables(
+    soup: bs4.element.Tag, home_team_id: str
+) -> tuple[list[float], list]:
     """Function to get the base variables for the event data.
     The function calculates the center of the pitch, and the start
     datetimes of the first and second half, needed later for calculating
@@ -266,7 +273,7 @@ def _initialize_search_variables(soup:bs4.element.Tag, home_team_id:str) -> tupl
         home_team_id (str): The id of the home team
 
     Returns:
-        tuple[list[float], list[dt.DateTime]]: the x,y location of the center of the 
+        tuple[list[float], list[dt.DateTime]]: the x,y location of the center of the
             pitch and the start datetime of the first and second half.
     """
     first_half_kick_off = soup.find(
@@ -285,7 +292,9 @@ def _initialize_search_variables(soup:bs4.element.Tag, home_team_id:str) -> tupl
         [first_half_kick_off["EventTime"], second_half_kick_off["EventTime"]]
     )
 
-    goal_kick = soup.find(lambda tag: tag.name == "Event" and tag.find("GoalKick", {"Team": home_team_id}))
+    goal_kick = soup.find(
+        lambda tag: tag.name == "Event" and tag.find("GoalKick", {"Team": home_team_id})
+    )
     swap_period = 1 if float(goal_kick["X-Position"]) > pitch_center[0] else 2
 
     return pitch_center, period_start_times, swap_period
@@ -339,7 +348,7 @@ def _handle_shot_event(
         kwargs_dict (dict): The kwargs for event_data and databallpy events
 
     Returns:
-        tuple[dict, ShotEvent]: The updated kwargs for the event data, and 
+        tuple[dict, ShotEvent]: The updated kwargs for the event data, and
         the databallpy shot event
     """
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
@@ -375,7 +384,7 @@ def _handle_play_event(
         kwargs_dict (dict): The kwargs for event_data and databallpy events
 
     Returns:
-        tuple[dict, PassEvent]: The updated kwargs for the event data, and 
+        tuple[dict, PassEvent]: The updated kwargs for the event data, and
         the databallpy pass event
     """
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
@@ -403,9 +412,7 @@ def _handle_play_event(
     return kwargs_dict, pass_event
 
 
-def _get_base_on_ball_event_kwargs(
-    metadata: Metadata, kwargs_dict: dict
-) -> dict:
+def _get_base_on_ball_event_kwargs(metadata: Metadata, kwargs_dict: dict) -> dict:
     """Function to get the base on ball event info.
     "team_side", "pitch_size", and "jersey"
 

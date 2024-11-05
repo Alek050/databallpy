@@ -5,14 +5,15 @@ import xml.etree.ElementTree as ET
 import chardet
 import numpy as np
 import pandas as pd
+import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-import requests
-import pathlib
-import shutil
 
 from databallpy.data_parsers import Metadata
-from databallpy.data_parsers.sportec_metadata_parser import _get_sportec_metadata, _get_sportec_open_data_url
+from databallpy.data_parsers.sportec_metadata_parser import (
+    _get_sportec_metadata,
+    _get_sportec_open_data_url,
+)
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_ball_data_to_dict,
     _add_datetime,
@@ -75,7 +76,7 @@ def load_tracab_tracking_data(
         )
         tracking_data["datetime"] = pd.to_datetime(tracking_data["datetime"])
     else:
-        message = f"Tracab tracking data should be either .txt, .dat, or .xml format."
+        message = "Tracab tracking data should be either .txt, .dat, or .xml format."
         LOGGER.error(message)
         raise ValueError(message)
 
@@ -97,7 +98,8 @@ def load_tracab_tracking_data(
     LOGGER.info("Successfully post-processed the Tracab data.")
     return tracking_data, metadata
 
-def load_sportec_open_tracking_data(match_id: str, verbose:bool):
+
+def load_sportec_open_tracking_data(match_id: str, verbose: bool):
     metadata_url = _get_sportec_open_data_url(match_id, "metadata")
     save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", match_id)
     os.makedirs(save_path, exist_ok=True)
@@ -105,30 +107,44 @@ def load_sportec_open_tracking_data(match_id: str, verbose:bool):
         metadata = requests.get(metadata_url)
         with open(os.path.join(save_path, "metadata.xml"), "wb") as f:
             f.write(metadata.content)
-        
+
     if not os.path.exists(os.path.join(save_path, "tracking_data.xml")):
         if verbose:
             print("Downloading open tracking data...", end="\r")
         session = requests.Session()
-        response = session.get(_get_sportec_open_data_url(match_id, "tracking_data"), stream=True)
+        response = session.get(
+            _get_sportec_open_data_url(match_id, "tracking_data"), stream=True
+        )
         total_size = int(response.headers.get("content-length", 0))
 
-
-        with open(os.path.join(save_path, "tracking_data_temp.xml"), 'wb') as file, tqdm(desc='Downloading', total=total_size, unit='B', unit_scale=True, unit_divisor=1024, disable=not verbose) as bar:
+        with open(
+            os.path.join(save_path, "tracking_data_temp.xml"), "wb"
+        ) as file, tqdm(
+            desc="Downloading",
+            total=total_size,
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            disable=not verbose,
+        ) as bar:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     file.write(chunk)
                     bar.update(len(chunk))
-        
+
         # rename temp to non temp:
-        os.rename(os.path.join(save_path, "tracking_data_temp.xml"), os.path.join(save_path, "tracking_data.xml"))
+        os.rename(
+            os.path.join(save_path, "tracking_data_temp.xml"),
+            os.path.join(save_path, "tracking_data.xml"),
+        )
         print("Done!", end="\r")
-    
+
     return load_tracab_tracking_data(
         os.path.join(save_path, "tracking_data.xml"),
         os.path.join(save_path, "metadata.xml"),
-        verbose=verbose
+        verbose=verbose,
     )
+
 
 def _get_tracking_data_xml(
     tracab_loc: str,
@@ -136,7 +152,7 @@ def _get_tracking_data_xml(
     away_players: pd.DataFrame,
     verbose: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame, int]:
-    """ Load the tracking data of tracab in xml format. This format is primarily used
+    """Load the tracking data of tracab in xml format. This format is primarily used
     by the DFL/sportec.
 
     Args:
@@ -254,7 +270,7 @@ def _get_tracking_data_xml(
                     data[f"{column_id}_possession"][start_frame + i] = (
                         "home" if int(frame.get("BallPossession")) == 1 else "away"
                     )
-                    data[f"datetime"][start_frame + i] = frame.get("T")
+                    data["datetime"][start_frame + i] = frame.get("T")
 
     df = pd.DataFrame(data)
     df["datetime"] = pd.to_datetime(df["datetime"], utc=True)
@@ -363,7 +379,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     elif soup.find("General") is not None:
         return _get_sportec_metadata(metadata_loc)
     else:
-        message = f"Unknown type of tracab metadata, please open an issue on GitHub."
+        message = "Unknown type of tracab metadata, please open an issue on GitHub."
         LOGGER.error(message)
         raise ValueError(message)
 

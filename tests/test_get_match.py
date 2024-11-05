@@ -534,7 +534,7 @@ class TestGetMatch(unittest.TestCase):
         ],
     )
     def test_get_open_match(self, _):
-        match = get_open_match()
+        match = get_open_match(provider="metrica")
         pd.testing.assert_frame_equal(
             match.periods, self.expected_match_metrica.periods
         )
@@ -544,7 +544,7 @@ class TestGetMatch(unittest.TestCase):
         assert match == expected_match
 
         with self.assertRaises(ValueError):
-            get_open_match(provider="tracab")
+            get_open_match(provider="wrong")
 
     def test_get_saved_match(self):
         expected_match = self.expected_match_metrica

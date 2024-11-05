@@ -77,4 +77,12 @@ DATABALLPY_PASS_TYPES = [
 
 DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward"]
 
-OPEN_MATCH_IDS_DFL =  ["J03WMX", "J03WN1","J03WPY","J03WOH","J03WQQ","J03WOY","J03WR9"]
+OPEN_MATCH_IDS_DFL = [
+    "J03WMX",
+    "J03WN1",
+    "J03WPY",
+    "J03WOH",
+    "J03WQQ",
+    "J03WOY",
+    "J03WR9",
+]

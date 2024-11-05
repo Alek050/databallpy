@@ -17,8 +17,8 @@ from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
-    load_tracab_tracking_data,
     load_sportec_open_tracking_data,
+    load_tracab_tracking_data,
 )
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _quality_check_tracking_data,
@@ -354,8 +354,8 @@ def load_tracking_data(
             "load_tracking_data()."
         )
         raise ValueError(
-            f"We do not support '{tracking_data_provider}' as tracking data provider yet"
-            ", please open an issue in our Github repository."
+            f"We do not support '{tracking_data_provider}' as tracking data provider"
+            " yet, please open an issue in our Github repository."
         )
 
     # Get tracking data and tracking metadata
@@ -397,7 +397,14 @@ def load_event_data(
     """
 
     LOGGER.info("Trying to load event data in load_event_data()")
-    if event_data_provider not in ["opta", "metrica", "instat", "scisports", "sportec", "dfl"]:
+    if event_data_provider not in [
+        "opta",
+        "metrica",
+        "instat",
+        "scisports",
+        "sportec",
+        "dfl",
+    ]:
         LOGGER.error(
             f"Found invalid tracking data provider: {event_data_provider} in "
             "load_tracking_data()."
@@ -435,7 +442,11 @@ def load_event_data(
     return event_data, event_metadata, databallpy_events
 
 
-def get_open_match(provider: str = "dfl", match_id: str = "J03WMX", verbose: bool = True, ) -> Match:
+def get_open_match(
+    provider: str = "dfl",
+    match_id: str = "J03WMX",
+    verbose: bool = True,
+) -> Match:
     """Function to load a match object from an open datasource
 
     Args:
@@ -463,8 +474,13 @@ def get_open_match(provider: str = "dfl", match_id: str = "J03WMX", verbose: boo
             event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
         elif provider in ["dfl", "tracab", "sportec"]:
-            tracking_data, metadata = load_sportec_open_tracking_data(match_id=match_id, verbose=verbose, )
-            event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(match_id=match_id)
+            tracking_data, metadata = load_sportec_open_tracking_data(
+                match_id=match_id,
+                verbose=verbose,
+            )
+            event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(
+                match_id=match_id
+            )
 
         periods_cols = ed_metadata.periods_frames.columns.difference(
             metadata.periods_frames.columns

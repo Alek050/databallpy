@@ -6,11 +6,10 @@ from bs4 import BeautifulSoup
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.utils.constants import MISSING_INT
 
-
 SPORTEC_BASE_URL = "https://figshare.com/ndownloader/files"
 SPORTEC_PRIVATE_LINK = "1f806cb3e755c6b54e05"
 SPORTEC_METADATA_ID_MAP = {
-    "J03WMX": f"48392485",
+    "J03WMX": "48392485",
     "J03WN1": "48392491",
     "J03WPY": "48392497",
     "J03WOH": "48392515",
@@ -37,19 +36,34 @@ SPORTEC_TRACKING_DATA_ID_MAP = {
     "J03WR9": "48392563",
 }
 
-def _get_sportec_open_data_url(match_id: str, data_type:str) -> str:
-    if not match_id in SPORTEC_EVENT_DATA_ID_MAP.keys():
-        raise ValueError(f"Unknown match id {match_id}, please specify one of {list(SPORTEC_EVENT_DATA_ID_MAP.keys())}")
-   
-    if data_type == "metadata":
-        return f"{SPORTEC_BASE_URL}/{SPORTEC_METADATA_ID_MAP[match_id]}?private_link={SPORTEC_PRIVATE_LINK}"
-    elif data_type == "event_data":
-        return f"{SPORTEC_BASE_URL}/{SPORTEC_EVENT_DATA_ID_MAP[match_id]}?private_link={SPORTEC_PRIVATE_LINK}"
-    elif data_type == "tracking_data":
-        return f"{SPORTEC_BASE_URL}/{SPORTEC_TRACKING_DATA_ID_MAP[match_id]}?private_link={SPORTEC_PRIVATE_LINK}"
-    else:
-        raise ValueError(f"Unknown data type {data_type}, please specify one of ['metadata', 'tracking_data', 'event_data']")
 
+def _get_sportec_open_data_url(match_id: str, data_type: str) -> str:
+    if match_id not in SPORTEC_EVENT_DATA_ID_MAP.keys():
+        raise ValueError(
+            f"Unknown match id {match_id}, please specify one of "
+            f"{list(SPORTEC_EVENT_DATA_ID_MAP.keys())}"
+        )
+
+    if data_type == "metadata":
+        return (
+            f"{SPORTEC_BASE_URL}/{SPORTEC_METADATA_ID_MAP[match_id]}"
+            f"?private_link={SPORTEC_PRIVATE_LINK}"
+        )
+    elif data_type == "event_data":
+        return (
+            f"{SPORTEC_BASE_URL}/{SPORTEC_EVENT_DATA_ID_MAP[match_id]}"
+            f"?private_link={SPORTEC_PRIVATE_LINK}"
+        )
+    elif data_type == "tracking_data":
+        return (
+            f"{SPORTEC_BASE_URL}/{SPORTEC_TRACKING_DATA_ID_MAP[match_id]}"
+            f"?private_link={SPORTEC_PRIVATE_LINK}"
+        )
+    else:
+        raise ValueError(
+            f"Unknown data type {data_type}, please specify one of "
+            "['metadata', 'tracking_data', 'event_data']"
+        )
 
 
 DFB_POSITIONS = {
@@ -63,7 +77,7 @@ DFB_POSITIONS = {
     "ZD": "midfielder",  # central defensive midfielder
     "ORM": "midfielder",  # right midfield offensive
     "OLM": "midfielder",  # left midfield offsenive
-    "DML": "midfielder",  #  left midfield defensive
+    "DML": "midfielder",  # left midfield defensive
     "DMR": "midfielder",  # right midfield defensive
     "DLM": "midfielder",
     "DRM": "midfielder",
@@ -77,7 +91,7 @@ DFB_POSITIONS = {
     "STZ": "forward",  # central striker
     "STR": "forward",  # right striker
     "RA": "forward",
-    "LA": "forward"
+    "LA": "forward",
 }
 
 

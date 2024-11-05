@@ -32,13 +32,13 @@ class TestTracabParser(unittest.TestCase):
             )
         with self.assertRaises(FileNotFoundError):
             load_tracab_tracking_data(
-                self.tracking_data_dat_loc, self.metadata_dat_loc + ".sml", verbose=False
+                self.tracking_data_dat_loc,
+                self.metadata_dat_loc + ".sml",
+                verbose=False,
             )
-        
+
         with self.assertRaises(ValueError):
-            load_tracab_tracking_data(
-                self.wrong_format_loc, self.metadata_dat_loc
-            )
+            load_tracab_tracking_data(self.wrong_format_loc, self.metadata_dat_loc)
 
     def test_get_metadata(self):
         metadata = _get_metadata(self.metadata_dat_loc)
@@ -47,7 +47,9 @@ class TestTracabParser(unittest.TestCase):
         assert metadata == expected_metadata
 
     def test_get_tracking_data(self):
-        tracking_data = _get_tracking_data_txt(self.tracking_data_dat_loc, verbose=False)
+        tracking_data = _get_tracking_data_txt(
+            self.tracking_data_dat_loc, verbose=False
+        )
         expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 

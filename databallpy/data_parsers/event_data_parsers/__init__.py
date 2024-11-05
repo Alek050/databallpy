@@ -11,5 +11,5 @@ from databallpy.data_parsers.event_data_parsers.scisports_parser import (
 )
 from databallpy.data_parsers.event_data_parsers.sportec_parser import (
     load_sportec_event_data,
-    load_sportec_open_event_data
+    load_sportec_open_event_data,
 )
