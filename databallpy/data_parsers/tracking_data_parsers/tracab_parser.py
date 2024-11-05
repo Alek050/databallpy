@@ -1,13 +1,18 @@
 import datetime as dt
 import os
+import xml.etree.ElementTree as ET
 
 import chardet
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+import requests
+import pathlib
+import shutil
 
 from databallpy.data_parsers import Metadata
+from databallpy.data_parsers.sportec_metadata_parser import _get_sportec_metadata, _get_sportec_open_data_url
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_ball_data_to_dict,
     _add_datetime,
@@ -50,26 +55,40 @@ def load_tracab_tracking_data(
         LOGGER.error(message)
         raise FileNotFoundError(message)
 
-    tracking_data = _get_tracking_data(tracab_loc, verbose)
-    LOGGER.info("Successfully loaded the Tracab tracking data.")
     metadata = _get_metadata(metadata_loc)
     LOGGER.info("Successfully loaded the Tracab metdata.")
+    if tracab_loc.endswith(".dat") or tracab_loc.endswith(".txt"):
+        tracking_data = _get_tracking_data_txt(tracab_loc, verbose)
+        tracking_data["datetime"] = _add_datetime(
+            tracking_data["frame"],
+            metadata.frame_rate,
+            metadata.periods_frames["start_datetime_td"].iloc[0],
+        )
+    elif tracab_loc.endswith(".xml"):
+        tracking_data, periods_frames, frame_rate = _get_tracking_data_xml(
+            tracab_loc, metadata.home_players, metadata.away_players, verbose
+        )
+        metadata.periods_frames = periods_frames
+        metadata.frame_rate = int(frame_rate)
+        tracking_data = _insert_missing_rows(
+            tracking_data.reset_index(drop=True), "frame"
+        )
+        tracking_data["datetime"] = pd.to_datetime(tracking_data["datetime"])
+    else:
+        message = f"Tracab tracking data should be either .txt, .dat, or .xml format."
+        LOGGER.error(message)
+        raise ValueError(message)
 
-    tracking_data["period_id"] = _add_periods_to_tracking_data(
-        tracking_data["frame"], metadata.periods_frames
-    )
-
-    tracking_data["datetime"] = _add_datetime(
-        tracking_data["frame"],
-        metadata.frame_rate,
-        metadata.periods_frames["start_datetime_td"].iloc[0],
+    tracking_data.insert(
+        len(tracking_data.columns) - 1,
+        "period_id",
+        _add_periods_to_tracking_data(tracking_data["frame"], metadata.periods_frames),
     )
     tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
 
     tracking_data["matchtime_td"] = _get_matchtime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
-
     tracking_data, changed_periods = _normalize_playing_direction_tracking(
         tracking_data, metadata.periods_frames
     )
@@ -78,8 +97,184 @@ def load_tracab_tracking_data(
     LOGGER.info("Successfully post-processed the Tracab data.")
     return tracking_data, metadata
 
+def load_sportec_open_tracking_data(match_id: str, verbose:bool):
+    metadata_url = _get_sportec_open_data_url(match_id, "metadata")
+    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", match_id)
+    os.makedirs(save_path, exist_ok=True)
+    if not os.path.exists(os.path.join(save_path, "metadata.xml")):
+        metadata = requests.get(metadata_url)
+        with open(os.path.join(save_path, "metadata.xml"), "wb") as f:
+            f.write(metadata.content)
+        
+    if not os.path.exists(os.path.join(save_path, "tracking_data.xml")):
+        if verbose:
+            print("Downloading open tracking data...", end="\r")
+        session = requests.Session()
+        response = session.get(_get_sportec_open_data_url(match_id, "tracking_data"), stream=True)
+        total_size = int(response.headers.get("content-length", 0))
 
-def _get_tracking_data(tracab_loc: str, verbose: bool) -> pd.DataFrame:
+
+        with open(os.path.join(save_path, "tracking_data_temp.xml"), 'wb') as file, tqdm(desc='Downloading', total=total_size, unit='B', unit_scale=True, unit_divisor=1024, disable=not verbose) as bar:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    file.write(chunk)
+                    bar.update(len(chunk))
+        
+        # rename temp to non temp:
+        os.rename(os.path.join(save_path, "tracking_data_temp.xml"), os.path.join(save_path, "tracking_data.xml"))
+        print("Done!", end="\r")
+    
+    return load_tracab_tracking_data(
+        os.path.join(save_path, "tracking_data.xml"),
+        os.path.join(save_path, "metadata.xml"),
+        verbose=verbose
+    )
+
+def _get_tracking_data_xml(
+    tracab_loc: str,
+    home_players: pd.DataFrame,
+    away_players: pd.DataFrame,
+    verbose: bool,
+) -> tuple[pd.DataFrame, pd.DataFrame, int]:
+    """ Load the tracking data of tracab in xml format. This format is primarily used
+    by the DFL/sportec.
+
+    Args:
+        tracab_loc (str): The location of the xml tracking data
+        home_players (pd.DataFrame): the home team players information
+        away_players (pd.DataFrame): the away tea players information
+        verbose (bool): Whether to print info in the terminal about the progress
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, int]: The tracking data, the periods frames
+            for in the metadata, and the frame rate of the tracking data for in the
+            metadata.
+    """
+    if verbose:
+        print(f"Reading in {tracab_loc}", end="")
+
+    frames = [x for x in range(10000, 200000)]
+    size_lines = len(frames)
+
+    data = {
+        "frame": frames,
+        "ball_x": [np.nan] * size_lines,
+        "ball_y": [np.nan] * size_lines,
+        "ball_z": [np.nan] * size_lines,
+        "ball_status": [None] * size_lines,
+        "ball_possession": [None] * size_lines,
+        "datetime": ["NaT"] * size_lines,
+    }
+
+    frames_df = pd.DataFrame(
+        {
+            "period_id": [1, 2, 3, 4, 5],
+            "start_frame": [MISSING_INT] * 5,
+            "end_frame": [MISSING_INT] * 5,
+            "start_datetime_td": ["NaT"] * 5,
+            "end_datetime_td": ["NaT"] * 5,
+        }
+    )
+    frames_df["start_datetime_td"] = pd.to_datetime(frames_df["start_datetime_td"])
+    frames_df["end_datetime_td"] = pd.to_datetime(frames_df["end_datetime_td"])
+    fill_first_period = True
+    fill_second_period = True
+
+    context = iter(ET.iterparse(tracab_loc))
+    event, _ = next(context)
+
+    if verbose:
+        context = tqdm(context, total=3400000)
+
+    for event, elem in context:
+        if event == "end" and elem.tag == "FrameSet":
+            if fill_first_period and elem.get("GameSection") == "firstHalf":
+                frames_df.loc[0, "start_frame"] = int(elem.findall("Frame")[0].get("N"))
+                frames_df.loc[0, "start_datetime_td"] = pd.to_datetime(
+                    elem.findall("Frame")[0].get("T")
+                ).tz_convert(None)
+                frames_df.loc[0, "end_frame"] = int(elem.findall("Frame")[-1].get("N"))
+                frames_df.loc[0, "end_datetime_td"] = pd.to_datetime(
+                    elem.findall("Frame")[-1].get("T")
+                ).tz_convert(None)
+                frame_rate = (
+                    1
+                    / (
+                        pd.to_datetime(elem.findall("Frame")[1].get("T")).tz_convert(
+                            None
+                        )
+                        - pd.to_datetime(elem.findall("Frame")[0].get("T")).tz_convert(
+                            None
+                        )
+                    ).total_seconds()
+                )
+
+                fill_first_period = False
+            if fill_second_period and elem.get("GameSection") == "secondHalf":
+                frames_df.loc[1, "start_frame"] = int(elem.findall("Frame")[0].get("N"))
+                frames_df.loc[1, "start_datetime_td"] = pd.to_datetime(
+                    elem.findall("Frame")[0].get("T")
+                ).tz_convert(None)
+                frames_df.loc[1, "end_frame"] = int(elem.findall("Frame")[-1].get("N"))
+                frames_df.loc[1, "end_datetime_td"] = pd.to_datetime(
+                    elem.findall("Frame")[-1].get("T")
+                ).tz_convert(None)
+                fill_first_period = False
+
+            player_id = elem.get("PersonId")
+
+            if player_id in home_players["id"].to_list():
+                column_id = "home_" + str(
+                    home_players.loc[home_players["id"] == player_id, "shirt_num"].iloc[
+                        0
+                    ]
+                )
+            elif player_id in away_players["id"].to_list():
+                column_id = "away_" + str(
+                    away_players.loc[away_players["id"] == player_id, "shirt_num"].iloc[
+                        0
+                    ]
+                )
+            else:
+                column_id = "ball"
+
+            if column_id + "_x" not in data.keys():
+                data[f"{column_id}_x"] = [np.nan] * size_lines
+                data[f"{column_id}_y"] = [np.nan] * size_lines
+
+            start_frame = 0 if elem.get("GameSection") == "firstHalf" else 90000
+            for i, frame in enumerate(elem.findall("Frame")):
+                data[f"{column_id}_x"][start_frame + i] = float(frame.get("X"))
+                data[f"{column_id}_y"][start_frame + i] = float(frame.get("Y"))
+                if frame.get("Z") is not None:  # ball
+                    data[f"{column_id}_z"][start_frame + i] = float(frame.get("Z"))
+                    data[f"{column_id}_status"][start_frame + i] = (
+                        "alive" if frame.get("BallStatus") == "1" else "dead"
+                    )
+                    data[f"{column_id}_possession"][start_frame + i] = (
+                        "home" if int(frame.get("BallPossession")) == 1 else "away"
+                    )
+                    data[f"datetime"][start_frame + i] = frame.get("T")
+
+    df = pd.DataFrame(data)
+    df["datetime"] = pd.to_datetime(df["datetime"], utc=True)
+    df = df.dropna(axis=0, how="all", subset=[x for x in data.keys() if x != "frame"])
+
+    frames_df["start_datetime_td"] = (
+        frames_df["start_datetime_td"]
+        .dt.tz_localize("UTC")
+        .dt.tz_convert("Europe/Berlin")
+    )
+    frames_df["end_datetime_td"] = (
+        frames_df["end_datetime_td"]
+        .dt.tz_localize("UTC")
+        .dt.tz_convert("Europe/Berlin")
+    )
+
+    return df, frames_df, frame_rate
+
+
+def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     """Function that reads tracking data from .dat file and stores it in a pd.DataFrame
 
     Args:
@@ -163,6 +358,19 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     lines = lines.replace("ï»¿", "")
     soup = BeautifulSoup(lines, "xml")
 
+    if soup.find("match") is not None:
+        return _get_tracab_metadata(soup)
+    elif soup.find("General") is not None:
+        return _get_sportec_metadata(metadata_loc)
+    else:
+        message = f"Unknown type of tracab metadata, please open an issue on GitHub."
+        LOGGER.error(message)
+        raise ValueError(message)
+
+
+def _get_tracab_metadata(soup: BeautifulSoup) -> Metadata:
+    """This version is used in the Netherlands"""
+
     match_id = int(soup.find("match")["iId"])
     pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
@@ -223,7 +431,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         for element in player.findChildren():
             player_dict[element.name] = element.text
         home_players_info.append(player_dict)
-    df_home_players = _get_players_metadata(home_players_info)
+    df_home_players = _get_players_metadata_v1(home_players_info)
 
     away_team = soup.find("AwayTeam")
     away_team_name = away_team.find("LongName").text
@@ -235,7 +443,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         for element in player.findChildren():
             player_dict[element.name] = element.text
         away_players_info.append(player_dict)
-    df_away_players = _get_players_metadata(away_players_info)
+    df_away_players = _get_players_metadata_v1(away_players_info)
 
     metadata = Metadata(
         match_id=match_id,
@@ -258,7 +466,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     return metadata
 
 
-def _get_players_metadata(players_info: list[dict[str, int | float]]) -> pd.DataFrame:
+def _get_players_metadata_v1(
+    players_info: list[dict[str, int | float]]
+) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
 
     Args:

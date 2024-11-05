@@ -303,7 +303,7 @@ class TestMatch(unittest.TestCase):
                         "player_id": [1],
                         "start_x": [1],
                         "start_y": [1],
-                        "player": ["player_1"],
+                        "player_name": ["player_1"],
                         "datetime": ["2020-01-01 00:00:00"],  # not datetime object
                     }
                 ),
@@ -337,7 +337,7 @@ class TestMatch(unittest.TestCase):
                         "player_id": [1],
                         "start_x": [1],
                         "start_y": [1],
-                        "player": ["player_1"],
+                        "player_name": ["player_1"],
                         "datetime": pd.to_datetime(
                             ["2020-01-01 00:00:00"]
                         ),  # no timezone assigned

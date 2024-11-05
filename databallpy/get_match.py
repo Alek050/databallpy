@@ -10,12 +10,15 @@ from databallpy.data_parsers.event_data_parsers import (
     load_metrica_open_event_data,
     load_opta_event_data,
     load_scisports_event_data,
+    load_sportec_event_data,
+    load_sportec_open_event_data,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
     load_tracab_tracking_data,
+    load_sportec_open_tracking_data,
 )
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _quality_check_tracking_data,
@@ -122,6 +125,8 @@ def get_match(
             "tracab": True,
             "metrica": True,
             "inmotio": False,
+            "sportec": True,
+            "dfl": True,
         }
 
         event_precise_timestamps = {
@@ -129,6 +134,8 @@ def get_match(
             "metrica": True,
             "instat": False,
             "scisports": False,
+            "sportec": True,
+            "dfl": True,
         }
 
         LOGGER.info(
@@ -341,18 +348,18 @@ def load_tracking_data(
     """
     LOGGER.info("Trying to load tracking in load_tracking_data()")
 
-    if tracking_data_provider not in ["tracab", "metrica", "inmotio"]:
+    if tracking_data_provider not in ["tracab", "metrica", "inmotio", "sportec", "dfl"]:
         LOGGER.error(
             f"Found invalid tracking data provider: {tracking_data_provider} in "
             "load_tracking_data()."
         )
         raise ValueError(
-            "We do not support '{tracking_data_provider}' as tracking data provider yet"
+            f"We do not support '{tracking_data_provider}' as tracking data provider yet"
             ", please open an issue in our Github repository."
         )
 
     # Get tracking data and tracking metadata
-    if tracking_data_provider == "tracab":
+    if tracking_data_provider in ["tracab", "sportec", "dfl"]:
         tracking_data, tracking_metadata = load_tracab_tracking_data(
             tracking_data_loc, tracking_metadata_loc, verbose=verbose
         )
@@ -390,7 +397,7 @@ def load_event_data(
     """
 
     LOGGER.info("Trying to load event data in load_event_data()")
-    if event_data_provider not in ["opta", "metrica", "instat", "scisports"]:
+    if event_data_provider not in ["opta", "metrica", "instat", "scisports", "sportec", "dfl"]:
         LOGGER.error(
             f"Found invalid tracking data provider: {event_data_provider} in "
             "load_tracking_data()."
@@ -418,18 +425,22 @@ def load_event_data(
         event_data, event_metadata, databallpy_events = load_scisports_event_data(
             events_json=event_data_loc,
         )
+    elif event_data_provider in ["sportec", "dfl"]:
+        event_data, event_metadata, databallpy_events = load_sportec_event_data(
+            event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
+        )
     LOGGER.info(
         f"Successfully loaded {event_data_provider} tracking data in load_event_data()"
     )
     return event_data, event_metadata, databallpy_events
 
 
-def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
+def get_open_match(provider: str = "dfl", match_id: str = "J03WMX", verbose: bool = True, ) -> Match:
     """Function to load a match object from an open datasource
 
     Args:
         provider (str, optional): What provider to get the open data from.
-        Defaults to "metrica".
+        Defaults to "dfl". Options are ["metrica", "dfl", "sportec", "tracab"]
         verbose (bool, optional): Whether or not to print info about progress
         in the terminal, Defaults to True.
 
@@ -438,7 +449,7 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
     """
     LOGGER.info("Trying to load open match in get_open_match()")
     try:
-        provider_options = ["metrica"]
+        provider_options = ["metrica", "dfl", "sportec", "tracab"]
         if provider not in provider_options:
             LOGGER.error(
                 f"{provider} is not a valid provider for the get_open_match() function"
@@ -450,6 +461,10 @@ def get_open_match(provider: str = "metrica", verbose: bool = True) -> Match:
         if provider == "metrica":
             tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
             event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
+
+        elif provider in ["dfl", "tracab", "sportec"]:
+            tracking_data, metadata = load_sportec_open_tracking_data(match_id=match_id, verbose=verbose, )
+            event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(match_id=match_id)
 
         periods_cols = ed_metadata.periods_frames.columns.difference(
             metadata.periods_frames.columns

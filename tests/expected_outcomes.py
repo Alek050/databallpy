@@ -1439,3 +1439,52 @@ ED_SCISPORTS = pd.DataFrame(
         ],
     }
 )
+
+
+SPORTEC_METADATA_TD = Metadata(
+    match_id="Match-1",
+    pitch_dimensions=[105., 68.],
+    periods_frames = pd.DataFrame(
+        {
+            "period_id": [1, 2, 3, 4, 5],
+            "start_frame": [np.nan] * 5,
+            "end_frame": [np.nan] * 5,
+            "start_datetime_td": [pd.to_datetime("NaT")] * 5,
+            "end_datetime_td": [pd.to_datetime("NaT")] * 5,
+        }
+    ),
+    home_team_id="Team1",
+    home_team_name="TeamA",
+    home_players=pd.DataFrame({
+        "id": ["A-1", "A-3", "A-5"],
+        "full_name": ["Adam Bodzek", "Rouwen Hennings", "Raphael Wolf"],
+        "shirt_num": [13, 28, 1],
+        "position": ["", "forward", ""],
+        "start_frame": [MISSING_INT] * 3,
+        "end_frame": [MISSING_INT] * 3,
+        "starter": [False, True, False],
+    }),
+    home_score=1,
+    home_formation="442",
+    away_team_id="Team2",
+    away_team_name="TeamB",
+    away_players=pd.DataFrame({
+        "id": ["B-1", "B-2", "B-3"],
+        "full_name": ["Mike Wunderlich", "Andreas Luthe", "Kevin Kraus"],
+        "shirt_num": [28, 1, 5],
+        "position": ["midfielder", "goalkeeper", "defender"],
+        "start_frame": [MISSING_INT] * 3,
+        "end_frame": [MISSING_INT] * 3,
+        "starter": [True, True, False]
+    }),
+    away_score=2,
+    away_formation="4231",
+    country="Germany",
+    frame_rate=MISSING_INT,
+)
+SPORTEC_METADATA_ED = SPORTEC_METADATA_TD.copy()
+SPORTEC_METADATA_ED.periods_frames = pd.DataFrame({
+    "period_id": [1, 2, 3, 4, 5],
+    "start_datetime_ed": [pd.to_datetime("NaT")] * 5,
+    "end_datetime_ed": [pd.to_datetime("NaT")] * 5,
+})

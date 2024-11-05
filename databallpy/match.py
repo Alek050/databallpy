@@ -236,7 +236,7 @@ class Match:
     def get_column_ids(
         self,
         team: str | None = None,
-        positions: list[str] = [],
+        positions: list[str] = ["goalkeeper", "defender", "midfielder", "forward"],
         min_minutes_played: float | int = 0.1,
     ) -> list[str]:
         """Function to get the column ids that are used in the tracking data. With this
@@ -248,8 +248,8 @@ class Match:
             team (str | None, optional): Which team to add, can be {home, away, None}.
                 If None, both teams are added. Defaults to None.
             positions (list[str], optional): The positions to include
-                {goalkeeper, defender, midfielder, forward}. If the list is empty, all
-                positions are returned. Defaults to [].
+                {goalkeeper, defender, midfielder, forward}. Defaults to
+                ["goalkeeper", "defender", "midfielder", "forward"].
             min_minutes_played (float | int, optional): The minimum number of minutes a
                 player needs to have played during the match to be returned.
                 Defaults to 1.0.
@@ -292,10 +292,11 @@ class Match:
             else:
                 players = players[players["position"].isin(positions)]
 
-        players = players[
-            (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
-            >= min_minutes_played
-        ]
+        if not (players["start_frame"] == MISSING_INT).all():
+            players = players[
+                (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
+                >= min_minutes_played
+            ]
 
         return [
             f"home_{row.shirt_num}"
@@ -1040,7 +1041,7 @@ def check_inputs_match_object(match: Match):
                 ball_alive_mask, "ball_x"
             ].first_valid_index()
             if (
-                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 5.0
+                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 7.0
                 or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
             ):
                 x_start = match.tracking_data.loc[first_frame, "ball_x"]
@@ -1086,6 +1087,7 @@ def check_inputs_match_object(match: Match):
             "start_x",
             "start_y",
             "datetime",
+            "player_name",
         ]:
             if col not in match.event_data.columns.to_list():
                 message = f"{col} not in event data columns, this is manditory!"

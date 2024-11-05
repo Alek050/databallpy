@@ -19,7 +19,6 @@ def _insert_missing_rows(df: pd.DataFrame, col: str) -> pd.DataFrame:
     ), f"Calculations are based on {col} column, which is not in the df"
 
     dtypes = df.dtypes
-
     missing = np.where(df[col].diff() > 1)[0]
     all_missing_timestamps = np.array([])
     for start_missing in missing:

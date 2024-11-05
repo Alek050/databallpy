@@ -966,7 +966,6 @@ def _plot_events(
         .iloc[0]
         .T
     )
-
     player_name = event["player_name"]
     event_name = event["databallpy_event"]
 

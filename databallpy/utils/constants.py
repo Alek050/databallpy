@@ -33,6 +33,7 @@ DATABALLPY_POSSESSION_TYPES = [
     "free_kick",
     "throw_in",
     "penalty",
+    "rebound",
     "unspecified",
 ]
 """The possession types that are supported in databallpy."""
@@ -75,3 +76,5 @@ DATABALLPY_PASS_TYPES = [
 """The pass type strings that are supported in databallpy."""
 
 DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward"]
+
+OPEN_MATCH_IDS_DFL =  ["J03WMX", "J03WN1","J03WPY","J03WOH","J03WQQ","J03WOY","J03WR9"]
