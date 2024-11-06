@@ -38,32 +38,28 @@ SPORTEC_TRACKING_DATA_ID_MAP = {
 
 
 def _get_sportec_open_data_url(match_id: str, data_type: str) -> str:
-    if match_id not in SPORTEC_EVENT_DATA_ID_MAP.keys():
+    if match_id not in SPORTEC_EVENT_DATA_ID_MAP:
         raise ValueError(
             f"Unknown match id {match_id}, please specify one of "
             f"{list(SPORTEC_EVENT_DATA_ID_MAP.keys())}"
         )
 
-    if data_type == "metadata":
-        return (
-            f"{SPORTEC_BASE_URL}/{SPORTEC_METADATA_ID_MAP[match_id]}"
-            f"?private_link={SPORTEC_PRIVATE_LINK}"
-        )
-    elif data_type == "event_data":
-        return (
-            f"{SPORTEC_BASE_URL}/{SPORTEC_EVENT_DATA_ID_MAP[match_id]}"
-            f"?private_link={SPORTEC_PRIVATE_LINK}"
-        )
-    elif data_type == "tracking_data":
-        return (
-            f"{SPORTEC_BASE_URL}/{SPORTEC_TRACKING_DATA_ID_MAP[match_id]}"
-            f"?private_link={SPORTEC_PRIVATE_LINK}"
-        )
-    else:
+    data_type_map = {
+        "metadata": SPORTEC_METADATA_ID_MAP,
+        "event_data": SPORTEC_EVENT_DATA_ID_MAP,
+        "tracking_data": SPORTEC_TRACKING_DATA_ID_MAP,
+    }
+
+    if data_type not in data_type_map:
         raise ValueError(
             f"Unknown data type {data_type}, please specify one of "
             "['metadata', 'tracking_data', 'event_data']"
         )
+
+    return (
+        f"{SPORTEC_BASE_URL}/{data_type_map[data_type][match_id]}"
+        f"?private_link={SPORTEC_PRIVATE_LINK}"
+    )
 
 
 DFB_POSITIONS = {

@@ -1494,3 +1494,168 @@ SPORTEC_METADATA_ED.periods_frames = pd.DataFrame(
         "end_datetime_ed": [pd.to_datetime("NaT")] * 5,
     }
 )
+
+SPORTEC_EVENT_DATA = pd.DataFrame(
+    {
+        "event_id": [12, 13, 14, 15, 17, 18],
+        "databallpy_event": ["pass", "shot", "pass", None, "dribble", None],
+        "period_id": [1, 1, 2, 2, 2, 2],
+        "minutes": [0, 6, 45, 72, 83, 84],
+        "seconds": [0, 24.2, 0, 26.5, 19.6, 9.5],
+        "player_id": ["B-1", "B-3", "A-1", "A-3", "A-5", "B-2"],
+        "team_id": ["Team2", "Team2", "Team1", "Team1", "Team1", "Team2"],
+        "outcome": [True, False, True, None, True, None],
+        "start_x": np.array([52.5, 98.41, 52.5, 63.44, 15.19, 44.28]) - 52.5,
+        "start_y": np.array([34.00, 36.55, 34.00, 40.54, 4.39, 12.24]) - 34.0,
+        "datetime": [
+            "2022-11-11T18:31:12.000+01:00",
+            "2022-11-11T18:37:36.200+01:00",
+            "2022-11-11T19:31:09.000+01:00",
+            "2022-11-11T19:58:35.500+01:00",
+            "2022-11-11T20:09:28.600+01:00",
+            "2022-11-11T20:10:18.500+01:00",
+        ],
+        "sportec_event": [
+            "Pass",
+            "SavedShot",
+            "Pass",
+            "ballcontactSucceeded",
+            "dribbledAround",
+            "OtherBallAction",
+        ],
+        "player_name": [
+            "Mike Wunderlich",
+            "Kevin Kraus",
+            "Adam Bodzek",
+            "Rouwen Hennings",
+            "Raphael Wolf",
+            "Andreas Luthe",
+        ],
+    }
+)
+SPORTEC_EVENT_DATA["datetime"] = pd.to_datetime(
+    SPORTEC_EVENT_DATA["datetime"]
+).dt.tz_convert("Europe/Berlin")
+SPORTEC_EVENT_DATA.loc[
+    SPORTEC_EVENT_DATA["period_id"] == 1, ["start_x", "start_y"]
+] *= -1
+
+SPORTEC_DATABALLPY_EVENTS = {
+    "shot_events": {
+        13: ShotEvent(
+            event_id=13,
+            period_id=1,
+            minutes=6,
+            seconds=24.2,
+            datetime=pd.to_datetime("2022-11-11T18:37:36.200+01:00").tz_convert(
+                "Europe/Berlin"
+            ),
+            start_x=-45.91,
+            start_y=-2.55,
+            team_id="Team2",
+            pitch_size=[105.0, 68.0],
+            player_id="B-3",
+            jersey=5,
+            outcome=False,
+            related_event_id=None,
+            body_part="head",
+            possession_type="free_kick",
+            set_piece="no_set_piece",
+            _xt=-1,
+            outcome_str="miss_on_target",
+            team_side="away",
+        )
+    },
+    "pass_events": {
+        12: PassEvent(
+            event_id=12,
+            period_id=1,
+            minutes=0,
+            seconds=0,
+            datetime=pd.to_datetime("2022-11-11T18:31:12.000+01:00").tz_convert(
+                "Europe/Berlin"
+            ),
+            start_x=0.0,
+            start_y=0.0,
+            team_id="Team2",
+            team_side="away",
+            pitch_size=[
+                105.0,
+                68.0,
+            ],
+            player_id="B-1",
+            jersey=28,
+            related_event_id=None,
+            body_part="unspecified",
+            possession_type="unspecified",
+            set_piece="kick_off",
+            _xt=-1,
+            outcome=True,
+            outcome_str="unspecified",
+            end_x=np.nan,
+            end_y=np.nan,
+            pass_type="unspecified",
+            receiver_player_id="B-3",
+        ),
+        14: PassEvent(
+            event_id=14,
+            period_id=2,
+            minutes=45,
+            seconds=0,
+            datetime=pd.to_datetime("2022-11-11T19:31:09.000+01:00").tz_convert(
+                "Europe/Berlin"
+            ),
+            start_x=0.0,
+            start_y=0.0,
+            team_id="Team1",
+            team_side="home",
+            pitch_size=[
+                105.0,
+                68.0,
+            ],
+            player_id="A-1",
+            jersey=13,
+            related_event_id=None,
+            body_part="unspecified",
+            possession_type="unspecified",
+            set_piece="kick_off",
+            _xt=-1,
+            outcome=True,
+            outcome_str="unspecified",
+            end_x=np.nan,
+            end_y=np.nan,
+            pass_type="unspecified",
+            receiver_player_id="A-5",
+        ),
+    },
+    "dribble_events": {
+        17: DribbleEvent(
+            event_id=17,
+            period_id=2,
+            minutes=83,
+            seconds=19.6,
+            datetime=pd.to_datetime("2022-11-11T20:09:28.600+01:00").tz_convert(
+                "Europe/Berlin"
+            ),
+            start_x=15.19 - 52.5,
+            start_y=4.39 - 34.0,
+            team_id="Team1",
+            team_side="home",
+            pitch_size=[
+                105.0,
+                68.0,
+            ],
+            player_id="A-5",
+            jersey=1,
+            outcome=True,
+            related_event_id=None,
+            body_part="foot",
+            possession_type="open_play",
+            set_piece="no_set_piece",
+            _xt=-1,
+            duel_type="unspecified",
+            with_opponent=True,
+        )
+    },
+    "other_events": {},
+}

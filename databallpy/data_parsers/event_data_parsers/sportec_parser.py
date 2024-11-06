@@ -17,15 +17,6 @@ from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
-SPORTEC_TACKLING_GAME_MAP = {
-    "layoff": "duel",
-    "ballcontactSucceeded": "ball_touch",
-    "dribbledAround": "dribble",
-    "fouled": "foul",
-    "ballClaimed": "ball_claim",
-    "ballControlRetained": "ball_claim",
-}
-
 SPORTEC_SET_PIECES_MAP = {
     "ThrowIn": "throw_in",
     "GoalKick": "goal_kick",
@@ -118,7 +109,18 @@ def load_sportec_event_data(
     return event_data, metadata, databallpy_events
 
 
-def load_sportec_open_event_data(match_id: str):
+def load_sportec_open_event_data(
+    match_id: str,
+) -> tuple[pd.DataFrame, Metadata, dict[str, dict]]:
+    """Function to (down)load on open match from Sportec/Tracab
+
+    Args:
+        match_id (str): The id of the open match
+
+    Returns:
+        tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
+            metadata, and the databallpy events dictionary.
+    """
     metadata_url = _get_sportec_open_data_url(match_id, "metadata")
     save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", match_id)
     os.makedirs(save_path, exist_ok=True)
@@ -196,16 +198,14 @@ def _get_sportec_event_data(
         kwargs["set_piece"] = SPORTEC_SET_PIECES_MAP.get(
             event.find_next().name, "no_set_piece"
         )
-        # initialize pitch center
-        if pd.isnull(pitch_center[0]) and kwargs["set_piece"] == "kick_off":
-            pitch_center[0] = float(event["X-Position"])
-            pitch_center[1] = float(event["Y-Position"])
 
         kwargs["datetime"] = pd.to_datetime(event["EventTime"])
         dt_idx = int(kwargs["datetime"] >= period_start_times[1])
         kwargs["period_id"] = dt_idx + 1
-        time_diff_s = (kwargs["datetime"] - period_start_times[dt_idx]).seconds
-        kwargs["minutes"] = (45 * dt_idx) + time_diff_s // 60
+        time_diff_s = (
+            kwargs["datetime"].timestamp() - period_start_times[dt_idx].timestamp()
+        )
+        kwargs["minutes"] = int((45 * dt_idx) + time_diff_s // 60)
         kwargs["seconds"] = time_diff_s % 60
         kwargs["event_id"] = int(event["EventId"])
 
@@ -291,11 +291,9 @@ def _initialize_search_variables(
     period_start_times = pd.to_datetime(
         [first_half_kick_off["EventTime"], second_half_kick_off["EventTime"]]
     )
-
-    goal_kick = soup.find(
-        lambda tag: tag.name == "Event" and tag.find("GoalKick", {"Team": home_team_id})
+    swap_period = (
+        1 if first_half_kick_off.find("KickOff")["TeamRight"] == home_team_id else 2
     )
-    swap_period = 1 if float(goal_kick["X-Position"]) > pitch_center[0] else 2
 
     return pitch_center, period_start_times, swap_period
 
@@ -315,10 +313,8 @@ def _handle_tackling_game_event(
         tuple[dict, DribbleEvent | None]: The updated kwargs for the
         event data, and the dribble event or None if it was not a dribble event
     """
+    kwargs_dict["sportec_event"] = event.get("WinnerResult", event.name)
     if not event["WinnerResult"] == "dribbledAround":
-        kwargs_dict["sportec_event"] = SPORTEC_TACKLING_GAME_MAP.get(
-            event.get("WinnerResult"), event.name
-        )
         return kwargs_dict, None
 
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
@@ -328,6 +324,7 @@ def _handle_tackling_game_event(
     kwargs_dict["duel_type"] = "unspecified"
     kwargs_dict["with_opponent"] = True
     kwargs_dict["related_event_id"] = None
+    kwargs_dict["databallpy_event"] = "dribble"
 
     temp_exclude = ["sportec_event", "databallpy_event"]
 
@@ -357,7 +354,7 @@ def _handle_shot_event(
     kwargs_dict["databallpy_event"] = "shot"
     kwargs_dict["related_event_id"] = None
     kwargs_dict["body_part"] = SPORTEC_BODY_PARTS.get(
-        event.get("TypeOfShote"), "unspecified"
+        event.get("TypeOfShot"), "unspecified"
     )
     kwargs_dict["possession_type"] = SPORTEC_ASSISTS.get(
         event.get("AssistAction"), "unspecified"

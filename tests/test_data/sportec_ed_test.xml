@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PutDataRequest RequestId="0ccbf585-18d8-4d06-92da-cacaf46f2d96" MessageTime="2023-06-27T10:57:47.533+00:00" TransmissionComplete="true" TransmissionSuspended="false" DataStatus="postmatch">
+  <Event EventId="12" X-Source-Position="52.50" Y-Source-Position="34.00" EventTime="2022-11-11T18:31:12.000+01:00" Y-Position="34.00" MatchId="Match-1" X-Position="52.50">
+    <KickOff TeamRight="Team1" TeamLeft="Team2" GameSection="firstHalf">
+      <Play Player="B-1" Distance="medium" PlayOrigin="ownHalf" FromOpenPlay="false" FlatCross="false" Recipient="B-3" PlayAngle="187.20" SemiField="false" Team="Team2" BallPossessionPhase="7" Evaluation="successfullyCompleted" Height="flat" PenaltyBox="false">
+        <Pass FreeKickLayup="false"/>
+      </Play>
+    </KickOff>
+  </Event>
+  <Event EventId="13" Y-PositionFromTracking="36.56" CalculatedTimestamp="2022-11-11T18:37:36.200+01:00" X-Source-Position="98.29" Y-Source-Position="38.61" EventTime="2022-11-11T18:37:36.200+01:00" Y-Position="36.55" CalculatedFrame="19597" X-PositionFromTracking="97.38" MatchId="Match-1" X-Position="98.41">
+    <ShotAtGoal ShotCondition="complicated" TakerBallControl="volley" AfterFreeKick="false" xG="0.0823" TakerSetup="freeKick" BallPossessionPhase="110" AssistTypeShotAtGoal="direct" GoalDistanceGoalkeeper="1.68" BuildUp="freeKick" ChanceEvaluation="chance" AssistShotAtGoal="B-1" CounterAttack="false" SignificanceEvaluation="decent" InsideBox="true" ExtendedTypeOfShot="frontalVolley" DistanceToGoal="8.04" AssistAction="freeKick" TypeOfShot="head" PlayerSpeed="16.42" Player="B-3" AngleToGoal="47.44" Pressure="1.00" ShotOrigin="3" AmountOfDefenders="1" Team="Team2" SetupOrigin="right">
+      <SavedShot SaveType="arms" SaveEvaluation="average" SaveResult="notCleared" GoalKeeper="DFL-OBJ-00003W"/>
+    </ShotAtGoal>
+  </Event>
+  <Event EventId="14" X-Source-Position="52.50" Y-Source-Position="34.00" EventTime="2022-11-11T19:31:09.000+01:00" Y-Position="34.00" MatchId="Match-1" X-Position="52.50">
+    <KickOff TeamRight="Team2" TeamLeft="Team1" GameSection="secondHalf">
+      <Play Player="A-1" Distance="medium" PlayOrigin="ownHalf" FromOpenPlay="false" FlatCross="false" Recipient="A-5" PlayAngle="187.20" SemiField="false" Team="Team1" BallPossessionPhase="7" Evaluation="successfullyCompleted" Height="flat" PenaltyBox="false">
+        <Pass FreeKickLayup="false"/>
+      </Play>
+    </KickOff>
+  </Event>
+  <Event EventId="15" EventTime="2022-11-11T19:58:35.500+01:00" Y-Position="40.54" MatchId="Match-1" X-Position="63.44">
+    <TacklingGame WinnerResult="ballcontactSucceeded" Loser="B-1" PossessionChange="true" GoalKeeperInvolved="false" LoserRole="withBallControl" WinnerRole="withoutBallControl" WinnerTeam="Team1" Type="air" Winner="A-3" LoserTeam="Team2"/>
+  </Event>
+  <Event EventId="17" EventTime="2022-11-11T20:09:28.600+01:00" Y-Position="4.39" MatchId="Match-1" X-Position="15.19">
+    <TacklingGame WinnerResult="dribbledAround" Loser="B-3" PossessionChange="false" BallPossessionPhase="1231" GoalKeeperInvolved="false" LoserRole="withoutBallControl" WinnerRole="withBallControl" WinnerTeam="Team1" Type="ground" Winner="A-5" LoserTeam="Team2" DribbleEvaluation="successful" DribblingSide="right" DribblingType="atTheFoot"/>
+  </Event>
+  <Event EventId="18" X-Source-Position="44.28" Y-Source-Position="12.24" EventTime="2022-11-11T20:10:18.500+01:00" Y-Position="12.24" MatchId="Match-1" X-Position="44.28">
+    <OtherBallAction Player="B-2" Team="Team2" BallPossessionPhase="1240"/>
+  </Event>
+</PutDataRequest>
