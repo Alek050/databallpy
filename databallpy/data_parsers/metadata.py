@@ -74,7 +74,7 @@ class Metadata:
             LOGGER.error(message)
             raise TypeError(message)
         if "period_id" not in self.periods_frames.columns:
-            message = "'period' should be one of the columns in period_frames"
+            message = "'period_id' should be one of the columns in period_frames"
             LOGGER.error(message)
             raise ValueError(message)
         if any(

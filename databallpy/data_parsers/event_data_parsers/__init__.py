@@ -9,3 +9,5 @@ from databallpy.data_parsers.event_data_parsers.opta_parser import load_opta_eve
 from databallpy.data_parsers.event_data_parsers.scisports_parser import (
     load_scisports_event_data,
 )
+
+from databallpy.data_parsers.event_data_parsers.statsbomb_parser import load_statsbomb_event_data

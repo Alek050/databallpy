@@ -10,6 +10,7 @@ from databallpy.data_parsers.event_data_parsers import (
     load_metrica_open_event_data,
     load_opta_event_data,
     load_scisports_event_data,
+    load_statsbomb_event_data,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
@@ -34,6 +35,8 @@ def get_match(
     tracking_metadata_loc: str = None,
     event_data_loc: str = None,
     event_metadata_loc: str = None,
+    event_match_loc: str = None,
+    event_lineup_loc: str = None,
     tracking_data_provider: str = None,
     event_data_provider: str = None,
     check_quality: bool = True,
@@ -50,6 +53,10 @@ def get_match(
         event_data_loc (str, optional): location of the event data. Defaults to None.
         event_metadata_loc (str, optional): location of the metadata of the event data.
             Defaults to None.
+        event_match_loc (str, optional): location of the match file of the event data.
+            Only used for statsbomb event data. Defaults to None.
+        event_lineup_loc (str, optional): location of the lineup file of the event data.
+            Only used for statsbomb event data. Defaults to None.
         tracking_data_provider (str, optional): provider of the tracking data. Defaults
             to None. Supported providers are [tracab, metrica, inmotio]
         event_data_provider (str, optional): provider of the event data. Defaults to
@@ -75,7 +82,7 @@ def get_match(
         if (
             event_data_loc
             and event_metadata_loc is None
-            and not event_data_provider == "scisports"
+            and not event_data_provider in ["scisports", "statsbomb"]
         ):
             LOGGER.error(
                 "Event metadata location is None while event data location is not"
@@ -97,6 +104,13 @@ def get_match(
             raise ValueError(
                 "Please provide an event data provider when providing an event"
                 " metadata location"
+            )
+        elif event_data_provider == "statsbomb" and (event_match_loc is None or event_lineup_loc is None):
+            LOGGER.error(
+                "Event data provider is statsbomb and either event_match_loc and/or event_lineup_loc was not provided."
+            )
+            raise ValueError(
+                "Please provivde both event_match_loc and event_lineup_loc when using statsbomb as event data provider"
             )
         elif tracking_data_loc and tracking_data_provider is None:
             LOGGER.error(
@@ -129,6 +143,7 @@ def get_match(
             "metrica": True,
             "instat": False,
             "scisports": False,
+            "statsbomb": False,
         }
 
         LOGGER.info(
@@ -153,6 +168,8 @@ def get_match(
                 event_data_loc=event_data_loc,
                 event_metadata_loc=event_metadata_loc,
                 event_data_provider=event_data_provider,
+                event_match_loc=event_match_loc,
+                event_lineup_loc=event_lineup_loc,
             )
             uses_event_data = True
 
@@ -376,7 +393,7 @@ def load_tracking_data(
 
 
 def load_event_data(
-    *, event_data_loc: str, event_metadata_loc: str, event_data_provider: str
+    *, event_data_loc: str, event_metadata_loc: str, event_data_provider: str, event_match_loc: str, event_lineup_loc: str
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the event data of a match
 
@@ -384,13 +401,15 @@ def load_event_data(
         event_data_loc (str): location of the event data file
         event_metadata_loc (str): location of the event metadata file
         event_data_provider (str): provider of the event data
+        event_match_loc (str): location of match file (specific to statsbomb)
+        event_lineup_loc (str): location of lineup file (specific to statsbomb)
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
     """
 
     LOGGER.info("Trying to load event data in load_event_data()")
-    if event_data_provider not in ["opta", "metrica", "instat", "scisports"]:
+    if event_data_provider not in ["opta", "metrica", "instat", "scisports", "statsbomb"]:
         LOGGER.error(
             f"Found invalid tracking data provider: {event_data_provider} in "
             "load_tracking_data()."
@@ -417,6 +436,10 @@ def load_event_data(
     elif event_data_provider == "scisports":
         event_data, event_metadata, databallpy_events = load_scisports_event_data(
             events_json=event_data_loc,
+        )
+    elif event_data_provider == "statsbomb":
+        event_data, event_metadata, databallpy_events = load_statsbomb_event_data(
+            events_loc=event_data_loc, match_loc = event_match_loc, lineup_loc = event_lineup_loc
         )
     LOGGER.info(
         f"Successfully loaded {event_data_provider} tracking data in load_event_data()"

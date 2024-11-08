@@ -25,7 +25,7 @@ class IndividualCloseToBallEvent:
     event.
 
     Args:
-        event_id (int): distinct id of the event
+        event_id (int | str): distinct id of the event
         period_id (int): id of the period
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
@@ -39,7 +39,7 @@ class IndividualCloseToBallEvent:
         player_id (int | str): id of the player that performed the event
         jersey (int): jersey number of the player that performed the event
         outcome (bool): whether the event was successful or not
-        related_event_id (int | str | None): id of the event that the event is related
+        related_event_id (int | str | list | None): id of the event that the event is related
             to the current event.
 
     Properties:
@@ -47,7 +47,7 @@ class IndividualCloseToBallEvent:
             DataFrame
     """
 
-    event_id: int
+    event_id: int | list
     period_id: int
     minutes: int
     seconds: int
@@ -60,7 +60,7 @@ class IndividualCloseToBallEvent:
     player_id: int | str
     jersey: int
     outcome: bool
-    related_event_id: int | str | None
+    related_event_id: int | str | list | None
 
     @property
     def base_df_attributes(self) -> list[str]:
@@ -101,8 +101,8 @@ class IndividualCloseToBallEvent:
         return True
 
     def _validate_inputs_close_to_ball_event(self):
-        if not isinstance(self.event_id, (np.integer, int)):
-            raise TypeError(f"event_id should be int, not {type(self.event_id)}")
+        if not isinstance(self.event_id, (np.integer, int, str)):
+            raise TypeError(f"event_id should be int or str, not {type(self.event_id)}")
 
         if not isinstance(self.period_id, (np.integer, int)):
             raise TypeError(f"period_id should be int, not {type(self.period_id)}")
@@ -166,7 +166,7 @@ class IndividualCloseToBallEvent:
         if not isinstance(self.outcome, bool):
             raise TypeError(f"outcome should be bool, not {type(self.outcome)}")
 
-        if not isinstance(self.related_event_id, (int, np.integer, str, type(None))):
+        if not isinstance(self.related_event_id, (int, np.integer, str, list, type(None))):
             raise TypeError(
                 f"related_event_id should be int, not {type(self.related_event_id)}"
             )

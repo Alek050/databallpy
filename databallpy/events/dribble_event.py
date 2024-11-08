@@ -33,7 +33,7 @@ class DribbleEvent(IndividualOnBallEvent):
             databallpy.utils.constants.DATABALLPY_SET_PIECES
         duel_type (str): type of duel that the event is related to. Should be in
             ["offensive", "defensive", "unspecified"].
-        with_opponent (bool): whether the event was performed with an opponent or not
+        with_opponent (bool | None): whether the event was performed with an opponent or not
 
     Properties:
         xT (float): expected threat of the event. This is calculated using a model
@@ -83,7 +83,7 @@ class DribbleEvent(IndividualOnBallEvent):
                 "duel_type should be in ['offensive', 'defensive', 'unspecified'],"
                 f" got {self.duel_type} instead"
             )
-        if not isinstance(self.with_opponent, bool):
+        if not isinstance(self.with_opponent, (bool, type(None))):
             raise TypeError(
-                f"with_opponent should be bool, got {type(self.with_opponent)} instead"
+                f"with_opponent should be bool or None, got {type(self.with_opponent)} instead"
             )

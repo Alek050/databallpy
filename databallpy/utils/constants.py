@@ -11,6 +11,7 @@ DATABALLPY_SET_PIECES = [
     "corner_kick",
     "kick_off",
     "penalty",
+    "goal_kick"
     "no_set_piece",
     "unspecified",
 ]
@@ -33,6 +34,8 @@ DATABALLPY_POSSESSION_TYPES = [
     "free_kick",
     "throw_in",
     "penalty",
+    "kick_off",
+    "goal_kick",
     "unspecified",
 ]
 """The possession types that are supported in databallpy."""
