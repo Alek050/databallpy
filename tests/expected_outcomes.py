@@ -1447,10 +1447,18 @@ SPORTEC_METADATA_TD = Metadata(
     periods_frames=pd.DataFrame(
         {
             "period_id": [1, 2, 3, 4, 5],
-            "start_frame": [np.nan] * 5,
-            "end_frame": [np.nan] * 5,
-            "start_datetime_td": [pd.to_datetime("NaT")] * 5,
-            "end_datetime_td": [pd.to_datetime("NaT")] * 5,
+            "start_frame": [10000, 100000] + [MISSING_INT] * 3,
+            "end_frame": [10002, 100002] + [MISSING_INT] * 3,
+            "start_datetime_td": pd.to_datetime(
+                ["2022-11-11 17:31:12.360000+0000", "2022-11-11 18:33:12.360000+0000"]
+                + ["NaT"] * 3,
+                utc=True,
+            ),
+            "end_datetime_td": pd.to_datetime(
+                ["2022-11-11 17:31:14.360000+0000", "2022-11-11 18:33:14.360000+0000"]
+                + ["NaT"] * 3,
+                utc=True,
+            ),
         }
     ),
     home_team_id="Team1",
@@ -1484,16 +1492,40 @@ SPORTEC_METADATA_TD = Metadata(
     away_score=2,
     away_formation="4231",
     country="Germany",
-    frame_rate=MISSING_INT,
+    frame_rate=1,
+    periods_changed_playing_direction=[1],
 )
+SPORTEC_METADATA_TD.periods_frames["start_datetime_td"] = pd.to_datetime(
+    SPORTEC_METADATA_TD.periods_frames["start_datetime_td"]
+).dt.tz_convert("Europe/Berlin")
+SPORTEC_METADATA_TD.periods_frames["end_datetime_td"] = pd.to_datetime(
+    SPORTEC_METADATA_TD.periods_frames["end_datetime_td"]
+).dt.tz_convert("Europe/Berlin")
+
+
 SPORTEC_METADATA_ED = SPORTEC_METADATA_TD.copy()
 SPORTEC_METADATA_ED.periods_frames = pd.DataFrame(
     {
         "period_id": [1, 2, 3, 4, 5],
-        "start_datetime_ed": [pd.to_datetime("NaT")] * 5,
-        "end_datetime_ed": [pd.to_datetime("NaT")] * 5,
+        "start_datetime_ed": pd.to_datetime(
+            ["2022-11-11T18:31:12.000+01:00", "2022-11-11T19:31:09.000+01:00"]
+            + ["NaT"] * 3,
+            utc=True,
+        ),
+        "end_datetime_ed": pd.to_datetime(
+            ["2022-11-11T18:37:36.200+01:00", "2022-11-11T20:10:18.500+01:00"]
+            + ["NaT"] * 3,
+            utc=True,
+        ),
     }
 )
+SPORTEC_METADATA_ED.periods_frames["start_datetime_ed"] = pd.to_datetime(
+    SPORTEC_METADATA_ED.periods_frames["start_datetime_ed"]
+).dt.tz_convert("Europe/Berlin")
+SPORTEC_METADATA_ED.periods_frames["end_datetime_ed"] = pd.to_datetime(
+    SPORTEC_METADATA_ED.periods_frames["end_datetime_ed"]
+).dt.tz_convert("Europe/Berlin")
+SPORTEC_METADATA_ED.frame_rate = MISSING_INT
 
 SPORTEC_EVENT_DATA = pd.DataFrame(
     {
@@ -1659,3 +1691,33 @@ SPORTEC_DATABALLPY_EVENTS = {
     },
     "other_events": {},
 }
+
+TRACAB_SPORTEC_XML_TD = pd.DataFrame(
+    {
+        "frame": [10000, 10001, 10002, 100000, 100001, 100002],
+        "ball_x": [0.8, 1.8, 2.8, -0.8, 1.8, -13.82],
+        "ball_y": [-0.1, -0.3, 2.1, 1.0, 1.3, 2.5],
+        "ball_z": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+        "ball_status": ["alive", "alive", "dead", "alive", "dead", "dead"],
+        "ball_possession": ["home", "away", "home", "away", "away", "home"],
+        "datetime": [
+            "2022-11-11 17:31:12.360000+0000",
+            "2022-11-11 17:31:13.360000+0000",
+            "2022-11-11 17:31:14.360000+0000",
+            "2022-11-11 18:33:12.360000+0000",
+            "2022-11-11 18:33:13.360000+0000",
+            "2022-11-11 18:33:14.360000+0000",
+        ],
+        "home_13_x": [-5.1, -5.2, -6.3, -5.4, -12.2, -8.3],
+        "home_13_y": [8.2, -3.3, 8.1, -8.8, -22.2, -0.8],
+        "away_5_x": [5.4, 15.2, 15.1, np.nan, np.nan, np.nan],
+        "away_5_y": [-12.1, -18.1, -20.3, np.nan, np.nan, np.nan],
+        "away_1_x": [np.nan, np.nan, np.nan, 52.0, 50.1, 33.2],
+        "period_id": [1, 1, 1, 2, 2, 2],
+        "away_1_y": [np.nan, np.nan, np.nan, -8.1, -4.8, -18.8],
+        "matchtime_td": ["00:00", "00:01", "00:02", "45:00", "45:01", "45:02"],
+    }
+)
+TRACAB_SPORTEC_XML_TD["datetime"] = pd.to_datetime(
+    TRACAB_SPORTEC_XML_TD["datetime"]
+).dt.tz_convert("Europe/Berlin")

@@ -443,7 +443,7 @@ def load_event_data(
 
 
 def get_open_match(
-    provider: str = "dfl",
+    provider: str = "sportec",
     match_id: str = "J03WMX",
     verbose: bool = True,
 ) -> Match:
@@ -512,7 +512,7 @@ def get_open_match(
             away_score=metadata.away_score,
             away_team_name=metadata.away_team_name,
             away_players=metadata.away_players,
-            country="",
+            country=ed_metadata.country,
             allow_synchronise_tracking_and_event_data=True,
             shot_events=databallpy_events["shot_events"]
             if "shot_events" in databallpy_events.keys()

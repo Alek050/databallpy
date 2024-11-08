@@ -1190,7 +1190,7 @@ def check_inputs_match_object(match: Match):
     ):
         if not isinstance(team_id, (int, np.integer)) and not isinstance(team_id, str):
             message = (
-                "{team} team id should be an integer or string, not a "
+                f"{team} team id should be an integer or string, not a "
                 f"{type(team_id)}"
             )
             LOGGER.error(message)

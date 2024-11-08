@@ -43,7 +43,7 @@ def load_tracab_tracking_data(
         defaults to True
 
     Returns:
-        Tuple[pd.DataFrame, Metadata], the tracking data and metadata class
+        Tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
     """
     LOGGER.info("Trying to load Tracab tracking data")
 
@@ -74,7 +74,6 @@ def load_tracab_tracking_data(
         tracking_data = _insert_missing_rows(
             tracking_data.reset_index(drop=True), "frame"
         )
-        tracking_data["datetime"] = pd.to_datetime(tracking_data["datetime"])
     else:
         message = "Tracab tracking data should be either .txt, .dat, or .xml format."
         LOGGER.error(message)
@@ -99,7 +98,18 @@ def load_tracab_tracking_data(
     return tracking_data, metadata
 
 
-def load_sportec_open_tracking_data(match_id: str, verbose: bool):
+def load_sportec_open_tracking_data(
+    match_id: str, verbose: bool
+) -> tuple[pd.DataFrame, Metadata]:
+    """Load the tracking data from the sportec open data platform
+
+    Args:
+        match_id (str): The id of the match
+        verbose (bool): Whether to print info about the loading of the data.
+
+    Returns:
+        tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
+    """
     metadata_url = _get_sportec_open_data_url(match_id, "metadata")
     save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", match_id)
     os.makedirs(save_path, exist_ok=True)
@@ -273,7 +283,9 @@ def _get_tracking_data_xml(
                     data["datetime"][start_frame + i] = frame.get("T")
 
     df = pd.DataFrame(data)
-    df["datetime"] = pd.to_datetime(df["datetime"], utc=True)
+    df["datetime"] = pd.to_datetime(df["datetime"], utc=True).dt.tz_convert(
+        "Europe/Berlin"
+    )
     df = df.dropna(axis=0, how="all", subset=[x for x in data.keys() if x != "frame"])
 
     frames_df["start_datetime_td"] = (

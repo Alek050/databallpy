@@ -39,6 +39,9 @@ def _insert_missing_rows(df: pd.DataFrame, col: str) -> pd.DataFrame:
     df = pd.concat((df, to_add_df)).sort_values(by=col)
     df.reset_index(drop=True, inplace=True)
 
+    if "datetime" in df.columns:
+        df["datetime"] = df["datetime"].astype(dtypes["datetime"])
+
     return df
 
 

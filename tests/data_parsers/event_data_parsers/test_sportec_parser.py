@@ -48,22 +48,6 @@ class TestSportecParser(unittest.TestCase):
         )
 
         exp_metadata = self.expected_md.copy()
-        exp_metadata.periods_frames["start_datetime_ed"] = pd.to_datetime(
-            exp_metadata.periods_frames["start_datetime_ed"]
-        ).dt.tz_localize("Europe/Berlin")
-        exp_metadata.periods_frames["end_datetime_ed"] = pd.to_datetime(
-            exp_metadata.periods_frames["end_datetime_ed"]
-        ).dt.tz_localize("Europe/Berlin")
-        exp_metadata.periods_frames.loc[0:1, "start_datetime_ed"] = [
-            pd.to_datetime("2022-11-11T18:31:12.000+01:00"),
-            pd.to_datetime("2022-11-11T19:31:09.000+01:00"),
-        ]
-        exp_metadata.periods_frames.loc[0:1, "end_datetime_ed"] = [
-            pd.to_datetime("2022-11-11T18:37:36.200+01:00"),
-            pd.to_datetime("2022-11-11T20:10:18.500+01:00"),
-        ]
-        exp_metadata.periods_changed_playing_direction = [1]
-
         pd.testing.assert_frame_equal(res_ed, self.expected_ed)
         self.assertEqual(res_md, exp_metadata)
         self.assertDictEqual(res_dbp_events, self.dbp_events)

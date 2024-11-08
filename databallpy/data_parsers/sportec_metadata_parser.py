@@ -1,5 +1,4 @@
 import chardet
-import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -160,8 +159,8 @@ def _get_sportec_metadata(metadata_loc: str, only_event_data: bool = False) -> M
         frames_df = pd.DataFrame(
             {
                 "period_id": [1, 2, 3, 4, 5],
-                "start_frame": [np.nan] * 5,
-                "end_frame": [np.nan] * 5,
+                "start_frame": [MISSING_INT] * 5,
+                "end_frame": [MISSING_INT] * 5,
                 "start_datetime_td": [pd.to_datetime("NaT")] * 5,
                 "end_datetime_td": [pd.to_datetime("NaT")] * 5,
             }

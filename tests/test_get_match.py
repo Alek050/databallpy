@@ -33,10 +33,15 @@ from tests.expected_outcomes import (
     SHOT_EVENTS_METRICA,
     SHOT_EVENTS_OPTA,
     SHOT_EVENTS_OPTA_TRACAB,
+    SPORTEC_DATABALLPY_EVENTS,
+    SPORTEC_EVENT_DATA,
+    SPORTEC_METADATA_ED,
+    SPORTEC_METADATA_TD,
     TACKLE_EVENTS_METRICA,
     TACKLE_EVENTS_OPTA,
     TACKLE_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
+    TRACAB_SPORTEC_XML_TD,
 )
 
 from .mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
@@ -369,6 +374,9 @@ class TestGetMatch(unittest.TestCase):
             _periods_changed_playing_direction=[],
         )
 
+        self.sportec_event_loc = "tests/test_data/sportec_ed_test.xml"
+        self.sportec_metadata_loc = "tests/test_data/sportec_metadata.xml"
+
     def test_get_match_wrong_inputs(self):
         with self.assertRaises(ValueError):
             get_match(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
@@ -523,6 +531,89 @@ class TestGetMatch(unittest.TestCase):
             check_quality=False,
         )
         assert res == self.expected_match_metrica
+
+    def test_get_match_sportec(self):
+        expected_match_sportec = Match(
+            tracking_data=pd.DataFrame(),
+            tracking_data_provider=None,
+            event_data=SPORTEC_EVENT_DATA.copy(),
+            event_data_provider="sportec",
+            pitch_dimensions=SPORTEC_METADATA_ED.pitch_dimensions,
+            periods=SPORTEC_METADATA_ED.periods_frames,
+            frame_rate=SPORTEC_METADATA_ED.frame_rate,
+            home_team_id=SPORTEC_METADATA_ED.home_team_id,
+            home_formation=SPORTEC_METADATA_ED.home_formation,
+            home_score=SPORTEC_METADATA_ED.home_score,
+            home_team_name=SPORTEC_METADATA_ED.home_team_name,
+            home_players=SPORTEC_METADATA_ED.home_players,
+            away_team_id=SPORTEC_METADATA_ED.away_team_id,
+            away_formation=SPORTEC_METADATA_ED.away_formation,
+            away_score=SPORTEC_METADATA_ED.away_score,
+            away_team_name=SPORTEC_METADATA_ED.away_team_name,
+            away_players=SPORTEC_METADATA_ED.away_players,
+            country=SPORTEC_METADATA_ED.country,
+            _event_timestamp_is_precise=True,
+            _periods_changed_playing_direction=None,
+            pass_events=SPORTEC_DATABALLPY_EVENTS["pass_events"],
+            shot_events=SPORTEC_DATABALLPY_EVENTS["shot_events"],
+            dribble_events=SPORTEC_DATABALLPY_EVENTS["dribble_events"],
+        )
+        res = get_match(
+            event_data_loc=self.sportec_event_loc,
+            event_metadata_loc=self.sportec_metadata_loc,
+            event_data_provider="sportec",
+        )
+
+        self.assertEqual(res, expected_match_sportec)
+
+    @patch("databallpy.get_match.load_sportec_open_tracking_data")
+    @patch("databallpy.get_match.load_sportec_open_event_data")
+    def test_get_open_match_sportec(self, mock_event_data, mock_tracking_data):
+        mock_tracking_data.return_value = (TRACAB_SPORTEC_XML_TD, SPORTEC_METADATA_TD)
+        mock_event_data.return_value = (
+            SPORTEC_EVENT_DATA,
+            SPORTEC_METADATA_ED,
+            SPORTEC_DATABALLPY_EVENTS,
+        )
+        match = get_open_match()
+
+        expected_match_sportec = Match(
+            tracking_data=TRACAB_SPORTEC_XML_TD.copy(),
+            tracking_data_provider="sportec",
+            event_data=SPORTEC_EVENT_DATA.copy(),
+            event_data_provider="sportec",
+            pitch_dimensions=SPORTEC_METADATA_ED.pitch_dimensions,
+            periods=pd.merge(
+                SPORTEC_METADATA_TD.periods_frames,
+                SPORTEC_METADATA_ED.periods_frames[
+                    ["start_datetime_ed", "end_datetime_ed"]
+                ],
+                left_index=True,
+                right_index=True,
+                how="outer",
+            ),
+            frame_rate=SPORTEC_METADATA_TD.frame_rate,
+            home_team_id=SPORTEC_METADATA_ED.home_team_id,
+            home_formation=SPORTEC_METADATA_ED.home_formation,
+            home_score=SPORTEC_METADATA_ED.home_score,
+            home_team_name=SPORTEC_METADATA_ED.home_team_name,
+            home_players=SPORTEC_METADATA_ED.home_players,
+            away_team_id=SPORTEC_METADATA_ED.away_team_id,
+            away_formation=SPORTEC_METADATA_ED.away_formation,
+            away_score=SPORTEC_METADATA_ED.away_score,
+            away_team_name=SPORTEC_METADATA_ED.away_team_name,
+            away_players=SPORTEC_METADATA_ED.away_players,
+            country=SPORTEC_METADATA_ED.country,
+            _event_timestamp_is_precise=True,
+            _tracking_timestamp_is_precise=True,
+            _periods_changed_playing_direction=[1],
+            pass_events=SPORTEC_DATABALLPY_EVENTS["pass_events"],
+            shot_events=SPORTEC_DATABALLPY_EVENTS["shot_events"],
+            dribble_events=SPORTEC_DATABALLPY_EVENTS["dribble_events"],
+            allow_synchronise_tracking_and_event_data=True,
+        )
+
+        self.assertEqual(match, expected_match_sportec)
 
     @patch(
         "requests.get",
