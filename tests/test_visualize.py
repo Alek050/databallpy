@@ -174,6 +174,10 @@ class TestVisualize(unittest.TestCase):
 
     def test_save_match_clip(self):
         match = self.match.copy()
+        match.home_players = match.home_players.iloc[0:1]
+        match.home_players["shirt_num"] = 34
+        match.away_players = match.away_players.iloc[0:1]
+        match.away_players["shirt_num"] = 17
         match.tracking_data["player_possession"] = [
             None,
             "home_34",
@@ -257,10 +261,9 @@ class TestVisualize(unittest.TestCase):
             event_data_provider="opta",
             check_quality=False,
         )
-        for col in (
-            synced_match.home_players_column_ids()
-            + synced_match.away_players_column_ids()
-        ):
+        synced_match.home_players = synced_match.home_players.iloc[1:2]
+        synced_match.away_players = synced_match.away_players.iloc[0:1]
+        for col in synced_match.get_column_ids():
             mask = synced_match.tracking_data[col + "_x"].notnull()
             synced_match.tracking_data.loc[mask, col + "_vx"] = 2
             synced_match.tracking_data.loc[mask, col + "_vy"] = 2

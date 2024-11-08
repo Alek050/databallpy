@@ -104,7 +104,7 @@ def get_distance_between_ball_and_players(tracking_data: pd.DataFrame) -> pd.Dat
 def get_initial_possessions(
     pz_radius: float,
     distances_df: pd.DataFrame,
-) -> pd.Series:
+) -> np.ndarray:
     """
     Calculate initial ball possession based on proximity and duration within the
     possession zone (PZ).
@@ -115,10 +115,11 @@ def get_initial_possessions(
         ball and players.
 
     Returns:
-        pd.Series: Player possession status for each frame.
+        np.ndarray: Array with the initial possession of the ball.
     """
-    closest_player = distances_df.idxmin(axis=1, skipna=True)
-    close_enough = distances_df.min(axis=1) < pz_radius
+    filled_distances_df = distances_df.fillna(np.inf)
+    closest_player = filled_distances_df.idxmin(axis=1)
+    close_enough = filled_distances_df.min(axis=1) < pz_radius
     return np.where(close_enough, closest_player, None)
 
 
@@ -216,7 +217,10 @@ def get_ball_speed_condition(
         np.ndarray: Array with bools indicating if the ball speed condition is met
             for each proposed possession.
     """
-    ball_speed_change = tracking_data["ball_velocity"].diff().abs() > bv_threshold
+    ball_vel = pd.concat(
+        [pd.Series(data=[0]), tracking_data["ball_velocity"]], ignore_index=True
+    )
+    ball_speed_change = ball_vel.diff().abs()[1:] > bv_threshold
     intervals = [
         (start, end) for start, end in zip(possession_start_idxs, possession_end_idxs)
     ]
@@ -251,17 +255,17 @@ def get_ball_angle_condition(
         np.ndarray: Array with bools indicating if the ball angle condition is met
             for each proposed possession.
     """
-    start_idxs_plus_1 = np.clip(possession_start_idxs + 1, 0, tracking_data.index[-1])
-    end_idxs_minus_1 = np.clip(possession_end_idxs - 1, 0, tracking_data.index[-1])
+    start_idxs_minus_1 = np.clip(possession_start_idxs - 1, 0, tracking_data.index[-1])
+    end_idxs_plus_1 = np.clip(possession_end_idxs + 1, 0, tracking_data.index[-1])
 
     incomming_vectors = (
-        tracking_data.loc[start_idxs_plus_1, ["ball_x", "ball_y"]].values
-        - tracking_data.loc[possession_start_idxs, ["ball_x", "ball_y"]].values
+        tracking_data.loc[possession_start_idxs, ["ball_x", "ball_y"]].values
+        - tracking_data.loc[start_idxs_minus_1, ["ball_x", "ball_y"]].values
     )
 
     outgoing_vectors = (
-        tracking_data.loc[possession_end_idxs, ["ball_x", "ball_y"]].values
-        - tracking_data.loc[end_idxs_minus_1, ["ball_x", "ball_y"]].values
+        tracking_data.loc[end_idxs_plus_1, ["ball_x", "ball_y"]].values
+        - tracking_data.loc[possession_end_idxs, ["ball_x", "ball_y"]].values
     )
     ball_angles = get_smallest_angle(
         incomming_vectors, outgoing_vectors, angle_format="degree"
@@ -291,22 +295,21 @@ def get_ball_losses_and_updated_gain_idxs(
             tuple[np.ndarray, np.ndarray]: The starting indexes of the valid gains and
             the ball losses.
     """
-    valid_gains_start_idxs = possession_start_idxs[valid_gains]
-    initial_ball_losses_idxs = possession_end_idxs[valid_gains]
-    ball_losses_idxs = np.full(len(valid_gains_start_idxs), MISSING_INT, dtype=int)
+    ball_losses_idxs = np.full(len(possession_start_idxs), MISSING_INT, dtype=int)
     last_player = None
-
-    for i, (start, end) in enumerate(
-        zip(valid_gains_start_idxs, initial_ball_losses_idxs)
+    for i, (start, end, is_valid_gain) in enumerate(
+        zip(possession_start_idxs, possession_end_idxs, valid_gains)
     ):
         player = initial_possession[start]
         if player == last_player:
             ball_losses_idxs[i - 1] = end
-        else:
+        elif is_valid_gain:
             ball_losses_idxs[i] = end
-        last_player = player
+            last_player = player
 
-    valid_gains_start_idxs = valid_gains_start_idxs[ball_losses_idxs != MISSING_INT]
+    valid_gains_start_idxs = possession_start_idxs[
+        (ball_losses_idxs != MISSING_INT) & valid_gains
+    ]
     ball_losses_idxs = ball_losses_idxs[ball_losses_idxs != MISSING_INT]
 
     return valid_gains_start_idxs, ball_losses_idxs

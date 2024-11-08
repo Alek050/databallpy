@@ -241,7 +241,7 @@ class TestGetMatch(unittest.TestCase):
                 "player_type": ["Goalkeeper", "Field player"],
                 "start_frame": [2, 2],
                 "end_frame": [6, 6],
-                "position": ["Goalkeeper", "Defender"],
+                "position": ["goalkeeper", "defender"],
                 "starter": [True, True],
             }
         )
@@ -254,7 +254,7 @@ class TestGetMatch(unittest.TestCase):
                 "player_type": ["Goalkeeper", "Field player"],
                 "start_frame": [2, 2],
                 "end_frame": [6, 6],
-                "position": ["Goalkeeper", "Substitute player"],
+                "position": ["goalkeeper", ""],
                 "starter": [True, False],
             }
         )

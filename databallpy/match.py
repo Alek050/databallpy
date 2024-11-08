@@ -14,7 +14,7 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import create_logger
 from databallpy.utils.match_utils import (
@@ -233,13 +233,94 @@ class Match:
         return f"{home_text} - {away_text} {date.strftime('%Y-%m-%d %H:%M:%S')}"
 
     @requires_tracking_data
+    def get_column_ids(
+        self,
+        team: str | None = None,
+        positions: list[str] = [],
+        min_minutes_played: float | int = 0.1,
+    ) -> list[str]:
+        """Function to get the column ids that are used in the tracking data. With this
+        function you can filter on team side, position, or minimum minutes played.
+        If no arguments are specified, all column ids are returned of players that j
+        played at least 0.1 minute.
+
+        Args:
+            team (str | None, optional): Which team to add, can be {home, away, None}.
+                If None, both teams are added. Defaults to None.
+            positions (list[str], optional): The positions to include
+                {goalkeeper, defender, midfielder, forward}. If the list is empty, all
+                positions are returned. Defaults to [].
+            min_minutes_played (float | int, optional): The minimum number of minutes a
+                player needs to have played during the match to be returned.
+                Defaults to 1.0.
+
+        Raises:
+            ValueError: If team is not in {None, home, away}
+            ValueError: If there is an unknown position
+            TypeError: if min_minutes_played is not numeric
+
+        Returns:
+            list[str]: The column ids of the players.
+        """
+        if team and team not in ["home", "away"]:
+            raise ValueError(f"team should be either 'home' or 'away', not {team}")
+
+        for pos in positions:
+            if pos not in DATABALLPY_POSITIONS:
+                raise ValueError(
+                    f"Position {pos} is not supported in databallpy, should be in "
+                    f"{DATABALLPY_POSITIONS}"
+                )
+
+        if not isinstance(min_minutes_played, (float, int, np.floating, np.integer)):
+            raise TypeError("min_minutes_played should be a float or integer")
+
+        if team:
+            players = self.home_players if team == "home" else self.away_players
+        else:
+            players = pd.concat(
+                [self.home_players, self.away_players], ignore_index=True
+            )
+
+        if len(positions) > 0:
+            if "position" not in players.columns:
+                warnings.warn(
+                    "No position information found in players, can not filter on "
+                    "positions. Returning all positions.",
+                    DataBallPyWarning,
+                )
+            else:
+                players = players[players["position"].isin(positions)]
+
+        players = players[
+            (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
+            >= min_minutes_played
+        ]
+
+        return [
+            f"home_{row.shirt_num}"
+            if row.id in self.home_players["id"].to_list()
+            else f"away_{row.shirt_num}"
+            for row in players.itertuples(index=False)
+        ]
+
+    @requires_tracking_data
     def home_players_column_ids(self) -> list[str]:
         """Function to get all column ids of the tracking data that refer to information
         about the home team players
 
+        Depreciation: This function is depreciated and will be removed in version
+        0.7.0. Please use match.get_column_ids(team="home").
+
         Returns:
             list[str]: All column ids of the home team players
         """
+
+        warnings.warn(
+            "match.home_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use match.get_column_ids(team='home')",
+            DeprecationWarning,
+        )
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -251,9 +332,18 @@ class Match:
         """Function to get all column ids of the tracking data that refer to information
         about the away team players
 
+        Depreciation: This function is depreciated and will be removed in version
+        0.7.0. Please use match.get_column_ids(team="away").
+
         Returns:
             list[str]: All column ids of the away team players
         """
+
+        warnings.warn(
+            "match.away_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use match.get_column_ids(team='away')",
+            DeprecationWarning,
+        )
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -397,6 +487,105 @@ class Match:
             return self.all_events[event_id]
         else:
             raise ValueError(f"Event with id {event_id} not found in the match.")
+
+    def get_frames(
+        self, frames: int | list[int], playing_direction: str = "team_oriented"
+    ) -> pd.DataFrame:
+        """Function to get the frame of the match with the given frame
+
+        Args:
+            frames (int|list[int]): The frames of the match
+            playing_direction (str, optional): The coordinate system of the frame.
+                Defaults to "team_oriented", options are {team_oriented,
+                possession_oriented}. For more info on the coordinate systems, see
+                the documentation
+
+        Returns:
+            pd.DataFrame: The frame of the match with the given frames
+        """
+        if isinstance(frames, (int, np.integer)):
+            frames = [frames]
+
+        unrecognized_frames = [
+            frame for frame in frames if frame not in self.tracking_data["frame"].values
+        ]
+        if len(unrecognized_frames) > 0:
+            raise ValueError(f"Frame(s) {unrecognized_frames} not found in the match.")
+
+        if playing_direction == "team_oriented":
+            return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
+        elif playing_direction == "possession_oriented":
+            if (
+                "ball_possession" not in self.tracking_data.columns
+                or pd.isna(self.tracking_data["ball_possession"]).all()
+            ):
+                raise ValueError(
+                    "No `ball_possession` column found in tracking data, can not get"
+                    " frames in possession coordinate system without this column. "
+                    "Please run the add_team_possession() function first."
+                )
+
+            # current coordinate system: home from left to right, away right to left
+            suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+            cols_to_swap = [
+                col for col in self.tracking_data.columns if col.endswith(suffixes)
+            ]
+            temp_td = self.tracking_data.loc[
+                self.tracking_data["frame"].isin(frames)
+            ].copy()
+            temp_td.loc[
+                self.tracking_data["ball_possession"] == "away", cols_to_swap
+            ] *= -1
+            return temp_td
+
+        else:
+            raise ValueError(f"Coordinate system {playing_direction} is not supported.")
+
+    def get_event_frame(
+        self, event_id: int | str, playing_direction: str = "team_oriented"
+    ) -> pd.DataFrame:
+        """Function to get the frame of the event with the given event_id
+
+        Args:
+            event_id (int | str): The id of the event
+            playing_direction (str, optional): The coordinate system of the frame.
+                Defaults to "team_oriented", options are {team_oriented,
+                possession_oriented}. For more info on the coordinate systems, see
+                the databallpy documentation
+
+        Raises:
+            ValueError: if the event with the given event_id is not found in the match
+            ValueError: if the event with the given event_id is not found in the
+                tracking data
+
+        Returns:
+            pd.DataFrame: The frame of the match with the given event_id
+        """
+        if not self._is_synchronised:
+            raise DataBallPyError(
+                "Tracking and event data are not synchronised yet. Please run the"
+                " synchronise_tracking_and_event_data() method first."
+            )
+        event = self.get_event(event_id)
+        frame_id = self.tracking_data.loc[
+            self.tracking_data["event_id"] == event.event_id, "frame"
+        ].iloc[0]
+        frame = self.get_frames(frame_id, playing_direction="team_oriented")
+        if playing_direction == "team_oriented":
+            return frame
+        elif playing_direction == "possession_oriented":
+            if event.team_side == "away":
+                suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+                cols_to_swap = [
+                    col for col in self.tracking_data.columns if col.endswith(suffixes)
+                ]
+                frame = self.tracking_data.loc[
+                    self.tracking_data["frame"] == frame_id
+                ].copy()
+                frame.loc[:, cols_to_swap] *= -1
+        else:
+            raise ValueError(f"Coordinate system {playing_direction} is not supported.")
+        return frame
 
     @requires_event_data
     @requires_tracking_data
@@ -1060,10 +1249,20 @@ def check_inputs_match_object(match: Match):
             if col not in players.columns:
                 message = (
                     f"{team} team players should contain at least the column "
-                    f"['id', 'full_name', 'shirt_num'], {col} is missing."
+                    f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
                 )
                 LOGGER.error(message)
                 raise ValueError(message)
+        if (
+            "position" in players.columns
+            and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
+        ):
+            message = (
+                f"{team} team players should have a position that is in "
+                f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
+            )
+            LOGGER.error(message)
+            raise ValueError(message)
 
         # check for direction of play
         for _, period_row in match.periods.iterrows():

@@ -47,3 +47,5 @@ test:
 
 documentation: 
 	poetry run jupyter-book build docs/ --all -W
+
+ready: formatlint test documentation

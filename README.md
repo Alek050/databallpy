@@ -49,7 +49,7 @@ This package is developed to create a standardized way to analyse soccer matches
 
 Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. If you are interested in some of the features we implemented, see our [official documentation][docs-url].
 
-## V0.5.0. (30/7/2024)
+## V0.5.1. (10/10/2024)
 
 - Added event data parser for SciSports
 - Added expected threat model from Karun Singh to on ball events
@@ -60,6 +60,8 @@ Although reading in and synchronising data is already very helpfull to get start
 - Made save match clip more robust
 - Added function to calculate covered distances in different velocity and acceleration zones
 - Updated the documentation
+- Added support for numpy 2.x
+- Fixed minor bugs
 
 ## Installation
 

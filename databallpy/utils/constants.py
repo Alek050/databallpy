@@ -76,3 +76,5 @@ DATABALLPY_PASS_TYPES = [
     "unspecified",
 ]
 """The pass type strings that are supported in databallpy."""
+
+DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward"]

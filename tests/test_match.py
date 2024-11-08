@@ -793,6 +793,30 @@ class TestMatch(unittest.TestCase):
                 country=self.expected_match_tracab_opta.country,
             )
 
+        wrong_pos = self.expected_match_tracab_opta.away_players.copy()
+        wrong_pos["position"] = "unknown_position"
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data,
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_match_tracab_opta.pitch_dimensions,
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=wrong_pos,
+                country=self.expected_match_tracab_opta.country,
+            )
+
         # pitch axis
         with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_match_tracab_opta.tracking_data.copy()
@@ -1017,14 +1041,68 @@ class TestMatch(unittest.TestCase):
         assert match.name == "TeamOne 3 - 1 TeamTwo"
 
     def test_match_home_players_column_ids(self):
-        assert self.expected_match_tracab_opta.home_players_column_ids() == [
-            "home_34",
-        ]
+        with self.assertWarns(DeprecationWarning):
+            assert self.expected_match_tracab_opta.home_players_column_ids() == [
+                "home_34",
+            ]
 
     def test_match_away_players_column_ids(self):
-        assert self.expected_match_tracab_opta.away_players_column_ids() == [
-            "away_17",
-        ]
+        with self.assertWarns(DeprecationWarning):
+            assert self.expected_match_tracab_opta.away_players_column_ids() == [
+                "away_17",
+            ]
+
+    def test_match_get_column_ids(self):
+        match = self.expected_match_tracab_opta.copy()
+        match.frame_rate = 1
+        match.home_players = pd.DataFrame(
+            {
+                "id": [1, 2, 3, 4],
+                "shirt_num": [11, 22, 33, 44],
+                "start_frame": [1, 1, 100, 20],
+                "end_frame": [200, 100, 200, 200],
+                "position": ["goalkeeper", "defender", "midfielder", "forward"],
+            }
+        )
+        match.away_players = pd.DataFrame(
+            {
+                "id": [5, 6, 7, 8],
+                "shirt_num": [55, 66, 77, 88],
+                "start_frame": [1, 1, 80, -999],
+                "end_frame": [200, 80, 200, -999],
+                "position": ["defender", "defender", "midfielder", "goalkeeper"],
+            }
+        )
+
+        res_all = match.get_column_ids()
+        expected_all = {
+            "home_11",
+            "home_22",
+            "home_33",
+            "home_44",
+            "away_55",
+            "away_66",
+            "away_77",
+        }
+        self.assertSetEqual(set(res_all), expected_all)
+
+        home = match.get_column_ids(team="home", min_minutes_played=2)
+        self.assertSetEqual(set(home), {"home_11", "home_44"})
+
+        away = match.get_column_ids(team="away", positions=["defender"])
+        self.assertSetEqual(set(away), {"away_55", "away_66"})
+
+        with self.assertRaises(ValueError):
+            match.get_column_ids(team="wrong")
+        with self.assertRaises(ValueError):
+            match.get_column_ids(positions=["striker"])
+        with self.assertRaises(TypeError):
+            match.get_column_ids(min_minutes_played="fifteen")
+
+        with self.assertWarns(DataBallPyWarning):
+            match.away_players.drop(columns=["position"], inplace=True)
+            away = match.get_column_ids(team="away", positions=["defender"])
+            self.assertSetEqual(set(away), {"away_55", "away_66", "away_77"})
 
     def test_match_player_column_id_to_full_name(self):
         res_name_home = self.expected_match_tracab_opta.player_column_id_to_full_name(
@@ -1499,3 +1577,65 @@ class TestMatch(unittest.TestCase):
             **match.other_events,
         }
         assert match.all_events == expected_events
+
+    def test_get_frames(self):
+        match = self.expected_match_tracab_opta.copy()
+        res = match.get_frames(1509993)
+        pd.testing.assert_frame_equal(
+            match.get_frames(1509993), match.get_frames([1509993])
+        )
+        pd.testing.assert_frame_equal(res, match.tracking_data.iloc[0:1])
+
+        res2 = match.get_frames(1509993, playing_direction="possession_oriented")
+        pd.testing.assert_frame_equal(
+            match.get_frames(1509993, playing_direction="possession_oriented"),
+            match.get_frames([1509993], playing_direction="possession_oriented"),
+        )
+        cols = ["ball_x", "ball_y", "home_34_x", "home_34_y", "away_17_x", "away_17_y"]
+        match.tracking_data[cols] = match.tracking_data[cols] * -1
+        pd.testing.assert_frame_equal(res2, match.tracking_data.iloc[0:1])
+
+        with self.assertRaises(ValueError):
+            match.get_frames(1509993, playing_direction="wrong")
+
+        with self.assertRaises(ValueError):
+            match.get_frames(999)
+
+        match.tracking_data.drop(columns=["ball_possession"], inplace=True)
+        with self.assertRaises(ValueError):
+            match.get_frames(1509993, playing_direction="possession_oriented")
+
+    def test_get_event_frame(self):
+        match = self.expected_match_tracab_opta.copy()
+        pass_event = match.get_event(list(match.pass_events.keys())[0])
+        match.tracking_data.loc[0, "event_id"] = pass_event.event_id
+
+        with self.assertRaises(DataBallPyError):
+            match.get_event_frame(pass_event.event_id)
+        match._is_synchronised = True
+
+        with self.assertRaises(ValueError):
+            match.get_event_frame(999)
+
+        res_team = match.get_event_frame(
+            pass_event.event_id, playing_direction="team_oriented"
+        )
+        pd.testing.assert_frame_equal(res_team, match.tracking_data.iloc[0:1])
+
+        res_possession = match.get_event_frame(
+            pass_event.event_id, playing_direction="possession_oriented"
+        )
+        pd.testing.assert_frame_equal(
+            res_possession, match.tracking_data.iloc[0:1]
+        )  # event team side is home
+
+        pass_event.team_side = "away"
+        res_possession = match.get_event_frame(
+            pass_event.event_id, playing_direction="possession_oriented"
+        )
+        cols = ["ball_x", "ball_y", "home_34_x", "home_34_y", "away_17_x", "away_17_y"]
+        match.tracking_data[cols] = match.tracking_data[cols] * -1
+        pd.testing.assert_frame_equal(res_possession, match.tracking_data.iloc[0:1])
+
+        with self.assertRaises(ValueError):
+            match.get_event_frame(pass_event.event_id, playing_direction="wrong")

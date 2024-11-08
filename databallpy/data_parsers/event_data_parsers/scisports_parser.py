@@ -145,8 +145,8 @@ def _get_players(
         "CMF": "midfielder",
         "LW": "forward",
         "RW": "forward",
-        "CF": "striker",
-        "UNKNOWN": "unknown",
+        "CF": "forward",
+        "UNKNOWN": "",
     }
 
     for player in events_json["players"]:
