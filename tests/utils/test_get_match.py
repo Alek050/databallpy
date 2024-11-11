@@ -14,9 +14,9 @@ from databallpy.data_parsers.tracking_data_parsers import (
     load_metrica_tracking_data,
     load_tracab_tracking_data,
 )
-from databallpy.get_match import get_match, get_open_match, get_saved_match
 from databallpy.match import Match
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.get_match import get_match, get_open_match, get_saved_match
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
@@ -44,7 +44,7 @@ from tests.expected_outcomes import (
     TRACAB_SPORTEC_XML_TD,
 )
 
-from .mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
+from ..mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
 class TestGetMatch(unittest.TestCase):
@@ -566,9 +566,9 @@ class TestGetMatch(unittest.TestCase):
 
         self.assertEqual(res, expected_match_sportec)
 
-    @patch("databallpy.get_match.load_sportec_open_tracking_data")
-    @patch("databallpy.get_match.load_sportec_open_event_data")
-    def test_get_open_match_sportec(self, mock_event_data, mock_tracking_data):
+    @patch("databallpy.utils.get_match.load_sportec_open_event_data")
+    @patch("databallpy.utils.get_match.load_sportec_open_tracking_data")
+    def test_get_open_match_sportec(self, mock_tracking_data, mock_event_data):
         mock_tracking_data.return_value = (TRACAB_SPORTEC_XML_TD, SPORTEC_METADATA_TD)
         mock_event_data.return_value = (
             SPORTEC_EVENT_DATA,

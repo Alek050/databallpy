@@ -5,9 +5,9 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from databallpy.get_match import get_match
 from databallpy.match import Match
 from databallpy.utils.errors import DataBallPyError
+from databallpy.utils.get_match import get_match
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
