@@ -1,6 +1,6 @@
 LINT_FILES = tests/ databallpy/
 TEST_PATH = tests/
-PYTEST = poetry run python -m pytest $(TEST_PATH) --pythonwarnings=once 
+PYTEST = poetry run python -m pytest $(TEST_PATH) --pythonwarnings=once
 PYTEST_ARGS_COV = --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
 
 define echotask
@@ -15,11 +15,10 @@ endef
 help:
 	@echo
 	$(call echotask,"deps","installs and updates all dependencies for developing")
-	$(call echotask,"format","formats code using isort and black")
-	$(call echotask,"formatcheck","checks format using isort and black")
-	$(call echotask,"flake8","lints code using flake8")
-	$(call echotask,"lint","lints all code using flake8 isort and black")
-	$(call echotask,"formatlint","formats and lints code using flake8 isort and black")
+	$(call echotask,"format","formats code using ruff")
+	$(call echotask,"formatcheck","checks format using ruff")
+	$(call echotask,"lint","lints all code using ruff")
+	$(call echotask,"formatlint","formats and lints code using ruff")
 	$(call echotask,"test","runs all tests")
 	$(call echotask,"docs","runs sphinx code to create docs")
 	@echo
@@ -28,19 +27,20 @@ deps:
 	poetry install --with docs,developing
 
 format:
-	poetry run isort --filter-files $(LINT_FILES)
-	poetry run black $(LINT_FILES)
+	poetry run ruff format $(LINT_FILES)
 
 formatcheck:
-	poetry run isort --check-only --filter-files $(LINT_FILES)
-	poetry run black --check $(LINT_FILES)
+	poetry run ruff format --check $(LINT_FILES)
 
-flake8:
-	poetry run flake8 $(LINT_FILES)
+ruff_fix: ## Run ruff lint check with auto fix
+	poetry run ruff check --fix $(LINT_FILES)
 
-lint: flake8 formatcheck
+ruff: ## Run ruff lint checs
+	poetry run ruff check $(LINT_FILES)
 
-formatlint: format flake8
+lint: formatcheck ruff
+
+formatlint: ruff format $(LINT_FILES)
 
 test:
 	$(PYTEST) $(PYTEST_ARGS_COV)

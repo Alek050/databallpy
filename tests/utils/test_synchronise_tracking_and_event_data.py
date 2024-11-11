@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
-from databallpy.get_match import get_match
+from databallpy.utils.get_match import get_match
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
@@ -580,9 +580,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_event_data.loc[1:, "datetime"] -= pd.to_timedelta(1, unit="hours")
         expected_event_data.loc[1:, "datetime"] += pd.to_timedelta(1, unit="seconds")
 
-        res_event_data = align_event_data_datetime(
-            event_data, tracking_data, offset=1.0
-        )
+        res_event_data = align_event_data_datetime(event_data, tracking_data, offset=1.0)
         pd.testing.assert_frame_equal(res_event_data, expected_event_data)
 
     def test_get_time_difference_cost(self):

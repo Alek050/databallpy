@@ -5,9 +5,9 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from databallpy.get_match import get_match
 from databallpy.match import Match
 from databallpy.utils.errors import DataBallPyError
+from databallpy.utils.get_match import get_match
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
@@ -303,7 +303,7 @@ class TestMatch(unittest.TestCase):
                         "player_id": [1],
                         "start_x": [1],
                         "start_y": [1],
-                        "player": ["player_1"],
+                        "player_name": ["player_1"],
                         "datetime": ["2020-01-01 00:00:00"],  # not datetime object
                     }
                 ),
@@ -337,7 +337,7 @@ class TestMatch(unittest.TestCase):
                         "player_id": [1],
                         "start_x": [1],
                         "start_y": [1],
-                        "player": ["player_1"],
+                        "player_name": ["player_1"],
                         "datetime": pd.to_datetime(
                             ["2020-01-01 00:00:00"]
                         ),  # no timezone assigned
@@ -1012,8 +1012,7 @@ class TestMatch(unittest.TestCase):
             == "databallpy.match.Match object: Team A 0 - 2 Team B 2019-02-21 03:30:07"
         )
         assert (
-            self.expected_match_metrica.name
-            == "Team A 0 - 2 Team B 2019-02-21 03:30:07"
+            self.expected_match_metrica.name == "Team A 0 - 2 Team B 2019-02-21 03:30:07"
         )
 
     def test_match__eq__(self):
@@ -1144,7 +1143,7 @@ class TestMatch(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",
@@ -1160,7 +1159,7 @@ class TestMatch(unittest.TestCase):
             "n_obstructive_players",
             "n_obstructive_defenders",
             "goal_gk_distance",
-            "xG",
+            "xg",
         ]
         expected_df = pd.DataFrame(
             {
@@ -1432,7 +1431,7 @@ class TestMatch(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",
@@ -1466,7 +1465,7 @@ class TestMatch(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",

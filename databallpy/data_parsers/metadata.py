@@ -180,9 +180,7 @@ class Metadata:
                 )
                 LOGGER.error(message)
                 raise TypeError(message)
-            if not all(
-                [x in players.columns for x in ["id", "full_name", "shirt_num"]]
-            ):
+            if not all([x in players.columns for x in ["id", "full_name", "shirt_num"]]):
                 message = (
                     f"{team} team players should contain at least the column "
                     f"['id', 'full_name', 'shirt_num'], now its {players.columns}"

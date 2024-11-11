@@ -236,7 +236,7 @@ class Match:
     def get_column_ids(
         self,
         team: str | None = None,
-        positions: list[str] = [],
+        positions: list[str] = ["goalkeeper", "defender", "midfielder", "forward"],
         min_minutes_played: float | int = 0.1,
     ) -> list[str]:
         """Function to get the column ids that are used in the tracking data. With this
@@ -248,8 +248,8 @@ class Match:
             team (str | None, optional): Which team to add, can be {home, away, None}.
                 If None, both teams are added. Defaults to None.
             positions (list[str], optional): The positions to include
-                {goalkeeper, defender, midfielder, forward}. If the list is empty, all
-                positions are returned. Defaults to [].
+                {goalkeeper, defender, midfielder, forward}. Defaults to
+                ["goalkeeper", "defender", "midfielder", "forward"].
             min_minutes_played (float | int, optional): The minimum number of minutes a
                 player needs to have played during the match to be returned.
                 Defaults to 1.0.
@@ -292,10 +292,11 @@ class Match:
             else:
                 players = players[players["position"].isin(positions)]
 
-        players = players[
-            (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
-            >= min_minutes_played
-        ]
+        if not (players["start_frame"] == MISSING_INT).all():
+            players = players[
+                (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
+                >= min_minutes_played
+            ]
 
         return [
             f"home_{row.shirt_num}"
@@ -417,9 +418,7 @@ class Match:
             pd.DataFrame: DataFrame with all information of the dribbles in the match"""
 
         if self._dribbles_df is None:
-            LOGGER.info(
-                "Creating the match._dribbles_df dataframe in match.dribbles_df"
-            )
+            LOGGER.info("Creating the match._dribbles_df dataframe in match.dribbles_df")
             self._dribbles_df = create_event_attributes_dataframe(self.dribble_events)
 
             LOGGER.info(
@@ -638,9 +637,7 @@ class Match:
                     & (self.away_players["position"] == "goalkeeper")
                 )
 
-                gk_column_id = (
-                    f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
-                )
+                gk_column_id = f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
             else:
                 mask = (
                     (
@@ -657,9 +654,7 @@ class Match:
                     & (self.home_players["position"] == "goalkeeper")
                 )
 
-                gk_column_id = (
-                    f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
-                )
+                gk_column_id = f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
 
             shot.add_tracking_data_features(
                 tracking_data_frame,
@@ -1040,7 +1035,7 @@ def check_inputs_match_object(match: Match):
                 ball_alive_mask, "ball_x"
             ].first_valid_index()
             if (
-                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 5.0
+                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 7.0
                 or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
             ):
                 x_start = match.tracking_data.loc[first_frame, "ball_x"]
@@ -1086,6 +1081,7 @@ def check_inputs_match_object(match: Match):
             "start_x",
             "start_y",
             "datetime",
+            "player_name",
         ]:
             if col not in match.event_data.columns.to_list():
                 message = f"{col} not in event data columns, this is manditory!"
@@ -1183,12 +1179,10 @@ def check_inputs_match_object(match: Match):
             raise ValueError(message)
 
     # team id's
-    for team, team_id in zip(
-        ["home", "away"], [match.home_team_id, match.away_team_id]
-    ):
+    for team, team_id in zip(["home", "away"], [match.home_team_id, match.away_team_id]):
         if not isinstance(team_id, (int, np.integer)) and not isinstance(team_id, str):
             message = (
-                "{team} team id should be an integer or string, not a "
+                f"{team} team id should be an integer or string, not a "
                 f"{type(team_id)}"
             )
             LOGGER.error(message)
@@ -1221,9 +1215,7 @@ def check_inputs_match_object(match: Match):
     ):
         if form is not None and not form == MISSING_INT:
             if not isinstance(form, str):
-                message = (
-                    f"{team} team formation should be a string, not a {type(form)}"
-                )
+                message = f"{team} team formation should be a string, not a {type(form)}"
                 LOGGER.error(message)
                 raise TypeError(message)
             if len(form) > 5:
@@ -1235,9 +1227,7 @@ def check_inputs_match_object(match: Match):
                 raise ValueError(message)
 
     # team players
-    for team, players in zip(
-        ["home", "away"], [match.home_players, match.away_players]
-    ):
+    for team, players in zip(["home", "away"], [match.home_players, match.away_players]):
         if not isinstance(players, pd.DataFrame):
             message = (
                 f"{team} team players should be a pandas dataframe, not a "

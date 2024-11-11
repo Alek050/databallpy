@@ -74,26 +74,40 @@ $ pip install databallpy
 The package is centered around the `Match` object. A `Match` has tracking data, event data metadata about the match.
 For a more elaborate example, see the [Getting Started][getting-started-url].
 
-```console
-$ from databallpy import get_match, get_open_match
-$
-$ match = get_match(
-$   tracking_data_loc="../data/tracking_data.dat",
-$   tracking_metadata_loc="../data/tracking_metadata.xml",
-$   tracking_data_provider="tracab"
-$   event_data_loc="../data/event_data_f24.xml",
-$   event_metadata_loc="../data/event_metadata_f7.xml",
-$   event_data_provider="opta",
-$ )
-$
-$ # or to load an open metrica dataset of tracking and event data
-$ match = get_open_match()
-$
-$ match.home_team_name # the team name of the home playing team
-$ match.away_players # pandas dataframe with the names, ids, shirt numbers and positions of the away team
-$ match.tracking_data # pandas dataframe with tracking data of the match
-$ match.event_data # pandas dataframe with event data of the match
+```python
+from databallpy import get_match, get_open_match
+
+match = get_match(
+  tracking_data_loc="../data/tracking_data.dat",
+  tracking_metadata_loc="../data/tracking_metadata.xml",
+  tracking_data_provider="tracab"
+  event_data_loc="../data/event_data_f24.xml",
+  event_metadata_loc="../data/event_metadata_f7.xml",
+  event_data_provider="opta",
+)
+
+# or get the open match provided by the DFL (Sportec Solutions)
+match = get_open_match()
 ```
+
+> [!note]
+> The current supported tracking data providers are:
+> - Tracab (including Sportec Solutions from the DFL)
+> - Metrica
+> - Inmotio
+> 
+> The accepted variables for the `tracking_data_provider` are `["tracab", "metrica", "inmotio", "dfl", "sportec"]`
+> 
+> The current supported event data provider are:
+> - Opta
+> - Metrica
+> - Instat
+> - SciSports
+> - Sportec Solutions (from the DFL)
+> 
+> The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec"]`
+>
+> If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 
 See [the documentation][docs-url] of the `Match` object and the [example usage][example-url] for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Match` object.
 
@@ -165,9 +179,10 @@ Event data providers:
 - Metrica
 - Instat
 - SciSports
+- Sportec Solutions (for the DFL)
 
 Tracking data providers:
-- Tracab
+- Tracab (including Sportec Solutions format from the DFL)
 - Metrica
 - Inmotio
 

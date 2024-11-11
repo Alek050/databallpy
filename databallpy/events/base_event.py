@@ -4,7 +4,7 @@ from dataclasses import dataclass, fields
 import numpy as np
 import pandas as pd
 
-from databallpy.models.utils import get_xT_prediction
+from databallpy.models.utils import get_xt_prediction
 from databallpy.utils.constants import (
     DATABALLPY_POSSESSION_TYPES,
     DATABALLPY_SET_PIECES,
@@ -202,7 +202,7 @@ class IndividualOnBallEvent(IndividualCloseToBallEvent):
             databallpy.utils.constants.DATABALLPY_SET_PIECES
 
     Properties:
-        xT (float): expected threat of the event. This is calculated using a model
+        xt (float): expected threat of the event. This is calculated using a model
             that is trained on the distance and angle to the goal, and the distance
             times theangle to the goal. See the notebook in the notebooks folder for
             more information on the model.
@@ -218,19 +218,19 @@ class IndividualOnBallEvent(IndividualCloseToBallEvent):
     def __post_init__(self):
         self._validate_inputs_close_to_ball_event()
         self._validate_inputs_on_ball_event()
-        self._xt = self.xT
+        self._xt = self.xt
 
     @property
     def base_df_attributes(self) -> list[str]:
         return super().base_df_attributes + [
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",
         ]
 
     @property
-    def xT(self) -> float:
+    def xt(self) -> float:
         """This property returns the expected threat of the event. It is calculated
         using a model that is trained on the distance and angle to the goal, and the
         distance times the angle to the goal. See the notebook in the notebooks folder
@@ -252,11 +252,11 @@ class IndividualOnBallEvent(IndividualCloseToBallEvent):
             elif self.set_piece == "kick_off":
                 self._xt = 0.001
             elif self.set_piece == "throw_in":
-                self._xt = get_xT_prediction(x, y, THROW_IN_XT)
+                self._xt = get_xt_prediction(x, y, THROW_IN_XT)
             elif self.set_piece == "free_kick":
-                self._xt = get_xT_prediction(x, y, FREE_KICK_XT)
+                self._xt = get_xt_prediction(x, y, FREE_KICK_XT)
             elif self.set_piece in ["no_set_piece", "unspecified"]:
-                self._xt = get_xT_prediction(x, y, OPEN_PLAY_XT)
+                self._xt = get_xt_prediction(x, y, OPEN_PLAY_XT)
             else:
                 raise ValueError(
                     f"set_piece should be one of {DATABALLPY_SET_PIECES}, "
@@ -313,4 +313,4 @@ class IndividualOnBallEvent(IndividualCloseToBallEvent):
             )
 
         if not isinstance(self._xt, (float, np.floating, int, np.integer)):
-            raise TypeError(f"xT should be float, not {type(self._xt)}")
+            raise TypeError(f"xt should be float, not {type(self._xt)}")

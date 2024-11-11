@@ -71,13 +71,13 @@ class ShotEvent(IndividualOnBallEvent):
             goalkeeper in meters.
 
     Properties:
-        xT (float): expected threat of the event. This is calculated using a model
+        xt (float): expected threat of the event. This is calculated using a model
             that is trained on the distance and angle to the goal, and the distance
             times theangle to the goal. See the notebook in the notebooks folder for
             more information on the model.
         base_df_attributes (list[str]): list of attributes that are used to create a
             DataFrame
-        xG (float): expected goals of the shot. This is calculated using a model that is
+        xg (float): expected goals of the shot. This is calculated using a model that is
             trained on the distance and angle to the goal, and the distance times the
             angle to the goal. See the notebook in the notebooks folder for more
             information on the model.
@@ -104,17 +104,17 @@ class ShotEvent(IndividualOnBallEvent):
     n_obstructive_players: int = MISSING_INT
     n_obstructive_defenders: int = MISSING_INT
     goal_gk_distance: float = np.nan
-    xG: float = np.nan
+    xg: float = np.nan
 
     def __post_init__(self):
         super().__post_init__()
         self._validate_inputs_on_ball_event()
-        _ = self.xT
+        _ = self.xt
         if pd.isnull(self.ball_goal_distance):
             self._update_ball_goal_distance()
         if pd.isnull(self.shot_angle):
             self._update_shot_angle()
-        self.xG = float(self.get_xG())
+        self.xg = float(self.get_xg())
 
     @property
     def df_attributes(self) -> list[str]:
@@ -132,7 +132,7 @@ class ShotEvent(IndividualOnBallEvent):
             "n_obstructive_players",
             "n_obstructive_defenders",
             "goal_gk_distance",
-            "xG",
+            "xg",
         ]
 
     def _update_ball_goal_distance(self, ball_xy: np.ndarray | None = None):
@@ -270,12 +270,12 @@ class ShotEvent(IndividualOnBallEvent):
         self.n_obstructive_defenders = int(n_obstructive_defenders)
         self.goal_gk_distance = float(np.linalg.norm(goal_xy - gk_xy))
 
-        self.xG = float(self.get_xG())
+        self.xg = float(self.get_xg())
 
-    def get_xG(self):
-        """Get xG of the shot event. This function calculates the xG of the shot.
-        A notebook on how th xG models were created can be found in the notebooks
-        folder.
+    def get_xg(self):
+        """Get expected goals of the shot event. This function calculates the xG of
+        the shot. A notebook on how th xG models were created can be found in
+        the documentation in features.
         """
 
         if self.outcome_str == "own_goal":
@@ -293,19 +293,19 @@ class ShotEvent(IndividualOnBallEvent):
         elif self.set_piece == "free_kick":
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
-                xg_params["xG_by_free_kick"],
+                xg_params["xg_by_free_kick"],
             )[0]
 
         elif "foot" not in self.body_part:
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
-                xg_params["xG_by_head"],
+                xg_params["xg_by_head"],
             )[0]
 
         else:  # take most general model, shot by foot
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
-                xg_params["xG_by_foot"],
+                xg_params["xg_by_foot"],
             )[0]
 
     def __eq__(self, other: object) -> bool:

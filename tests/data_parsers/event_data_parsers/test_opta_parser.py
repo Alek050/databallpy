@@ -56,15 +56,15 @@ class TestOptaParser(unittest.TestCase):
             expected_shot_events_opta[shot_id]._xt = -1
             expected_shot_events_opta[shot_id]._xt = expected_shot_events_opta[
                 shot_id
-            ].xT
+            ].xt
             shot_event._xt = -1
-            shot_event._xt = shot_event.xT
+            shot_event._xt = shot_event.xt
             expected_shot_events_opta[shot_id].pitch_size = [10.0, 10.0]
             expected_shot_events_opta[shot_id]._update_shot_angle()
             expected_shot_events_opta[shot_id]._update_ball_goal_distance()
-            expected_shot_events_opta[shot_id].xG = expected_shot_events_opta[
+            expected_shot_events_opta[shot_id].xg = expected_shot_events_opta[
                 shot_id
-            ].get_xG()
+            ].get_xg()
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():
@@ -113,13 +113,9 @@ class TestOptaParser(unittest.TestCase):
             metadata = _load_metadata(self.f7_loc_no_timestamps, [10.0, 10.0])
         expected_md = MD_OPTA.copy()
         pf = expected_md.periods_frames
-        pf.loc[0, "start_datetime_ed"] = pd.to_datetime(
-            "20230122T111500+0000", utc=True
-        )
+        pf.loc[0, "start_datetime_ed"] = pd.to_datetime("20230122T111500+0000", utc=True)
         pf.loc[0, "end_datetime_ed"] = pd.to_datetime("20230122T120000+0000", utc=True)
-        pf.loc[1, "start_datetime_ed"] = pd.to_datetime(
-            "20230122T121500+0000", utc=True
-        )
+        pf.loc[1, "start_datetime_ed"] = pd.to_datetime("20230122T121500+0000", utc=True)
         pf.loc[1, "end_datetime_ed"] = pd.to_datetime("20230122T130000+0000", utc=True)
 
         assert metadata == expected_md

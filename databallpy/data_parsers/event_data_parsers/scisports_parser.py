@@ -228,9 +228,9 @@ def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.Da
     periods_frames["start_datetime_ed"] = periods_frames[
         "start_datetime_ed"
     ].dt.tz_localize(tz)
-    periods_frames["end_datetime_ed"] = periods_frames[
-        "end_datetime_ed"
-    ].dt.tz_localize(tz)
+    periods_frames["end_datetime_ed"] = periods_frames["end_datetime_ed"].dt.tz_localize(
+        tz
+    )
     return periods_frames
 
 
@@ -268,7 +268,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "team_name": [],
     }
 
-    DATABALLPY_EVENT_MAPPING = {
+    databallpy_event_mapping = {
         "PASS": "pass",
         "CROSS": "pass",
         "SHOT": "shot",
@@ -308,8 +308,8 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         event_data["player_name"].append(event["playerName"])
         event_data["team_name"].append(event["teamName"])
 
-        if event["baseTypeName"] in DATABALLPY_EVENT_MAPPING:
-            databallpy_event = DATABALLPY_EVENT_MAPPING[event["baseTypeName"]]
+        if event["baseTypeName"] in databallpy_event_mapping:
+            databallpy_event = databallpy_event_mapping[event["baseTypeName"]]
             if databallpy_event == "tackle":
                 databallpy_event = (
                     None

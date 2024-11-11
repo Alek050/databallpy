@@ -120,9 +120,7 @@ class TestUtils(unittest.TestCase):
 
         # dict
         self.assertTrue(_values_are_equal_({"a": 1, "b": 2}, {"b": 2, "a": 1}))
-        self.assertTrue(
-            _values_are_equal_({"a": [1, 2], "b": 2}, {"a": [1, 2], "b": 2})
-        )
+        self.assertTrue(_values_are_equal_({"a": [1, 2], "b": 2}, {"a": [1, 2], "b": 2}))
         self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "b": 3}))
         self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 3}))
         self.assertFalse(_values_are_equal_({"a": 1, "b": 2}, {"a": 1, "b": 2.0001}))
@@ -174,9 +172,7 @@ class TestUtils(unittest.TestCase):
         )
 
         # NaT
-        self.assertTrue(
-            _values_are_equal_(pd.to_datetime("NaT"), pd.to_datetime("NaT"))
-        )
+        self.assertTrue(_values_are_equal_(pd.to_datetime("NaT"), pd.to_datetime("NaT")))
         self.assertFalse(
             _values_are_equal_(pd.to_datetime("NaT"), pd.to_datetime("2021-01-01"))
         )

@@ -1,7 +1,5 @@
 # Changelog
 
-<!--next-version-placeholder-->
-
 ## v0.0.1 (24/01/2023)
 
 - First release of `databallpy`!
@@ -95,4 +93,10 @@
 ## new version
 
 - Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
+- Added parser for DFL/Sportec Solutions event data
+- Added parser for Tracab xml format, used by DFL and Sportec solutions
+- Added integration for open data from DFL (open sourced by Bassek et al.)
 
+### Breaking changes
+- From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
+- `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
