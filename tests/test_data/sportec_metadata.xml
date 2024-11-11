@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<PutDataRequest RequestId="8542afdc-6b98-4025-9a55-1bef0164ddfd" MessageTime="2024-02-28T07:40:43.191+00:00" TransmissionComplete="true" TransmissionSuspended="false">
+  <MatchInformation>
+    <General TypeOfSport="Fußball" CompetitionName="2. Bundesliga" CompetitionId="DFL-COM-000002" Host="Die Liga - Fußballverband e.V. (Ligaverband)" Type="Ligabetrieb" MatchDay="17" Season="2022/2023" SeasonId="DFL-SEA-0001K6" PlannedKickoffTime="2022-11-11T17:30:00.000+00:00" KickoffTime="2022-11-11T17:31:11.970+00:00" MatchId="Match-1" DlProviderId="182421" MatchTitle="TeamA:TeamB" HomeTeamName="TeaA" HomeTeamId="Team1" GuestTeamName="TeamB" GuestTeamId="TeamB" Result="1:2" />
+    <Environment Country="Deutschland" StadiumId="DFL-STA-00000P" StadiumName="Merkur Spielarena" StadiumAddress="Arena-Straße 1, 40474 Düsseldorf" NeutralVenue="false" Roof="open" Floodlight="required" Temperature="14" AirHumidity="54" AirPressure="1030" PitchErosion="medium" NumberOfSpectators="44422" StadiumCapacity="54600" Precipitation="none" SoldOut="false" PitchX="105.00" PitchY="68.00" />
+    <Teams>
+          <Team TeamId="Team2" TeamName="TeamB" Role="guest" PlayerShirtType="Ausweichtrikot" PlayerShirtMainColor="#13294B" PlayerShirtSecondaryColor="#13294B" PlayerShirtNumberColor="#0057B8" LineUp="4-2-3-1">
+            <Players>
+                  <Player PersonId="B-1" ShirtNumber="28" FirstName="Mike" LastName="Wunderlich" Shortname="M. Wunderlich" Starting="true" PlayingPosition="ZO" TeamLeader="false" />
+                  <Player PersonId="B-2" ShirtNumber="1" FirstName="Andreas" LastName="Luthe" Shortname="A. Luthe" Starting="true" PlayingPosition="TW" TeamLeader="false" />
+                  <Player PersonId="B-3" ShirtNumber="5" FirstName="Kevin" LastName="Kraus" Shortname="K. Kraus" Starting="false" PlayingPosition="IVL" TeamLeader="True" />
+            </Players>
+            <TrainerStaff>
+                  <Trainer PersonId="DFL-OBJ-002BTF" Role="assistantHeadcoach" FirstName="Andreas" LastName="Clauß" Shortname="A. Clauß" />
+                  <Trainer PersonId="DFL-OBJ-0002D7" Role="headcoach" FirstName="Dirk" LastName="Schuster" Shortname="D. Schuster" />
+                  <Trainer PersonId="DFL-OBJ-0002D2" Role="assistantHeadcoach" FirstName="Sascha" LastName="Franz" Shortname="S. Franz" />
+                  <Trainer PersonId="DFL-OBJ-J01PHZ" Role="assistantHeadcoach" FirstName="Niklas" LastName="Martin" Shortname="N. Martin" />
+            </TrainerStaff>
+            <OfficialStaff>
+            </OfficialStaff>
+          </Team>
+          <Team TeamId="Team1" TeamName="TeamA" Role="home" PlayerShirtType="Heimtrikot" PlayerShirtMainColor="#9F1922" PlayerShirtSecondaryColor="#FFFFFF" PlayerShirtNumberColor="#FFFFFF" LineUp="4-4-2 Double-6 offensive Outliner">
+            <Players>
+                  <Player PersonId="A-1" ShirtNumber="13" FirstName="Adam" LastName="Bodzek" Shortname="A. Bodzek" Starting="false" TeamLeader="false" />
+                  <Player PersonId="A-3" ShirtNumber="28" FirstName="Rouwen" LastName="Hennings" Shortname="R. Hennings" Starting="true" PlayingPosition="STL" TeamLeader="false" />
+                  <Player PersonId="A-5" ShirtNumber="1" FirstName="Raphael" LastName="Wolf" Shortname="R. Wolf" Starting="false" TeamLeader="false" />
+            </Players>
+            <TrainerStaff>
+                  <Trainer PersonId="DFL-OBJ-0000NR" Role="assistantHeadcoach" FirstName="Manfred" LastName="Stefes" Shortname="M. Stefes" />
+                  <Trainer PersonId="DFL-OBJ-002AEN" Role="headcoach" FirstName="Daniel Moustapha" LastName="Thioune" Shortname="Daniel Thioune" />
+                  <Trainer PersonId="DFL-OBJ-002A5W" Role="assistantHeadcoach" FirstName="Christoph" LastName="Semmler" Shortname="C. Semmler" />
+                  <Trainer PersonId="DFL-OBJ-J01AK3" Role="assistantHeadcoach" FirstName="Jan" LastName="Hoepner" Shortname="J. Hoepner" />
+            </TrainerStaff>
+            <OfficialStaff>
+                  <Official PersonId="DFL-OBJ-000050" Role="otherOfficial" FirstName="Christian" LastName="Weber" Shortname="C. Weber" />
+            </OfficialStaff>
+          </Team>
+    </Teams>
+    <Referees>
+          <Referee PersonId="DFL-OBJ-00011X" Role="videoReferee" FirstName="Tobias" LastName="Welz" Shortname="T. Welz" />
+          <Referee PersonId="DFL-OBJ-00012I" Role="referee" FirstName="Benjamin" LastName="Cortus" Shortname="B. Cortus" />
+          <Referee PersonId="DFL-OBJ-00013V" Role="firstAssistant" FirstName="Marcel" LastName="Pelgrim" Shortname="M. Pelgrim" />
+          <Referee PersonId="DFL-OBJ-0026M8" Role="secondAssistant" FirstName="Fabian" LastName="Maibaum" Shortname="F. Maibaum" />
+          <Referee PersonId="DFL-OBJ-002FV0" Role="fourthOfficial" FirstName="Tobias" LastName="Schultes" Shortname="T. Schultes" />
+    </Referees>
+    <OtherGameInformation TotalTimeFirstHalf="2734120" TotalTimeSecondHalf="3138200" PlayingTimeFirstHalf="1771400" PlayingTimeSecondHalf="1641160" />
+  </MatchInformation>
+</PutDataRequest>

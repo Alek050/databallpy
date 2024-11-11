@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features import add_velocity
-from databallpy.get_match import get_match
 from databallpy.utils.errors import DataBallPyError
+from databallpy.utils.get_match import get_match
 from databallpy.visualize import (
     _pre_check_plot_td_inputs,
     plot_events,

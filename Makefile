@@ -1,6 +1,6 @@
 LINT_FILES = tests/ databallpy/
 TEST_PATH = tests/
-PYTEST = poetry run python -m pytest $(TEST_PATH) --pythonwarnings=once 
+PYTEST = poetry run python -m pytest $(TEST_PATH) --pythonwarnings=once
 PYTEST_ARGS_COV = --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
 
 define echotask

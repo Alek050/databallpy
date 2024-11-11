@@ -146,6 +146,7 @@ docs/create_anonimised_match.py
 test.py
 data/
 .vscode/
+datasets/
 
 # config files
 databallpy_config.ini

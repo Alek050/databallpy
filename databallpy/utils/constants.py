@@ -33,6 +33,7 @@ DATABALLPY_POSSESSION_TYPES = [
     "free_kick",
     "throw_in",
     "penalty",
+    "rebound",
     "unspecified",
 ]
 """The possession types that are supported in databallpy."""
@@ -75,3 +76,13 @@ DATABALLPY_PASS_TYPES = [
 """The pass type strings that are supported in databallpy."""
 
 DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward"]
+
+OPEN_MATCH_IDS_DFL = {
+    "J03WMX": "1. FC Köln vs. FC Bayern München",
+    "J03WN1": "VfL Bochum 1848 vs. Bayer 04 Leverkusen",
+    "J03WPY": "Fortuna Düsseldorf vs. 1. FC Nürnberg",
+    "J03WOH": "Fortuna Düsseldorf vs. SSV Jahn Regensburg",
+    "J03WQQ": "Fortuna Düsseldorf vs. FC St. Pauli",
+    "J03WOY": "Fortuna Düsseldorf vs. F.C. Hansa Rostock",
+    "J03WR9": "Fortuna Düsseldorf vs. 1. FC Kaiserslautern",
+}

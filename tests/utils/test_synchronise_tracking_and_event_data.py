@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
-from databallpy.get_match import get_match
+from databallpy.utils.get_match import get_match
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,

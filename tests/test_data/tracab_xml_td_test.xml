@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PutDataRequest RequestId="455bfca9-d7fe-4443-a826-5e53d0c3dae2" MessageTime="2022-11-12T05:17:41.732+00:00" TransmissionComplete="true" TransmissionSuspended="false">
+  <Positions EventTime="2022-11-11T17:31:12.360+00:00">
+    <MetaData MatchId="Match1" Type="pitch-size">
+      <PitchSize X="105.00" Y="68.00"/>
+    </MetaData>
+    <FrameSet GameSection="firstHalf" MatchId="Match1" TeamId="Team1" PersonId="A-1">
+      <Frame N="10000" T="2022-11-11T17:31:12.360+00:00" X="5.1" Y="-8.2" D="0.00" S="0.00" A="0.00" M="1"/>
+      <Frame N="10001" T="2022-11-11T17:31:13.360+00:00" X="5.2" Y="3.3" D="0.00" S="0.00" A="0.00" M="1"/>
+      <Frame N="10002" T="2022-11-11T17:31:14.360+00:00" X="6.3" Y="-8.1" D="0.00" S="0.00" A="0.00" M="1"/>
+    </FrameSet>
+    <FrameSet GameSection="firstHalf" MatchId="Match1" TeamId="Team2" PersonId="B-3">
+        <Frame N="10000" T="2022-11-11T17:31:12.360+00:00" X="-5.4" Y="12.1" D="0.00" S="0.00" A="0.00" M="1"/>
+        <Frame N="10001" T="2022-11-11T17:31:13.360+00:00" X="-15.2" Y="18.1" D="0.00" S="0.00" A="0.00" M="1"/>
+        <Frame N="10002" T="2022-11-11T17:31:14.360+00:00" X="-15.1" Y="20.3" D="0.00" S="0.00" A="0.00" M="1"/>
+    </FrameSet>
+    <FrameSet GameSection="firstHalf" MatchId="Match1" TeamId="BALL" PersonId="ball">
+        <Frame N="10000" T="2022-11-11T17:31:12.360+00:00" X="-0.8" Y="0.1" Z="0.20" D="0.00" S="0.16" A="0.00" M="1" BallPossession="1" BallStatus="1"/>
+        <Frame N="10001" T="2022-11-11T17:31:13.360+00:00" X="-1.8" Y="0.3" Z="0.20" D="0.00" S="0.16" A="0.00" M="1" BallPossession="2" BallStatus="1"/>
+        <Frame N="10002" T="2022-11-11T17:31:14.360+00:00" X="-2.8" Y="-2.1" Z="0.20" D="0.00" S="0.16" A="0.00" M="1" BallPossession="1" BallStatus="0"/>
+    </FrameSet>
+    <FrameSet GameSection="secondHalf" MatchId="Match1" TeamId="Team1" PersonId="A-1">
+        <Frame N="100000" T="2022-11-11T18:33:12.360+00:00" X="-5.4" Y="-8.8" D="0.00" S="0.00" A="0.00" M="46"/>
+        <Frame N="100001" T="2022-11-11T18:33:13.360+00:00" X="-12.2" Y="-22.2" D="0.00" S="0.00" A="0.00" M="46"/>
+        <Frame N="100002" T="2022-11-11T18:33:14.360+00:00" X="-8.3" Y="-0.8" D="0.00" S="0.00" A="0.00" M="46"/>
+      </FrameSet>
+    <FrameSet GameSection="secondHalf" MatchId="Match1" TeamId="Team2" PersonId="B-2">
+        <Frame N="100000" T="2022-11-11T18:33:12.360+00:00" X="52.0" Y="-8.1" D="0.00" S="0.00" A="0.00" M="46"/>
+        <Frame N="100001" T="2022-11-11T18:33:13.360+00:00" X="50.1" Y="-4.8" D="0.00" S="0.00" A="0.00" M="46"/>
+        <Frame N="100002" T="2022-11-11T18:33:14.360+00:00" X="33.2" Y="-18.8" D="0.00" S="0.00" A="0.00" M="46"/>
+    </FrameSet>
+    <FrameSet GameSection="secondHalf" MatchId="Match1" TeamId="BALL" PersonId="ball">
+        <Frame N="100000" T="2022-11-11T18:33:12.360+00:00" X="-0.8" Y="1.0" Z="0.20" D="0.00" S="0.16" A="0.00" M="46" BallPossession="2" BallStatus="1"/>
+        <Frame N="100001" T="2022-11-11T18:33:13.360+00:00" X="1.8" Y="1.3" Z="0.20" D="0.00" S="0.16" A="0.00" M="46" BallPossession="2" BallStatus="0"/>
+        <Frame N="100002" T="2022-11-11T18:33:14.360+00:00" X="-13.82" Y="2.5" Z="0.20" D="0.00" S="0.16" A="0.00" M="46" BallPossession="1" BallStatus="0"/>
+    </FrameSet>
+  </Positions>
+</PutDataRequest>
