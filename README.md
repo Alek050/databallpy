@@ -179,9 +179,10 @@ Event data providers:
 - Metrica
 - Instat
 - SciSports
+- Sportec Solutions (for the DFL)
 
 Tracking data providers:
-- Tracab
+- Tracab (including Sportec Solutions format from the DFL)
 - Metrica
 - Inmotio
 

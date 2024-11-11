@@ -131,9 +131,9 @@ def synchronise_tracking_and_event_data(
                     event_type = event_batch.loc[event, "databallpy_event"]
                     event_index = int(event_batch.loc[event, "index"])
                     tracking_frame = int(tracking_batch.loc[frame, "index"])
-                    extra_tracking_info.loc[
-                        tracking_frame, "databallpy_event"
-                    ] = event_type
+                    extra_tracking_info.loc[tracking_frame, "databallpy_event"] = (
+                        event_type
+                    )
                     extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
                     extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
                         frame, event
@@ -229,38 +229,37 @@ def _needleman_wunsch(
     """
     n_frames, n_events = np.shape(sim_mat)
 
-    F = np.zeros((n_frames + 1, n_events + 1))
-    F[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
-    F[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
+    function_matrix = np.zeros((n_frames + 1, n_events + 1))
+    function_matrix[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
+    function_matrix[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
 
-    # Pointer matrix
-    P = np.zeros((n_frames + 1, n_events + 1))
-    P[:, 0] = 3
-    P[0, :] = 4
+    pointer_matrix = np.zeros((n_frames + 1, n_events + 1))
+    pointer_matrix[:, 0] = 3
+    pointer_matrix[0, :] = 4
 
     t = np.zeros(3)
     for i in range(n_frames):
         for j in range(n_events):
-            t[0] = F[i, j] + sim_mat[i, j]
-            t[1] = F[i, j + 1] + gap_frame  # top + gap frame
-            t[2] = F[i + 1, j] + gap_event  # left + gap event
+            t[0] = function_matrix[i, j] + sim_mat[i, j]
+            t[1] = function_matrix[i, j + 1] + gap_frame  # top + gap frame
+            t[2] = function_matrix[i + 1, j] + gap_event  # left + gap event
 
             # manually calculate tmax instead of using np.max() since it is
             # faster when using small arrays. On top of that, we can now fill in
             # the pointer matrix at the same time.
             if t[0] >= t[1] and t[0] >= t[2]:  # t[0] = tmax thus whe got a match
                 tmax = t[0]
-                P[i + 1, j + 1] += 2
+                pointer_matrix[i + 1, j + 1] += 2
             elif (
                 t[1] >= t[0] and t[1] >= t[2]
             ):  # t[1] = tmax thus we got a frame unassigned
                 tmax = t[1]
-                P[i + 1, j + 1] += 3
+                pointer_matrix[i + 1, j + 1] += 3
             else:  # t[2] = tmax thus we got an event unassigned
                 tmax = t[2]
-                P[i + 1, j + 1] += 4
+                pointer_matrix[i + 1, j + 1] += 4
 
-            F[i + 1, j + 1] = tmax
+            function_matrix[i + 1, j + 1] = tmax
 
     # Trace through an optimal alignment.
     i = n_frames
@@ -268,23 +267,23 @@ def _needleman_wunsch(
     frames = []
     events = []
     while i > 0 or j > 0:
-        if P[i, j] in [2, 5, 6, 9]:  # 2 was added, match
+        if pointer_matrix[i, j] in [2, 5, 6, 9]:  # 2 was added, match
             frames.append(i)
             events.append(j)
             i -= 1
             j -= 1
-        elif P[i, j] in [3, 5, 7, 9]:  # 3 was added, frame unassigned
+        elif pointer_matrix[i, j] in [3, 5, 7, 9]:  # 3 was added, frame unassigned
             frames.append(i)
             events.append(0)
             i -= 1
-        elif P[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
+        elif pointer_matrix[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
             )
         else:
             raise ValueError(
                 f"The algorithm got stuck due to an unexpected "
-                f"value of P[{i}, {j}]: {P[i, j]}"
+                f"value of P[{i}, {j}]: {pointer_matrix[i, j]}"
             )
 
     frames = frames[::-1]

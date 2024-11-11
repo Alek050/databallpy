@@ -86,9 +86,7 @@ class TestTracabParser(unittest.TestCase):
         self.assertEqual(meta_dat, exp_metadata)
 
     def test_get_tracking_data_txt(self):
-        tracking_data = _get_tracking_data_txt(
-            self.tracking_data_dat_loc, verbose=False
-        )
+        tracking_data = _get_tracking_data_txt(self.tracking_data_dat_loc, verbose=False)
         expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 

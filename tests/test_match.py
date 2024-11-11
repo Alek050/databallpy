@@ -1012,8 +1012,7 @@ class TestMatch(unittest.TestCase):
             == "databallpy.match.Match object: Team A 0 - 2 Team B 2019-02-21 03:30:07"
         )
         assert (
-            self.expected_match_metrica.name
-            == "Team A 0 - 2 Team B 2019-02-21 03:30:07"
+            self.expected_match_metrica.name == "Team A 0 - 2 Team B 2019-02-21 03:30:07"
         )
 
     def test_match__eq__(self):
@@ -1144,7 +1143,7 @@ class TestMatch(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",
@@ -1160,7 +1159,7 @@ class TestMatch(unittest.TestCase):
             "n_obstructive_players",
             "n_obstructive_defenders",
             "goal_gk_distance",
-            "xG",
+            "xg",
         ]
         expected_df = pd.DataFrame(
             {
@@ -1432,7 +1431,7 @@ class TestMatch(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",
@@ -1466,7 +1465,7 @@ class TestMatch(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",

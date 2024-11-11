@@ -61,12 +61,12 @@ def get_pressure_on_player(
             z = calculate_z(
                 td_frame, column_id, opponent_column_id, pitch_length=pitch_size[0]
             )
-            L = calculate_L(d_back, d_front, z)
+            variable_l = calculate_l(d_back, d_front, z)
 
             current_pressure = (
-                pd.to_numeric((1 - player_opponent_distance / L), errors="coerce").clip(
-                    0
-                )
+                pd.to_numeric(
+                    (1 - player_opponent_distance / variable_l), errors="coerce"
+                ).clip(0)
                 ** q
                 * 100
             )
@@ -153,7 +153,7 @@ def calculate_z(
     return (1.0 + np.cos(angles)) / 2.0
 
 
-def calculate_L(d_back: float, d_front: float, z: float) -> float:
+def calculate_l(d_back: float, d_front: float, z: float) -> float:
     """
     Calculates the L value of the pressure calculation in accordance with
     Adrienko et al. (2016).
@@ -167,6 +167,8 @@ def calculate_L(d_back: float, d_front: float, z: float) -> float:
     Returns:
         float: L value of the pressure calculation.
     """
-    L = d_back + (d_front - d_back) * ((z**3 + 0.3 * z) / 1.3)
-    L = np.maximum(L, 0.0001)  # set any values less than 0.0001 to 0.0001
-    return L
+    variable_l = d_back + (d_front - d_back) * ((z**3 + 0.3 * z) / 1.3)
+    variable_l = np.maximum(
+        variable_l, 0.0001
+    )  # set any values less than 0.0001 to 0.0001
+    return variable_l

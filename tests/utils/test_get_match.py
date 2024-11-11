@@ -191,12 +191,12 @@ class TestGetMatch(unittest.TestCase):
         )
 
         # add metrica even data timestamps
-        self.md_metrica.periods_frames[
-            "start_datetime_ed"
-        ] = md_metrica_ed.periods_frames["start_datetime_ed"]
-        self.md_metrica.periods_frames[
+        self.md_metrica.periods_frames["start_datetime_ed"] = (
+            md_metrica_ed.periods_frames["start_datetime_ed"]
+        )
+        self.md_metrica.periods_frames["end_datetime_ed"] = md_metrica_ed.periods_frames[
             "end_datetime_ed"
-        ] = md_metrica_ed.periods_frames["end_datetime_ed"]
+        ]
 
         self.expected_match_metrica = Match(
             tracking_data=self.td_metrica,
@@ -626,9 +626,7 @@ class TestGetMatch(unittest.TestCase):
     )
     def test_get_open_match(self, _):
         match = get_open_match(provider="metrica")
-        pd.testing.assert_frame_equal(
-            match.periods, self.expected_match_metrica.periods
-        )
+        pd.testing.assert_frame_equal(match.periods, self.expected_match_metrica.periods)
         expected_match = self.expected_match_metrica.copy()
         expected_match._periods_changed_playing_direction = []
         expected_match.allow_synchronise_tracking_and_event_data = True
@@ -648,9 +646,7 @@ class TestGetMatch(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             get_saved_match(name="test_match2", path="tests/test_data")
         with self.assertRaises(TypeError):
-            get_saved_match(
-                name="not_a_match_but_a_list.pickle", path="tests/test_data"
-            )
+            get_saved_match(name="not_a_match_but_a_list.pickle", path="tests/test_data")
 
     def test_get_match_call_quality_check(self):
         # does not check functionality since the tracking data is not valid

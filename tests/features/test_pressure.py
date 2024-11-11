@@ -6,7 +6,7 @@ import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
 from databallpy.features.pressure import (
-    calculate_L,
+    calculate_l,
     calculate_variable_dfront,
     calculate_z,
     get_pressure_on_player,
@@ -34,8 +34,8 @@ class TestPressure(unittest.TestCase):
         )
         z1 = calculate_z(self.td_frame, "home_1", "away_1", pitch_length=100.0)
         z2 = calculate_z(self.td_frame, "home_1", "away_2", pitch_length=100.0)
-        l1 = calculate_L(d_back=3.0, d_front=d_front, z=z1)
-        l2 = calculate_L(d_back=3.0, d_front=d_front, z=z2)
+        l1 = calculate_l(d_back=3.0, d_front=d_front, z=z1)
+        l2 = calculate_l(d_back=3.0, d_front=d_front, z=z2)
         dist1 = math.dist([1, 1], [2, 2])
         dist2 = math.dist([1, 1], [3, 3])
 
@@ -56,8 +56,8 @@ class TestPressure(unittest.TestCase):
     def test_get_pressure_on_player_variable_d_front(self):
         z1 = calculate_z(self.td_frame, "home_1", "away_1", pitch_length=100.0)
         z2 = calculate_z(self.td_frame, "home_1", "away_2", pitch_length=100.0)
-        l1 = calculate_L(d_back=3.0, d_front=9.0, z=z1)
-        l2 = calculate_L(d_back=3.0, d_front=9.0, z=z2)
+        l1 = calculate_l(d_back=3.0, d_front=9.0, z=z1)
+        l2 = calculate_l(d_back=3.0, d_front=9.0, z=z2)
         dist1 = math.dist([1, 1], [2, 2])
         dist2 = math.dist([1, 1], [3, 3])
 
@@ -92,9 +92,9 @@ class TestPressure(unittest.TestCase):
         res = calculate_z(self.td_frame, "home_1", "away_1", pitch_length=100.0)
         self.assertAlmostEqual(res, expected, places=4)
 
-    def test_calculate_L(self):
+    def test_calculate_l(self):
         expected = 3.1046
-        res = calculate_L(d_back=3.0, d_front=5.0, z=0.2)
+        res = calculate_l(d_back=3.0, d_front=5.0, z=0.2)
         self.assertAlmostEqual(res, expected, places=4)
 
     def test_get_pressure_on_player_wrong_input(self):

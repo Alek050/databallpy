@@ -73,30 +73,38 @@ Before you submit a pull request, check that it meets these guidelines:
   1. All tests should pass (add/update tests for added code if applicable): 
      
       ```console
-      $ # for linux and macos
-      $ make test
-      $ # for windows
-      $ poetry run py.test tests/ --pythonwarnings=once --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
+      > # for linux and macos
+      > make test
+      > # for windows
+      > poetry run py.test tests/ --pythonwarnings=once --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
       ```
+
+````{margin}
+```{tip}
+For MacOs and Linux users, try running 
+```console
+> make ready
+``` 
+to run the tests, linters and documentation in one command!
+```
+````
 
   2. All linters should pass:
       
       ```console
-      $ # for linux and macos
-      $ make formatlint
-      $ # for windows
-      $ poetry run isort --filter-files tests/ databallpy/
-      $ poetry run black tests/ databallpy/
-      $ poetry run flake8 tests/ databallpy/
+      > # for linux and macos
+      > make formatlint
+      > # for windows
+      > poetry run ruff format tests/ databallpy
       ```
   
   3. All documentation should be updated and run without errors:
         
       ```console
-      $ # for linux and macos
-      $ make documentation
-      $ # for windows
-      $ poetry run jupyter-book build docs/ --all
+      > # for linux and macos
+      > make documentation
+      > # for windows
+      > poetry run jupyter-book build docs/ --all
       ```
 
   4. All functions variables that are not intended to call for users should start with a `_`.

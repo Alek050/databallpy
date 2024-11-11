@@ -36,7 +36,7 @@ class DribbleEvent(IndividualOnBallEvent):
         with_opponent (bool): whether the event was performed with an opponent or not
 
     Properties:
-        xT (float): expected threat of the event. This is calculated using a model
+        xt (float): expected threat of the event. This is calculated using a model
             that is trained on the distance and angle to the goal, and the distance
             times theangle to the goal. See the notebook in the notebooks folder for
             more information on the model.

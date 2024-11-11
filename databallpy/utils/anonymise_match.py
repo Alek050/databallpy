@@ -171,9 +171,9 @@ def get_player_mappings(
                 keys = add_new_pseudonym(
                     keys, "player", original_player_name, original_id
                 )
-            pseudonym = keys.loc[
-                keys["original_id"] == original_id, "pseudonym"
-            ].values[0]
+            pseudonym = keys.loc[keys["original_id"] == original_id, "pseudonym"].values[
+                0
+            ]
 
             player_id_map[original_id] = pseudonym
             player_name_map[original_player_name] = f"{side}_{counter}"

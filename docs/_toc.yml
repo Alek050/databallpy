@@ -21,8 +21,8 @@ parts:
         title: Pressure
       - file: features/team_and_player_possession
         title: Team and Player Possession
-      - file: features/simple_xG_models
-      - file: features/xT_models
+      - file: features/simple_xg_models
+      - file: features/xt_models
       - file: features/space_occupation
         title: Space Occupation
   - caption: API Documentation

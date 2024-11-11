@@ -74,9 +74,7 @@ def load_metrica_tracking_data(
     td_channels = _get_td_channels(metadata_loc, metadata)
     LOGGER.info("Successfully loaded metrica tracking data channels.")
     metadata = _update_metadata(td_channels, metadata)
-    LOGGER.info(
-        "Successfully updated metrica metadata based on tracking data channels."
-    )
+    LOGGER.info("Successfully updated metrica metadata based on tracking data channels.")
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
     )

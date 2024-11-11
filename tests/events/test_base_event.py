@@ -622,7 +622,7 @@ class TestBaseOnBallEvent(unittest.TestCase):
             set_piece="unspecified",
             _xt=np.nan,
         )
-        self.assertAlmostEqual(event.xT, 0.008168, places=5)
+        self.assertAlmostEqual(event.xt, 0.008168, places=5)
 
     def test_individual_on_ball_base_df_attributes(self):
         assert self.on_ball_event.base_df_attributes == [
@@ -639,53 +639,53 @@ class TestBaseOnBallEvent(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",
         ]
 
-    def test_individual_on_ball_event_xT(self):
+    def test_individual_on_ball_event_xt(self):
         event = self.on_ball_event.copy()
         event._xt = -1
         event.body_part = "foot"
         event.set_piece = "penalty"
 
-        assert event.xT == 0.797
+        assert event.xt == 0.797
 
         event._xt = -1
         event.set_piece = "corner_kick"
-        assert event.xT == 0.049
+        assert event.xt == 0.049
 
         event.set_piece = "goal_kick"
         event._xt = -1
-        assert event.xT == 0.0
+        assert event.xt == 0.0
 
         event.set_piece = "kick_off"
         event._xt = -1
-        assert event.xT == 0.001
+        assert event.xt == 0.001
 
         event.set_piece = "throw_in"
         event._xt = -1
-        np.testing.assert_almost_equal(event.xT, 0.0)
+        np.testing.assert_almost_equal(event.xt, 0.0)
 
         event.set_piece = "free_kick"
         event._xt = -1
-        np.testing.assert_almost_equal(event.xT, 0.0139, decimal=4)
+        np.testing.assert_almost_equal(event.xt, 0.0139, decimal=4)
 
         event.set_piece = "no_set_piece"
         event._xt = -1
-        np.testing.assert_almost_equal(event.xT, 0.0082, decimal=4)
+        np.testing.assert_almost_equal(event.xt, 0.0082, decimal=4)
 
         event.set_piece = "unspecified"
         event._xt = -1
         event.team_side = "away"
-        np.testing.assert_almost_equal(event.xT, 0.0041, decimal=4)
+        np.testing.assert_almost_equal(event.xt, 0.0041, decimal=4)
 
         with self.assertRaises(ValueError):
             event.set_piece = "test"
             event._xt = -1
-            event.xT
+            event.xt
 
     def test_individual_on_ball_event_copy(self):
         copy_event = self.on_ball_event.copy()

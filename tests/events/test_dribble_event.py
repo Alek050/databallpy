@@ -178,7 +178,7 @@ class TestDribbleEvent(unittest.TestCase):
             duel_type="offensive",
             with_opponent=False,
         )
-        self.assertAlmostEqual(event.xT, 0.0369635, places=6)
+        self.assertAlmostEqual(event.xt, 0.0369635, places=6)
 
     def test_dribble_event__eq_and_copy__(self):
         dribble_event = self.dribble_event.copy()
@@ -208,7 +208,7 @@ class TestDribbleEvent(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",

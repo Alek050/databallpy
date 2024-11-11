@@ -32,22 +32,22 @@ def scale_and_predict_logreg(input: np.array, params: dict) -> float:
     return 1 / (1 + np.exp(-(np.dot(scaled_data, coefs) + intercept)))
 
 
-def get_xT_prediction(
-    x: float | np.ndarray, y: float | np.ndarray, xT_model: np.ndarray
+def get_xt_prediction(
+    x: float | np.ndarray, y: float | np.ndarray, xt_model: np.ndarray
 ) -> float | np.ndarray:
     """Function to get the predicted xT based on a position and a xT model
 
     Args:
         x (float | np.ndarray): x coordinate on the pitch (-53, 53).
         y (float| np.ndarray): y coordinate on the pitch (-34, 34).
-        xT_model (np.ndarray): The xT model to use.
+        xt_model (np.ndarray): The xT model to use.
 
     Returns:
         float | np.ndarray: xT value(s)
     """
-    x_cells, y_cells = xT_model.shape
+    x_cells, y_cells = xt_model.shape
 
     x_idx = np.clip((x + 53) * (x_cells / 106), a_min=0, a_max=x_cells - 1).astype(int)
     y_idx = np.clip((y + 34) * (y_cells / 68), a_min=0, a_max=y_cells - 1).astype(int)
 
-    return xT_model[x_idx, y_idx]
+    return xt_model[x_idx, y_idx]
