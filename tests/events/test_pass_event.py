@@ -214,7 +214,7 @@ class TestPassEvent(unittest.TestCase):
                     _xt=0.02,
                     outcome_str="successful",
                     pass_type="pull_back",
-                    **current_kwargs
+                    **current_kwargs,
                 )
 
         # opponents_in_passing_lane
@@ -260,7 +260,7 @@ class TestPassEvent(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",

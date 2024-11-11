@@ -418,9 +418,7 @@ class Match:
             pd.DataFrame: DataFrame with all information of the dribbles in the match"""
 
         if self._dribbles_df is None:
-            LOGGER.info(
-                "Creating the match._dribbles_df dataframe in match.dribbles_df"
-            )
+            LOGGER.info("Creating the match._dribbles_df dataframe in match.dribbles_df")
             self._dribbles_df = create_event_attributes_dataframe(self.dribble_events)
 
             LOGGER.info(
@@ -639,9 +637,7 @@ class Match:
                     & (self.away_players["position"] == "goalkeeper")
                 )
 
-                gk_column_id = (
-                    f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
-                )
+                gk_column_id = f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
             else:
                 mask = (
                     (
@@ -658,9 +654,7 @@ class Match:
                     & (self.home_players["position"] == "goalkeeper")
                 )
 
-                gk_column_id = (
-                    f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
-                )
+                gk_column_id = f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
 
             shot.add_tracking_data_features(
                 tracking_data_frame,
@@ -1185,9 +1179,7 @@ def check_inputs_match_object(match: Match):
             raise ValueError(message)
 
     # team id's
-    for team, team_id in zip(
-        ["home", "away"], [match.home_team_id, match.away_team_id]
-    ):
+    for team, team_id in zip(["home", "away"], [match.home_team_id, match.away_team_id]):
         if not isinstance(team_id, (int, np.integer)) and not isinstance(team_id, str):
             message = (
                 f"{team} team id should be an integer or string, not a "
@@ -1223,9 +1215,7 @@ def check_inputs_match_object(match: Match):
     ):
         if form is not None and not form == MISSING_INT:
             if not isinstance(form, str):
-                message = (
-                    f"{team} team formation should be a string, not a {type(form)}"
-                )
+                message = f"{team} team formation should be a string, not a {type(form)}"
                 LOGGER.error(message)
                 raise TypeError(message)
             if len(form) > 5:
@@ -1237,9 +1227,7 @@ def check_inputs_match_object(match: Match):
                 raise ValueError(message)
 
     # team players
-    for team, players in zip(
-        ["home", "away"], [match.home_players, match.away_players]
-    ):
+    for team, players in zip(["home", "away"], [match.home_players, match.away_players]):
         if not isinstance(players, pd.DataFrame):
             message = (
                 f"{team} team players should be a pandas dataframe, not a "

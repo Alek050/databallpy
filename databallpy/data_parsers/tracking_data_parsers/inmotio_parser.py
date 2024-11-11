@@ -267,9 +267,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     home_team_player_data = soup.find_all("Player", {"teamId": home_team_id})
     home_players = _get_player_data(home_team_player_data)
     home_score = (
-        int(soup.LocalTeamScore.text)
-        if soup.LocalTeamScore is not None
-        else MISSING_INT
+        int(soup.LocalTeamScore.text) if soup.LocalTeamScore is not None else MISSING_INT
     )
 
     away_team = soup.Teams.find_all("Team")[1]

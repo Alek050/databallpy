@@ -66,7 +66,7 @@ class PassEvent(IndividualOnBallEvent):
             location of the pass. Default is np.nan.
 
     Attributes:
-        xT (float): xT (float): expected threat of the event. This is calculated using a
+        xt (float): expected threat of the event. This is calculated using a
             model that is trained on the distance and angle to the goal, and the
             distance times the angle to the goal. See the notebook in the notebooks
             folder for more information on the model.

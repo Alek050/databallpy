@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from databallpy.models.utils import get_xT_prediction, scale_and_predict_logreg
+from databallpy.models.utils import get_xt_prediction, scale_and_predict_logreg
 
 
 class TestUtils(unittest.TestCase):
@@ -27,10 +27,10 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             scale_and_predict_logreg(np.array([1, 2, 3]), params)
 
-    def test_get_xT_prediction(self):
-        xT_model = np.array([[0.1, 0.2], [0.3, 0.4]])
+    def test_get_xt_prediction(self):
+        xt_model = np.array([[0.1, 0.2], [0.3, 0.4]])
         x = 25.0
 
         y = 17.0
 
-        np.testing.assert_almost_equal(get_xT_prediction(x, y, xT_model), 0.4)
+        np.testing.assert_almost_equal(get_xt_prediction(x, y, xt_model), 0.4)

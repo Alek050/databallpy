@@ -85,9 +85,7 @@ Before you submit a pull request, check that it meets these guidelines:
       $ # for linux and macos
       $ make formatlint
       $ # for windows
-      $ poetry run isort --filter-files tests/ databallpy/
-      $ poetry run black tests/ databallpy/
-      $ poetry run flake8 tests/ databallpy/
+      $ poetry run ruff format tests/ databallpy
       ```
   
   3. All documentation should be updated and run without errors:
@@ -98,6 +96,12 @@ Before you submit a pull request, check that it meets these guidelines:
       $ # for windows
       $ poetry run jupyter-book build docs/ --all
       ```
+
+````{margin}
+```{tip}
+For MacOs and Linux users, try running `make ready` to run the tests, linters and documentation in one command!
+```
+````
 
   4. All functions variables that are not intended to call for users should start with a `_`.
   5. All functions and classes should contain docstrings in the [google](https://github.com/NilsJPWerner/autoDocstring/blob/HEAD/docs/google.md) format.

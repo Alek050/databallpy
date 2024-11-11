@@ -194,7 +194,7 @@ class TestShotEvent(unittest.TestCase):
                     set_piece="no_set_piece",
                     outcome_str="own_goal",
                     first_touch=False,
-                    **current_kwargs
+                    **current_kwargs,
                 )
 
         int_like_kwargs = {
@@ -230,7 +230,7 @@ class TestShotEvent(unittest.TestCase):
                         y_target=3.5,
                         outcome_str="own_goal",
                         first_touch=False,
-                        **current_kwargs
+                        **current_kwargs,
                     )
 
     def test_shot_event_df_attributes(self):
@@ -248,7 +248,7 @@ class TestShotEvent(unittest.TestCase):
             "jersey",
             "outcome",
             "related_event_id",
-            "xT",
+            "xt",
             "body_part",
             "possession_type",
             "set_piece",
@@ -264,7 +264,7 @@ class TestShotEvent(unittest.TestCase):
             "n_obstructive_players",
             "n_obstructive_defenders",
             "goal_gk_distance",
-            "xG",
+            "xg",
         ]
 
     def test_shot_event_eq__copy(self):
@@ -290,9 +290,7 @@ class TestShotEvent(unittest.TestCase):
         ball_left_post_vec = [53, 7.32 / 2]
         ball_right_post_vec = [53, -7.32 / 2]
 
-        self.assertAlmostEqual(
-            shot_event.ball_goal_distance, np.sqrt(53**2), places=4
-        )
+        self.assertAlmostEqual(shot_event.ball_goal_distance, np.sqrt(53**2), places=4)
         self.assertAlmostEqual(
             shot_event.ball_gk_distance, np.sqrt(10**2 + 10**2), places=4
         )
@@ -315,39 +313,39 @@ class TestShotEvent(unittest.TestCase):
             shot_event.goal_gk_distance, np.sqrt(43**2 + 10**2), places=4
         )
 
-    def test_get_xG_valid(self):
+    def test_get_xg_valid(self):
         shot_event = self.shot_event.copy()
         shot_event.ball_goal_distance = 18.0
         shot_event.shot_angle = 20
         shot_event.body_part = "left_foot"
         shot_event.set_piece = "penalty"
 
-        res_own_goal = shot_event.get_xG()
+        res_own_goal = shot_event.get_xg()
 
         shot_event.outcome_str = "miss_off_target"
-        res_penalty = shot_event.get_xG()
+        res_penalty = shot_event.get_xg()
 
         shot_event.set_piece = "free_kick"
-        res_free_kick = shot_event.get_xG()
+        res_free_kick = shot_event.get_xg()
 
         shot_event.set_piece = "corner_kick"
-        res_reg_foot = shot_event.get_xG()
+        res_reg_foot = shot_event.get_xg()
 
         shot_event.body_part = "head"
-        res_head = shot_event.get_xG()
+        res_head = shot_event.get_xg()
         assert res_own_goal == 0.0
         assert res_penalty == 0.79
         assert 0.3 > res_free_kick > res_reg_foot > res_head > 0.0
 
-    def test_get_xG_invalid(self):
+    def test_get_xg_invalid(self):
         shot_event = self.shot_event.copy()
         shot_event.ball_goal_distance = np.nan
         shot_event.shot_angle = 20
         shot_event.body_part = "left_foot"
         shot_event.set_piece = "penalty"
         shot_event.outcome_str = "miss_off_target"
-        assert pd.isnull(shot_event.get_xG())
+        assert pd.isnull(shot_event.get_xg())
 
         shot_event.ball_goal_distance = 18.0
         shot_event.set_piece = "unknown_type_of_play"
-        assert round(shot_event.get_xG(), 4) == 0.0805
+        assert round(shot_event.get_xg(), 4) == 0.0805

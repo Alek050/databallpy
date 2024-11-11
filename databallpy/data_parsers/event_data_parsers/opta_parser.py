@@ -386,9 +386,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         teams_info[team_info["side"]] = team_info
 
         # Player information
-        players_data = [
-            player.attrs for player in team_data.findChildren("MatchPlayer")
-        ]
+        players_data = [player.attrs for player in team_data.findChildren("MatchPlayer")]
         players_names = {}
         for player in team.findChildren("Player"):
             player_id = int(player.attrs["uID"][1:])
