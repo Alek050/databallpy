@@ -1,12 +1,12 @@
 import datetime as dt
 import os
-import xml.etree.ElementTree as ET
 
 import chardet
 import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from lxml import etree
 from tqdm import tqdm
 
 from databallpy.data_parsers import Metadata
@@ -162,20 +162,6 @@ def _get_tracking_data_xml(
     away_players: pd.DataFrame,
     verbose: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame, int]:
-    """Load the tracking data of tracab in xml format. This format is primarily used
-    by the DFL/sportec.
-
-    Args:
-        tracab_loc (str): The location of the xml tracking data
-        home_players (pd.DataFrame): the home team players information
-        away_players (pd.DataFrame): the away tea players information
-        verbose (bool): Whether to print info in the terminal about the progress
-
-    Returns:
-        tuple[pd.DataFrame, pd.DataFrame, int]: The tracking data, the periods frames
-            for in the metadata, and the frame rate of the tracking data for in the
-            metadata.
-    """
     if verbose:
         print(f"Reading in {tracab_loc}", end="")
 
@@ -206,81 +192,73 @@ def _get_tracking_data_xml(
     fill_first_period = True
     fill_second_period = True
 
-    context = iter(ET.iterparse(tracab_loc))
+    context = etree.iterparse(tracab_loc, events=("start", "end"))
     event, _ = next(context)
 
     if verbose:
         context = tqdm(context, total=3400000)
 
     for event, elem in context:
-        if event == "end" and elem.tag == "FrameSet":
-            if fill_first_period and elem.get("GameSection") == "firstHalf":
-                frames_df.loc[0, "start_frame"] = int(elem.findall("Frame")[0].get("N"))
-                frames_df.loc[0, "start_datetime_td"] = pd.to_datetime(
-                    elem.findall("Frame")[0].get("T")
-                ).tz_convert(None)
-                frames_df.loc[0, "end_frame"] = int(elem.findall("Frame")[-1].get("N"))
-                frames_df.loc[0, "end_datetime_td"] = pd.to_datetime(
-                    elem.findall("Frame")[-1].get("T")
-                ).tz_convert(None)
-                frame_rate = (
-                    1
-                    / (
-                        pd.to_datetime(elem.findall("Frame")[1].get("T")).tz_convert(
-                            None
-                        )
-                        - pd.to_datetime(elem.findall("Frame")[0].get("T")).tz_convert(
-                            None
-                        )
-                    ).total_seconds()
+        if not (event == "end" and elem.tag == "FrameSet"):
+            continue
+        frames = elem.findall("Frame")
+        if fill_first_period and elem.get("GameSection") == "firstHalf":
+            frames_df.loc[0, "start_frame"] = int(frames[0].get("N"))
+            frames_df.loc[0, "start_datetime_td"] = pd.to_datetime(
+                frames[0].get("T")
+            ).tz_convert(None)
+            frames_df.loc[0, "end_frame"] = int(frames[-1].get("N"))
+            frames_df.loc[0, "end_datetime_td"] = pd.to_datetime(
+                frames[-1].get("T")
+            ).tz_convert(None)
+            frame_rate = (
+                1
+                / (
+                    pd.to_datetime(frames[1].get("T")).tz_convert(None)
+                    - pd.to_datetime(frames[0].get("T")).tz_convert(None)
+                ).total_seconds()
+            )
+            fill_first_period = False
+        if fill_second_period and elem.get("GameSection") == "secondHalf":
+            frames_df.loc[1, "start_frame"] = int(frames[0].get("N"))
+            frames_df.loc[1, "start_datetime_td"] = pd.to_datetime(
+                frames[0].get("T")
+            ).tz_convert(None)
+            frames_df.loc[1, "end_frame"] = int(frames[-1].get("N"))
+            frames_df.loc[1, "end_datetime_td"] = pd.to_datetime(
+                frames[-1].get("T")
+            ).tz_convert(None)
+            fill_second_period = False
+
+        player_id = elem.get("PersonId")
+        if player_id in home_players["id"].to_list():
+            column_id = "home_" + str(
+                home_players.loc[home_players["id"] == player_id, "shirt_num"].iloc[0]
+            )
+        elif player_id in away_players["id"].to_list():
+            column_id = "away_" + str(
+                away_players.loc[away_players["id"] == player_id, "shirt_num"].iloc[0]
+            )
+        else:
+            column_id = "ball"
+
+        if column_id + "_x" not in data.keys():
+            data[f"{column_id}_x"] = [np.nan] * size_lines
+            data[f"{column_id}_y"] = [np.nan] * size_lines
+
+        start_frame = 0 if elem.get("GameSection") == "firstHalf" else 90000
+        for i, frame in enumerate(frames):
+            data[f"{column_id}_x"][start_frame + i] = float(frame.get("X"))
+            data[f"{column_id}_y"][start_frame + i] = float(frame.get("Y"))
+            if frame.get("Z") is not None:  # ball
+                data[f"{column_id}_z"][start_frame + i] = float(frame.get("Z"))
+                data[f"{column_id}_status"][start_frame + i] = (
+                    "alive" if frame.get("BallStatus") == "1" else "dead"
                 )
-
-                fill_first_period = False
-            if fill_second_period and elem.get("GameSection") == "secondHalf":
-                frames_df.loc[1, "start_frame"] = int(elem.findall("Frame")[0].get("N"))
-                frames_df.loc[1, "start_datetime_td"] = pd.to_datetime(
-                    elem.findall("Frame")[0].get("T")
-                ).tz_convert(None)
-                frames_df.loc[1, "end_frame"] = int(elem.findall("Frame")[-1].get("N"))
-                frames_df.loc[1, "end_datetime_td"] = pd.to_datetime(
-                    elem.findall("Frame")[-1].get("T")
-                ).tz_convert(None)
-                fill_first_period = False
-
-            player_id = elem.get("PersonId")
-
-            if player_id in home_players["id"].to_list():
-                column_id = "home_" + str(
-                    home_players.loc[home_players["id"] == player_id, "shirt_num"].iloc[
-                        0
-                    ]
+                data[f"{column_id}_possession"][start_frame + i] = (
+                    "home" if int(frame.get("BallPossession")) == 1 else "away"
                 )
-            elif player_id in away_players["id"].to_list():
-                column_id = "away_" + str(
-                    away_players.loc[away_players["id"] == player_id, "shirt_num"].iloc[
-                        0
-                    ]
-                )
-            else:
-                column_id = "ball"
-
-            if column_id + "_x" not in data.keys():
-                data[f"{column_id}_x"] = [np.nan] * size_lines
-                data[f"{column_id}_y"] = [np.nan] * size_lines
-
-            start_frame = 0 if elem.get("GameSection") == "firstHalf" else 90000
-            for i, frame in enumerate(elem.findall("Frame")):
-                data[f"{column_id}_x"][start_frame + i] = float(frame.get("X"))
-                data[f"{column_id}_y"][start_frame + i] = float(frame.get("Y"))
-                if frame.get("Z") is not None:  # ball
-                    data[f"{column_id}_z"][start_frame + i] = float(frame.get("Z"))
-                    data[f"{column_id}_status"][start_frame + i] = (
-                        "alive" if frame.get("BallStatus") == "1" else "dead"
-                    )
-                    data[f"{column_id}_possession"][start_frame + i] = (
-                        "home" if int(frame.get("BallPossession")) == 1 else "away"
-                    )
-                    data["datetime"][start_frame + i] = frame.get("T")
+                data["datetime"][start_frame + i] = frame.get("T")
 
     df = pd.DataFrame(data)
     df["datetime"] = pd.to_datetime(df["datetime"], utc=True).dt.tz_convert(
