@@ -11,6 +11,40 @@ from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
+POSSESSION_TYPE_MAPPING = {
+    "Corner": "corner_kick",
+    "Free Kick": "free_kick",
+    "Open Play": "open_play",
+    "Penalty": "penalty",
+    "Kick Off": "kick_off",
+    "Recovery": "unspecified",
+    "Throw-in": "throw_in",
+    "Interception": "unspecified",
+    "Goal Kick": "goal_kick"
+}
+
+SET_PIECE_TYPE_MAPPING = {
+    "Corner": "corner_kick",
+    "Free Kick": "free_kick",
+    "Open Play": "no_set_piece",
+    "Penalty": "penalty",
+    "Kick Off": "kick_off",
+    "Throw-in": "throw_in",
+    "Goal Kick": "goal_kick",
+    "Recovery": "no_set_piece",
+    "Interception": "no_set_piece", 
+}
+
+BODY_PART_MAPPING = {
+    "Head": "head",
+    "Left Foot": "left_foot",
+    "Right Foot": "right_foot",
+    "Keeper Arm": "other",
+    "Drop Kick": "other",
+    "No Touch": "other", 
+    "Other": "other"
+}
+
 def load_statsbomb_event_data(
     events_loc: str, match_loc: str, lineup_loc: str,  pitch_dimensions: tuple = (120.0, 80.0)
 ) -> tuple[pd.DataFrame, Metadata, dict]:
@@ -24,7 +58,8 @@ def load_statsbomb_event_data(
         events_loc (str): location of the event.json file.
         match_loc (str): location of the match.json file.
         lineup_loc (str): location of the lineup.json file.
-        pitch_dimensions (tuple, optional): the length and width of the pitch in meters
+        pitch_dimensions (tuple, optional): the length and width of the pitch in yards
+            Defaults to (120.0, 80.0)
 
     Returns:
         Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
@@ -60,6 +95,7 @@ def load_statsbomb_event_data(
     event_data, databallpy_events, metadata = _load_event_data(events_loc, metadata, pitch_dimensions)
     
     LOGGER.info("Successfully loaded Statsbomb event data and databallpy events.")
+    import pdb;pdb.set_trace()
     return event_data, metadata, databallpy_events
 
 def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> Metadata:
@@ -85,22 +121,24 @@ def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> 
     home_players = _get_player_info(lineup_json[home_index]["lineup"])
     away_players = _get_player_info(lineup_json[away_index]["lineup"])
 
+    match_start = pd.to_datetime(match_json["match_date"]+" "+match_json["kick_off"], utc=True)
     periods = {
         "period_id": [1, 2, 3, 4, 5],
-        "start_datetime_ed": [],
-        "end_datetime_ed": [],
+        "start_datetime_ed": [
+              match_start, 
+              match_start + pd.to_timedelta(60, unit="minutes"),  
+              pd.NaT,  
+              pd.NaT, 
+              pd.NaT 
+        ],
+        "end_datetime_ed": [ 
+              match_start + pd.to_timedelta(45, unit="minutes"),
+              match_start + pd.to_timedelta(105, unit="minutes"),  
+              pd.NaT,  
+              pd.NaT, 
+              pd.NaT 
+        ],
     }
-    match_start = pd.to_datetime(match_json["match_date"]+" "+match_json["kick_off"], utc=True)
-    for id in range(5):
-        if id == 0:
-            periods["start_datetime_ed"].append(match_start)
-            periods["end_datetime_ed"].append(match_start + pd.to_timedelta(45, unit="minutes"))
-        elif id == 1:
-            periods["start_datetime_ed"].append(match_start+ pd.to_timedelta(60, unit="minutes"))
-            periods["end_datetime_ed"].append(match_start + pd.to_timedelta(105, unit="minutes"))
-        else:
-            periods["start_datetime_ed"].append(pd.NaT)
-            periods["end_datetime_ed"].append(pd.NaT)
 
     metadata = Metadata(
         match_id=match_json["match_id"],
@@ -131,36 +169,36 @@ def _get_player_info(players_data: list) -> pd.DataFrame:
     Returns:
         pd.DataFrame: all information of the players
     """
+
+    n = len(players_data)
     result_dict = {
-        "id": [],
-        "full_name": [],
-        "formation_place": [],
-        "position": [],
-        "starter": [],
-        "shirt_num": [],
+        "id": [MISSING_INT]*n,
+        "full_name": [""]*n,
+        "formation_place": [MISSING_INT]*n,
+        "position": ["unspecified"]*n,
+        "starter": [False]*n,
+        "shirt_num": [MISSING_INT]*n,
     }
 
-    for player in players_data:
+    positions = {
+        "goalkeeper": [1],
+        "defender": [2, 3, 4, 5, 6, 7, 8, 9],
+        "midfielder": [10, 11, 12, 13, 14, 15, 16, 18, 19, 20],
+        "forward": [17, 21, 22, 23, 24, 25]
+    }
+    position_id_map = {i: position for position, ids in positions.items() for i in ids}
+
+    for id, player in enumerate(players_data):
 
         if len(player["positions"])>0:
             if player["positions"][0]["from"] == "00:00":
-                starter = True
-            else:
-                starter = False
-            formation_place = player["positions"][0]["position_id"]
-            position = player["positions"][0]["position"].lower()
-        else:
-            starter = False
-            formation_place = MISSING_INT
-            position = "did not play"
+                result_dict["starter"][id] = True
+            result_dict["formation_place"][id] = player["positions"][0]["position_id"]
+            result_dict["position"][id] = position_id_map[player["positions"][0]["position_id"]]
 
-
-        result_dict["id"].append(player["player_id"])
-        result_dict["full_name"].append(player["player_name"])
-        result_dict["formation_place"].append(formation_place)
-        result_dict["position"].append(position)
-        result_dict["starter"].append(starter)
-        result_dict["shirt_num"].append(player["jersey_number"])
+        result_dict["id"][id] = player["player_id"]
+        result_dict["full_name"][id] = player["player_name"]
+        result_dict["shirt_num"][id] = player["jersey_number"]
 
     return pd.DataFrame(result_dict)
 
@@ -188,23 +226,35 @@ def _load_event_data(events_loc: str, metadata: Metadata, pitch_dimensions: tupl
     }
     metadata.home_formation = formations[metadata.home_team_id]
     metadata.away_formation = formations[metadata.away_team_id]
-
+    
+    UNWANTED_EVENTS = {
+        5: "Camera On",
+        18: "Half Start",
+        19: "Substitution",
+        26: "Player On",
+        27: "Player Off",
+        34: "Half End",
+        35: "formations",
+        36: "Tactical Shift",
+    }
+    
+    event_mask = [event["type"]["id"] not in UNWANTED_EVENTS.keys() for event in events_json]
+    n = sum(event_mask)
     event_data = {
-        "event_id": [],
-        "databallpy_event": [],
-        "period_id": [],
-        "minutes": [],
-        "seconds": [],
-        "player_id": [],
-        "team_id": [],
-        "outcome": [],
-        "start_x": [],
-        "start_y": [],
-        "datetime": [],
-        "statsbomb_event": [],
-        "statsbomb_event_id": [],
-        "player_name": [],
-        "team_name": [],
+        "event_id": list(range(0, n)),
+        "databallpy_event": [None]*n,
+        "period_id": [MISSING_INT]*n,
+        "minutes": [MISSING_INT]*n,
+        "seconds": [MISSING_INT]*n,
+        "player_id": [MISSING_INT]*n,
+        "team_id": [MISSING_INT]*n,
+        "outcome": [""]*n,
+        "start_x": [np.nan]*n,
+        "start_y": [np.nan]*n,
+        "datetime": [pd.NaT]*n,
+        "statsbomb_event": [""]*n,
+        "player_name": [""]*n,
+        "team_name": [""]*n,
     }
     
     databallpy_mapping = {
@@ -216,51 +266,38 @@ def _load_event_data(events_loc: str, metadata: Metadata, pitch_dimensions: tupl
     shot_events = {}
     pass_events = {}
     dribble_events = {}
-    
-    event_mask = [event["type"]["id"] not in [5, 18, 19, 26, 27, 34, 35, 36] for event in events_json]
+
     for id, event in enumerate(np.array(events_json)[event_mask]): 
-        event_data["event_id"].append(id)
-        event_data["period_id"].append(event["period"])
-        event_data["minutes"].append(event["minute"])
-        event_data["seconds"].append(event["second"])
-        event_data["player_id"].append(event["player"]["id"])
-        event_data["team_id"].append(event["possession_team"]["id"])
+        event_data["event_id"][id] = id
+        event_data["period_id"][id] = event["period"]
+        event_data["minutes"][id] = event["minute"]
+        event_data["seconds"][id] = event["second"]
+        event_data["player_id"][id] = event["player"]["id"]
+        event_data["team_id"][id] = event["possession_team"]["id"]
         if "location" in event.keys():
-            event_data["start_x"].append(event["location"][0]-(pitch_dimensions[0]/2))
-            event_data["start_y"].append(event["location"][1]-(pitch_dimensions[1]/2))
-        else:
-            event_data["start_x"].append(MISSING_INT)
-            event_data["start_y"].append(MISSING_INT)
-        event_data["datetime"].append(
-            pd.to_datetime(metadata.periods_frames["start_datetime_ed"][event["period"]-1]+pd.to_timedelta(event["minute"]*60+event["second"], unit="seconds"))
-        )
-        event_data["statsbomb_event"].append(event["type"]["name"].lower().replace("*",""))
-        event_data["statsbomb_event_id"].append(event["id"])
-        event_data["player_name"].append(event["player"]["name"])
-        event_data["team_name"].append(event["possession_team"]["name"])
+            event_data["start_x"][id] = event["location"][0]-(pitch_dimensions[0]/2)
+            event_data["start_y"][id] = event["location"][1]-(pitch_dimensions[1]/2)
+        event_data["datetime"][id] = pd.to_datetime(metadata.periods_frames["start_datetime_ed"][event["period"]-1]+pd.to_timedelta(event["minute"]*60+event["second"], unit="seconds"))
+        event_data["statsbomb_event"][id] = event["type"]["name"].lower().replace("*","")
+        event_data["player_name"][id] = event["player"]["name"]
+        event_data["team_name"][id] = event["possession_team"]["name"]
 
         event_type_object = event["type"]["name"].lower().replace(" ", "_").replace("*", "").replace("-", "_").replace("/", "-")
 
         if event["type"]["name"] in databallpy_mapping:
             databallpy_event = databallpy_mapping[event["type"]["name"]]
-            event_data["databallpy_event"].append(databallpy_event)
-            try:
-                event_data["outcome"].append(event[event_type_object]["outcome"]["name"])
-            except:
-                event_data["outcome"].append("")
+            event_data["databallpy_event"][id] = databallpy_event
             if databallpy_event == "shot": 
-                shot_events[id] = _get_shot_event(event=event, id=event["id"], pitch_dimensions=pitch_dimensions, periods=metadata.periods_frames, away_team_id=metadata.away_team_id)
+                shot_events[id] = _get_shot_event(event=event, id=id, pitch_dimensions=pitch_dimensions, periods=metadata.periods_frames, away_team_id=metadata.away_team_id)
             elif databallpy_event == "pass":
-                pass_events[id] = _get_pass_event(event=event, id=event["id"], pitch_dimensions=pitch_dimensions, periods=metadata.periods_frames, away_team_id=metadata.away_team_id)
+                pass_events[id] = _get_pass_event(event=event, id=id, pitch_dimensions=pitch_dimensions, periods=metadata.periods_frames, away_team_id=metadata.away_team_id)
             elif databallpy_event == "dribble":
-                dribble_events[id] = _get_dribble_event(event=event, id=event["id"], pitch_dimensions=pitch_dimensions, periods=metadata.periods_frames, away_team_id=metadata.away_team_id)
-        else:
-            event_data["databallpy_event"].append(None)
-
-            try:
-                event_data["outcome"].append(event[event_type_object[event["type"]["id"]]]["outcome"]["name"])
-            except:
-                event_data["outcome"].append("")
+                dribble_events[id] = _get_dribble_event(event=event, id=id, pitch_dimensions=pitch_dimensions, periods=metadata.periods_frames, away_team_id=metadata.away_team_id)
+        
+        if event_type_object in event.keys():
+            if "outcome" in event[event_type_object]:
+                event_data["outcome"][id]= event[event_type_object]["outcome"]["name"]
+           
 
     event_data = pd.DataFrame(event_data)
 
@@ -290,42 +327,6 @@ def _load_event_data(events_loc: str, metadata: Metadata, pitch_dimensions: tupl
         "pass_events": pass_events,
         "dribble_events": dribble_events,
     }, metadata
-
-
-POSSESSION_TYPE_MAPPING = {
-    "Corner": "corner_kick",
-    "Free Kick": "free_kick",
-    "Open Play": "open_play",
-    "Penalty": "penalty",
-    "Kick Off": "kick_off",
-    "Recovery": "unspecified",
-    "Throw-in": "throw_in",
-    "Interception": "unspecified",
-    "Goal Kick": "goal_kick"
-}
-
-SET_PIECE_TYPE_MAPPING = {
-    "Corner": "corner_kick",
-    "Free Kick": "free_kick",
-    "Open Play": "no_set_piece",
-    "Penalty": "penalty",
-    "Kick Off": "kick_off",
-    "Throw-in": "throw_in",
-    "Goal Kick": "goal_kick",
-    "Recovery": "no_set_piece",
-    "Interception": "no_set_piece", 
-}
-
-BODY_PART_MAPPING = {
-    "Head": "head",
-    "Left Foot": "left_foot",
-    "Right Foot": "right_foot",
-    "Keeper Arm": "other",
-    "Drop Kick": "other",
-    "No Touch": "other", 
-    "Other": "other"
-}
-
 
 def _get_shot_event(event: dict, id: int, pitch_dimensions: tuple, periods: pd.DataFrame, away_team_id: int) -> ShotEvent:
     """This function retrieves the shot event of a specific match.
@@ -377,11 +378,7 @@ def _get_pass_event(event: dict, id: int, pitch_dimensions: tuple, periods: pd.D
 
     Returns:
         PassEvent: the pass event
-    """
-
-    PASS_OUTCOME_MAPPING = {
-        "": "",
-    }    
+    """   
 
     PASS_TYPE_MAPPING = {
         "Inswinging": "unspecified",
@@ -503,5 +500,3 @@ def _get_close_to_ball_event_info(
         "player_id": event["player"]["id"],
         "jersey": MISSING_INT
     }
-
-

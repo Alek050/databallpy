@@ -78,7 +78,7 @@ DATABALLPY_PASS_TYPES = [
 ]
 """The pass type strings that are supported in databallpy."""
 
-DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward"]
+DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward", "unspecified"]
 
 OPEN_MATCH_IDS_DFL = {
     "J03WMX": "1. FC Köln vs. FC Bayern München",
