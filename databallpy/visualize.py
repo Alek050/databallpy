@@ -91,9 +91,9 @@ def plot_soccer_pitch(
         area_length = 18 * meters_per_yard
         penalty_spot = 12 * meters_per_yard
         corner_radius = 1 * meters_per_yard
-        D_length = 8 * meters_per_yard
-        D_radius = 10 * meters_per_yard
-        D_pos = 12 * meters_per_yard
+        box_circle_length = 8 * meters_per_yard
+        box_circle_radius = 10 * meters_per_yard
+        box_circle_pos = 12 * meters_per_yard
         centre_circle_radius = 10 * meters_per_yard
 
         zorder = -2
@@ -226,9 +226,9 @@ def plot_soccer_pitch(
 
             # Draw the half circles by the box: the D
             y = (
-                np.linspace(-1, 1, 50) * D_length
+                np.linspace(-1, 1, 50) * box_circle_length
             )  # D_length is the chord of the circle that defines the D
-            x = np.sqrt(D_radius**2 - y**2) + D_pos
+            x = np.sqrt(box_circle_radius**2 - y**2) + box_circle_pos
             ax.plot(
                 s * half_pitch_length - s * x, y, lc, linewidth=linewidth, zorder=zorder
             )
@@ -535,9 +535,7 @@ def plot_tracking_data(
         return fig, ax
 
     except Exception as e:
-        LOGGER.exception(
-            f"Found an unexpected exception in plot_tracking_data(): \n{e}"
-        )
+        LOGGER.exception(f"Found an unexpected exception in plot_tracking_data(): \n{e}")
         raise e
 
 
@@ -937,9 +935,7 @@ def _plot_player_possession(
     ax: plt.axes, column_id: str, idx: int, match: Match, variable_fig_objs: list
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the player possession of the current frame."""
-    if pd.isnull(column_id) or pd.isnull(
-        match.tracking_data.loc[idx, f"{column_id}_x"]
-    ):
+    if pd.isnull(column_id) or pd.isnull(match.tracking_data.loc[idx, f"{column_id}_x"]):
         return variable_fig_objs, ax
 
     circle = plt.Circle(

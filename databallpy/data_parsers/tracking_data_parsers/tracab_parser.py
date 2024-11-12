@@ -127,9 +127,7 @@ def load_sportec_open_tracking_data(
         )
         total_size = int(response.headers.get("content-length", 0))
 
-        with open(
-            os.path.join(save_path, "tracking_data_temp.xml"), "wb"
-        ) as file, tqdm(
+        with open(os.path.join(save_path, "tracking_data_temp.xml"), "wb") as file, tqdm(
             desc="Downloading",
             total=total_size,
             unit="B",
@@ -272,9 +270,7 @@ def _get_tracking_data_xml(
         .dt.tz_convert("Europe/Berlin")
     )
     frames_df["end_datetime_td"] = (
-        frames_df["end_datetime_td"]
-        .dt.tz_localize("UTC")
-        .dt.tz_convert("Europe/Berlin")
+        frames_df["end_datetime_td"].dt.tz_localize("UTC").dt.tz_convert("Europe/Berlin")
     )
 
     return df, frames_df, frame_rate
@@ -472,9 +468,7 @@ def _get_tracab_metadata(soup: BeautifulSoup) -> Metadata:
     return metadata
 
 
-def _get_players_metadata_v1(
-    players_info: list[dict[str, int | float]]
-) -> pd.DataFrame:
+def _get_players_metadata_v1(players_info: list[dict[str, int | float]]) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
 
     Args:

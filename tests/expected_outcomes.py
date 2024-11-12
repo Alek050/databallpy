@@ -378,9 +378,7 @@ for key, shot_event in SHOT_EVENTS_OPTA.items():
     SHOT_EVENTS_OPTA_TRACAB[key].start_x = (
         SHOT_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
     )
-    SHOT_EVENTS_OPTA_TRACAB[key].start_y = (
-        SHOT_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
-    )
+    SHOT_EVENTS_OPTA_TRACAB[key].start_y = SHOT_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
 
 DRIBBLE_EVENTS_OPTA = {
     2499594285: DribbleEvent(
@@ -513,9 +511,7 @@ for key, pass_event in PASS_EVENTS_OPTA.items():
     PASS_EVENTS_OPTA_TRACAB[key].start_x = (
         PASS_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
     )
-    PASS_EVENTS_OPTA_TRACAB[key].start_y = (
-        PASS_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
-    )
+    PASS_EVENTS_OPTA_TRACAB[key].start_y = PASS_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
     PASS_EVENTS_OPTA_TRACAB[key].end_x = PASS_EVENTS_OPTA_TRACAB[key].end_x / 106 * 100
     PASS_EVENTS_OPTA_TRACAB[key].end_y = PASS_EVENTS_OPTA_TRACAB[key].end_y / 68 * 50
 

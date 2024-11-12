@@ -43,9 +43,7 @@ def get_approximate_voronoi(
         tracking_data = tracking_data.to_frame().T
 
     all_distances = np.empty((len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32)
-    all_assigned_players = np.empty(
-        (len(tracking_data), n_y_bins, n_x_bins), dtype="U7"
-    )
+    all_assigned_players = np.empty((len(tracking_data), n_y_bins, n_x_bins), dtype="U7")
     for i, (_, frame) in enumerate(tracking_data.iterrows()):
         player_column_ids = np.array(
             [
@@ -308,9 +306,7 @@ def get_player_influence(
         np.ndarray: Player influence values across the grid.
     """
     mean = get_mean_position_of_influence(x_val, y_val, vx_val, vy_val)
-    scaling_matrix = calculate_scaling_matrix(
-        np.hypot(vx_val, vy_val), distance_to_ball
-    )
+    scaling_matrix = calculate_scaling_matrix(np.hypot(vx_val, vy_val), distance_to_ball)
     covariance_matrix = calculate_covariance_matrix(vx_val, vy_val, scaling_matrix)
 
     grid_size = grid[0].shape

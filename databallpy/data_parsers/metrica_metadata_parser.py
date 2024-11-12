@@ -138,18 +138,14 @@ def _get_metadata(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
                 ) if not current_frame == MISSING_INT else periods_dict[
                     "start_datetime_td"
-                ].append(
-                    pd.to_datetime("NaT")
-                )
+                ].append(pd.to_datetime("NaT"))
             if is_event_data:
                 seconds = (current_frame - first_frame) / frame_rate
                 periods_dict["start_datetime_ed"].append(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
                 ) if not current_frame == MISSING_INT else periods_dict[
                     "start_datetime_ed"
-                ].append(
-                    pd.to_datetime("NaT")
-                )
+                ].append(pd.to_datetime("NaT"))
 
         elif "end" in name:
             periods_dict["end_frame"].append(current_frame)
@@ -160,17 +156,13 @@ def _get_metadata(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
                 ) if not current_frame == MISSING_INT else periods_dict[
                     "end_datetime_td"
-                ].append(
-                    pd.to_datetime("NaT")
-                )
+                ].append(pd.to_datetime("NaT"))
             if is_event_data:
                 periods_dict["end_datetime_ed"].append(
                     datetime + dt.timedelta(milliseconds=seconds * 1000)
                 ) if not current_frame == MISSING_INT else periods_dict[
                     "end_datetime_ed"
-                ].append(
-                    pd.to_datetime("NaT")
-                )
+                ].append(pd.to_datetime("NaT"))
 
     # add fifth period
     periods_dict["period_id"].append(5)

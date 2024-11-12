@@ -580,9 +580,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_event_data.loc[1:, "datetime"] -= pd.to_timedelta(1, unit="hours")
         expected_event_data.loc[1:, "datetime"] += pd.to_timedelta(1, unit="seconds")
 
-        res_event_data = align_event_data_datetime(
-            event_data, tracking_data, offset=1.0
-        )
+        res_event_data = align_event_data_datetime(event_data, tracking_data, offset=1.0)
         pd.testing.assert_frame_equal(res_event_data, expected_event_data)
 
     def test_get_time_difference_cost(self):

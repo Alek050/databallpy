@@ -55,11 +55,9 @@ jobs:
       - name: Install packages
         run: poetry install --with docs,developing
 
-      - name: Linters
-        run: |
-          poetry run flake8 tests/ databallpy/
-          poetry run isort --check-only --filter-files tests/ databallpy/
-          poetry run black --check tests/ databallpy/ 
+      - name: ruff linting
+        run: poetry run ruff format --check tests/ databallpy/
+
 
       - name: Test with pytest
         run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
