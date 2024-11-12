@@ -108,7 +108,9 @@ def get_match(
                 "Please provide an event data provider when providing an event"
                 " metadata location"
             )
-        elif event_data_provider == "statsbomb" and (event_match_loc is None or event_lineup_loc is None):
+        elif event_data_provider == "statsbomb" and (
+            event_match_loc is None or event_lineup_loc is None
+        ):
             LOGGER.error(
                 "Event data provider is statsbomb and either event_match_loc and/or event_lineup_loc was not provided."
             )
@@ -400,7 +402,12 @@ def load_tracking_data(
 
 
 def load_event_data(
-    *, event_data_loc: str, event_metadata_loc: str, event_data_provider: str, event_match_loc: str, event_lineup_loc: str
+    *,
+    event_data_loc: str,
+    event_metadata_loc: str,
+    event_data_provider: str,
+    event_match_loc: str,
+    event_lineup_loc: str,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the event data of a match
 
@@ -454,7 +461,9 @@ def load_event_data(
         )
     elif event_data_provider == "statsbomb":
         event_data, event_metadata, databallpy_events = load_statsbomb_event_data(
-            events_loc=event_data_loc, match_loc = event_match_loc, lineup_loc = event_lineup_loc
+            events_loc=event_data_loc,
+            match_loc=event_match_loc,
+            lineup_loc=event_lineup_loc,
         )
     elif event_data_provider in ["sportec", "dfl"]:
         event_data, event_metadata, databallpy_events = load_sportec_event_data(

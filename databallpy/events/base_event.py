@@ -166,7 +166,9 @@ class IndividualCloseToBallEvent:
         if not isinstance(self.outcome, bool):
             raise TypeError(f"outcome should be bool, not {type(self.outcome)}")
 
-        if not isinstance(self.related_event_id, (int, np.integer, str, list, type(None))):
+        if not isinstance(
+            self.related_event_id, (int, np.integer, str, list, type(None))
+        ):
             raise TypeError(
                 f"related_event_id should be int, not {type(self.related_event_id)}"
             )

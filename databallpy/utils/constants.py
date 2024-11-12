@@ -11,8 +11,7 @@ DATABALLPY_SET_PIECES = [
     "corner_kick",
     "kick_off",
     "penalty",
-    "goal_kick"
-    "no_set_piece",
+    "goal_kick" "no_set_piece",
     "unspecified",
 ]
 """The set piece types that are supported in databallpy."""
