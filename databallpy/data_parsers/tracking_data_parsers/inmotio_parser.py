@@ -18,13 +18,12 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import utc_to_local_datetime
 from databallpy.utils.utils import _to_float, _to_int
 
-LOGGER = create_logger(__name__)
 
-
+@logging_wrapper(__file__)
 def load_inmotio_tracking_data(
     tracking_data_loc: str, metadata_loc: str, verbose: bool = True
 ) -> tuple[pd.DataFrame, Metadata]:
@@ -42,29 +41,14 @@ def load_inmotio_tracking_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
-    LOGGER.info("Trying to load inmotio tracking data.")
-    if isinstance(tracking_data_loc, str):
-        if not os.path.exists(tracking_data_loc):
-            message = f"Could not find {tracking_data_loc}"
-            LOGGER.error(message)
-            raise FileNotFoundError(message)
-        if not os.path.exists(metadata_loc):
-            message = f"Could not find {metadata_loc}"
-            LOGGER.error(message)
-            raise FileNotFoundError(message)
-    else:
-        message = f"tracking_data_loc must be  a str, not a {type(tracking_data_loc)}"
-        LOGGER.error(message)
-        raise TypeError(message)
+    if not isinstance(tracking_data_loc, str):
+        raise TypeError (f"tracking_data_loc must be  a str, not a {type(tracking_data_loc)}")
 
     metadata = _get_metadata(metadata_loc)
-    LOGGER.info("Successfully loaded instat metadata.")
     td_channels = _get_td_channels(metadata_loc, metadata)
-    LOGGER.info("Successfully loaded instat tracking data channels.")
     tracking_data = _get_tracking_data(
         tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose
     )
-    LOGGER.info("Successfully loaded instat tracking data.")
     first_frame = metadata.periods_frames[metadata.periods_frames["start_frame"] > 0][
         "start_frame"
     ].min()
@@ -88,10 +72,9 @@ def load_inmotio_tracking_data(
     tracking_data["matchtime_td"] = _get_matchtime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
-    LOGGER.info("Successfully post-processed the instat tracking data.")
     return tracking_data, metadata
 
-
+@logging_wrapper(__file__)
 def _get_tracking_data(
     tracking_data_loc: str,
     td_channels: list,
@@ -204,7 +187,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
 
     return res
 
-
+@logging_wrapper(__file__)
 def _get_metadata(metadata_loc: str) -> Metadata:
     """Function to get the metadata of the match
 

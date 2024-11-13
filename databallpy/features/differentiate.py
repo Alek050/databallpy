@@ -4,11 +4,10 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.filters import _filter_data
-from databallpy.utils.logging import create_logger
-
-LOGGER = create_logger(__name__)
+from databallpy.utils.logging import logging_wrapper
 
 
+@logging_wrapper(__file__)
 def add_acceleration(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],
@@ -47,44 +46,41 @@ def add_acceleration(
         The function will delete the columns in input_columns with the acceleration if
         they already exist.
     """
-    try:
-        if isinstance(column_ids, str):
-            column_ids = [column_ids]
 
-        if filter_type not in ["moving_average", "savitzky_golay", None]:
-            raise ValueError(
-                "filter_type should be one of: 'moving_average', "
-                f"'savitzky_golay', None, got: {filter_type}"
-            )
-        for column_id in column_ids:
-            if (
-                column_id + "_vx" not in tracking_data.columns
-                or column_id + "_vy" not in tracking_data.columns
-            ):
-                raise ValueError(
-                    f"Velocity was not found for {column_id} in the DataFrame. "
-                    " Please calculate velocity first using get_velocity() function."
-                )
+    if isinstance(column_ids, str):
+        column_ids = [column_ids]
 
-        res_df = _differentiate(
-            tracking_data,
-            new_name="acceleration",
-            metric="v",
-            frame_rate=frame_rate,
-            filter_type=filter_type,
-            window=window_length,
-            poly_order=polyorder,
-            column_ids=column_ids,
-            max_val=max_acceleration,
-            inplace=inplace,
+    if filter_type not in ["moving_average", "savitzky_golay", None]:
+        raise ValueError(
+            "filter_type should be one of: 'moving_average', "
+            f"'savitzky_golay', None, got: {filter_type}"
         )
+    for column_id in column_ids:
+        if (
+            column_id + "_vx" not in tracking_data.columns
+            or column_id + "_vy" not in tracking_data.columns
+        ):
+            raise ValueError(
+                f"Velocity was not found for {column_id} in the DataFrame. "
+                " Please calculate velocity first using get_velocity() function."
+            )
 
-        return res_df
-    except Exception as e:
-        LOGGER.exception(f"Found unexpected exception in get_acceleration(): \n{e}")
-        raise e
+    res_df = _differentiate(
+        tracking_data,
+        new_name="acceleration",
+        metric="v",
+        frame_rate=frame_rate,
+        filter_type=filter_type,
+        window=window_length,
+        poly_order=polyorder,
+        column_ids=column_ids,
+        max_val=max_acceleration,
+        inplace=inplace,
+    )
 
+    return res_df
 
+@logging_wrapper(__file__)
 def add_velocity(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],
@@ -121,35 +117,32 @@ def add_velocity(
         The function will delete the columns in input_columns with the velocity if
         they already exist.
     """
-    try:
-        if isinstance(column_ids, str):
-            column_ids = [column_ids]
 
-        if filter_type not in ["moving_average", "savitzky_golay", None]:
-            raise ValueError(
-                "filter_type should be one of: 'moving_average', "
-                f"'savitzky_golay', None, got: {filter_type}"
-            )
+    if isinstance(column_ids, str):
+        column_ids = [column_ids]
 
-        res_df = _differentiate(
-            tracking_data,
-            new_name="velocity",
-            metric="",
-            frame_rate=frame_rate,
-            filter_type=filter_type,
-            window=window_length,
-            poly_order=polyorder,
-            column_ids=column_ids,
-            max_val=max_velocity,
-            inplace=inplace,
+    if filter_type not in ["moving_average", "savitzky_golay", None]:
+        raise ValueError(
+            "filter_type should be one of: 'moving_average', "
+            f"'savitzky_golay', None, got: {filter_type}"
         )
 
-        return res_df
-    except Exception as e:
-        LOGGER.exception(f"Found unexpected exception in get_velocity(): \n{e}")
-        raise e
+    res_df = _differentiate(
+        tracking_data,
+        new_name="velocity",
+        metric="",
+        frame_rate=frame_rate,
+        filter_type=filter_type,
+        window=window_length,
+        poly_order=polyorder,
+        column_ids=column_ids,
+        max_val=max_velocity,
+        inplace=inplace,
+    )
 
+    return res_df
 
+@logging_wrapper(__file__)
 def _differentiate(
     df: pd.DataFrame,
     *,
@@ -193,65 +186,61 @@ def _differentiate(
     if not inplace:
         df = df.copy()
 
-    try:
-        to_skip = len(metric) + 2
-        if column_ids is None:
-            column_ids = [x[:-to_skip] for x in df.columns if f"_{metric}x" in x]
 
-        dt = 1.0 / frame_rate
+    to_skip = len(metric) + 2
+    if column_ids is None:
+        column_ids = [x[:-to_skip] for x in df.columns if f"_{metric}x" in x]
 
-        cols_to_drop = np.array(
-            [
-                [c + f"_{new_name}", c + f"_{new_name[0]}x", c + f"_{new_name[0]}y"]
-                for c in column_ids
-            ]
-        ).ravel()
-        df.drop(cols_to_drop, axis=1, errors="ignore", inplace=True)
+    dt = 1.0 / frame_rate
 
-        res_dict = {}
-        for column_id in column_ids:
-            gradient_x = np.gradient(df[column_id + f"_{metric}x"].values, dt)
-            gradient_y = np.gradient(df[column_id + f"_{metric}y"].values, dt)
-            raw_differentiated = np.linalg.norm([gradient_x, gradient_y], axis=0)
+    cols_to_drop = np.array(
+        [
+            [c + f"_{new_name}", c + f"_{new_name[0]}x", c + f"_{new_name[0]}y"]
+            for c in column_ids
+        ]
+    ).ravel()
+    df.drop(cols_to_drop, axis=1, errors="ignore", inplace=True)
 
-            # Scale gradients if magnitude exceeds max_val
-            if not pd.isnull(max_val):
-                exceed_max = raw_differentiated > max_val
-                scale_factor = max_val / raw_differentiated[exceed_max]
-                gradient_x[exceed_max] *= scale_factor
-                gradient_y[exceed_max] *= scale_factor
+    res_dict = {}
+    for column_id in column_ids:
+        gradient_x = np.gradient(df[column_id + f"_{metric}x"].values, dt)
+        gradient_y = np.gradient(df[column_id + f"_{metric}y"].values, dt)
+        raw_differentiated = np.linalg.norm([gradient_x, gradient_y], axis=0)
 
-            # smoothing the signal
-            if filter_type is not None:
-                gradient_x = _filter_data(
-                    gradient_x,
-                    filter_type=filter_type,
-                    window_length=window,
-                    polyorder=poly_order,
-                )
-                gradient_y = _filter_data(
-                    gradient_y,
-                    filter_type=filter_type,
-                    window_length=window,
-                    polyorder=poly_order,
-                )
+        # Scale gradients if magnitude exceeds max_val
+        if not pd.isnull(max_val):
+            exceed_max = raw_differentiated > max_val
+            scale_factor = max_val / raw_differentiated[exceed_max]
+            gradient_x[exceed_max] *= scale_factor
+            gradient_y[exceed_max] *= scale_factor
 
-            res_dict[column_id + f"_{new_name[0]}x"] = np.array(gradient_x)
-            res_dict[column_id + f"_{new_name[0]}y"] = np.array(gradient_y)
-            res_dict[column_id + f"_{new_name}"] = np.linalg.norm(
-                [gradient_x, gradient_y], axis=0
+        # smoothing the signal
+        if filter_type is not None:
+            gradient_x = _filter_data(
+                gradient_x,
+                filter_type=filter_type,
+                window_length=window,
+                polyorder=poly_order,
+            )
+            gradient_y = _filter_data(
+                gradient_y,
+                filter_type=filter_type,
+                window_length=window,
+                polyorder=poly_order,
             )
 
-        new_columns_df = pd.DataFrame(res_dict)
+        res_dict[column_id + f"_{new_name[0]}x"] = np.array(gradient_x)
+        res_dict[column_id + f"_{new_name[0]}y"] = np.array(gradient_y)
+        res_dict[column_id + f"_{new_name}"] = np.linalg.norm(
+            [gradient_x, gradient_y], axis=0
+        )
 
-        if inplace:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
-                df[new_columns_df.columns] = new_columns_df
-            return None
-        else:
-            return pd.concat([df, new_columns_df], axis=1)
+    new_columns_df = pd.DataFrame(res_dict)
 
-    except Exception as e:
-        LOGGER.exception(f"Found unexpected exception in _differentiate: \n{e}")
-        raise e
+    if inplace:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+            df[new_columns_df.columns] = new_columns_df
+        return None
+    else:
+        return pd.concat([df, new_columns_df], axis=1)

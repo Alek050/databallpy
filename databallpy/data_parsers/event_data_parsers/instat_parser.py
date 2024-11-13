@@ -7,12 +7,10 @@ import pandas as pd
 
 from databallpy.data_parsers import Metadata
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import utc_to_local_datetime
 
-LOGGER = create_logger(__name__)
-
-instat_databallpy_map = {
+INSTAT_DATABALLPY_MAP = {
     "Attacking pass accurate": ["pass", 1],
     "Attacking pass inaccurate": ["pass", 0],
     "Unsuccessful dribbling": ["dribble", 0],
@@ -36,7 +34,7 @@ instat_databallpy_map = {
     "Accurate crossing from set piece with a goal": ["pass", 1],
 }
 
-
+logging_wrapper(__file__)
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> tuple[pd.DataFrame, Metadata]:
@@ -53,37 +51,25 @@ def load_instat_event_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: the event data of the match and the  metadata
     """
-    LOGGER.info("Trying to load instat event data.")
     if not isinstance(event_data_loc, str):
-        message = f"event_data_loc should be a string, not a {type(event_data_loc)}"
-        LOGGER.error(message)
-        raise TypeError(message)
+        raise TypeError(f"event_data_loc should be a string, not a {type(event_data_loc)}")
     if not isinstance(metadata_loc, str):
-        message = f"metadata_loc should be a string, not a {type(metadata_loc)}"
-        LOGGER.error(message)
-        raise TypeError(message)
+        raise TypeError(f"metadata_loc should be a string, not a {type(metadata_loc)}")
     if not event_data_loc[-5:] == ".json":
-        message = "instat event file should by of .json format"
-        LOGGER.error(message)
-        raise ValueError(message)
+        raise ValueError("instat event file should by of .json format")
     if not metadata_loc[-5:] == ".json":
-        message = "instat event metadata file should be of .json format"
-        LOGGER.error(message)
-        raise ValueError(message)
+        raise ValueError("instat event metadata file should be of .json format")
 
     metadata = _load_metadata(metadata_loc=metadata_loc)
-    LOGGER.info("Successfully loaded metadata if instat.")
     metadata = _update_metadata(metadata=metadata, event_data_loc=event_data_loc)
-    LOGGER.info("Successfully updated metadata of instat.")
     event_data, pitch_dimensions = _load_event_data(
         event_data_loc=event_data_loc, metadata=metadata
     )
-    LOGGER.info("Succesfully loaded instat event data.")
     metadata.pitch_dimensions = pitch_dimensions
 
     return event_data, metadata, {}
 
-
+logging_wrapper(__file__)
 def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     """Function to load the data from the metadata.json file
 
@@ -232,7 +218,7 @@ def _parse_instat_position(position: str) -> str:
             return pos
     return ""
 
-
+logging_wrapper(__file__)
 def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     """Function to load the event_data.json file, the events of the match.
     Note: this function does ignore qualifiers for now
@@ -325,10 +311,10 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
 
     event_data = pd.DataFrame(result_dict)
     event_data["databallpy_event"] = event_data["instat_event"].apply(
-        lambda x: instat_databallpy_map.get(x, [None, MISSING_INT])[0]
+        lambda x: INSTAT_DATABALLPY_MAP.get(x, [None, MISSING_INT])[0]
     )
     event_data["outcome"] = event_data["instat_event"].apply(
-        lambda x: instat_databallpy_map.get(x, [None, MISSING_INT])[1]
+        lambda x: INSTAT_DATABALLPY_MAP.get(x, [None, MISSING_INT])[1]
     )
 
     start_events = ["pass", "shot"]

@@ -13,9 +13,7 @@ from databallpy.data_parsers.sportec_metadata_parser import (
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.logging import create_logger
-
-LOGGER = create_logger(__name__)
+from databallpy.utils.logging import logging_wrapper
 
 SPORTEC_SET_PIECES_MAP = {
     "ThrowIn": "throw_in",
@@ -61,7 +59,7 @@ SPORTEC_UNCLEAR_EVENTS = [
 ]
 ALL_SPORTEC_EVENTS = SPORTEC_UNCLEAR_EVENTS + list(SPORTEC_ON_BALL_EVENTS_MAP.keys())
 
-
+@logging_wrapper(__file__)
 def load_sportec_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> tuple[pd.DataFrame, Metadata, dict[str, dict]]:
@@ -78,14 +76,13 @@ def load_sportec_event_data(
         tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
             metadata, and the databallpy events dictionary.
     """
-    LOGGER.info("Trying to load sportec event data.")
 
-    if not os.path.exists(event_data_loc):
-        LOGGER.error(f"Event data not found at {event_data_loc}")
-        raise FileNotFoundError(f"Event data not found at {event_data_loc}")
-    if not os.path.exists(metadata_loc):
-        LOGGER.error(f"Metadata not found at {metadata_loc}")
-        raise FileNotFoundError(f"Metadata not found at {metadata_loc}")
+    # if not os.path.exists(event_data_loc):
+    #     LOGGER.error(f"Event data not found at {event_data_loc}")
+    #     raise FileNotFoundError(f"Event data not found at {event_data_loc}")
+    # if not os.path.exists(metadata_loc):
+    #     LOGGER.error(f"Metadata not found at {metadata_loc}")
+    #     raise FileNotFoundError(f"Metadata not found at {metadata_loc}")
 
     metadata = _get_sportec_metadata(metadata_loc, only_event_data=True)
     event_data, databallpy_events = _get_sportec_event_data(event_data_loc, metadata)
@@ -108,7 +105,7 @@ def load_sportec_event_data(
 
     return event_data, metadata, databallpy_events
 
-
+@logging_wrapper(__file__)
 def load_sportec_open_event_data(
     match_id: str,
 ) -> tuple[pd.DataFrame, Metadata, dict[str, dict]]:
@@ -138,7 +135,7 @@ def load_sportec_open_event_data(
         os.path.join(save_path, "metadata.xml"),
     )
 
-
+@logging_wrapper(__file__)
 def _get_sportec_event_data(
     event_data_loc: str, metadata: Metadata
 ) -> tuple[pd.DataFrame, dict[str, dict]]:

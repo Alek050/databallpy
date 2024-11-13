@@ -1,10 +1,10 @@
 import pandas as pd
 
-from databallpy.utils.logging import create_logger
-
-LOGGER = create_logger(__name__)
+from databallpy.utils.logging import logging_wrapper
 
 
+
+@logging_wrapper(__file__)
 def get_covered_distance(
     tracking_data: pd.DataFrame,
     column_ids: list[str],
@@ -44,69 +44,66 @@ def get_covered_distance(
         presence of acceleration intervals in the input
     """
 
-    try:
-        _validate_inputs(
-            tracking_data,
-            column_ids,
-            frame_rate,
-            acceleration_intervals,
-            start_idx,
-            end_idx,
-        )
 
-        column_ids = sorted(column_ids)
-        velocity_intervals = (
-            _parse_intervals(velocity_intervals) if len(velocity_intervals) > 0 else []
-        )
-        acceleration_intervals = (
-            _parse_intervals(acceleration_intervals)
-            if len(acceleration_intervals) > 0
-            else []
-        )
-        result_dict = (
-            {"total_distance": []}
-            | {
-                f"total_distance_velocity_{interval[0]}_{interval[1]}": []
-                for interval in velocity_intervals
-            }
-            | {
-                f"total_distance_acceleration_{interval[0]}_{interval[1]}": []
-                for interval in acceleration_intervals
-            }
-        )
+    _validate_inputs(
+        tracking_data,
+        column_ids,
+        frame_rate,
+        acceleration_intervals,
+        start_idx,
+        end_idx,
+    )
 
-        tracking_data_velocity = pd.concat(
-            [tracking_data[player_id + "_velocity"] for player_id in column_ids], axis=1
-        ).fillna(0)
-        tracking_data_velocity.columns = tracking_data_velocity.columns.str.replace(
-            "_velocity", ""
-        )
-        distance_per_frame = tracking_data_velocity / frame_rate
+    column_ids = sorted(column_ids)
+    velocity_intervals = (
+        _parse_intervals(velocity_intervals) if len(velocity_intervals) > 0 else []
+    )
+    acceleration_intervals = (
+        _parse_intervals(acceleration_intervals)
+        if len(acceleration_intervals) > 0
+        else []
+    )
+    result_dict = (
+        {"total_distance": []}
+        | {
+            f"total_distance_velocity_{interval[0]}_{interval[1]}": []
+            for interval in velocity_intervals
+        }
+        | {
+            f"total_distance_acceleration_{interval[0]}_{interval[1]}": []
+            for interval in acceleration_intervals
+        }
+    )
 
-        start_idx = start_idx if start_idx is not None else tracking_data.index[0]
-        end_idx = end_idx if end_idx is not None else tracking_data.index[-1]
-        distance_per_frame = distance_per_frame.loc[start_idx:end_idx]
-        tracking_data = tracking_data.loc[start_idx:end_idx]
+    tracking_data_velocity = pd.concat(
+        [tracking_data[player_id + "_velocity"] for player_id in column_ids], axis=1
+    ).fillna(0)
+    tracking_data_velocity.columns = tracking_data_velocity.columns.str.replace(
+        "_velocity", ""
+    )
+    distance_per_frame = tracking_data_velocity / frame_rate
 
-        result_dict["total_distance"] = distance_per_frame.sum().values
+    start_idx = start_idx if start_idx is not None else tracking_data.index[0]
+    end_idx = end_idx if end_idx is not None else tracking_data.index[-1]
+    distance_per_frame = distance_per_frame.loc[start_idx:end_idx]
+    tracking_data = tracking_data.loc[start_idx:end_idx]
 
-        for intervals, interval_name in zip(
-            [velocity_intervals, acceleration_intervals], ["velocity", "acceleration"]
-        ):
-            if len(intervals) > 0:
-                result_dict = _add_covered_distance_interval(
-                    result_dict,
-                    interval_name,
-                    tracking_data,
-                    distance_per_frame,
-                    intervals,
-                    column_ids,
-                )
+    result_dict["total_distance"] = distance_per_frame.sum().values
 
-        return pd.DataFrame(result_dict, index=column_ids)
-    except Exception as e:
-        LOGGER.exception(f"Found unexpected exception in get_covered_distance(): \n{e}")
-        raise e
+    for intervals, interval_name in zip(
+        [velocity_intervals, acceleration_intervals], ["velocity", "acceleration"]
+    ):
+        if len(intervals) > 0:
+            result_dict = _add_covered_distance_interval(
+                result_dict,
+                interval_name,
+                tracking_data,
+                distance_per_frame,
+                intervals,
+                column_ids,
+            )
+
+    return pd.DataFrame(result_dict, index=column_ids)
 
 
 def _add_covered_distance_interval(

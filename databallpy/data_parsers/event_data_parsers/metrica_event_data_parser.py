@@ -20,10 +20,8 @@ from databallpy.data_parsers.metrica_metadata_parser import (
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import _to_float, _to_int
-
-LOGGER = create_logger(__name__)
 
 metrica_databallpy_map = {
     "pass": "pass",
@@ -33,6 +31,7 @@ metrica_databallpy_map = {
 }
 
 
+@logging_wrapper(__file__)
 def load_metrica_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> tuple[pd.DataFrame, Metadata]:
@@ -49,38 +48,25 @@ def load_metrica_event_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: The event data and the metadata
     """
-    LOGGER.info("Trying to load metrica event data")
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
-        if not os.path.exists(event_data_loc):
-            message = f"Could not find {event_data_loc}"
-            LOGGER.error(message)
-            raise FileNotFoundError(message)
         if not os.path.exists(metadata_loc):
-            message = f"Could not find {metadata_loc}"
-            LOGGER.error(message)
-            raise FileNotFoundError(message)
+            raise FileNotFoundError(
+                f"Could not find {metadata_loc}"
+            )    
     elif isinstance(event_data_loc, str) and "{" in event_data_loc:
-        LOGGER.info(
-            "event_data_loc has a '{' in it. Expecting it to be the json file"
-            " with the event data, not the location of the event data .json."
-        )
+        # event_data_loc has a '{' in it. Expecting it to be the json file
+        # with the event data, not the location of the event data .json.
         pass
     else:
-        message = (
+        raise TypeError(
             "tracking_data_loc must be either a str or a StringIO object,"
             f" not a {type(event_data_loc)}"
         )
-        LOGGER.error(message)
-        raise TypeError(message)
 
     metadata = _get_metadata(metadata_loc, is_tracking_data=False, is_event_data=True)
-    LOGGER.info("Succesfully loaded metadata")
     td_channels = _get_td_channels(metadata_loc, metadata)
-    LOGGER.info("Successfully loaded the tracking data channels from the metadata")
     metadata = _update_metadata(td_channels, metadata)
-    LOGGER.info("Successfully updated the metadata based on the tracking data channels")
     event_data = _get_event_data(event_data_loc)
-    LOGGER.info("Successfully loaded the metrica event data")
 
     # rescale the event locations, metrica data is scaled between 0 and 1.
     for col in [x for x in event_data.columns if "_x" in x]:
@@ -121,10 +107,9 @@ def load_metrica_event_data(
         metadata.home_team_id,
         pd.concat([metadata.home_players, metadata.away_players], ignore_index=True),
     )
-    LOGGER.info("Succesfully rescaled the data and added the databallpy events.")
     return event_data, metadata, databallpy_events
 
-
+@logging_wrapper(__file__)
 def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
     """Function to load the open event data of metrica
 
@@ -136,14 +121,12 @@ def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
     ed_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_events.json"
 
-    LOGGER.info("Downloading Metrica open event data...")
     raw_ed = requests.get(ed_link).text
     raw_metadata = requests.get(metadata_link).text
-    LOGGER.info("Succesfully downloaded the metrica open event data.")
 
     return load_metrica_event_data(raw_ed, raw_metadata)
 
-
+@logging_wrapper(__file__)
 def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
     """Function to load metrica event data
 
@@ -277,7 +260,7 @@ def _is_in_subtypes(subtypes: list[dict] | dict, name: str) -> bool:
             result = True
     return result
 
-
+@logging_wrapper(__file__)
 def _get_databallpy_events(
     event_data: pd.DataFrame,
     pitch_dimensions: tuple[float, float],

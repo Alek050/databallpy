@@ -25,12 +25,11 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import localize_datetime
 
-LOGGER = create_logger(__name__)
 
-
+@logging_wrapper(__file__)
 def load_tracab_tracking_data(
     tracab_loc: str, metadata_loc: str, verbose: bool = True
 ) -> tuple[pd.DataFrame, Metadata]:
@@ -45,19 +44,8 @@ def load_tracab_tracking_data(
     Returns:
         Tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
     """
-    LOGGER.info("Trying to load Tracab tracking data")
-
-    if not os.path.exists(tracab_loc):
-        message = f"Could not find {tracab_loc}."
-        LOGGER.error(message)
-        raise FileNotFoundError(message)
-    if not os.path.exists(metadata_loc):
-        message = f"Could not find {metadata_loc}."
-        LOGGER.error(message)
-        raise FileNotFoundError(message)
 
     metadata = _get_metadata(metadata_loc)
-    LOGGER.info("Successfully loaded the Tracab metdata.")
     if tracab_loc.endswith(".dat") or tracab_loc.endswith(".txt"):
         tracking_data = _get_tracking_data_txt(tracab_loc, verbose)
         tracking_data["datetime"] = _add_datetime(
@@ -76,7 +64,6 @@ def load_tracab_tracking_data(
         )
     else:
         message = "Tracab tracking data should be either .txt, .dat, or .xml format."
-        LOGGER.error(message)
         raise ValueError(message)
 
     tracking_data.insert(
@@ -94,10 +81,9 @@ def load_tracab_tracking_data(
     )
     metadata.periods_changed_playing_direction = changed_periods
 
-    LOGGER.info("Successfully post-processed the Tracab data.")
     return tracking_data, metadata
 
-
+@logging_wrapper(__file__)
 def load_sportec_open_tracking_data(
     match_id: str, verbose: bool
 ) -> tuple[pd.DataFrame, Metadata]:
@@ -153,7 +139,7 @@ def load_sportec_open_tracking_data(
         verbose=verbose,
     )
 
-
+@logging_wrapper(__file__)
 def _get_tracking_data_xml(
     tracab_loc: str,
     home_players: pd.DataFrame,
@@ -275,7 +261,7 @@ def _get_tracking_data_xml(
 
     return df, frames_df, frame_rate
 
-
+@logging_wrapper(__file__)
 def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     """Function that reads tracking data from .dat file and stores it in a pd.DataFrame
 
@@ -341,7 +327,7 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     df = _insert_missing_rows(df, "frame")
     return df
 
-
+@logging_wrapper(__file__)
 def _get_metadata(metadata_loc: str) -> Metadata:
     """Function that reads metadata.xml file and stores it in Metadata class
 
@@ -366,10 +352,9 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         return _get_sportec_metadata(metadata_loc)
     else:
         message = "Unknown type of tracab metadata, please open an issue on GitHub."
-        LOGGER.error(message)
         raise ValueError(message)
 
-
+@logging_wrapper(__file__)
 def _get_tracab_metadata(soup: BeautifulSoup) -> Metadata:
     """This version is used in the Netherlands"""
 
