@@ -6,6 +6,7 @@ import pandas as pd
 from databallpy.features.angle import get_smallest_angle
 from databallpy.utils.logging import logging_wrapper
 
+
 @logging_wrapper(__file__)
 def get_pressure_on_player(
     td_frame: pd.Series,
@@ -73,6 +74,7 @@ def get_pressure_on_player(
         tot_pressure += current_pressure
 
     return tot_pressure
+
 
 def calculate_variable_dfront(
     td_frame: pd.Series,

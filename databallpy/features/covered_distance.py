@@ -3,7 +3,6 @@ import pandas as pd
 from databallpy.utils.logging import logging_wrapper
 
 
-
 @logging_wrapper(__file__)
 def get_covered_distance(
     tracking_data: pd.DataFrame,
@@ -43,7 +42,6 @@ def get_covered_distance(
         add_velocity function. The acceleration for every player depends on the
         presence of acceleration intervals in the input
     """
-
 
     _validate_inputs(
         tracking_data,

@@ -1,6 +1,5 @@
 import io
 import os
-import io
 
 import numpy as np
 import pandas as pd
@@ -52,13 +51,15 @@ def load_metrica_tracking_data(
         if not os.path.exists(metadata_loc):
             message = f"Could not find {metadata_loc}"
             raise FileNotFoundError(message)
-       
+
     elif isinstance(tracking_data_loc, io.StringIO):
         # open tracking data, downloaded from internet.
         pass
     else:
-         raise TypeError("tracking_data_loc must be either a str or a StringIO object,"
-            f" not a {type(tracking_data_loc)}")
+        raise TypeError(
+            "tracking_data_loc must be either a str or a StringIO object,"
+            f" not a {type(tracking_data_loc)}"
+        )
 
     metadata = _get_metadata(metadata_loc)
     td_channels = _get_td_channels(metadata_loc, metadata)
@@ -85,6 +86,7 @@ def load_metrica_tracking_data(
     )
     return tracking_data, metadata
 
+
 @logging_wrapper(__file__)
 def load_metrica_open_tracking_data(
     verbose: bool = True,
@@ -110,6 +112,7 @@ def load_metrica_open_tracking_data(
     return load_metrica_tracking_data(
         tracking_data_loc=td_data, metadata_loc=td_metadata, verbose=verbose
     )
+
 
 @logging_wrapper(__file__)
 def _get_tracking_data(

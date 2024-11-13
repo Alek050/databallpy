@@ -50,9 +50,7 @@ def load_metrica_event_data(
     """
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
         if not os.path.exists(metadata_loc):
-            raise FileNotFoundError(
-                f"Could not find {metadata_loc}"
-            )    
+            raise FileNotFoundError(f"Could not find {metadata_loc}")
     elif isinstance(event_data_loc, str) and "{" in event_data_loc:
         # event_data_loc has a '{' in it. Expecting it to be the json file
         # with the event data, not the location of the event data .json.
@@ -109,6 +107,7 @@ def load_metrica_event_data(
     )
     return event_data, metadata, databallpy_events
 
+
 @logging_wrapper(__file__)
 def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
     """Function to load the open event data of metrica
@@ -125,6 +124,7 @@ def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
     raw_metadata = requests.get(metadata_link).text
 
     return load_metrica_event_data(raw_ed, raw_metadata)
+
 
 @logging_wrapper(__file__)
 def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
@@ -259,6 +259,7 @@ def _is_in_subtypes(subtypes: list[dict] | dict, name: str) -> bool:
         if subtypes["name"] == name:
             result = True
     return result
+
 
 @logging_wrapper(__file__)
 def _get_databallpy_events(

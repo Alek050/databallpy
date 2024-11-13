@@ -33,6 +33,8 @@ LOGGER = create_logger(__name__)
 
 
 logging_wrapper(__file__)
+
+
 def get_match(
     tracking_data_loc: str = None,
     tracking_metadata_loc: str = None,
@@ -95,13 +97,11 @@ def get_match(
             " metadata location"
         )
     elif tracking_data_loc and tracking_data_provider is None:
-        
         raise ValueError(
             "Please provide a tracking data provider when providing a tracking"
             " data location"
         )
     elif tracking_data_loc and tracking_metadata_loc is None:
-        
         raise ValueError(
             "Please provide a tracking metadata location when providing a tracking"
             " data location"
@@ -153,9 +153,7 @@ def get_match(
         uses_event_data = True
 
     if not uses_event_data and not uses_tracking_data:
-        raise ValueError(
-            "No data loaded, please provide data locations and providers"
-        )
+        raise ValueError("No data loaded, please provide data locations and providers")
 
     LOGGER.info(
         f"Loaded data in get_match():\n\tTracking data: {str(uses_tracking_data)}"
@@ -174,9 +172,7 @@ def get_match(
             event_data,
             databallpy_events,
         )
-        tracking_metadata = align_player_and_team_ids(
-            event_metadata, tracking_metadata
-        )
+        tracking_metadata = align_player_and_team_ids(event_metadata, tracking_metadata)
         (
             event_metadata.home_players,
             event_metadata.away_players,
@@ -199,9 +195,7 @@ def get_match(
     LOGGER.info("Creating match object in get_match()")
     match = Match(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
-        tracking_data_provider=tracking_data_provider
-        if uses_tracking_data
-        else None,
+        tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
         event_data=event_data if uses_event_data else pd.DataFrame(),
         event_data_provider=event_data_provider if uses_event_data else None,
         pitch_dimensions=tracking_metadata.pitch_dimensions
@@ -210,9 +204,7 @@ def get_match(
         periods=tracking_metadata.periods_frames
         if uses_tracking_data
         else event_metadata.periods_frames,
-        frame_rate=tracking_metadata.frame_rate
-        if uses_tracking_data
-        else MISSING_INT,
+        frame_rate=tracking_metadata.frame_rate if uses_tracking_data else MISSING_INT,
         home_team_id=event_metadata.home_team_id
         if uses_event_data
         else tracking_metadata.home_team_id,
@@ -243,9 +235,7 @@ def get_match(
         away_players=event_metadata.away_players
         if uses_event_data
         else tracking_metadata.away_players,
-        country=event_metadata.country
-        if uses_event_data
-        else tracking_metadata.country,
+        country=event_metadata.country if uses_event_data else tracking_metadata.country,
         allow_synchronise_tracking_and_event_data=allow_synchronise,
         shot_events=databallpy_events["shot_events"]
         if "shot_events" in databallpy_events.keys()
@@ -306,6 +296,7 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
         )
     return match
 
+
 @logging_wrapper(__file__)
 def load_tracking_data(
     *,
@@ -350,6 +341,7 @@ def load_tracking_data(
             verbose=verbose,
         )
     return tracking_data, tracking_metadata
+
 
 @logging_wrapper(__file__)
 def load_event_data(
@@ -402,6 +394,7 @@ def load_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
     return event_data, event_metadata, databallpy_events
+
 
 @logging_wrapper(__file__)
 def get_open_match(
@@ -485,11 +478,10 @@ def get_open_match(
         else {},
         _tracking_timestamp_is_precise=True,
         _event_timestamp_is_precise=True,
-        _periods_changed_playing_direction=(
-            metadata.periods_changed_playing_direction
-        ),
+        _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
     return match
+
 
 @logging_wrapper(__file__)
 def merge_metadata_periods(
@@ -514,6 +506,7 @@ def merge_metadata_periods(
         axis=1,
     )
     return merged_periods
+
 
 @logging_wrapper(__file__)
 def rescale_event_data(
@@ -564,6 +557,7 @@ def rescale_event_data(
 
     return event_data, databallpy_events
 
+
 @logging_wrapper(__file__)
 def align_player_and_team_ids(
     event_metadata: Metadata, tracking_metadata: Metadata
@@ -596,6 +590,7 @@ def align_player_and_team_ids(
     tracking_metadata.away_team_name = event_metadata.away_team_name
 
     return tracking_metadata
+
 
 @logging_wrapper(__file__)
 def merge_player_info(

@@ -35,6 +35,8 @@ INSTAT_DATABALLPY_MAP = {
 }
 
 logging_wrapper(__file__)
+
+
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> tuple[pd.DataFrame, Metadata]:
@@ -52,7 +54,9 @@ def load_instat_event_data(
         Tuple[pd.DataFrame, Metadata]: the event data of the match and the  metadata
     """
     if not isinstance(event_data_loc, str):
-        raise TypeError(f"event_data_loc should be a string, not a {type(event_data_loc)}")
+        raise TypeError(
+            f"event_data_loc should be a string, not a {type(event_data_loc)}"
+        )
     if not isinstance(metadata_loc, str):
         raise TypeError(f"metadata_loc should be a string, not a {type(metadata_loc)}")
     if not event_data_loc[-5:] == ".json":
@@ -69,7 +73,10 @@ def load_instat_event_data(
 
     return event_data, metadata, {}
 
+
 logging_wrapper(__file__)
+
+
 def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     """Function to load the data from the metadata.json file
 
@@ -218,7 +225,10 @@ def _parse_instat_position(position: str) -> str:
             return pos
     return ""
 
+
 logging_wrapper(__file__)
+
+
 def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     """Function to load the event_data.json file, the events of the match.
     Note: this function does ignore qualifiers for now

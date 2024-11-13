@@ -99,6 +99,8 @@ select = [
     # pep8-naming
     "N",
 ]
+fixable = ["ALL"]
+unfixable = []
 
 
 [tool.ruff.lint.per-file-ignores]

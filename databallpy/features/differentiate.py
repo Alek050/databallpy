@@ -80,6 +80,7 @@ def add_acceleration(
 
     return res_df
 
+
 @logging_wrapper(__file__)
 def add_velocity(
     tracking_data: pd.DataFrame,
@@ -142,6 +143,7 @@ def add_velocity(
 
     return res_df
 
+
 @logging_wrapper(__file__)
 def _differentiate(
     df: pd.DataFrame,
@@ -185,7 +187,6 @@ def _differentiate(
 
     if not inplace:
         df = df.copy()
-
 
     to_skip = len(metric) + 2
     if column_ids is None:

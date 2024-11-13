@@ -16,6 +16,7 @@ from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
 
+
 @logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
     tracking_data: pd.DataFrame,
@@ -126,9 +127,7 @@ def synchronise_tracking_and_event_data(
                 event_type = event_batch.loc[event, "databallpy_event"]
                 event_index = int(event_batch.loc[event, "index"])
                 tracking_frame = int(tracking_batch.loc[frame, "index"])
-                extra_tracking_info.loc[tracking_frame, "databallpy_event"] = (
-                    event_type
-                )
+                extra_tracking_info.loc[tracking_frame, "databallpy_event"] = event_type
                 extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
                 extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
                     frame, event
@@ -141,6 +140,7 @@ def synchronise_tracking_and_event_data(
         batch_first_datetime = batch_end_datetime
 
     return extra_tracking_info, extra_event_info
+
 
 @logging_wrapper(__file__)
 def _create_sim_mat(
@@ -198,6 +198,7 @@ def _create_sim_mat(
     sim_mat = -sim_mat + 1  # low cost is better similarity
 
     return sim_mat
+
 
 @logging_wrapper(__file__)
 def _needleman_wunsch(

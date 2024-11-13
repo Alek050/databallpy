@@ -59,6 +59,7 @@ SPORTEC_UNCLEAR_EVENTS = [
 ]
 ALL_SPORTEC_EVENTS = SPORTEC_UNCLEAR_EVENTS + list(SPORTEC_ON_BALL_EVENTS_MAP.keys())
 
+
 @logging_wrapper(__file__)
 def load_sportec_event_data(
     event_data_loc: str, metadata_loc: str
@@ -105,6 +106,7 @@ def load_sportec_event_data(
 
     return event_data, metadata, databallpy_events
 
+
 @logging_wrapper(__file__)
 def load_sportec_open_event_data(
     match_id: str,
@@ -134,6 +136,7 @@ def load_sportec_open_event_data(
         os.path.join(save_path, "event_data.xml"),
         os.path.join(save_path, "metadata.xml"),
     )
+
 
 @logging_wrapper(__file__)
 def _get_sportec_event_data(

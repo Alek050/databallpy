@@ -83,6 +83,7 @@ def load_tracab_tracking_data(
 
     return tracking_data, metadata
 
+
 @logging_wrapper(__file__)
 def load_sportec_open_tracking_data(
     match_id: str, verbose: bool
@@ -138,6 +139,7 @@ def load_sportec_open_tracking_data(
         os.path.join(save_path, "metadata.xml"),
         verbose=verbose,
     )
+
 
 @logging_wrapper(__file__)
 def _get_tracking_data_xml(
@@ -261,6 +263,7 @@ def _get_tracking_data_xml(
 
     return df, frames_df, frame_rate
 
+
 @logging_wrapper(__file__)
 def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     """Function that reads tracking data from .dat file and stores it in a pd.DataFrame
@@ -327,6 +330,7 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     df = _insert_missing_rows(df, "frame")
     return df
 
+
 @logging_wrapper(__file__)
 def _get_metadata(metadata_loc: str) -> Metadata:
     """Function that reads metadata.xml file and stores it in Metadata class
@@ -353,6 +357,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     else:
         message = "Unknown type of tracab metadata, please open an issue on GitHub."
         raise ValueError(message)
+
 
 @logging_wrapper(__file__)
 def _get_tracab_metadata(soup: BeautifulSoup) -> Metadata:

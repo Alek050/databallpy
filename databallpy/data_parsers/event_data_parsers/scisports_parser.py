@@ -1,5 +1,4 @@
 import json
-import os
 
 import numpy as np
 import pandas as pd
@@ -16,6 +15,7 @@ BODY_PART_MAPPING = {
     "RIGHT_FOOT": "right_foot",
     "LEFT_FOOT": "left_foot",
 }
+
 
 @logging_wrapper(__file__)
 def load_scisports_event_data(
@@ -44,6 +44,7 @@ def load_scisports_event_data(
     metadata = _load_metadata(events_json, pitch_dimensions)
     event_data, databallpy_events = _load_event_data(events_json, metadata)
     return event_data, metadata, databallpy_events
+
 
 @logging_wrapper(__file__)
 def _load_metadata(events_json: str, pitch_dimensions: tuple) -> Metadata:
@@ -216,6 +217,7 @@ def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.Da
         tz
     )
     return periods_frames
+
 
 @logging_wrapper(__file__)
 def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame, dict]:

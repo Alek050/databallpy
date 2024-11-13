@@ -1,5 +1,3 @@
-import os
-
 import bs4
 import chardet
 import numpy as np
@@ -42,7 +40,9 @@ def load_inmotio_tracking_data(
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
     """
     if not isinstance(tracking_data_loc, str):
-        raise TypeError (f"tracking_data_loc must be  a str, not a {type(tracking_data_loc)}")
+        raise TypeError(
+            f"tracking_data_loc must be  a str, not a {type(tracking_data_loc)}"
+        )
 
     metadata = _get_metadata(metadata_loc)
     td_channels = _get_td_channels(metadata_loc, metadata)
@@ -73,6 +73,7 @@ def load_inmotio_tracking_data(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
     return tracking_data, metadata
+
 
 @logging_wrapper(__file__)
 def _get_tracking_data(
@@ -186,6 +187,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
         res.append(f"{team}_{shirt_num}")
 
     return res
+
 
 @logging_wrapper(__file__)
 def _get_metadata(metadata_loc: str) -> Metadata:

@@ -21,9 +21,7 @@ def get_smallest_angle(
         np.ndarray | float: The smallest angle between the two vectors.
     """
     for input_list in [a_vec, b_vec]:
-        if not isinstance(input_list, list) and not isinstance(
-            input_list, np.ndarray
-        ):
+        if not isinstance(input_list, list) and not isinstance(input_list, np.ndarray):
             raise TypeError(
                 f"Input must be a numpy array, not {type(input_list).__name__}"
             )

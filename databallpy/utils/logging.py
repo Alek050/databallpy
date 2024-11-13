@@ -1,16 +1,17 @@
 import logging
 import os
+import traceback
 from configparser import ConfigParser
 from functools import wraps
-import traceback
-from typing import Callable, TypeVar, Any
+from typing import Callable, TypeVar
 
-R = TypeVar('R')
+R = TypeVar("R")
+
 
 def logging_wrapper(file_name: str) -> Callable[[Callable[..., R]], Callable[..., R]]:
     def decorator(func: Callable[..., R]) -> Callable[..., R]:
         logger = create_logger(file_name)
-        
+
         @wraps(func)
         def wrapper(*args, **kwargs) -> R:
             try:
@@ -19,10 +20,15 @@ def logging_wrapper(file_name: str) -> Callable[[Callable[..., R]], Callable[...
                 logger.info(f"Successfully ran the function `{func.__name__}`")
                 return result
             except Exception as e:
-                logger.error(f"Error in the function `{func.__name__}`: {e}\n{traceback.format_exc()}")
+                logger.error(
+                    f"Error in the function `{func.__name__}`: {e}\n{traceback.format_exc()}"
+                )
                 raise e
+
         return wrapper
+
     return decorator
+
 
 def create_logger(
     name: str, user_config_path: str = "databallpy_config.ini"

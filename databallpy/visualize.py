@@ -15,7 +15,6 @@ from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import logging_wrapper
 
 
-
 def requires_ffmpeg(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -228,9 +227,7 @@ def plot_soccer_pitch(
             np.linspace(-1, 1, 50) * box_circle_length
         )  # D_length is the chord of the circle that defines the D
         x = np.sqrt(box_circle_radius**2 - y**2) + box_circle_pos
-        ax.plot(
-            s * half_pitch_length - s * x, y, lc, linewidth=linewidth, zorder=zorder
-        )
+        ax.plot(s * half_pitch_length - s * x, y, lc, linewidth=linewidth, zorder=zorder)
 
     # remove axis labels and ticks
     ax.set_xticklabels([])
@@ -303,21 +300,21 @@ def plot_events(
         mask = (mask) & (event_data["databallpy_event"].isin(events))
     if outcome is not None:
         if outcome not in [0, 1]:
-            raise ValueError( f"'outcome' should be either 0 or 1, not {outcome}")
+            raise ValueError(f"'outcome' should be either 0 or 1, not {outcome}")
 
         mask = (mask) & (event_data["outcome"] == outcome)
     if len(player_ids) > 0:
         for wrong_id in [
             x for x in player_ids if x not in event_data["player_id"].unique()
         ]:
-            raise ValueError (
+            raise ValueError(
                 f"'{wrong_id}' is not found in event_data.player_id, can not "
                 "show events."
             )
         mask = (mask) & (event_data["player_id"].isin(player_ids))
     if team_id:
         if team_id not in [match.home_team_id, match.away_team_id]:
-            raise ValueError (
+            raise ValueError(
                 f"'{team_id}' is not the id of either teams, can not plot events."
             )
         mask = mask & (event_data["team_id"] == team_id)
@@ -325,8 +322,7 @@ def plot_events(
     event_data = event_data.loc[mask]
     if len(event_data) == 0:
         print(
-            "No events could be found that match your"
-            "requirements, please try again."
+            "No events could be found that match your" "requirements, please try again."
         )
         return None, None
 
@@ -391,11 +387,10 @@ def plot_events(
 
     # If color_by_col is not specified, color events using default settings
     else:
-        ax.scatter(
-            event_data["start_x"], event_data["start_y"], marker="x", zorder=2.5
-        )
+        ax.scatter(event_data["start_x"], event_data["start_y"], marker="x", zorder=2.5)
 
     return fig, ax
+
 
 @logging_wrapper(__file__)
 def plot_tracking_data(
@@ -439,7 +434,6 @@ def plot_tracking_data(
     Returns:
         tuple[plt.figure, plt.axes]: The figure and axes with the tracking data
     """
-
 
     td = match.tracking_data.loc[[idx]]
     td_ht = td[
@@ -671,6 +665,7 @@ def save_tracking_video(
     plt.clf()
     plt.close(fig)
 
+
 @logging_wrapper(__file__)
 def _pre_check_plot_td_inputs(
     match: Match,
@@ -684,24 +679,24 @@ def _pre_check_plot_td_inputs(
 ):
     """Function to check if the inputs for the save_match_clip function are correct."""
     if not isinstance(match, Match):
-        raise DataBallPyError( "match should be an instance of databallpy.Match")
+        raise DataBallPyError("match should be an instance of databallpy.Match")
 
     if variable_of_interest is not None:
         if isinstance(variable_of_interest, pd.Series):
             if not (variable_of_interest.index == td.index).all():
-               raise DataBallPyError(
+                raise DataBallPyError(
                     "index of the variable_of_interest should be equal to the index "
                     "of the start_idx:end_idx."
                 )
         elif isinstance(variable_of_interest, list):
             if len(variable_of_interest) != len(td):
-               raise DataBallPyError(
+                raise DataBallPyError(
                     "Length of variable_of_interest should be equal to the length of "
                     "the start_idx:end_idx."
                 )
     if add_player_possession:
         if "player_possession" not in match.tracking_data.columns:
-           raise DataBallPyError(
+            raise DataBallPyError(
                 "Column 'player_possession' not found in " "match.tracking_data.columns"
             )
 
@@ -725,12 +720,12 @@ def _pre_check_plot_td_inputs(
                 f" Type of heatmap_overlay: {type(heatmap_overlay)}"
             )
         if len(td) == 1 and len(heatmap_overlay.shape) != 2:
-           raise DataBallPyError(
+            raise DataBallPyError(
                 "heatmap_overlay should be a 2D array."
                 f" Heatmap overlay shape: {heatmap_overlay.shape}"
             )
         if len(td) > 1 and len(heatmap_overlay.shape) != 3:
-           raise DataBallPyError(
+            raise DataBallPyError(
                 "heatmap_overlay should be a 3D array."
                 f" Heatmap overlay shape: {heatmap_overlay.shape}"
             )
@@ -743,6 +738,7 @@ def _pre_check_plot_td_inputs(
 
         if not isinstance(cmap, Colormap) and cmap not in mpl.colormaps:
             raise DataBallPyError("cmap should be a matplotlib.colors.Colomap.")
+
 
 def _plot_heatmap_overlay(
     ax: plt.axes,
@@ -803,6 +799,7 @@ def _plot_velocities(
 
     return variable_fig_objs, ax
 
+
 def _plot_single_frame(
     ax: plt.axes,
     td_ht: pd.DataFrame,
@@ -860,6 +857,7 @@ def _plot_single_frame(
 
     return variable_fig_objs, ax
 
+
 def _plot_variable_of_interest(
     ax: plt.axes,
     value: any,
@@ -876,6 +874,7 @@ def _plot_variable_of_interest(
     variable_fig_objs.append(fig_obj)
 
     return variable_fig_objs, ax
+
 
 def _plot_player_possession(
     ax: plt.axes, column_id: str, idx: int, match: Match, variable_fig_objs: list
@@ -897,6 +896,7 @@ def _plot_player_possession(
     variable_fig_objs.append(fig_obj)
 
     return variable_fig_objs, ax
+
 
 def _plot_events(
     ax: plt.axes, td: pd.DataFrame, idx: int, match: Match, variable_fig_objs: list

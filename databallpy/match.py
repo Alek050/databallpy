@@ -16,7 +16,7 @@ from databallpy.events import (
 )
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.logging import logging_wrapper, create_logger
+from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.match_utils import (
     create_event_attributes_dataframe,
     player_column_id_to_full_name,
@@ -35,6 +35,7 @@ from databallpy.utils.utils import (
 from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__file__)
+
 
 def requires_tracking_data(func):
     @wraps(func)
@@ -376,9 +377,7 @@ class Match:
         Returns:
             str: column id of the player, for instance "home_1"
         """
-        return player_id_to_column_id(
-                self.home_players, self.away_players, player_id
-            )
+        return player_id_to_column_id(self.home_players, self.away_players, player_id)
 
     @property
     @requires_event_data

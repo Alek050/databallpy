@@ -3,8 +3,9 @@ from dataclasses import dataclass, fields
 import pandas as pd
 
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.logging import create_logger, logging_wrapper
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import _copy_value_, _values_are_equal_
+
 
 @dataclass
 class Metadata:
@@ -44,24 +45,24 @@ class Metadata:
                 f"list, not a {type(self.pitch_dimensions)}"
             )
         if not len(self.pitch_dimensions) == 2:
-            raise ValueError (
+            raise ValueError(
                 "pitch_dimensions should contain, two values: a length and a width "
                 f"of the pitch, current input is {self.pitch_dimensions}"
             )
         if not all([isinstance(x, float) for x in self.pitch_dimensions]):
-            raise TypeError (
+            raise TypeError(
                 "Both values in pitch dimensions should by floats, current inputs "
                 f"{[type(x) for x in self.pitch_dimensions]}"
             )
 
         # periods_frames
         if not isinstance(self.periods_frames, pd.DataFrame):
-            raise TypeError (
+            raise TypeError(
                 "periods_frames should be a pandas dataframe, not a "
                 f" {type(self.periods_frames)}"
             )
         if "period_id" not in self.periods_frames.columns:
-            raise ValueError ("'period' should be one of the columns in period_frames")
+            raise ValueError("'period' should be one of the columns in period_frames")
         if any(
             [
                 x not in self.periods_frames["period_id"].value_counts().index
@@ -77,18 +78,16 @@ class Metadata:
             if pd.isnull(self.periods_frames[col]).all():
                 continue
             if self.periods_frames[col].dt.tz is None:
-                raise ValueError(
-                    f"{col} column in period_frames should have a timezone"
-                )
+                raise ValueError(f"{col} column in period_frames should have a timezone")
 
         # frame_rate
         if not pd.isnull(self.frame_rate) and not self.frame_rate == MISSING_INT:
             if not isinstance(self.frame_rate, int):
-                raise TypeError (
+                raise TypeError(
                     f"frame_rate should be an integer, not a {type(self.frame_rate)}"
                 )
             if self.frame_rate < 1:
-                raise ValueError (f"frame_rate should be positive, not {self.frame_rate}")
+                raise ValueError(f"frame_rate should be positive, not {self.frame_rate}")
 
         # team id's
         for team, team_id in zip(
@@ -109,17 +108,21 @@ class Metadata:
             ["home", "away"], [self.home_team_name, self.away_team_name]
         ):
             if not isinstance(name, str):
-                raise TypeError( f"{team} team name should be a string, not a {type(name)}")
+                raise TypeError(
+                    f"{team} team name should be a string, not a {type(name)}"
+                )
 
         # team scores
         for team, score in zip(["home", "away"], [self.home_score, self.away_score]):
             if not pd.isnull(score) and not score == MISSING_INT:
                 if not isinstance(score, int):
-                    raise TypeError (
+                    raise TypeError(
                         f"{team} team score should be an integer, not a {type(score)}"
                     )
                 if score < 0:
-                    raise ValueError(f"{team} team score should be positive, not {score}")
+                    raise ValueError(
+                        f"{team} team score should be positive, not {score}"
+                    )
 
         # team formations
         for team, form in zip(
@@ -127,11 +130,11 @@ class Metadata:
         ):
             if not pd.isnull(form):
                 if not isinstance(form, str):
-                    raise TypeError (
+                    raise TypeError(
                         f"{team} team formation should be a string, not a {type(form)}"
                     )
                 if len(form) > 5:
-                    raise ValueError (
+                    raise ValueError(
                         f"{team} team formation should be of length 5 or smaller, not "
                         f"{len(form)}"
                     )
@@ -141,19 +144,19 @@ class Metadata:
             ["home", "away"], [self.home_players, self.away_players]
         ):
             if not isinstance(players, pd.DataFrame):
-                raise TypeError (
+                raise TypeError(
                     f"{team} team players should be a pandas dataframe, not a "
                     f"{type(players)}"
                 )
             if not all([x in players.columns for x in ["id", "full_name", "shirt_num"]]):
-                raise ValueError (
+                raise ValueError(
                     f"{team} team players should contain at least the column "
                     f"['id', 'full_name', 'shirt_num'], now its {players.columns}"
                 )
 
         # country
         if not isinstance(self.country, str):
-            raise TypeError( f"country should be a string, not a {type(self.country)}")
+            raise TypeError(f"country should be a string, not a {type(self.country)}")
 
     @logging_wrapper(__file__)
     def __eq__(self, other):

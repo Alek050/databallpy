@@ -178,6 +178,7 @@ OWN_GOAL_QUALIFIER = 280
 RELATED_EVENT_QUALIFIER = 55
 OPPOSITE_RELATED_EVENT_ID = 233  # used for dribbles
 
+
 @logging_wrapper(__file__)
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
@@ -204,7 +205,9 @@ def load_opta_event_data(
     if not isinstance(f24_loc, str):
         raise TypeError(f"f24_loc should be a string, not a {type(f24_loc)}")
     if not f7_loc[-4:] == ".xml":
-        raise ValueError(f"f7 opta file should by of .xml format, not {f7_loc.split('.')[-1]}")
+        raise ValueError(
+            f"f7 opta file should by of .xml format, not {f7_loc.split('.')[-1]}"
+        )
     if not f24_loc == "pass" and not f24_loc[-4:] == ".xml":
         raise ValueError(
             f"f24 opta file should be of .xml format, not {f24_loc.split('.')[-1]}"
@@ -271,7 +274,10 @@ def load_opta_event_data(
         databallpy_events = {}
     return event_data, metadata, databallpy_events
 
+
 logging_wrapper(__file__)
+
+
 def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     """Function to load metadata from the f7.xml opta file
 
@@ -445,7 +451,10 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
 
     return pd.DataFrame(result_dict)
 
+
 logging_wrapper(__file__)
+
+
 def _load_event_data(
     f24_loc: str,
     country: str,

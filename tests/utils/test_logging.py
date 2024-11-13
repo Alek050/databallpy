@@ -18,4 +18,3 @@ class TestCreateLogger(unittest.TestCase):
         self.assertEqual(logger.handlers[0].level, logging.DEBUG)
         self.assertIsInstance(logger.handlers[1], logging.FileHandler)
         self.assertEqual(logger.handlers[1].level, logging.INFO)
-    
