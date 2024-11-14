@@ -17,7 +17,6 @@ from databallpy.data_parsers.tracking_data_parsers import (
 from databallpy.match import Match
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_match import get_match, get_open_match, get_saved_match
-from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
@@ -177,6 +176,7 @@ class TestGetMatch(unittest.TestCase):
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
+            allow_synchronise_tracking_and_event_data=True,
         )
 
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -408,7 +408,7 @@ class TestGetMatch(unittest.TestCase):
             event_metadata_loc=self.md_opta_loc,
             tracking_data_provider=self.td_provider,
             event_data_provider=self.ed_provider,
-            check_quality=False,
+            check_quality=True,
         )
         assert match == self.expected_match_tracab_opta
 
@@ -647,27 +647,6 @@ class TestGetMatch(unittest.TestCase):
             get_saved_match(name="test_match2", path="tests/test_data")
         with self.assertRaises(TypeError):
             get_saved_match(name="not_a_match_but_a_list.pickle", path="tests/test_data")
-
-    def test_get_match_call_quality_check(self):
-        # does not check functionality since the tracking data is not valid
-        with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
-            get_match(
-                tracking_data_loc=self.td_tracab_loc,
-                tracking_metadata_loc=self.md_tracab_loc,
-                event_data_loc=self.ed_opta_loc,
-                event_metadata_loc=self.md_opta_loc,
-                tracking_data_provider=self.td_provider,
-                event_data_provider=self.ed_provider,
-                check_quality=True,
-            )
-
-        with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
-            get_match(
-                tracking_data_loc=self.td_tracab_loc,
-                tracking_metadata_loc=self.md_tracab_loc,
-                tracking_data_provider=self.td_provider,
-                check_quality=True,
-            )
 
     def test_get_match_scisports(self):
         res_match = get_match(

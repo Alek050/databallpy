@@ -13,12 +13,11 @@ from databallpy.events import (
 from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
 
-logger = create_logger(__name__)
 
-
+@logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
     tracking_data: pd.DataFrame,
     event_data: pd.DataFrame,
@@ -72,86 +71,78 @@ def synchronise_tracking_and_event_data(
             - tracking_frame: the frame in the tracking data that is synced to the event
             - sync_certainty: the certainty of the synchronisation
     """
-    try:
-        event_data_to_sync = event_data[
-            event_data["databallpy_event"].isin(DATABALLPY_EVENTS)
-        ]
 
-        if n_batches == "smart":
-            end_datetimes = create_smart_batches(tracking_data)
-        else:
-            end_datetimes = create_naive_batches(
-                n_batches,
-                tracking_data,
-            )
-        logger.info(
-            f"Succesfully created batches. Number of batches: {len(end_datetimes)}"
+    event_data_to_sync = event_data[
+        event_data["databallpy_event"].isin(DATABALLPY_EVENTS)
+    ]
+
+    if n_batches == "smart":
+        end_datetimes = create_smart_batches(tracking_data)
+    else:
+        end_datetimes = create_naive_batches(
+            n_batches,
+            tracking_data,
         )
 
-        if verbose:
-            end_datetimes = tqdm(
-                end_datetimes,
-                desc="Syncing event and tracking data",
-                unit="batches",
-                leave=False,
-            )
-
-        # loop over batches
-        extra_tracking_info = pd.DataFrame(
-            index=tracking_data.index,
-            columns=["databallpy_event", "event_id", "sync_certainty"],
+    if verbose:
+        end_datetimes = tqdm(
+            end_datetimes,
+            desc="Syncing event and tracking data",
+            unit="batches",
+            leave=False,
         )
-        extra_event_info = pd.DataFrame(
-            index=event_data.index, columns=["tracking_frame", "sync_certainty"]
+
+    # loop over batches
+    extra_tracking_info = pd.DataFrame(
+        index=tracking_data.index,
+        columns=["databallpy_event", "event_id", "sync_certainty"],
+    )
+    extra_event_info = pd.DataFrame(
+        index=event_data.index, columns=["tracking_frame", "sync_certainty"]
+    )
+    batch_first_datetime = tracking_data["datetime"].iloc[0]
+    for batch_end_datetime in end_datetimes:
+        # create batches
+        event_mask = event_data_to_sync["datetime"].between(
+            batch_first_datetime, batch_end_datetime, inclusive="left"
         )
-        batch_first_datetime = tracking_data["datetime"].iloc[0]
-        for batch_end_datetime in end_datetimes:
-            # create batches
-            event_mask = event_data_to_sync["datetime"].between(
-                batch_first_datetime, batch_end_datetime, inclusive="left"
+        tracking_mask = tracking_data["datetime"].between(
+            batch_first_datetime, batch_end_datetime, inclusive="left"
+        )
+        tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
+        event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
+
+        if len(event_batch) > 0:
+            sim_mat = _create_sim_mat(
+                tracking_batch,
+                event_batch,
+                all_events,
+                cost_functions,
             )
-            tracking_mask = tracking_data["datetime"].between(
-                batch_first_datetime, batch_end_datetime, inclusive="left"
-            )
-            tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
-            event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
+            event_frame_dict = _needleman_wunsch(sim_mat)
 
-            if len(event_batch) > 0:
-                sim_mat = _create_sim_mat(
-                    tracking_batch,
-                    event_batch,
-                    all_events,
-                    cost_functions,
-                )
-                event_frame_dict = _needleman_wunsch(sim_mat)
+            # assign events to tracking data frames
+            for event, frame in event_frame_dict.items():
+                event_id = int(event_batch.loc[event, "event_id"])
+                event_type = event_batch.loc[event, "databallpy_event"]
+                event_index = int(event_batch.loc[event, "index"])
+                tracking_frame = int(tracking_batch.loc[frame, "index"])
+                extra_tracking_info.loc[tracking_frame, "databallpy_event"] = event_type
+                extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
+                extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
+                    frame, event
+                ]
+                extra_event_info.loc[event_index, "tracking_frame"] = tracking_frame
+                extra_event_info.loc[event_index, "sync_certainty"] = sim_mat[
+                    frame, event
+                ]
 
-                # assign events to tracking data frames
-                for event, frame in event_frame_dict.items():
-                    event_id = int(event_batch.loc[event, "event_id"])
-                    event_type = event_batch.loc[event, "databallpy_event"]
-                    event_index = int(event_batch.loc[event, "index"])
-                    tracking_frame = int(tracking_batch.loc[frame, "index"])
-                    extra_tracking_info.loc[tracking_frame, "databallpy_event"] = (
-                        event_type
-                    )
-                    extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
-                    extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
-                        frame, event
-                    ]
-                    extra_event_info.loc[event_index, "tracking_frame"] = tracking_frame
-                    extra_event_info.loc[event_index, "sync_certainty"] = sim_mat[
-                        frame, event
-                    ]
+        batch_first_datetime = batch_end_datetime
 
-            batch_first_datetime = batch_end_datetime
-
-        logger.info("Succesfully synchronised tracking and event data")
-        return extra_tracking_info, extra_event_info
-    except Exception as e:
-        logger.exception(f"Failed to synchronise tracking and event data, error: {e}")
-        raise e
+    return extra_tracking_info, extra_event_info
 
 
+@logging_wrapper(__file__)
 def _create_sim_mat(
     tracking_batch: pd.DataFrame,
     event_batch: pd.DataFrame,
@@ -209,6 +200,7 @@ def _create_sim_mat(
     return sim_mat
 
 
+@logging_wrapper(__file__)
 def _needleman_wunsch(
     sim_mat: np.ndarray, gap_event: int = -10, gap_frame: int = 0
 ) -> dict:
