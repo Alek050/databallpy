@@ -25,13 +25,11 @@ def requires_ffmpeg(func):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-        except subprocess.CalledProcessError:
+        except Exception:
             raise FileNotFoundError(
                 "Could not find the subprocess ffmpeg. Make sure ffmpeg is installed"
                 " globally on you device and added to your python path."
             )
-        except Exception as e:
-            raise e
 
         return func(*args, **kwargs)
 
@@ -724,17 +722,18 @@ def _pre_check_plot_td_inputs(
                 "heatmap_overlay should be a 2D array."
                 f" Heatmap overlay shape: {heatmap_overlay.shape}"
             )
-        if len(td) > 1 and len(heatmap_overlay.shape) != 3:
-            raise DataBallPyError(
-                "heatmap_overlay should be a 3D array."
-                f" Heatmap overlay shape: {heatmap_overlay.shape}"
-            )
-        if len(td) > 1 and heatmap_overlay.shape[0] != len(td):
-            raise DataBallPyError(
-                "heatmap_overlay should have the same length as the tracking data."
-                f" Heatmap overlay length: {heatmap_overlay.shape[0]}, "
-                f"tracking data length: {len(td)}"
-            )
+        if len(td) > 1:
+            if len(heatmap_overlay.shape) != 3:
+                raise DataBallPyError(
+                    "heatmap_overlay should be a 3D array."
+                    f" Heatmap overlay shape: {heatmap_overlay.shape}"
+                )
+            if len(td) != heatmap_overlay.shape[0]:
+                raise DataBallPyError(
+                    "heatmap_overlay should have the same length as the tracking data."
+                    f" Heatmap overlay length: {heatmap_overlay.shape[0]}, "
+                    f"tracking data length: {len(td)}"
+                )
 
         if not isinstance(cmap, Colormap) and cmap not in mpl.colormaps:
             raise DataBallPyError("cmap should be a matplotlib.colors.Colomap.")
