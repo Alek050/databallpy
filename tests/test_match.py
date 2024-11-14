@@ -1000,6 +1000,12 @@ class TestMatch(unittest.TestCase):
             == "Preprocessing status:\n\tis_synchronised = True"
         )
 
+    def test_precise_timestamp(self):
+        assert self.expected_match_tracab_opta.tracking_timestamp_is_precise is True
+        assert self.expected_match_tracab_opta.event_timestamp_is_precise is True
+        with self.assertRaises(AttributeError):
+            self.expected_match_tracab_opta.tracking_timestamp_is_precise = False
+
     def test_synchronise_tracking_and_event_data_not_allowed(self):
         match = self.match_to_sync.copy()
         match.allow_synchronise_tracking_and_event_data = False
