@@ -90,7 +90,7 @@
 
 
 
-## new version
+## V0.5.2 (15/11/2024)
 
 - Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
 - Added parser for DFL/Sportec Solutions event data
