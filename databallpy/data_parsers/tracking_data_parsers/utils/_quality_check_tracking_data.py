@@ -248,7 +248,10 @@ def _check_player_velocity(
         player_specific_total_frames = (
             valid_frames[::-1].idxmax() - valid_frames.idxmax()
         )
-        percentages_valid_frames.append(sum_valid_frames / player_specific_total_frames)
+        percentages_valid_frames.append(
+            sum_valid_frames
+            / np.clip(player_specific_total_frames, a_min=1, a_max=np.inf)
+        )
         max_sequences_invalid_frames.append(
             _max_sequence_invalid_frames(valid_frames, False)
         )

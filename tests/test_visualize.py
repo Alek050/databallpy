@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features import add_velocity
-from databallpy.get_match import get_match
 from databallpy.utils.errors import DataBallPyError
+from databallpy.utils.get_match import get_match
 from databallpy.visualize import (
     _pre_check_plot_td_inputs,
     plot_events,
@@ -166,6 +166,7 @@ class TestVisualize(unittest.TestCase):
             heatmap_overlay=x,
             overlay_cmap="viridis",
             events=["pass", "dribble"],
+            variable_of_interest="12",
         )
         self.assertIsInstance(fig, plt.Figure)
         self.assertIsInstance(ax, plt.Axes)
@@ -174,6 +175,10 @@ class TestVisualize(unittest.TestCase):
 
     def test_save_match_clip(self):
         match = self.match.copy()
+        match.home_players = match.home_players.iloc[0:1]
+        match.home_players["shirt_num"] = 34
+        match.away_players = match.away_players.iloc[0:1]
+        match.away_players["shirt_num"] = 17
         match.tracking_data["player_possession"] = [
             None,
             "home_34",
@@ -209,6 +214,15 @@ class TestVisualize(unittest.TestCase):
                 title="test_clip",
                 heatmap_overlay=np.zeros((4, 10, 10)),
             )
+        with self.assertRaises(DataBallPyError):
+            save_tracking_video(
+                match,
+                1,
+                3,
+                save_folder="tests/test_data",
+                title="test_clip",
+                heatmap_overlay=np.zeros((3, 10, 10, 10)),
+            )
 
         with self.assertRaises(DataBallPyError):
             save_tracking_video(
@@ -238,6 +252,7 @@ class TestVisualize(unittest.TestCase):
             3,
             save_folder="tests/test_data",
             title="test_clip",
+            add_player_possession=True,
             variable_of_interest=series,
             heatmap_overlay=heatmap,
             overlay_cmap="viridis",
@@ -257,10 +272,9 @@ class TestVisualize(unittest.TestCase):
             event_data_provider="opta",
             check_quality=False,
         )
-        for col in (
-            synced_match.home_players_column_ids()
-            + synced_match.away_players_column_ids()
-        ):
+        synced_match.home_players = synced_match.home_players.iloc[1:2]
+        synced_match.away_players = synced_match.away_players.iloc[0:1]
+        for col in synced_match.get_column_ids():
             mask = synced_match.tracking_data[col + "_x"].notnull()
             synced_match.tracking_data.loc[mask, col + "_vx"] = 2
             synced_match.tracking_data.loc[mask, col + "_vy"] = 2
@@ -335,6 +349,17 @@ class TestVisualize(unittest.TestCase):
                 False,
                 False,
                 [[2, 3, 4], [5, 6, 7]],
+                "viridis",
+            )
+        with self.assertRaises(DataBallPyError):
+            _pre_check_plot_td_inputs(
+                match,
+                match.tracking_data.iloc[0:1],
+                [],
+                None,
+                False,
+                False,
+                np.array([[[2, 3, 4], [5, 6, 7]], [[2, 3, 4], [5, 6, 7]]]),
                 "viridis",
             )
 

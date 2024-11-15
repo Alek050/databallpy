@@ -171,9 +171,9 @@ def get_player_mappings(
                 keys = add_new_pseudonym(
                     keys, "player", original_player_name, original_id
                 )
-            pseudonym = keys.loc[
-                keys["original_id"] == original_id, "pseudonym"
-            ].values[0]
+            pseudonym = keys.loc[keys["original_id"] == original_id, "pseudonym"].values[
+                0
+            ]
 
             player_id_map[original_id] = pseudonym
             player_name_map[original_player_name] = f"{side}_{counter}"
@@ -437,38 +437,32 @@ def anonymise_datetime(
 
         new_frames = np.arange(len(match.tracking_data)) + 1
         frame_map = dict(zip(match.tracking_data["frame"], new_frames))
+        max_frame = frame_map[match.tracking_data["frame"].max()]
         match.tracking_data["frame"] = np.arange(len(match.tracking_data)) + 1
-
         match.periods["start_frame"] = (
-            match.periods["start_frame"].map(frame_map).fillna(MISSING_INT).astype(int)
+            match.periods["start_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
         match.periods["end_frame"] = (
-            match.periods["end_frame"].map(frame_map).fillna(MISSING_INT).astype(int)
+            match.periods["end_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
 
         match.home_players["start_frame"] = (
             match.home_players["start_frame"]
             .map(frame_map)
-            .fillna(MISSING_INT)
+            .fillna(max_frame)
             .astype(int)
         )
         match.home_players["end_frame"] = (
-            match.home_players["end_frame"]
-            .map(frame_map)
-            .fillna(MISSING_INT)
-            .astype(int)
+            match.home_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
         match.away_players["start_frame"] = (
             match.away_players["start_frame"]
             .map(frame_map)
-            .fillna(MISSING_INT)
+            .fillna(max_frame)
             .astype(int)
         )
         match.away_players["end_frame"] = (
-            match.away_players["end_frame"]
-            .map(frame_map)
-            .fillna(MISSING_INT)
-            .astype(int)
+            match.away_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
 
     if len(match.event_data) > 0:

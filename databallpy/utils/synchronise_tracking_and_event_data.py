@@ -13,12 +13,11 @@ from databallpy.events import (
 from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
 
-logger = create_logger(__name__)
 
-
+@logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
     tracking_data: pd.DataFrame,
     event_data: pd.DataFrame,
@@ -72,86 +71,78 @@ def synchronise_tracking_and_event_data(
             - tracking_frame: the frame in the tracking data that is synced to the event
             - sync_certainty: the certainty of the synchronisation
     """
-    try:
-        event_data_to_sync = event_data[
-            event_data["databallpy_event"].isin(DATABALLPY_EVENTS)
-        ]
 
-        if n_batches == "smart":
-            end_datetimes = create_smart_batches(tracking_data)
-        else:
-            end_datetimes = create_naive_batches(
-                n_batches,
-                tracking_data,
-            )
-        logger.info(
-            f"Succesfully created batches. Number of batches: {len(end_datetimes)}"
+    event_data_to_sync = event_data[
+        event_data["databallpy_event"].isin(DATABALLPY_EVENTS)
+    ]
+
+    if n_batches == "smart":
+        end_datetimes = create_smart_batches(tracking_data)
+    else:
+        end_datetimes = create_naive_batches(
+            n_batches,
+            tracking_data,
         )
 
-        if verbose:
-            end_datetimes = tqdm(
-                end_datetimes,
-                desc="Syncing event and tracking data",
-                unit="batches",
-                leave=False,
-            )
-
-        # loop over batches
-        extra_tracking_info = pd.DataFrame(
-            index=tracking_data.index,
-            columns=["databallpy_event", "event_id", "sync_certainty"],
+    if verbose:
+        end_datetimes = tqdm(
+            end_datetimes,
+            desc="Syncing event and tracking data",
+            unit="batches",
+            leave=False,
         )
-        extra_event_info = pd.DataFrame(
-            index=event_data.index, columns=["tracking_frame", "sync_certainty"]
+
+    # loop over batches
+    extra_tracking_info = pd.DataFrame(
+        index=tracking_data.index,
+        columns=["databallpy_event", "event_id", "sync_certainty"],
+    )
+    extra_event_info = pd.DataFrame(
+        index=event_data.index, columns=["tracking_frame", "sync_certainty"]
+    )
+    batch_first_datetime = tracking_data["datetime"].iloc[0]
+    for batch_end_datetime in end_datetimes:
+        # create batches
+        event_mask = event_data_to_sync["datetime"].between(
+            batch_first_datetime, batch_end_datetime, inclusive="left"
         )
-        batch_first_datetime = tracking_data["datetime"].iloc[0]
-        for batch_end_datetime in end_datetimes:
-            # create batches
-            event_mask = event_data_to_sync["datetime"].between(
-                batch_first_datetime, batch_end_datetime, inclusive="left"
+        tracking_mask = tracking_data["datetime"].between(
+            batch_first_datetime, batch_end_datetime, inclusive="left"
+        )
+        tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
+        event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
+
+        if len(event_batch) > 0:
+            sim_mat = _create_sim_mat(
+                tracking_batch,
+                event_batch,
+                all_events,
+                cost_functions,
             )
-            tracking_mask = tracking_data["datetime"].between(
-                batch_first_datetime, batch_end_datetime, inclusive="left"
-            )
-            tracking_batch = tracking_data[tracking_mask].reset_index(drop=False)
-            event_batch = event_data_to_sync[event_mask].reset_index(drop=False)
+            event_frame_dict = _needleman_wunsch(sim_mat)
 
-            if len(event_batch) > 0:
-                sim_mat = _create_sim_mat(
-                    tracking_batch,
-                    event_batch,
-                    all_events,
-                    cost_functions,
-                )
-                event_frame_dict = _needleman_wunsch(sim_mat)
+            # assign events to tracking data frames
+            for event, frame in event_frame_dict.items():
+                event_id = int(event_batch.loc[event, "event_id"])
+                event_type = event_batch.loc[event, "databallpy_event"]
+                event_index = int(event_batch.loc[event, "index"])
+                tracking_frame = int(tracking_batch.loc[frame, "index"])
+                extra_tracking_info.loc[tracking_frame, "databallpy_event"] = event_type
+                extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
+                extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
+                    frame, event
+                ]
+                extra_event_info.loc[event_index, "tracking_frame"] = tracking_frame
+                extra_event_info.loc[event_index, "sync_certainty"] = sim_mat[
+                    frame, event
+                ]
 
-                # assign events to tracking data frames
-                for event, frame in event_frame_dict.items():
-                    event_id = int(event_batch.loc[event, "event_id"])
-                    event_type = event_batch.loc[event, "databallpy_event"]
-                    event_index = int(event_batch.loc[event, "index"])
-                    tracking_frame = int(tracking_batch.loc[frame, "index"])
-                    extra_tracking_info.loc[
-                        tracking_frame, "databallpy_event"
-                    ] = event_type
-                    extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
-                    extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
-                        frame, event
-                    ]
-                    extra_event_info.loc[event_index, "tracking_frame"] = tracking_frame
-                    extra_event_info.loc[event_index, "sync_certainty"] = sim_mat[
-                        frame, event
-                    ]
+        batch_first_datetime = batch_end_datetime
 
-            batch_first_datetime = batch_end_datetime
-
-        logger.info("Succesfully synchronised tracking and event data")
-        return extra_tracking_info, extra_event_info
-    except Exception as e:
-        logger.exception(f"Failed to synchronise tracking and event data, error: {e}")
-        raise e
+    return extra_tracking_info, extra_event_info
 
 
+@logging_wrapper(__file__)
 def _create_sim_mat(
     tracking_batch: pd.DataFrame,
     event_batch: pd.DataFrame,
@@ -209,6 +200,7 @@ def _create_sim_mat(
     return sim_mat
 
 
+@logging_wrapper(__file__)
 def _needleman_wunsch(
     sim_mat: np.ndarray, gap_event: int = -10, gap_frame: int = 0
 ) -> dict:
@@ -229,38 +221,37 @@ def _needleman_wunsch(
     """
     n_frames, n_events = np.shape(sim_mat)
 
-    F = np.zeros((n_frames + 1, n_events + 1))
-    F[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
-    F[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
+    function_matrix = np.zeros((n_frames + 1, n_events + 1))
+    function_matrix[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
+    function_matrix[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
 
-    # Pointer matrix
-    P = np.zeros((n_frames + 1, n_events + 1))
-    P[:, 0] = 3
-    P[0, :] = 4
+    pointer_matrix = np.zeros((n_frames + 1, n_events + 1))
+    pointer_matrix[:, 0] = 3
+    pointer_matrix[0, :] = 4
 
     t = np.zeros(3)
     for i in range(n_frames):
         for j in range(n_events):
-            t[0] = F[i, j] + sim_mat[i, j]
-            t[1] = F[i, j + 1] + gap_frame  # top + gap frame
-            t[2] = F[i + 1, j] + gap_event  # left + gap event
+            t[0] = function_matrix[i, j] + sim_mat[i, j]
+            t[1] = function_matrix[i, j + 1] + gap_frame  # top + gap frame
+            t[2] = function_matrix[i + 1, j] + gap_event  # left + gap event
 
             # manually calculate tmax instead of using np.max() since it is
             # faster when using small arrays. On top of that, we can now fill in
             # the pointer matrix at the same time.
             if t[0] >= t[1] and t[0] >= t[2]:  # t[0] = tmax thus whe got a match
                 tmax = t[0]
-                P[i + 1, j + 1] += 2
+                pointer_matrix[i + 1, j + 1] += 2
             elif (
                 t[1] >= t[0] and t[1] >= t[2]
             ):  # t[1] = tmax thus we got a frame unassigned
                 tmax = t[1]
-                P[i + 1, j + 1] += 3
+                pointer_matrix[i + 1, j + 1] += 3
             else:  # t[2] = tmax thus we got an event unassigned
                 tmax = t[2]
-                P[i + 1, j + 1] += 4
+                pointer_matrix[i + 1, j + 1] += 4
 
-            F[i + 1, j + 1] = tmax
+            function_matrix[i + 1, j + 1] = tmax
 
     # Trace through an optimal alignment.
     i = n_frames
@@ -268,23 +259,23 @@ def _needleman_wunsch(
     frames = []
     events = []
     while i > 0 or j > 0:
-        if P[i, j] in [2, 5, 6, 9]:  # 2 was added, match
+        if pointer_matrix[i, j] in [2, 5, 6, 9]:  # 2 was added, match
             frames.append(i)
             events.append(j)
             i -= 1
             j -= 1
-        elif P[i, j] in [3, 5, 7, 9]:  # 3 was added, frame unassigned
+        elif pointer_matrix[i, j] in [3, 5, 7, 9]:  # 3 was added, frame unassigned
             frames.append(i)
             events.append(0)
             i -= 1
-        elif P[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
+        elif pointer_matrix[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
             )
         else:
             raise ValueError(
                 f"The algorithm got stuck due to an unexpected "
-                f"value of P[{i}, {j}]: {P[i, j]}"
+                f"value of P[{i}, {j}]: {pointer_matrix[i, j]}"
             )
 
     frames = frames[::-1]

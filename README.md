@@ -49,19 +49,16 @@ This package is developed to create a standardized way to analyse soccer matches
 
 Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. If you are interested in some of the features we implemented, see our [official documentation][docs-url].
 
-## V0.5.1. (10/10/2024)
+## V0.5.2 (15/11/2024)
 
-- Added event data parser for SciSports
-- Added expected threat model from Karun Singh to on ball events
-- Add function to add which team has ball possession based on the synchronised event data.
-- Solved encoding bug for Windows
-- Added function to obtain acceleration
-- Improved standardization and performance of synchronisation
-- Made save match clip more robust
-- Added function to calculate covered distances in different velocity and acceleration zones
-- Updated the documentation
-- Added support for numpy 2.x
-- Fixed minor bugs
+- Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
+- Added parser for DFL/Sportec Solutions event data
+- Added parser for Tracab xml format, used by DFL and Sportec solutions
+- Added integration for open data from DFL (open sourced by Bassek et al.)
+
+### Breaking changes
+- From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
+- `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
 
 ## Installation
 
@@ -74,26 +71,40 @@ $ pip install databallpy
 The package is centered around the `Match` object. A `Match` has tracking data, event data metadata about the match.
 For a more elaborate example, see the [Getting Started][getting-started-url].
 
-```console
-$ from databallpy import get_match, get_open_match
-$
-$ match = get_match(
-$   tracking_data_loc="../data/tracking_data.dat",
-$   tracking_metadata_loc="../data/tracking_metadata.xml",
-$   tracking_data_provider="tracab"
-$   event_data_loc="../data/event_data_f24.xml",
-$   event_metadata_loc="../data/event_metadata_f7.xml",
-$   event_data_provider="opta",
-$ )
-$
-$ # or to load an open metrica dataset of tracking and event data
-$ match = get_open_match()
-$
-$ match.home_team_name # the team name of the home playing team
-$ match.away_players # pandas dataframe with the names, ids, shirt numbers and positions of the away team
-$ match.tracking_data # pandas dataframe with tracking data of the match
-$ match.event_data # pandas dataframe with event data of the match
+```python
+from databallpy import get_match, get_open_match
+
+match = get_match(
+  tracking_data_loc="../data/tracking_data.dat",
+  tracking_metadata_loc="../data/tracking_metadata.xml",
+  tracking_data_provider="tracab"
+  event_data_loc="../data/event_data_f24.xml",
+  event_metadata_loc="../data/event_metadata_f7.xml",
+  event_data_provider="opta",
+)
+
+# or get the open match provided by the DFL (Sportec Solutions)
+match = get_open_match()
 ```
+
+> [!note]
+> The current supported tracking data providers are:
+> - Tracab (including Sportec Solutions from the DFL)
+> - Metrica
+> - Inmotio
+> 
+> The accepted variables for the `tracking_data_provider` are `["tracab", "metrica", "inmotio", "dfl", "sportec"]`
+> 
+> The current supported event data provider are:
+> - Opta
+> - Metrica
+> - Instat
+> - SciSports
+> - Sportec Solutions (from the DFL)
+> 
+> The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec"]`
+>
+> If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 
 See [the documentation][docs-url] of the `Match` object and the [example usage][example-url] for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Match` object.
 
@@ -165,9 +176,10 @@ Event data providers:
 - Metrica
 - Instat
 - SciSports
+- Sportec Solutions (for the DFL)
 
 Tracking data providers:
-- Tracab
+- Tracab (including Sportec Solutions format from the DFL)
 - Metrica
 - Inmotio
 

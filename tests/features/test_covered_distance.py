@@ -99,9 +99,7 @@ class TestCoveredDistance(unittest.TestCase):
         output = get_covered_distance(input_df, ["home_1", "away_2"], self.framerate)
         pd.testing.assert_frame_equal(output, expected_output_df)
 
-        output2 = get_covered_distance(
-            input_df, ["home_1"], self.framerate, start_idx=5
-        )
+        output2 = get_covered_distance(input_df, ["home_1"], self.framerate, start_idx=5)
         expected_output_df2 = pd.DataFrame(
             index=["home_1"],
             data={
@@ -114,9 +112,7 @@ class TestCoveredDistance(unittest.TestCase):
         input_df = self.input_td.copy()
         expected_output_df = self.expected_total_distance.copy()
         expected_output_df.drop(
-            columns=[
-                col for col in expected_output_df.columns if "acceleration" in col
-            ],
+            columns=[col for col in expected_output_df.columns if "acceleration" in col],
             inplace=True,
         )
         output = get_covered_distance(

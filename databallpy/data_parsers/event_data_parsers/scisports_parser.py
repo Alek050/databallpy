@@ -1,5 +1,4 @@
 import json
-import os
 
 import numpy as np
 import pandas as pd
@@ -7,9 +6,7 @@ import pandas as pd
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.logging import create_logger
-
-LOGGER = create_logger(__name__)
+from databallpy.utils.logging import logging_wrapper
 
 BODY_PART_MAPPING = {
     "FEET": "foot",
@@ -20,6 +17,7 @@ BODY_PART_MAPPING = {
 }
 
 
+@logging_wrapper(__file__)
 def load_scisports_event_data(
     events_json: str, pitch_dimensions: tuple = (106.0, 68.0)
 ) -> tuple[pd.DataFrame, Metadata, dict]:
@@ -37,31 +35,18 @@ def load_scisports_event_data(
         Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
         and the databallpy_events.
     """
-    LOGGER.info(f"Loading SciSports event data: events_json: {events_json}")
-    if not os.path.exists(events_json):
-        LOGGER.error(f"File {events_json} does not exist.")
-        raise FileNotFoundError(f"File {events_json} does not exist.")
-
     if not isinstance(pitch_dimensions, (tuple, list)) or len(pitch_dimensions) != 2:
-        LOGGER.error(
-            f"Invalid pitch_dimensions: {pitch_dimensions}. "
-            "Must be a tuple of length 2."
-        )
         raise ValueError(
             f"Invalid pitch_dimensions: {pitch_dimensions}. "
             "Must be a tuple of length 2."
         )
 
-    # Load the metadata
     metadata = _load_metadata(events_json, pitch_dimensions)
-    LOGGER.info("Successfully loaded SciSports metadata.")
-    # Load the event data
     event_data, databallpy_events = _load_event_data(events_json, metadata)
-
-    LOGGER.info("Successfully loaded SciSports event data and databallpy events.")
     return event_data, metadata, databallpy_events
 
 
+@logging_wrapper(__file__)
 def _load_metadata(events_json: str, pitch_dimensions: tuple) -> Metadata:
     """This function retrieves the metadata of a specific match.
 
@@ -145,8 +130,8 @@ def _get_players(
         "CMF": "midfielder",
         "LW": "forward",
         "RW": "forward",
-        "CF": "striker",
-        "UNKNOWN": "unknown",
+        "CF": "forward",
+        "UNKNOWN": "",
     }
 
     for player in events_json["players"]:
@@ -228,12 +213,13 @@ def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.Da
     periods_frames["start_datetime_ed"] = periods_frames[
         "start_datetime_ed"
     ].dt.tz_localize(tz)
-    periods_frames["end_datetime_ed"] = periods_frames[
-        "end_datetime_ed"
-    ].dt.tz_localize(tz)
+    periods_frames["end_datetime_ed"] = periods_frames["end_datetime_ed"].dt.tz_localize(
+        tz
+    )
     return periods_frames
 
 
+@logging_wrapper(__file__)
 def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame, dict]:
     """This function retrieves the event data of a specific match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
@@ -268,7 +254,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "team_name": [],
     }
 
-    DATABALLPY_EVENT_MAPPING = {
+    databallpy_event_mapping = {
         "PASS": "pass",
         "CROSS": "pass",
         "SHOT": "shot",
@@ -308,8 +294,8 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         event_data["player_name"].append(event["playerName"])
         event_data["team_name"].append(event["teamName"])
 
-        if event["baseTypeName"] in DATABALLPY_EVENT_MAPPING:
-            databallpy_event = DATABALLPY_EVENT_MAPPING[event["baseTypeName"]]
+        if event["baseTypeName"] in databallpy_event_mapping:
+            databallpy_event = databallpy_event_mapping[event["baseTypeName"]]
             if databallpy_event == "tackle":
                 databallpy_event = (
                     None

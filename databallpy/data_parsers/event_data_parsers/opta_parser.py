@@ -16,11 +16,9 @@ from databallpy.events import (
     TackleEvent,
 )
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
 from databallpy.utils.warnings import DataBallPyWarning
-
-LOGGER = create_logger(__name__)
 
 EVENT_TYPE_IDS = {
     1: "pass",
@@ -181,6 +179,7 @@ RELATED_EVENT_QUALIFIER = 55
 OPPOSITE_RELATED_EVENT_ID = 233  # used for dribbles
 
 
+@logging_wrapper(__file__)
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
 ) -> tuple[
@@ -201,34 +200,23 @@ def load_opta_event_data(
         Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
         and the databallpy_events.
     """
-    LOGGER.info("Trying to load opta event data.")
     if not isinstance(f7_loc, str):
-        message = f"f7_loc should be a string, not a {type(f7_loc)}"
-        LOGGER.error(message)
-        raise TypeError(message)
+        raise TypeError(f"f7_loc should be a string, not a {type(f7_loc)}")
     if not isinstance(f24_loc, str):
-        message = f"f24_loc should be a string, not a {type(f24_loc)}"
-        LOGGER.error(message)
-        raise TypeError(message)
-
+        raise TypeError(f"f24_loc should be a string, not a {type(f24_loc)}")
     if not f7_loc[-4:] == ".xml":
-        message = f"f7 opta file should by of .xml format, not {f7_loc.split('.')[-1]}"
-        LOGGER.error(message)
-        raise ValueError(message)
-
-    if not f24_loc == "pass":
-        if not f24_loc[-4:] == ".xml":
-            message = (
-                f"f24 opta file should be of .xml format, not {f24_loc.split('.')[-1]}"
-            )
-            LOGGER.error(message)
-            raise ValueError(message)
+        raise ValueError(
+            f"f7 opta file should by of .xml format, not {f7_loc.split('.')[-1]}"
+        )
+    if not f24_loc == "pass" and not f24_loc[-4:] == ".xml":
+        raise ValueError(
+            f"f24 opta file should be of .xml format, not {f24_loc.split('.')[-1]}"
+        )
 
     metadata = _load_metadata(f7_loc, pitch_dimensions=pitch_dimensions)
     all_players = pd.concat(
         [metadata.home_players, metadata.away_players], ignore_index=True
     )
-    LOGGER.info("Successfully loaded opta metadata.")
     if f24_loc != "pass":
         event_data, databallpy_events = _load_event_data(
             f24_loc,
@@ -237,7 +225,6 @@ def load_opta_event_data(
             pitch_dimensions=pitch_dimensions,
             players=all_players,
         )
-        LOGGER.info("Successfully loaded opta event data")
 
         # update timezones for databallpy_events
         for event_types in databallpy_events.values():
@@ -285,8 +272,10 @@ def load_opta_event_data(
     else:
         event_data = pd.DataFrame()
         databallpy_events = {}
-    LOGGER.info("Successfully rescaled opta event data.")
     return event_data, metadata, databallpy_events
+
+
+logging_wrapper(__file__)
 
 
 def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
@@ -386,9 +375,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         teams_info[team_info["side"]] = team_info
 
         # Player information
-        players_data = [
-            player.attrs for player in team_data.findChildren("MatchPlayer")
-        ]
+        players_data = [player.attrs for player in team_data.findChildren("MatchPlayer")]
         players_names = {}
         for player in team.findChildren("Player"):
             player_id = int(player.attrs["uID"][1:])
@@ -463,6 +450,9 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
         result_dict["shirt_num"].append(int(player["ShirtNumber"]))
 
     return pd.DataFrame(result_dict)
+
+
+logging_wrapper(__file__)
 
 
 def _load_event_data(

@@ -1,6 +1,6 @@
 from importlib.metadata import version
 
-from databallpy.get_match import get_match, get_open_match, get_saved_match
+from databallpy.utils.get_match import get_match, get_open_match, get_saved_match
 from databallpy.utils.logging import create_logger
 
 __version__ = version("databallpy")

@@ -14,9 +14,9 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.logging import create_logger
+from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.match_utils import (
     create_event_attributes_dataframe,
     player_column_id_to_full_name,
@@ -34,7 +34,7 @@ from databallpy.utils.utils import (
 )
 from databallpy.utils.warnings import DataBallPyWarning
 
-LOGGER = create_logger(__name__)
+LOGGER = create_logger(__file__)
 
 
 def requires_tracking_data(func):
@@ -43,7 +43,6 @@ def requires_tracking_data(func):
         if len(args[0].tracking_data) > 0:
             return func(*args, **kwargs)
         else:
-            LOGGER.error("Action not allowed, tracking data was not loaded.")
             raise DataBallPyError(
                 "No tracking data available, please load "
                 "Match object with tracking data first."
@@ -58,7 +57,6 @@ def requires_event_data(func):
         if len(args[0].event_data) > 0:
             return func(*args, **kwargs)
         else:
-            LOGGER.error("Action not allowed, event data was not loaded.")
             raise DataBallPyError(
                 "No event data available, please load "
                 "Match object with event data first."
@@ -233,13 +231,95 @@ class Match:
         return f"{home_text} - {away_text} {date.strftime('%Y-%m-%d %H:%M:%S')}"
 
     @requires_tracking_data
+    def get_column_ids(
+        self,
+        team: str | None = None,
+        positions: list[str] = ["goalkeeper", "defender", "midfielder", "forward"],
+        min_minutes_played: float | int = 0.1,
+    ) -> list[str]:
+        """Function to get the column ids that are used in the tracking data. With this
+        function you can filter on team side, position, or minimum minutes played.
+        If no arguments are specified, all column ids are returned of players that j
+        played at least 0.1 minute.
+
+        Args:
+            team (str | None, optional): Which team to add, can be {home, away, None}.
+                If None, both teams are added. Defaults to None.
+            positions (list[str], optional): The positions to include
+                {goalkeeper, defender, midfielder, forward}. Defaults to
+                ["goalkeeper", "defender", "midfielder", "forward"].
+            min_minutes_played (float | int, optional): The minimum number of minutes a
+                player needs to have played during the match to be returned.
+                Defaults to 1.0.
+
+        Raises:
+            ValueError: If team is not in {None, home, away}
+            ValueError: If there is an unknown position
+            TypeError: if min_minutes_played is not numeric
+
+        Returns:
+            list[str]: The column ids of the players.
+        """
+        if team and team not in ["home", "away"]:
+            raise ValueError(f"team should be either 'home' or 'away', not {team}")
+
+        for pos in positions:
+            if pos not in DATABALLPY_POSITIONS:
+                raise ValueError(
+                    f"Position {pos} is not supported in databallpy, should be in "
+                    f"{DATABALLPY_POSITIONS}"
+                )
+
+        if not isinstance(min_minutes_played, (float, int, np.floating, np.integer)):
+            raise TypeError("min_minutes_played should be a float or integer")
+
+        if team:
+            players = self.home_players if team == "home" else self.away_players
+        else:
+            players = pd.concat(
+                [self.home_players, self.away_players], ignore_index=True
+            )
+
+        if len(positions) > 0:
+            if "position" not in players.columns:
+                warnings.warn(
+                    "No position information found in players, can not filter on "
+                    "positions. Returning all positions.",
+                    DataBallPyWarning,
+                )
+            else:
+                players = players[players["position"].isin(positions)]
+
+        if not (players["start_frame"] == MISSING_INT).all():
+            players = players[
+                (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
+                >= min_minutes_played
+            ]
+
+        return [
+            f"home_{row.shirt_num}"
+            if row.id in self.home_players["id"].to_list()
+            else f"away_{row.shirt_num}"
+            for row in players.itertuples(index=False)
+        ]
+
+    @requires_tracking_data
     def home_players_column_ids(self) -> list[str]:
         """Function to get all column ids of the tracking data that refer to information
         about the home team players
 
+        Depreciation: This function is depreciated and will be removed in version
+        0.7.0. Please use match.get_column_ids(team="home").
+
         Returns:
             list[str]: All column ids of the home team players
         """
+
+        warnings.warn(
+            "match.home_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use match.get_column_ids(team='home')",
+            DeprecationWarning,
+        )
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -251,9 +331,18 @@ class Match:
         """Function to get all column ids of the tracking data that refer to information
         about the away team players
 
+        Depreciation: This function is depreciated and will be removed in version
+        0.7.0. Please use match.get_column_ids(team="away").
+
         Returns:
             list[str]: All column ids of the away team players
         """
+
+        warnings.warn(
+            "match.away_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use match.get_column_ids(team='away')",
+            DeprecationWarning,
+        )
         return [
             id[:-2]
             for id in self.tracking_data.columns
@@ -278,6 +367,7 @@ class Match:
     def preprocessing_status(self):
         return f"Preprocessing status:\n\tis_synchronised = {self.is_synchronised}"
 
+    @logging_wrapper(__file__)
     def player_id_to_column_id(self, player_id: int) -> str:
         """Simple function to get the column id based on player id
 
@@ -287,16 +377,7 @@ class Match:
         Returns:
             str: column id of the player, for instance "home_1"
         """
-        try:
-            return player_id_to_column_id(
-                self.home_players, self.away_players, player_id
-            )
-        except ValueError:
-            LOGGER.error(
-                f"Player_id {player_id} is not in either one of the teams, could not "
-                "obtain column id of player in match.player_id_to_column_id()."
-            )
-            raise ValueError(f"{player_id} is not in either one of the teams")
+        return player_id_to_column_id(self.home_players, self.away_players, player_id)
 
     @property
     @requires_event_data
@@ -327,9 +408,7 @@ class Match:
             pd.DataFrame: DataFrame with all information of the dribbles in the match"""
 
         if self._dribbles_df is None:
-            LOGGER.info(
-                "Creating the match._dribbles_df dataframe in match.dribbles_df"
-            )
+            LOGGER.info("Creating the match._dribbles_df dataframe in match.dribbles_df")
             self._dribbles_df = create_event_attributes_dataframe(self.dribble_events)
 
             LOGGER.info(
@@ -398,6 +477,105 @@ class Match:
         else:
             raise ValueError(f"Event with id {event_id} not found in the match.")
 
+    def get_frames(
+        self, frames: int | list[int], playing_direction: str = "team_oriented"
+    ) -> pd.DataFrame:
+        """Function to get the frame of the match with the given frame
+
+        Args:
+            frames (int|list[int]): The frames of the match
+            playing_direction (str, optional): The coordinate system of the frame.
+                Defaults to "team_oriented", options are {team_oriented,
+                possession_oriented}. For more info on the coordinate systems, see
+                the documentation
+
+        Returns:
+            pd.DataFrame: The frame of the match with the given frames
+        """
+        if isinstance(frames, (int, np.integer)):
+            frames = [frames]
+
+        unrecognized_frames = [
+            frame for frame in frames if frame not in self.tracking_data["frame"].values
+        ]
+        if len(unrecognized_frames) > 0:
+            raise ValueError(f"Frame(s) {unrecognized_frames} not found in the match.")
+
+        if playing_direction == "team_oriented":
+            return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
+        elif playing_direction == "possession_oriented":
+            if (
+                "ball_possession" not in self.tracking_data.columns
+                or pd.isna(self.tracking_data["ball_possession"]).all()
+            ):
+                raise ValueError(
+                    "No `ball_possession` column found in tracking data, can not get"
+                    " frames in possession coordinate system without this column. "
+                    "Please run the add_team_possession() function first."
+                )
+
+            # current coordinate system: home from left to right, away right to left
+            suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+            cols_to_swap = [
+                col for col in self.tracking_data.columns if col.endswith(suffixes)
+            ]
+            temp_td = self.tracking_data.loc[
+                self.tracking_data["frame"].isin(frames)
+            ].copy()
+            temp_td.loc[
+                self.tracking_data["ball_possession"] == "away", cols_to_swap
+            ] *= -1
+            return temp_td
+
+        else:
+            raise ValueError(f"Coordinate system {playing_direction} is not supported.")
+
+    def get_event_frame(
+        self, event_id: int | str, playing_direction: str = "team_oriented"
+    ) -> pd.DataFrame:
+        """Function to get the frame of the event with the given event_id
+
+        Args:
+            event_id (int | str): The id of the event
+            playing_direction (str, optional): The coordinate system of the frame.
+                Defaults to "team_oriented", options are {team_oriented,
+                possession_oriented}. For more info on the coordinate systems, see
+                the databallpy documentation
+
+        Raises:
+            ValueError: if the event with the given event_id is not found in the match
+            ValueError: if the event with the given event_id is not found in the
+                tracking data
+
+        Returns:
+            pd.DataFrame: The frame of the match with the given event_id
+        """
+        if not self._is_synchronised:
+            raise DataBallPyError(
+                "Tracking and event data are not synchronised yet. Please run the"
+                " synchronise_tracking_and_event_data() method first."
+            )
+        event = self.get_event(event_id)
+        frame_id = self.tracking_data.loc[
+            self.tracking_data["event_id"] == event.event_id, "frame"
+        ].iloc[0]
+        frame = self.get_frames(frame_id, playing_direction="team_oriented")
+        if playing_direction == "team_oriented":
+            return frame
+        elif playing_direction == "possession_oriented":
+            if event.team_side == "away":
+                suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+                cols_to_swap = [
+                    col for col in self.tracking_data.columns if col.endswith(suffixes)
+                ]
+                frame = self.tracking_data.loc[
+                    self.tracking_data["frame"] == frame_id
+                ].copy()
+                frame.loc[:, cols_to_swap] *= -1
+        else:
+            raise ValueError(f"Coordinate system {playing_direction} is not supported.")
+        return frame
+
     @requires_event_data
     @requires_tracking_data
     def add_tracking_data_features_to_shots(self):
@@ -428,9 +606,6 @@ class Match:
                 self.tracking_data["event_id"] == shot.event_id
             ]
 
-            # if, for some reason, the shot is not found in the tracking data, continue
-            if len(tracking_data_frame) == 0:
-                continue
             tracking_data_frame = tracking_data_frame.iloc[0]
 
             if team_side == "home":
@@ -449,9 +624,7 @@ class Match:
                     & (self.away_players["position"] == "goalkeeper")
                 )
 
-                gk_column_id = (
-                    f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
-                )
+                gk_column_id = f"away_{self.away_players.loc[mask, 'shirt_num'].iloc[0]}"
             else:
                 mask = (
                     (
@@ -468,9 +641,7 @@ class Match:
                     & (self.home_players["position"] == "goalkeeper")
                 )
 
-                gk_column_id = (
-                    f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
-                )
+                gk_column_id = f"home_{self.home_players.loc[mask, 'shirt_num'].iloc[0]}"
 
             shot.add_tracking_data_features(
                 tracking_data_frame,
@@ -516,14 +687,14 @@ class Match:
         away_column_ids = [
             x[:-2] for x in self.tracking_data.columns if x[-2:] == "_x" and "away" in x
         ]
+        all_passes = self.pass_events.values()
         if verbose:
             all_passes = tqdm(
-                self.pass_events.values(),
+                all_passes,
                 desc="Adding tracking data features to passes",
                 leave=False,
             )
-        else:
-            all_passes = self.pass_events.values()
+
         for pass_ in all_passes:
             team_side = (
                 "home" if pass_.player_id in self.home_players["id"].values else "away"
@@ -533,9 +704,6 @@ class Match:
                 self.tracking_data["event_id"] == pass_.event_id
             ]
 
-            # if, for some reason, the pass is not found in the tracking data, continue
-            if len(tracking_data_frame) == 0:
-                continue
             tracking_data_frame = tracking_data_frame.iloc[0]
 
             # find the end location of the pass
@@ -769,10 +937,8 @@ class Match:
             not provided, the current working directory will be used
             verbose (bool): if True, saved name will be printed
         """
-        if name is None or not isinstance(name, str):
-            name = self.name
-        if path is None:
-            path = os.getcwd()
+        name = name if isinstance(name, str) else self.name
+        path = path if path is not None else os.getcwd()
         name = name.replace(":", "_")
         pickle_path = os.path.join(path, f"{name}.pickle")
         assert os.path.exists(path), f"Path {path} does not exist"
@@ -783,6 +949,7 @@ class Match:
         LOGGER.info(f"Match saved to {os.path.join(path, name)}.pickle")
 
 
+@logging_wrapper(__file__)
 def check_inputs_match_object(match: Match):
     """Function to check if the inputs of the match object are correct
 
@@ -792,27 +959,23 @@ def check_inputs_match_object(match: Match):
     LOGGER.info("Checking the inputs of the match object")
     # tracking_data
     if not isinstance(match.tracking_data, pd.DataFrame):
-        message = (
+        raise TypeError(
             f"tracking data should be a pandas df, not a {type(match.tracking_data)}"
         )
-        LOGGER.error(message)
-        raise TypeError(message)
 
     if len(match.tracking_data) > 0:
         for col in ["frame", "ball_x", "ball_y", "datetime"]:
             if col not in match.tracking_data.columns.to_list():
-                message = f"No {col} in tracking_data columns, this is manditory!"
-                LOGGER.error(message)
-                raise ValueError(message)
+                raise ValueError(
+                    f"No {col} in tracking_data columns, this is manditory!"
+                )
 
         # tracking_data_provider
         if not isinstance(match.tracking_data_provider, str):
-            message = (
+            raise TypeError(
                 "tracking data provider should be a string, not a "
                 f"{type(match.tracking_data_provider)}"
             )
-            LOGGER.error(message)
-            raise TypeError(message)
 
         # tracking data ball status
         ball_status_value_counts = match.tracking_data["ball_status"].value_counts()
@@ -851,7 +1014,7 @@ def check_inputs_match_object(match: Match):
                 ball_alive_mask, "ball_x"
             ].first_valid_index()
             if (
-                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 5.0
+                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 7.0
                 or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
             ):
                 x_start = match.tracking_data.loc[first_frame, "ball_x"]
@@ -870,23 +1033,19 @@ def check_inputs_match_object(match: Match):
 
         # check if there is a valid datetime object
         if not pd.api.types.is_datetime64_any_dtype(match.tracking_data["datetime"]):
-            message = (
+            raise TypeError(
                 "datetime column in tracking data should be a datetime dtype, not a "
                 f"{type(match.tracking_data['datetime'])}"
             )
-            LOGGER.error(message)
-            raise TypeError(message)
         # also make sure it is tz sensitive
         if match.tracking_data["datetime"].dt.tz is None:
-            message = "datetime column in tracking data should have a timezone"
-            LOGGER.error(message)
-            raise ValueError(message)
+            raise ValueError("datetime column in tracking data should have a timezone")
 
     # event_data
     if not isinstance(match.event_data, pd.DataFrame):
-        message = f"event data should be a pandas df, not a {type(match.event_data)}"
-        LOGGER.error(message)
-        raise TypeError(message)
+        raise TypeError(
+            f"event data should be a pandas df, not a {type(match.event_data)}"
+        )
     if len(match.event_data) > 0:
         for col in [
             "event_id",
@@ -897,69 +1056,52 @@ def check_inputs_match_object(match: Match):
             "start_x",
             "start_y",
             "datetime",
+            "player_name",
         ]:
             if col not in match.event_data.columns.to_list():
-                message = f"{col} not in event data columns, this is manditory!"
-                LOGGER.error(message)
-                raise ValueError(message)
+                raise ValueError(f"{col} not in event data columns, this is manditory!")
 
         if not pd.api.types.is_datetime64_any_dtype(match.event_data["datetime"]):
-            message = (
+            raise TypeError(
                 "datetime column in event_data should be a datetime dtype, not a "
                 f"{type(match.event_data['datetime'])}"
             )
-            LOGGER.error(message)
-            raise TypeError(message)
 
         if match.event_data["datetime"].dt.tz is None:
-            message = "datetime column in event_data should have a timezone"
-            LOGGER.error(message)
-            raise ValueError(message)
+            raise ValueError("datetime column in event_data should have a timezone")
 
         # event_data_provider
         if not isinstance(match.event_data_provider, str):
-            message = (
+            raise TypeError(
                 "event data provider should be a string, not a "
                 f"{type(match.event_data_provider)}"
             )
-            LOGGER.error(message)
-            raise TypeError(message)
 
     # pitch_dimensions
     if not isinstance(match.pitch_dimensions, (list, tuple)):
-        message = (
-            "pitch_dimensions ({match.pitch_dimensions}) should be a "
+        raise TypeError(
+            f"pitch_dimensions ({match.pitch_dimensions}) should be a "
             f"list, not a {type(match.pitch_dimensions)}"
         )
-        LOGGER.error(message)
-        raise TypeError(message)
     if not len(match.pitch_dimensions) == 2:
-        message = (
+        raise ValueError(
             "pitch_dimensions should contain, two values: a length and a width "
             f"of the pitch, current input is {match.pitch_dimensions}"
         )
-        LOGGER.error(message)
-        raise ValueError(message)
     if not all([isinstance(x, (float, np.floating)) for x in match.pitch_dimensions]):
-        message = (
+        raise TypeError(
             "Both values in pitch dimensions should by floats, current inputs "
             f"{[type(x) for x in match.pitch_dimensions]}"
         )
-        LOGGER.error(message)
-        raise TypeError(message)
 
     # periods
     if not isinstance(match.periods, pd.DataFrame):
-        message = (
+        raise TypeError(
             "periods_frames should be a pandas dataframe, not a "
             f"{type(match.periods)}"
         )
-        LOGGER.error(message)
-        raise TypeError(message)
     if "period_id" not in match.periods.columns:
-        message = "'period' should be one of the columns in period_frames"
-        LOGGER.error(message)
-        raise ValueError(message)
+        raise ValueError("'period' should be one of the columns in period_frames")
     if any(
         [
             x not in match.periods["period_id"].value_counts().index
@@ -967,64 +1109,48 @@ def check_inputs_match_object(match: Match):
         ]
     ) or not all(match.periods["period_id"].value_counts() == 1):
         res = match.periods["period_id"]
-        message = (
+        raise ValueError(
             "'period' column in period_frames should contain only the values "
             f"[1, 2, 3, 4, 5]. Now it's {res}"
         )
-        LOGGER.error(message)
-        raise ValueError(message)
 
     for col in [col for col in match.periods if "datetime" in col]:
-        if pd.isnull(match.periods[col]).all():
-            continue
-        if match.periods[col].dt.tz is None:
-            message = f"{col} column in periods should have a timezone"
-            LOGGER.error(message)
-            raise ValueError(message)
+        if not pd.isnull(match.periods[col]).all() and match.periods[col].dt.tz is None:
+            raise ValueError(f"{col} column in periods should have a timezone")
 
     # frame_rate
     if not pd.isnull(match.frame_rate) and not match.frame_rate == MISSING_INT:
         if not isinstance(match.frame_rate, (int, np.integer)):
-            message = f"frame_rate should be an integer, not a {type(match.frame_rate)}"
-            LOGGER.error(message)
-            raise TypeError(message)
+            raise TypeError(
+                f"frame_rate should be an integer, not a {type(match.frame_rate)}"
+            )
         if match.frame_rate < 1:
-            message = f"frame_rate should be positive, not {match.frame_rate}"
-            LOGGER.error(message)
-            raise ValueError(message)
+            raise ValueError(f"frame_rate should be positive, not {match.frame_rate}")
 
     # team id's
-    for team, team_id in zip(
-        ["home", "away"], [match.home_team_id, match.away_team_id]
-    ):
+    for team, team_id in zip(["home", "away"], [match.home_team_id, match.away_team_id]):
         if not isinstance(team_id, (int, np.integer)) and not isinstance(team_id, str):
-            message = (
-                "{team} team id should be an integer or string, not a "
+            raise TypeError(
+                f"{team} team id should be an integer or string, not a "
                 f"{type(team_id)}"
             )
-            LOGGER.error(message)
-            raise TypeError(message)
 
     # team names
     for team, name in zip(
         ["home", "away"], [match.home_team_name, match.away_team_name]
     ):
         if not isinstance(name, str):
-            message = f"{team} team name should be a string, not a {type(name)}"
-            LOGGER.error(message)
-            raise TypeError(message)
+            raise TypeError(f"{team} team name should be a string, not a {type(name)}")
 
     # team scores
     for team, score in zip(["home", "away"], [match.home_score, match.away_score]):
         if not pd.isnull(score) and not score == MISSING_INT:
             if not isinstance(score, (int, np.integer)):
-                message = f"{team} team score should be an integer, not a {type(score)}"
-                LOGGER.error(message)
-                raise TypeError(message)
+                raise TypeError(
+                    f"{team} team score should be an integer, not a {type(score)}"
+                )
             if score < 0:
-                message = f"{team} team score should positive, not {score}"
-                LOGGER.error(message)
-                raise ValueError(message)
+                raise ValueError(f"{team} team score should positive, not {score}")
 
     # team formations
     for team, form in zip(
@@ -1032,38 +1158,36 @@ def check_inputs_match_object(match: Match):
     ):
         if form is not None and not form == MISSING_INT:
             if not isinstance(form, str):
-                message = (
+                raise TypeError(
                     f"{team} team formation should be a string, not a {type(form)}"
                 )
-                LOGGER.error(message)
-                raise TypeError(message)
             if len(form) > 5:
-                message = (
+                raise ValueError(
                     f"{team} team formation should be of length 5 or smaller "
                     f"('1433'), not {len(form)}"
                 )
-                LOGGER.error(message)
-                raise ValueError(message)
 
     # team players
-    for team, players in zip(
-        ["home", "away"], [match.home_players, match.away_players]
-    ):
+    for team, players in zip(["home", "away"], [match.home_players, match.away_players]):
         if not isinstance(players, pd.DataFrame):
-            message = (
+            raise TypeError(
                 f"{team} team players should be a pandas dataframe, not a "
                 f"{type(players)}"
             )
-            LOGGER.error(message)
-            raise TypeError(message)
         for col in ["id", "full_name", "shirt_num"]:
             if col not in players.columns:
-                message = (
+                raise ValueError(
                     f"{team} team players should contain at least the column "
-                    f"['id', 'full_name', 'shirt_num'], {col} is missing."
+                    f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
                 )
-                LOGGER.error(message)
-                raise ValueError(message)
+        if (
+            "position" in players.columns
+            and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
+        ):
+            raise ValueError(
+                f"{team} team players should have a position that is in "
+                f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
+            )
 
         # check for direction of play
         for _, period_row in match.periods.iterrows():
@@ -1081,23 +1205,19 @@ def check_inputs_match_object(match: Match):
             away_x = [x + "_x" for x in match.away_players_column_ids()]
             if match.tracking_data.loc[idx, home_x].mean() > 0:
                 centroid_x = match.tracking_data.loc[idx, home_x].mean()
-                message = (
+                raise DataBallPyError(
                     "The home team should be represented as playing from left to "
                     f"right the whole match. At the start of period {period} the x "
                     f"centroid of the home team is {centroid_x}."
                 )
-                LOGGER.error(message)
-                raise DataBallPyError(message)
 
             if match.tracking_data.loc[idx, away_x].mean() < 0:
                 centroid_x = match.tracking_data.loc[idx, away_x].mean()
-                message = (
+                raise DataBallPyError(
                     "The away team should be represented as playingfrom right to "
                     f"left the whole match. At the start  of period {period} the x "
                     f"centroid ofthe away team is {centroid_x}."
                 )
-                LOGGER.error(message)
-                raise DataBallPyError(message)
 
         # check databallpy_events
         databallpy_events = [match.dribble_events, match.shot_events, match.pass_events]
@@ -1107,25 +1227,18 @@ def check_inputs_match_object(match: Match):
             [DribbleEvent, ShotEvent, PassEvent],
         ):
             if not isinstance(event_dict, dict):
-                message = (
+                raise TypeError(
                     f"{event_name}_events should be a dictionary, not a "
                     f"{type(event_dict)}"
                 )
-                LOGGER.error(message)
-                raise TypeError(message)
 
             for event in event_dict.values():
                 if not isinstance(event, event_type):
-                    message = (
+                    raise TypeError(
                         f"{event_name}_events should contain only {event_type} objects,"
                         f" not {type(event)}"
                     )
-                    LOGGER.error(message)
-                    raise TypeError(message)
 
         # country
         if not isinstance(match.country, str):
-            message = f"country should be a string, not a {type(match.country)}"
-            LOGGER.error(message)
-            raise TypeError(message)
-    LOGGER.info("Passed all input checks in match()")
+            raise TypeError(f"country should be a string, not a {type(match.country)}")
