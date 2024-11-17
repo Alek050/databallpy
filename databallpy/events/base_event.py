@@ -25,7 +25,7 @@ class IndividualCloseToBallEvent:
     event.
 
     Args:
-        event_id (int | str): distinct id of the event
+        event_id (int): distinct id of the event
         period_id (int): id of the period
         minutes (int): minute in which the event occurs
         seconds (int): seconds within the aforementioned minute where the event occurs
@@ -47,7 +47,7 @@ class IndividualCloseToBallEvent:
             DataFrame
     """
 
-    event_id: int | list
+    event_id: int
     period_id: int
     minutes: int
     seconds: int
@@ -101,8 +101,8 @@ class IndividualCloseToBallEvent:
         return True
 
     def _validate_inputs_close_to_ball_event(self):
-        if not isinstance(self.event_id, (np.integer, int, str)):
-            raise TypeError(f"event_id should be int or str, not {type(self.event_id)}")
+        if not isinstance(self.event_id, (np.integer, int)):
+            raise TypeError(f"event_id should be int, not {type(self.event_id)}")
 
         if not isinstance(self.period_id, (np.integer, int)):
             raise TypeError(f"period_id should be int, not {type(self.period_id)}")

@@ -1,0 +1,308 @@
+[{
+    "id" : "9f6e2ecf-6685-45df-a62e-c2db3090f6c1",
+    "index" : 1,
+    "period" : 1,
+    "timestamp" : "00:00:00.000",
+    "minute" : 0,
+    "second" : 0,
+    "type" : {
+      "id" : 35,
+      "name" : "Starting XI"
+    },
+    "team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "tactics" : {
+      "formation" : 442
+    }
+  }, {
+    "id" : "0300039d-150d-41e4-b29a-76602ef002e6",
+    "index" : 2,
+    "period" : 1,
+    "timestamp" : "00:00:00.000",
+    "minute" : 0,
+    "second" : 0,
+    "type" : {
+      "id" : 35,
+      "name" : "Starting XI"
+    },
+    "team" : {
+      "id" : 206,
+      "name" : "Deportivo Alavés"
+    },
+    "tactics" : {
+      "formation" : 451
+    }
+  }, {
+    "id" : "c723053c-b956-494b-bb5d-352e1833203a",
+    "index" : 18,
+    "period" : 1,
+    "timestamp" : "00:00:11.630",
+    "minute" : 0,
+    "second" : 11,
+    "type" : {
+      "id" : 30,
+      "name" : "Pass"
+    },
+    "possession" : 3,
+    "possession_team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "play_pattern" : {
+      "id" : 1,
+      "name" : "Regular Play"
+    },
+    "team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "player" : {
+      "id" : 5211,
+      "name" : "Jordi Alba Ramos"
+    },
+    "position" : {
+      "id" : 6,
+      "name" : "Left Back"
+    },
+    "location" : [ 25.7, 1.6 ],
+    "duration" : 4.725756,
+    "related_events" : [ "994ee6b7-0e8b-4168-ac79-81c68ee580f7" ],
+    "pass" : {
+      "length" : 65.1565,
+      "angle" : 0.15253264,
+      "height" : {
+        "id" : 3,
+        "name" : "High Pass"
+      },
+      "end_location" : [ 90.1, 11.5 ],
+      "outcome" : {
+        "id" : 9,
+        "name" : "Incomplete"
+      },
+      "body_part" : {
+        "id" : 38,
+        "name" : "Left Foot"
+      },
+      "technique" : {
+        "id" : 108,
+        "name" : "Through Ball"
+      },
+      "recipient" : {
+        "id" : 5246,
+        "name" : "Luis Alberto Suárez Díaz"
+      },
+      "type" : {
+        "id": 61,
+        "name": "Corner"
+      }
+    }
+  },
+  {
+    "id" : "4f2502b5-2014-4265-afa1-f011aa4fd32e",
+    "index" : 41,
+    "period" : 1,
+    "timestamp" : "00:00:45.652",
+    "minute" : 0,
+    "second" : 45,
+    "type" : {
+      "id" : 43,
+      "name" : "Carry"
+    },
+    "possession" : 3,
+    "possession_team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "play_pattern" : {
+      "id" : 1,
+      "name" : "Regular Play"
+    },
+    "team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "player" : {
+      "id" : 5211,
+      "name" : "Jordi Alba Ramos"
+    },
+    "position" : {
+      "id" : 6,
+      "name" : "Left Back"
+    },
+    "location" : [ 54.6, 4.4 ],
+    "duration" : 1.325492,
+    "related_events" : [ "35dfb3ba-d04e-4833-979e-0c01a755d967", "b2386118-cd99-4d45-a34d-020652f918e0" ],
+    "carry" : {
+      "end_location" : [ 53.3, 6.6 ]
+    }
+  },
+  {
+    "id" : "9107d374-2942-4876-a14f-1b9f86901c15",
+    "index" : 262,
+    "period" : 1,
+    "timestamp" : "00:05:39.641",
+    "minute" : 5,
+    "second" : 39,
+    "type" : {
+      "id" : 16,
+      "name" : "Shot"
+    },
+    "possession" : 12,
+    "possession_team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "play_pattern" : {
+      "id" : 1,
+      "name" : "Regular Play"
+    },
+    "team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "player" : {
+      "id" : 5211,
+      "name" : "Jordi Alba Ramos"
+    },
+    "position" : {
+      "id" : 6,
+      "name" : "Left Back"
+    },
+    "location" : [ 113.9, 26.4 ],
+    "duration" : 0.807592,
+    "related_events" : [ "7fb36c67-4b6c-4c3d-bc52-4e1cd712e790" ],
+    "shot" : {
+      "statsbomb_xg" : 0.05166811,
+      "end_location" : [ 120.0, 35.5, 1.0 ],
+      "key_pass_id" : "c88615ba-1774-4f57-a408-77436c5227df",
+      "body_part" : {
+        "id" : 38,
+        "name" : "Left Foot"
+      },
+      "type" : {
+        "id" : 87,
+        "name" : "Open Play"
+      },
+      "outcome" : {
+        "id" : 98,
+        "name" : "Off T"
+      },
+      "first_time" : true,
+      "technique" : {
+        "id" : 95,
+        "name" : "Volley"
+      }
+    }
+  },
+  {
+    "id" : "d9cbb43c-e1a4-45d1-a4b9-2151657bb62a",
+    "index" : 322,
+    "period" : 1,
+    "timestamp" : "00:07:07.446",
+    "minute" : 7,
+    "second" : 7,
+    "type" : {
+      "id" : 14,
+      "name" : "Dribble"
+    },
+    "possession" : 14,
+    "possession_team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "play_pattern" : {
+      "id" : 4,
+      "name" : "From Throw In"
+    },
+    "team" : {
+      "id" : 206,
+      "name" : "Deportivo Alavés"
+    },
+    "player" : {
+      "id" : 6581,
+      "name" : "Jonathan Rodríguez Menéndez"
+    },
+    "position" : {
+      "id" : 16,
+      "name" : "Left Midfield"
+    },
+    "location" : [ 91.4, 24.1 ],
+    "duration" : 0.0,
+    "under_pressure" : true,
+    "related_events" : [ "4c601a79-df4f-4001-902b-6fc9788718eb" ],
+    "dribble" : {
+      "nutmeg" : true,
+      "outcome" : {
+        "id" : 9,
+        "name" : "Incomplete"
+      }
+    }
+  },
+  {
+    "id" : "c723053c-b956-494b-bb5d-352e1833203a",
+    "index" : 18,
+    "period" : 1,
+    "timestamp" : "00:00:11.630",
+    "minute" : 0,
+    "second" : 11,
+    "type" : {
+      "id" : 30,
+      "name" : "Pass"
+    },
+    "possession" : 3,
+    "possession_team" : {
+      "id" : 217,
+      "name" : "Barcelona"
+    },
+    "play_pattern" : {
+      "id" : 1,
+      "name" : "Regular Play"
+    },
+    "team" : {
+      "id" : 206,
+      "name" : "Deportivo Alavés"
+    },
+    "player" : {
+      "id" : 5211,
+      "name" : "Jordi Alba Ramos"
+    },
+    "position" : {
+      "id" : 6,
+      "name" : "Left Back"
+    },
+    "location" : [ 25.7, 1.6 ],
+    "duration" : 4.725756,
+    "related_events" : [ "994ee6b7-0e8b-4168-ac79-81c68ee580f7" ],
+    "pass" : {
+      "length" : 65.1565,
+      "angle" : 0.15253264,
+      "height" : {
+        "id" : 3,
+        "name" : "High Pass"
+      },
+      "end_location" : [ 90.1, 11.5 ],
+      "outcome" : {
+        "id" : 9,
+        "name" : "Incomplete"
+      },
+      "body_part" : {
+        "id" : 38,
+        "name" : "Left Foot"
+      },
+      "technique" : {
+        "id" : 108,
+        "name" : "Through Ball"
+      },
+      "recipient" : {
+        "id" : 5246,
+        "name" : "Luis Alberto Suárez Díaz"
+      },
+      "type" : {
+        "id": 61,
+        "name": "Corner"
+      }
+    }
+  }
+]

@@ -42,6 +42,11 @@ from tests.expected_outcomes import (
     TACKLE_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
     TRACAB_SPORTEC_XML_TD,
+    ED_STATSBOMB,
+    MD_STATSBOMB,
+    SHOT_EVENT_STATSBOMB,
+    PASS_EVENT_STATSBOMB,
+    DRIBBLE_EVENT_STATSBOMB,
 )
 
 from ..mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
@@ -377,6 +382,11 @@ class TestGetMatch(unittest.TestCase):
         self.sportec_event_loc = "tests/test_data/sportec_ed_test.xml"
         self.sportec_metadata_loc = "tests/test_data/sportec_metadata.xml"
 
+        self.statsbomb_event_loc = "tests/test_data/statsbomb_event_test.json"
+        self.statsbomb_match_loc = "tests/test_data/statsbomb_match_test.json"
+        self.statsbomb_lineup_loc = "tests/test_data/statsbomb_lineup_test.json"
+        self.statsbomb_pitch_dimensions = (120.0, 80.0)
+
     def test_get_match_wrong_inputs(self):
         with self.assertRaises(ValueError):
             get_match(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
@@ -565,6 +575,49 @@ class TestGetMatch(unittest.TestCase):
         )
 
         self.assertEqual(res, expected_match_sportec)
+
+    def test_get_match_statsbomb(self):
+        expected_match_statsbomb = Match(
+            tracking_data=pd.DataFrame(),
+            tracking_data_provider=None,
+            event_data=ED_STATSBOMB,
+            event_data_provider="statsbomb",
+            pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
+            periods=MD_STATSBOMB.periods_frames,
+            frame_rate=MD_STATSBOMB.frame_rate,
+            home_team_id=MD_STATSBOMB.home_team_id,
+            home_formation=MD_STATSBOMB.home_formation,
+            home_score=MD_STATSBOMB.home_score,
+            home_team_name=MD_STATSBOMB.home_team_name,
+            home_players=MD_STATSBOMB.home_players,
+            away_team_id=MD_STATSBOMB.away_team_id,
+            away_formation=MD_STATSBOMB.away_formation,
+            away_score=MD_STATSBOMB.away_score,
+            away_team_name=MD_STATSBOMB.away_team_name,
+            away_players=MD_STATSBOMB.away_players,
+            country=MD_STATSBOMB.country,
+            _tracking_timestamp_is_precise=False,
+            _periods_changed_playing_direction=None,
+            shot_events=SHOT_EVENT_STATSBOMB,
+            pass_events=PASS_EVENT_STATSBOMB,
+            dribble_events=DRIBBLE_EVENT_STATSBOMB,
+        )
+
+        res = get_match(
+            event_data_loc=self.statsbomb_event_loc,
+            event_match_loc=self.statsbomb_match_loc,
+            event_lineup_loc=self.statsbomb_lineup_loc,
+            event_data_provider="statsbomb",
+        )
+        self.assertEqual(res, expected_match_statsbomb)
+
+    def test_get_match_statsbomb_input_missing(self):
+        with self.assertRaises(ValueError):
+            res = get_match(
+                event_data_loc=self.statsbomb_event_loc,
+                event_match_loc=self.statsbomb_match_loc,
+                event_data_provider="statsbomb",
+            )
 
     @patch("databallpy.utils.get_match.load_sportec_open_event_data")
     @patch("databallpy.utils.get_match.load_sportec_open_tracking_data")

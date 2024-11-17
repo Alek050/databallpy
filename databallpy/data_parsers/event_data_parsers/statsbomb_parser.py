@@ -11,6 +11,8 @@ from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
+YARDS_TO_METERS = 0.9144
+
 POSSESSION_TYPE_MAPPING = {
     "Corner": "corner_kick",
     "Free Kick": "free_kick",
@@ -62,7 +64,8 @@ def load_statsbomb_event_data(
         events_loc (str): location of the event.json file.
         match_loc (str): location of the match.json file.
         lineup_loc (str): location of the lineup.json file.
-        pitch_dimensions (tuple, optional): the length and width of the pitch in yards
+        pitch_dimensions (tuple, optional): the length and width of the pitch.
+            Input should be in yards (as this is statsbomb standard) and is recalculated to meters in this function.
             Defaults to (120.0, 80.0)
 
     Returns:
@@ -70,17 +73,9 @@ def load_statsbomb_event_data(
         and the databallpy_events.
     """
     LOGGER.info(f"Loading Statsbomb event data: events_loc: {events_loc}")
-    if not os.path.exists(events_loc):
-        LOGGER.error(f"File {events_loc} does not exist.")
-        raise FileNotFoundError(f"File {events_loc} does not exist.")
-
-    if not os.path.exists(match_loc):
-        LOGGER.error(f"File {match_loc} does not exist.")
-        raise FileNotFoundError(f"File {match_loc} does not exist.")
-
-    if not os.path.exists(lineup_loc):
-        LOGGER.error(f"File {lineup_loc} does not exist.")
-        raise FileNotFoundError(f"File {lineup_loc} does not exist.")
+    _check_input_values(loc=events_loc, str_type="events_loc")
+    _check_input_values(loc=match_loc, str_type="match_loc")
+    _check_input_values(loc=lineup_loc, str_type="lineup_loc")
 
     if not isinstance(pitch_dimensions, (tuple, list)) or len(pitch_dimensions) != 2:
         LOGGER.error(
@@ -91,20 +86,46 @@ def load_statsbomb_event_data(
             f"Invalid pitch_dimensions: {pitch_dimensions}. "
             "Must be a tuple of length 2."
         )
+    # Convert yards to meters
+    pitch_dimensions_meters = tuple(
+        [x * YARDS_TO_METERS for x in list(pitch_dimensions)]
+    )
 
     # Load the metadata
-    metadata = _load_metadata(match_loc, lineup_loc, pitch_dimensions)
+    metadata = _load_metadata(match_loc, lineup_loc, pitch_dimensions_meters)
     LOGGER.info("Successfully loaded Statsbomb metadata.")
     # Load the event data
     event_data, databallpy_events, metadata = _load_event_data(
-        events_loc, metadata, pitch_dimensions
+        events_loc, metadata, pitch_dimensions_meters
     )
 
     LOGGER.info("Successfully loaded Statsbomb event data and databallpy events.")
-    import pdb
-
-    pdb.set_trace()
     return event_data, metadata, databallpy_events
+
+
+def _check_input_values(loc: str, str_type: str) -> None:
+    """Function to check the input values for load_statsbomb_event_data
+
+    Args:
+        loc (str): location of the file,
+        str_type (str): type of file, should be one of: events_loc, match_loc or lineup_loc
+
+    Returns:
+        None
+    """
+    if not isinstance(loc, str):
+        LOGGER.error(f"{str_type} should be a string, not a {type(loc)}")
+        raise TypeError(f"{str_type} should be a string, not a {type(loc)}")
+
+    elif not loc[-5:] == ".json":
+        LOGGER.error(f"{str_type} should by of .json format, not {loc.split('.')[-1]}")
+        raise ValueError(
+            f"{str_type} should by of .json format, not {loc.split('.')[-1]}"
+        )
+
+    elif not os.path.exists(loc):
+        LOGGER.error(f"File {loc} does not exist.")
+        raise FileNotFoundError(f"File {loc} does not exist.")
 
 
 def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> Metadata:
@@ -293,10 +314,14 @@ def _load_event_data(
         event_data["minutes"][id] = event["minute"]
         event_data["seconds"][id] = event["second"]
         event_data["player_id"][id] = event["player"]["id"]
-        event_data["team_id"][id] = event["possession_team"]["id"]
+        event_data["team_id"][id] = event["team"]["id"]
         if "location" in event.keys():
-            event_data["start_x"][id] = event["location"][0] - (pitch_dimensions[0] / 2)
-            event_data["start_y"][id] = event["location"][1] - (pitch_dimensions[1] / 2)
+            event_data["start_x"][id] = event["location"][0] * YARDS_TO_METERS - (
+                pitch_dimensions[0] / 2
+            )
+            event_data["start_y"][id] = event["location"][1] * YARDS_TO_METERS - (
+                pitch_dimensions[1] / 2
+            )
         event_data["datetime"][id] = pd.to_datetime(
             metadata.periods_frames["start_datetime_ed"][event["period"] - 1]
             + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")
@@ -305,7 +330,7 @@ def _load_event_data(
             event["type"]["name"].lower().replace("*", "")
         )
         event_data["player_name"][id] = event["player"]["name"]
-        event_data["team_name"][id] = event["possession_team"]["name"]
+        event_data["team_name"][id] = event["team"]["name"]
 
         event_type_object = (
             event["type"]["name"]
@@ -350,9 +375,7 @@ def _load_event_data(
 
     event_data = pd.DataFrame(event_data)
 
-    # for statsbomb, top left is 0,0 so we need an extra flip around y-axis
     event_data.loc[event_data["team_id"] == metadata.away_team_id, ["start_x"]] *= -1
-
     event_data.loc[event_data["team_id"] == metadata.home_team_id, ["start_y"]] *= -1
 
     id_jersey_map = (
@@ -456,32 +479,28 @@ def _get_pass_event(
         "Through Ball": "through_ball",
     }
 
+    pass_type = "unspecified"
+    possession_type = "unspecified"
+    set_piece = "unspecified"
+    body_part = "unspecified"
+    receiver_player_id = MISSING_INT
+    related_events = None
+
     if "technique" in event["pass"].keys():
         pass_type = PASS_TYPE_MAPPING[event["pass"]["technique"]["name"]]
-    else:
-        pass_type = "unspecified"
 
     if "type" in event["pass"].keys():
         possession_type = POSSESSION_TYPE_MAPPING[event["pass"]["type"]["name"]]
         set_piece = SET_PIECE_TYPE_MAPPING[event["pass"]["type"]["name"]]
-    else:
-        possession_type = "unspecified"
-        set_piece = "unspecified"
 
-    if "body_type" in event["pass"].keys():
+    if "body_part" in event["pass"].keys():
         body_part = BODY_PART_MAPPING[event["pass"]["body_part"]["name"]]
-    else:
-        body_part = "unspecified"
 
     if "recipient" in event["pass"].keys():
         receiver_player_id = event["pass"]["recipient"]["id"]
-    else:
-        receiver_player_id = MISSING_INT
 
-    if "related_events" in event["pass"].keys():
-        related_events = event["pass"]["related_events"]
-    else:
-        related_events = None
+    if "related_events" in event.keys():
+        related_events = event["related_events"]
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
         event, id, pitch_dimensions, away_team_id, periods
@@ -490,8 +509,10 @@ def _get_pass_event(
     return PassEvent(
         **close_to_ball_event_info,
         related_event_id=related_events,
-        end_x=event["pass"]["end_location"][0] - (pitch_dimensions[0] / 2),
-        end_y=event["pass"]["end_location"][1] - (pitch_dimensions[1] / 2),
+        end_x=event["pass"]["end_location"][0] * YARDS_TO_METERS
+        - (pitch_dimensions[0] / 2),
+        end_y=event["pass"]["end_location"][1] * YARDS_TO_METERS
+        - (pitch_dimensions[1] / 2),
         outcome=False if "goal-assist" not in event["pass"].keys() else True,
         body_part=body_part,
         possession_type=possession_type,
@@ -522,10 +543,9 @@ def _get_dribble_event(
     Returns:
         DribbleEvent: the dribble event
     """
-    if "related_events" in event["dribble"].keys():
-        related_events = event["dribble"]["related_events"]
-    else:
-        related_events = None
+    related_events = None
+    if "related_events" in event.keys():
+        related_events = event["related_events"]
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
         event, id, pitch_dimensions, away_team_id, periods
@@ -567,8 +587,8 @@ def _get_close_to_ball_event_info(
     """
 
     return {
-        "start_x": event["location"][0] - (pitch_dimensions[0] / 2),
-        "start_y": event["location"][1] - (pitch_dimensions[1] / 2),
+        "start_x": event["location"][0] * YARDS_TO_METERS - (pitch_dimensions[0] / 2),
+        "start_y": event["location"][1] * YARDS_TO_METERS - (pitch_dimensions[1] / 2),
         "event_id": id,
         "period_id": event["period"],
         "minutes": event["minute"],
