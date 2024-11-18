@@ -17,19 +17,23 @@ from databallpy.data_parsers.tracking_data_parsers import (
 from databallpy.match import Match
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_match import get_match, get_open_match, get_saved_match
-from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
+    DRIBBLE_EVENT_STATSBOMB,
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
     DRIBBLE_EVENTS_OPTA_TRACAB,
     ED_OPTA,
     ED_SCISPORTS,
+    ED_STATSBOMB,
     MD_OPTA,
     MD_SCISPORTS,
+    MD_STATSBOMB,
     MD_TRACAB,
+    PASS_EVENT_STATSBOMB,
     PASS_EVENTS_METRICA,
     PASS_EVENTS_OPTA,
     PASS_EVENTS_OPTA_TRACAB,
+    SHOT_EVENT_STATSBOMB,
     SHOT_EVENTS_METRICA,
     SHOT_EVENTS_OPTA,
     SHOT_EVENTS_OPTA_TRACAB,
@@ -42,11 +46,6 @@ from tests.expected_outcomes import (
     TACKLE_EVENTS_OPTA_TRACAB,
     TD_TRACAB,
     TRACAB_SPORTEC_XML_TD,
-    ED_STATSBOMB,
-    MD_STATSBOMB,
-    SHOT_EVENT_STATSBOMB,
-    PASS_EVENT_STATSBOMB,
-    DRIBBLE_EVENT_STATSBOMB,
 )
 
 from ..mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
@@ -182,6 +181,7 @@ class TestGetMatch(unittest.TestCase):
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
+            allow_synchronise_tracking_and_event_data=True,
         )
 
         self.td_metrica_loc = "tests/test_data/metrica_tracking_data_test.txt"
@@ -418,7 +418,7 @@ class TestGetMatch(unittest.TestCase):
             event_metadata_loc=self.md_opta_loc,
             tracking_data_provider=self.td_provider,
             event_data_provider=self.ed_provider,
-            check_quality=False,
+            check_quality=True,
         )
         assert match == self.expected_match_tracab_opta
 
@@ -613,7 +613,7 @@ class TestGetMatch(unittest.TestCase):
 
     def test_get_match_statsbomb_input_missing(self):
         with self.assertRaises(ValueError):
-            res = get_match(
+            get_match(
                 event_data_loc=self.statsbomb_event_loc,
                 event_match_loc=self.statsbomb_match_loc,
                 event_data_provider="statsbomb",
@@ -700,27 +700,6 @@ class TestGetMatch(unittest.TestCase):
             get_saved_match(name="test_match2", path="tests/test_data")
         with self.assertRaises(TypeError):
             get_saved_match(name="not_a_match_but_a_list.pickle", path="tests/test_data")
-
-    def test_get_match_call_quality_check(self):
-        # does not check functionality since the tracking data is not valid
-        with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
-            get_match(
-                tracking_data_loc=self.td_tracab_loc,
-                tracking_metadata_loc=self.md_tracab_loc,
-                event_data_loc=self.ed_opta_loc,
-                event_metadata_loc=self.md_opta_loc,
-                tracking_data_provider=self.td_provider,
-                event_data_provider=self.ed_provider,
-                check_quality=True,
-            )
-
-        with self.assertRaises(ZeroDivisionError), self.assertWarns(DataBallPyWarning):
-            get_match(
-                tracking_data_loc=self.td_tracab_loc,
-                tracking_metadata_loc=self.md_tracab_loc,
-                tracking_data_provider=self.td_provider,
-                check_quality=True,
-            )
 
     def test_get_match_scisports(self):
         res_match = get_match(

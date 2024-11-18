@@ -1,30 +1,25 @@
-import copy
+import json
 import unittest
 
-import numpy as np
 import pandas as pd
-import json
 
 from databallpy.data_parsers.event_data_parsers.statsbomb_parser import (
-    load_statsbomb_event_data,
-    _load_metadata,
-    _get_player_info,
-    _load_event_data,
-    _get_shot_event,
-    _get_pass_event,
-    _get_dribble_event,
     _get_close_to_ball_event_info,
+    _get_dribble_event,
+    _get_pass_event,
+    _get_player_info,
+    _get_shot_event,
+    _load_event_data,
+    _load_metadata,
+    load_statsbomb_event_data,
 )
-
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.utils import MISSING_INT
-from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
-    MD_STATSBOMB,
-    ED_STATSBOMB,
-    SHOT_EVENT_STATSBOMB,
-    PASS_EVENT_STATSBOMB,
     DRIBBLE_EVENT_STATSBOMB,
+    ED_STATSBOMB,
+    MD_STATSBOMB,
+    PASS_EVENT_STATSBOMB,
+    SHOT_EVENT_STATSBOMB,
 )
 
 

@@ -266,7 +266,7 @@ def _load_event_data(
     metadata.home_formation = formations[metadata.home_team_id]
     metadata.away_formation = formations[metadata.away_team_id]
 
-    UNWANTED_EVENTS = {
+    events_to_exclude = {
         5: "Camera On",
         18: "Half Start",
         19: "Substitution",
@@ -278,7 +278,7 @@ def _load_event_data(
     }
 
     event_mask = [
-        event["type"]["id"] not in UNWANTED_EVENTS.keys() for event in events_json
+        event["type"]["id"] not in events_to_exclude.keys() for event in events_json
     ]
     n = sum(event_mask)
     event_data = {
@@ -425,7 +425,7 @@ def _get_shot_event(
         ShotEvent: the shot event
     """
 
-    SHOT_OUTCOME_MAPPING = {
+    shot_outcome_mapping = {
         "Blocked": "blocked",
         "Goal": "goal",
         "Off T": "miss_off_target",
@@ -448,7 +448,7 @@ def _get_shot_event(
         possession_type=POSSESSION_TYPE_MAPPING[event["shot"]["type"]["name"]],
         set_piece=SET_PIECE_TYPE_MAPPING[event["shot"]["type"]["name"]],
         _xt=-1.0,
-        outcome_str=SHOT_OUTCOME_MAPPING[event["shot"]["outcome"]["name"]],
+        outcome_str=shot_outcome_mapping[event["shot"]["outcome"]["name"]],
     )
 
 
@@ -472,7 +472,7 @@ def _get_pass_event(
         PassEvent: the pass event
     """
 
-    PASS_TYPE_MAPPING = {
+    pass_type_mapping = {
         "Inswinging": "unspecified",
         "Outswinging": "unspecified",
         "Straight": "unspecified",
@@ -487,7 +487,7 @@ def _get_pass_event(
     related_events = None
 
     if "technique" in event["pass"].keys():
-        pass_type = PASS_TYPE_MAPPING[event["pass"]["technique"]["name"]]
+        pass_type = pass_type_mapping[event["pass"]["technique"]["name"]]
 
     if "type" in event["pass"].keys():
         possession_type = POSSESSION_TYPE_MAPPING[event["pass"]["type"]["name"]]

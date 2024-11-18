@@ -35,7 +35,7 @@ class TestTracabParser(unittest.TestCase):
         pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
 
     def test_load_tracab_tracking_data_errors(self):
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(ValueError):
             load_tracab_tracking_data(
                 self.tracking_data_dat_loc[:-3], self.metadata_dat_loc, verbose=False
             )
