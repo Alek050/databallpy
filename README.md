@@ -101,8 +101,9 @@ match = get_open_match()
 > - Instat
 > - SciSports
 > - Sportec Solutions (from the DFL)
+> - Statsbomb
 > 
-> The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec"]`
+> The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec", "statsbomb"]`
 >
 > If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 
