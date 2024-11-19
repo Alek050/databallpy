@@ -385,7 +385,6 @@ class TestGetMatch(unittest.TestCase):
         self.statsbomb_event_loc = "tests/test_data/statsbomb_event_test.json"
         self.statsbomb_match_loc = "tests/test_data/statsbomb_match_test.json"
         self.statsbomb_lineup_loc = "tests/test_data/statsbomb_lineup_test.json"
-        self.statsbomb_pitch_dimensions = (120.0, 80.0)
 
     def test_get_match_wrong_inputs(self):
         with self.assertRaises(ValueError):

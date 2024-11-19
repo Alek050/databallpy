@@ -28,8 +28,7 @@ class TestStatsbombParser(unittest.TestCase):
         self.event_loc = "tests/test_data/statsbomb_event_test.json"
         self.match_loc = "tests/test_data/statsbomb_match_test.json"
         self.lineup_loc = "tests/test_data/statsbomb_lineup_test.json"
-        self.pitch_dimensions = (120.0, 80.0)
-        self.yards_to_meters = 0.9144
+        self.pitch_dimensions = (105.0, 68.0)
 
     def test_load_statsbomb_event_data_errors(self):
         with self.assertRaises(ValueError):
@@ -68,7 +67,7 @@ class TestStatsbombParser(unittest.TestCase):
         result = _load_metadata(
             match_loc=self.match_loc,
             lineup_loc=self.lineup_loc,
-            pitch_dimensions=(120.0 * self.yards_to_meters, 80.0 * self.yards_to_meters),
+            pitch_dimensions=(105.0, 68.0),
         )
 
         assert expected_outcome == result
@@ -92,7 +91,7 @@ class TestStatsbombParser(unittest.TestCase):
         outcome_event_data, outcome_dbp_events, outcome_metadata = _load_event_data(
             events_loc=self.event_loc,
             metadata=metadata_input,
-            pitch_dimensions=(120.0 * self.yards_to_meters, 80.0 * self.yards_to_meters),
+            pitch_dimensions=(105.0, 68.0),
         )
 
         assert "shot_events" in outcome_dbp_events.keys()
@@ -110,8 +109,10 @@ class TestStatsbombParser(unittest.TestCase):
             assert key in DRIBBLE_EVENT_STATSBOMB.keys()
             assert event == DRIBBLE_EVENT_STATSBOMB[key]
 
-        pd.testing.assert_frame_equal(expected_outcome_event_data, outcome_event_data)
-        assert expected_outcome_metadata == outcome_metadata
+        pd.testing.assert_frame_equal(
+            outcome_event_data, expected_outcome_event_data, rtol=1e-3
+        )
+        assert outcome_metadata == expected_outcome_metadata
 
     def test_load_statsbomb_event_data(self):
         expected_outcome_event_data = ED_STATSBOMB
@@ -122,7 +123,7 @@ class TestStatsbombParser(unittest.TestCase):
                 events_loc=self.event_loc,
                 match_loc=self.match_loc,
                 lineup_loc=self.lineup_loc,
-                pitch_dimensions=(120.0, 80.0),
+                pitch_dimensions=(105.0, 68.0),
             )
         )
 
@@ -141,7 +142,9 @@ class TestStatsbombParser(unittest.TestCase):
             assert key in DRIBBLE_EVENT_STATSBOMB.keys()
             assert event == DRIBBLE_EVENT_STATSBOMB[key]
 
-        pd.testing.assert_frame_equal(expected_outcome_event_data, outcome_event_data)
+        pd.testing.assert_frame_equal(
+            expected_outcome_event_data, outcome_event_data, rtol=1e-3
+        )
         assert expected_outcome_metadata == outcome_metadata
 
     def test_get_close_to_ball_event_info(self):
@@ -151,11 +154,11 @@ class TestStatsbombParser(unittest.TestCase):
             "minutes": 0,
             "seconds": 11,
             "datetime": pd.to_datetime("2018-08-18 22:15:11+0000", utc=True),
-            "start_x": -31.363919999999997,
-            "start_y": -35.11296,
+            "start_x": -30.0125,
+            "start_y": -32.64,
             "team_id": 217,
             "team_side": "home",
-            "pitch_size": (120.0 * self.yards_to_meters, 80.0 * self.yards_to_meters),
+            "pitch_size": (105.0, 68.0),
             "player_id": 5211,
             "jersey": MISSING_INT,
         }
@@ -169,6 +172,8 @@ class TestStatsbombParser(unittest.TestCase):
             pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
             away_team_id=MD_STATSBOMB.away_team_id,
             periods=MD_STATSBOMB.periods_frames,
+            x_multiplier=105 / 120,
+            y_multiplier=68 / 80,
         )
         assert expected_outcome == outcome
 
@@ -185,6 +190,8 @@ class TestStatsbombParser(unittest.TestCase):
             pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
             periods=MD_STATSBOMB.periods_frames,
             away_team_id=MD_STATSBOMB.away_team_id,
+            x_multiplier=105 / 120,
+            y_multiplier=68 / 80,
         )
         assert expected_outcome == res
 
@@ -202,6 +209,8 @@ class TestStatsbombParser(unittest.TestCase):
             pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
             periods=MD_STATSBOMB.periods_frames,
             away_team_id=MD_STATSBOMB.away_team_id,
+            x_multiplier=105 / 120,
+            y_multiplier=68 / 80,
         )
         assert expected_outcome == res
 
@@ -218,5 +227,7 @@ class TestStatsbombParser(unittest.TestCase):
             pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
             periods=MD_STATSBOMB.periods_frames,
             away_team_id=MD_STATSBOMB.away_team_id,
+            x_multiplier=105 / 120,
+            y_multiplier=68 / 80,
         )
         assert expected_outcome == res

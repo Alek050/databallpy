@@ -100,3 +100,8 @@
 ### Breaking changes
 - From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
 - `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
+
+
+## new version
+
+- Added StatsBomb event data as provider (by [DaanGro](https://github.com/DaanGro))

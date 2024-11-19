@@ -11,8 +11,6 @@ from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
 
-YARDS_TO_METERS = 0.9144
-
 POSSESSION_TYPE_MAPPING = {
     "Corner": "corner_kick",
     "Free Kick": "free_kick",
@@ -52,7 +50,7 @@ def load_statsbomb_event_data(
     events_loc: str,
     match_loc: str,
     lineup_loc: str,
-    pitch_dimensions: tuple = (120.0, 80.0),
+    pitch_dimensions: tuple = (105.0, 68.0),
 ) -> tuple[pd.DataFrame, Metadata, dict]:
     """This function retrieves the metadata and event data of a specific match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
@@ -64,9 +62,9 @@ def load_statsbomb_event_data(
         events_loc (str): location of the event.json file.
         match_loc (str): location of the match.json file.
         lineup_loc (str): location of the lineup.json file.
-        pitch_dimensions (tuple, optional): the length and width of the pitch.
-            Input should be in yards (as this is statsbomb standard) and is recalculated to meters in this function.
-            Defaults to (120.0, 80.0)
+        pitch_dimensions (tuple, optional): the length and width of the pitch. Input
+            should be in yards (as this is statsbomb standard (120, 80)) and is
+            recalculated to meters in this function. Defaults to (105.0, 68.0)
 
     Returns:
         Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
@@ -86,17 +84,13 @@ def load_statsbomb_event_data(
             f"Invalid pitch_dimensions: {pitch_dimensions}. "
             "Must be a tuple of length 2."
         )
-    # Convert yards to meters
-    pitch_dimensions_meters = tuple(
-        [x * YARDS_TO_METERS for x in list(pitch_dimensions)]
-    )
 
     # Load the metadata
-    metadata = _load_metadata(match_loc, lineup_loc, pitch_dimensions_meters)
+    metadata = _load_metadata(match_loc, lineup_loc, pitch_dimensions)
     LOGGER.info("Successfully loaded Statsbomb metadata.")
     # Load the event data
     event_data, databallpy_events, metadata = _load_event_data(
-        events_loc, metadata, pitch_dimensions_meters
+        events_loc, metadata, pitch_dimensions
     )
 
     LOGGER.info("Successfully loaded Statsbomb event data and databallpy events.")
@@ -250,10 +244,11 @@ def _load_event_data(
     Args:
         events_loc (str): location of the events.json file
         metadata (Metadata): metadata of the match
-        pitch_dimensions (tuple): dimensions of the pitch.
+        pitch_dimensions (tuple): the length and with of the pitch in meters.
 
     Returns:
-        Tuple[pd.DataFrame, dict, Metadata]: the event data of the match, the databallpy_events, and the updated metadata
+        Tuple[pd.DataFrame, dict, Metadata]: the event data of the match, the
+            databallpy_events, and the updated metadata
     """
     with open(events_loc, "r", encoding="utf-8") as f:
         events_json = json.load(f)
@@ -289,13 +284,14 @@ def _load_event_data(
         "seconds": [MISSING_INT] * n,
         "player_id": [MISSING_INT] * n,
         "team_id": [MISSING_INT] * n,
-        "outcome": [""] * n,
+        "outcome": [None] * n,
         "start_x": [np.nan] * n,
         "start_y": [np.nan] * n,
         "datetime": [pd.NaT] * n,
         "statsbomb_event": [""] * n,
         "player_name": [""] * n,
         "team_name": [""] * n,
+        "statsbomb_outcome": [""] * n,
     }
 
     databallpy_mapping = {
@@ -308,18 +304,25 @@ def _load_event_data(
     pass_events = {}
     dribble_events = {}
 
+    x_multiplier = pitch_dimensions[0] / 120.0
+    y_multiplier = pitch_dimensions[1] / 80.0
+
     for id, event in enumerate(np.array(events_json)[event_mask]):
         event_data["event_id"][id] = id
-        event_data["period_id"][id] = event["period"]
-        event_data["minutes"][id] = event["minute"]
-        event_data["seconds"][id] = event["second"]
-        event_data["player_id"][id] = event["player"]["id"]
-        event_data["team_id"][id] = event["team"]["id"]
+        event_data["period_id"][id] = event.get("period", MISSING_INT)
+        event_data["minutes"][id] = event.get("minute", MISSING_INT)
+        event_data["seconds"][id] = event.get("second", np.nan)
+        event_data["player_id"][id] = (
+            event["player"]["id"] if "player" in event.keys() else MISSING_INT
+        )
+        event_data["team_id"][id] = (
+            event["team"]["id"] if "team" in event.keys() else MISSING_INT
+        )
         if "location" in event.keys():
-            event_data["start_x"][id] = event["location"][0] * YARDS_TO_METERS - (
+            event_data["start_x"][id] = event["location"][0] * x_multiplier - (
                 pitch_dimensions[0] / 2
             )
-            event_data["start_y"][id] = event["location"][1] * YARDS_TO_METERS - (
+            event_data["start_y"][id] = event["location"][1] * y_multiplier - (
                 pitch_dimensions[1] / 2
             )
         event_data["datetime"][id] = pd.to_datetime(
@@ -329,8 +332,12 @@ def _load_event_data(
         event_data["statsbomb_event"][id] = (
             event["type"]["name"].lower().replace("*", "")
         )
-        event_data["player_name"][id] = event["player"]["name"]
-        event_data["team_name"][id] = event["team"]["name"]
+        event_data["player_name"][id] = (
+            event["player"]["name"] if "player" in event.keys() else None
+        )
+        event_data["team_name"][id] = (
+            event["team"]["name"] if "team" in event.keys() else None
+        )
 
         event_type_object = (
             event["type"]["name"]
@@ -351,7 +358,13 @@ def _load_event_data(
                     pitch_dimensions=pitch_dimensions,
                     periods=metadata.periods_frames,
                     away_team_id=metadata.away_team_id,
+                    x_multiplier=x_multiplier,
+                    y_multiplier=y_multiplier,
                 )
+                event_data["outcome"][id] = (
+                    event[event_type_object]["outcome"]["name"] == "Goal"
+                )
+
             elif databallpy_event == "pass":
                 pass_events[id] = _get_pass_event(
                     event=event,
@@ -359,6 +372,11 @@ def _load_event_data(
                     pitch_dimensions=pitch_dimensions,
                     periods=metadata.periods_frames,
                     away_team_id=metadata.away_team_id,
+                    x_multiplier=x_multiplier,
+                    y_multiplier=y_multiplier,
+                )
+                event_data["outcome"][id] = (
+                    event[event_type_object].get("outcome") is None
                 )
             elif databallpy_event == "dribble":
                 dribble_events[id] = _get_dribble_event(
@@ -367,11 +385,18 @@ def _load_event_data(
                     pitch_dimensions=pitch_dimensions,
                     periods=metadata.periods_frames,
                     away_team_id=metadata.away_team_id,
+                    x_multiplier=x_multiplier,
+                    y_multiplier=y_multiplier,
+                )
+                event_data["outcome"][id] = (
+                    event[event_type_object]["outcome"]["name"] == "Complete"
                 )
 
         if event_type_object in event.keys():
             if "outcome" in event[event_type_object]:
-                event_data["outcome"][id] = event[event_type_object]["outcome"]["name"]
+                event_data["statsbomb_outcome"][id] = event[event_type_object][
+                    "outcome"
+                ]["name"]
 
     event_data = pd.DataFrame(event_data)
 
@@ -411,6 +436,8 @@ def _get_shot_event(
     pitch_dimensions: tuple,
     periods: pd.DataFrame,
     away_team_id: int,
+    x_multiplier: float,
+    y_multiplier: float,
 ) -> ShotEvent:
     """This function retrieves the shot event of a specific match.
 
@@ -420,6 +447,10 @@ def _get_shot_event(
         pitch_dimensions (tuple): pitch dimensions in x and y direction.
         periods (pd.Dataframe): metadata.periods_frames dataframe
         away_team_id (int): id of away team
+        x_multiplier (float): The value to multiply the x locations with to get to
+            meters. E.g. 105/120 = 0.875.
+        y_multiplier (float): The value to multiply the y locations with to get to
+            meters. E.g. 68/80 = 0.85.
 
     Returns:
         ShotEvent: the shot event
@@ -437,7 +468,7 @@ def _get_shot_event(
     }
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
-        event, id, pitch_dimensions, away_team_id, periods
+        event, id, pitch_dimensions, away_team_id, periods, x_multiplier, y_multiplier
     )
 
     return ShotEvent(
@@ -458,6 +489,8 @@ def _get_pass_event(
     pitch_dimensions: tuple,
     periods: pd.DataFrame,
     away_team_id: int,
+    x_multiplier: float,
+    y_multiplier: float,
 ) -> PassEvent:
     """This function retrieves the pass event of a specific match.
 
@@ -467,6 +500,10 @@ def _get_pass_event(
         pitch_dimensions (tuple): pitch dimensions in x and y direction.
         periods (pd.Dataframe): metadata.periods_frames dataframe
         away_team_id (int): id of away team
+        x_multiplier (float): The value to multiply the x locations with to get to
+            meters. E.g. 105/120 = 0.875.
+        y_multiplier (float): The value to multiply the y locations with to get to
+            meters. E.g. 68/80 = 0.85.
 
     Returns:
         PassEvent: the pass event
@@ -503,15 +540,15 @@ def _get_pass_event(
         related_events = event["related_events"]
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
-        event, id, pitch_dimensions, away_team_id, periods
+        event, id, pitch_dimensions, away_team_id, periods, x_multiplier, y_multiplier
     )
 
     return PassEvent(
         **close_to_ball_event_info,
         related_event_id=related_events,
-        end_x=event["pass"]["end_location"][0] * YARDS_TO_METERS
+        end_x=event["pass"]["end_location"][0] * x_multiplier
         - (pitch_dimensions[0] / 2),
-        end_y=event["pass"]["end_location"][1] * YARDS_TO_METERS
+        end_y=event["pass"]["end_location"][1] * y_multiplier
         - (pitch_dimensions[1] / 2),
         outcome=False if "goal-assist" not in event["pass"].keys() else True,
         body_part=body_part,
@@ -530,6 +567,8 @@ def _get_dribble_event(
     pitch_dimensions: tuple,
     periods: pd.DataFrame,
     away_team_id: int,
+    x_multiplier: float,
+    y_multiplier: float,
 ) -> DribbleEvent:
     """This function retrieves the dribble event
 
@@ -539,6 +578,10 @@ def _get_dribble_event(
         pitch_dimensions (tuple): pitch dimensions in x and y direction.
         periods (pd.Dataframe): metadata.periods_frames dataframe
         away_team_id (int): id of away team
+        x_multiplier (float): The value to multiply the x locations with to get to
+            meters. E.g. 105/120 = 0.875.
+        y_multiplier (float): The value to multiply the y locations with to get to
+            meters. E.g. 68/80 = 0.85.
 
     Returns:
         DribbleEvent: the dribble event
@@ -548,7 +591,7 @@ def _get_dribble_event(
         related_events = event["related_events"]
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
-        event, id, pitch_dimensions, away_team_id, periods
+        event, id, pitch_dimensions, away_team_id, periods, x_multiplier, y_multiplier
     )
 
     return DribbleEvent(
@@ -570,6 +613,8 @@ def _get_close_to_ball_event_info(
     pitch_dimensions: tuple,
     away_team_id: int,
     periods: pd.DataFrame,
+    x_multiplier: float,
+    y_multiplier: float,
 ) -> dict:
     """Function to get the base event data from the event based on
     the CloseToBallEvent class.
@@ -581,14 +626,18 @@ def _get_close_to_ball_event_info(
         away_team_id (int): id of the away team
         players (pd.DataFrame): dataframe with player information.
         periods: metadata.periods_frames dataframe
+        x_multiplier (float): The value to multiply the x locations with to get to
+            meters. E.g. 105/120 = 0.875.
+        y_multiplier (float): The value to multiply the y locations with to get to
+            meters. E.g. 68/80 = 0.85.
 
     Returns:
         dict: dictionary with the base event data: start_x, start_y, related_event_id
     """
 
     return {
-        "start_x": event["location"][0] * YARDS_TO_METERS - (pitch_dimensions[0] / 2),
-        "start_y": event["location"][1] * YARDS_TO_METERS - (pitch_dimensions[1] / 2),
+        "start_x": event["location"][0] * x_multiplier - (pitch_dimensions[0] / 2),
+        "start_y": event["location"][1] * y_multiplier - (pitch_dimensions[1] / 2),
         "event_id": id,
         "period_id": event["period"],
         "minutes": event["minute"],
