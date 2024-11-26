@@ -334,10 +334,10 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
 
 @logging_wrapper(__file__)
 def _get_metadata(metadata_loc: str) -> Metadata:
-    """Function that reads metadata.xml file and stores it in Metadata class
+    """Function that reads metadata (supports both .json and .xml) file and stores it in Metadata class
 
     Args:
-        meta_data_loc (str): location of the metadata.xml file
+        meta_data_loc (str): location of the metadata file
 
     Returns:
         Metadata: class that contains metadata
