@@ -297,9 +297,9 @@ class Match:
             ]
 
         return [
-            f"home_{row.shirt_num}"
+            f"home_{int(row.shirt_num)}"
             if row.id in self.home_players["id"].to_list()
-            else f"away_{row.shirt_num}"
+            else f"away_{int(row.shirt_num)}"
             for row in players.itertuples(index=False)
         ]
 

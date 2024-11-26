@@ -1,10 +1,11 @@
+import chardet
 import datetime as dt
 import os
-
-import chardet
+import json
 import numpy as np
 import pandas as pd
 import requests
+
 from bs4 import BeautifulSoup
 from lxml import etree
 from tqdm import tqdm
@@ -342,25 +343,127 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         Metadata: class that contains metadata
     """
 
-    with open(metadata_loc, "rb") as file:
-        encoding = chardet.detect(file.read())["encoding"]
-    with open(metadata_loc, "r", encoding=encoding) as file:
-        lines = file.read()
+    format = metadata_loc.split(".")[-1]
 
-    lines = lines.replace("ï»¿", "")
-    soup = BeautifulSoup(lines, "xml")
+    if format == "xml":
+        with open(metadata_loc, "rb") as file:
+            encoding = chardet.detect(file.read())["encoding"]
+        with open(metadata_loc, "r", encoding=encoding) as file:
+            lines = file.read()
 
-    if soup.find("match") is not None:
-        return _get_tracab_metadata(soup)
-    elif soup.find("General") is not None:
-        return _get_sportec_metadata(metadata_loc)
-    else:
-        message = "Unknown type of tracab metadata, please open an issue on GitHub."
-        raise ValueError(message)
+        lines = lines.replace("ï»¿", "")
+        soup = BeautifulSoup(lines, "xml")
 
+        if soup.find("match") is not None:
+            return _get_tracab_metadata_xml(soup)
+        elif soup.find("General") is not None:
+            return _get_sportec_metadata(metadata_loc)
+        else:
+            message = "Unknown type of tracab metadata, please open an issue on GitHub."
+            raise ValueError(message)
+    elif format == "json":
+        with open(metadata_loc, "r") as file:
+            content = json.load(file)
+            return _get_tracab_metadata_json(content)
 
 @logging_wrapper(__file__)
-def _get_tracab_metadata(soup: BeautifulSoup) -> Metadata:
+def _get_tracab_metadata_json(metadata: dict) -> Metadata:
+    match_id = int(metadata["GameID"])
+    pitch_size_x = float(metadata["PitchLongSide"])
+    pitch_size_y = float(metadata["PitchShortSide"])
+    frame_rate = int(metadata["FrameRate"])
+    datetime_string = metadata["Kickoff"]
+    date = pd.to_datetime(datetime_string[:10])
+
+    frames_dict = {
+        "period_id": [],
+        "start_frame": [],
+        "end_frame": [],
+        "start_datetime_td": [],
+        "end_datetime_td": [],
+    }
+
+    for i in range(1, 6):
+        frames_dict["period_id"].append(i)
+
+        if metadata[f"Phase{i}StartFrame"] != 0:
+            start_frame = int(metadata[f"Phase{i}StartFrame"])
+            end_frame = int(metadata[f"Phase{i}EndFrame"])
+
+            frames_dict["start_frame"].append(start_frame)
+            frames_dict["end_frame"].append(end_frame)
+
+            start_frame_corrected = start_frame % (frame_rate * 60 * 60 * 24)
+            end_frame_corrected = end_frame % (frame_rate * 60 * 60 * 24)
+
+            frames_dict["start_datetime_td"].append(date + dt.timedelta(milliseconds=int((start_frame_corrected / frame_rate) * 1_000)))
+            frames_dict["end_datetime_td"].append(date + dt.timedelta(milliseconds=int((end_frame_corrected / frame_rate) * 1_000)))
+        else:
+            frames_dict["start_frame"].append(MISSING_INT)
+            frames_dict["end_frame"].append(MISSING_INT)
+            frames_dict["start_datetime_td"].append(pd.NaT)
+            frames_dict["end_datetime_td"].append(pd.NaT)
+
+    df_frames = pd.DataFrame(frames_dict)
+
+    df_frames["start_datetime_td"] = localize_datetime(
+        df_frames["start_datetime_td"], "Netherlands"
+    )
+    df_frames["end_datetime_td"] = localize_datetime(
+        df_frames["end_datetime_td"], "Netherlands"
+    )
+
+    home_team_id = metadata["HomeTeam"]["TeamID"]
+    home_team_name = metadata["HomeTeam"]["LongName"]
+    home_players_info = []
+
+    for player in metadata["HomeTeam"]["Players"]:
+        home_players_info.append({
+            "PlayerId": player["PlayerID"],
+            "FirstName": player["FirstName"],
+            "LastName": player["LastName"],
+            "JerseyNo": player["JerseyNo"],
+            "StartFrameCount": player["StartFrameCount"],
+            "EndFrameCount": player["EndFrameCount"]
+        })
+
+    away_team_id = metadata["AwayTeam"]["TeamID"]
+    away_team_name = metadata["AwayTeam"]["LongName"]
+    away_players_info = []
+
+    for player in metadata["AwayTeam"]["Players"]:
+        home_players_info.append({
+            "PlayerId": player["PlayerID"],
+            "FirstName": player["FirstName"],
+            "LastName": player["LastName"],
+            "JerseyNo": player["JerseyNo"],
+            "StartFrameCount": player["StartFrameCount"],
+            "EndFrameCount": player["EndFrameCount"]
+        })
+
+    df_home_players = _get_players_metadata_v1(home_players_info)
+    df_away_players = _get_players_metadata_v1(away_players_info)
+
+    return Metadata(
+        match_id=match_id,
+        pitch_dimensions=[pitch_size_x, pitch_size_y],
+        periods_frames=df_frames,
+        frame_rate=frame_rate,
+        home_team_id=home_team_id,
+        home_team_name=home_team_name,
+        home_players=df_home_players,
+        home_score=MISSING_INT,
+        home_formation="",
+        away_team_id=away_team_id,
+        away_team_name=away_team_name,
+        away_players=df_away_players,
+        away_score=MISSING_INT,
+        away_formation="",
+        country="",
+    )
+
+@logging_wrapper(__file__)
+def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
     """This version is used in the Netherlands"""
 
     match_id = int(soup.find("match")["iId"])
