@@ -434,6 +434,13 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
         "starter": [],
         "shirt_num": [],
     }
+    player_positions = {
+        "midfielder": "midfielder",
+        "defender": "defender",
+        "forward": "forward",
+        "striker": "forward",
+        "goalkeeper": "goalkeeper",
+    }
 
     for player in players_data:
         player_id = int(player["PlayerRef"][1:])
@@ -445,7 +452,9 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
             if player["Position"] != "Substitute"
             else player["SubPosition"]
         )
-        result_dict["position"].append(position.lower())
+        result_dict["position"].append(
+            player_positions.get(position.lower(), "unspecified")
+        )
         result_dict["starter"].append(player["Status"] == "Start")
         result_dict["shirt_num"].append(int(player["ShirtNumber"]))
 
