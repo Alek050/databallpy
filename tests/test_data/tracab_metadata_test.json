@@ -1,0 +1,104 @@
+{
+  "GameID": 1908,
+  "CompetitionID": 10,
+  "SeasonID": 2023,
+  "FrameRate": 25,
+  "PitchShortSide": 50,
+  "PitchLongSide": 100,
+  "Phase1StartFrame": 1509993,
+  "Phase1EndFrame": 1509994,
+  "Phase2StartFrame": 1509996,
+  "Phase2EndFrame": 1509997,
+  "Phase3StartFrame": 0,
+  "Phase3EndFrame": 0,
+  "Phase4StartFrame": 0,
+  "Phase4EndFrame": 0,
+  "Phase5StartFrame": 0,
+  "Phase5EndFrame": 0,
+  "Phase1HomeGKLeft": true,
+  "Phase2HomeGKLeft": false,
+  "Phase3HomeGKLeft": null,
+  "Phase4HomeGKLeft": null,
+  "Phase5HomeGKLeft": null,
+  "HomeTeam": {
+    "LongName": "TeamOne",
+    "ShortName": "T1",
+    "TeamID": 3,
+    "Players": [
+      {
+        "PlayerID": 19367,
+        "FirstName": "Piet",
+        "LastName": "Schrijvers",
+        "JerseyNo": 1,
+        "StartFrameCount": 1509993,
+        "EndFrameCount": 1509997,
+        "StartingPosition": "G",
+        "CurrentPosition": "G"
+      },
+      {
+        "PlayerID": 45849,
+        "FirstName": "Jan",
+        "LastName": "Boskamp",
+        "JerseyNo": 2,
+        "StartFrameCount": 1509993,
+        "EndFrameCount": 1509995,
+        "StartingPosition": "D",
+        "CurrentPosition": "D"
+      }
+    ]
+  },
+  "AwayTeam": {
+    "LongName": "TeamTwo",
+    "ShortName": "T2",
+    "TeamID": 194,
+    "Players": [
+      {
+        "PlayerID": 184934,
+        "FirstName": "Pepijn",
+        "LastName": "Blok",
+        "JerseyNo": 1,
+        "StartFrameCount": 1509993,
+        "EndFrameCount": 1509997,
+        "StartingPosition": "G",
+        "CurrentPosition": "G"
+      },
+      {
+        "PlayerID": 450445,
+        "FirstName": "",
+        "LastName": "TestSpeler",
+        "JerseyNo": 2,
+        "StartFrameCount": 1509993,
+        "EndFrameCount": 1509995,
+        "StartingPosition": "D",
+        "CurrentPosition": "D"
+      }
+    ]
+  },
+  "Referees": [
+    {
+      "PlayerID": 42720,
+      "FirstName": "Jeroen",
+      "LastName": "Manschot",
+      "JerseyNo": 0,
+      "StartFrameCount": 1509993,
+      "EndFrameCount": 1675726
+    },
+    {
+      "PlayerID": 44316,
+      "FirstName": "Freek",
+      "LastName": "Vandeursen",
+      "JerseyNo": 1,
+      "StartFrameCount": 1509993,
+      "EndFrameCount": 1675726
+    },
+    {
+      "PlayerID": 48750,
+      "FirstName": "Halis",
+      "LastName": "Kucukerbir",
+      "JerseyNo": 2,
+      "StartFrameCount": 1509993,
+      "EndFrameCount": 1675726
+    }
+  ],
+  "Kickoff": "2023-01-14 13:17:00"
+}

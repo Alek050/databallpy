@@ -345,7 +345,12 @@ def _get_metadata(metadata_loc: str) -> Metadata:
 
     format = metadata_loc.split(".")[-1]
 
-    if format == "xml":
+    if format == "json":
+        with open(metadata_loc, "r") as file:
+            content = json.load(file)
+            
+            return _get_tracab_metadata_json(content)
+    else:
         with open(metadata_loc, "rb") as file:
             encoding = chardet.detect(file.read())["encoding"]
         with open(metadata_loc, "r", encoding=encoding) as file:
@@ -361,10 +366,6 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         else:
             message = "Unknown type of tracab metadata, please open an issue on GitHub."
             raise ValueError(message)
-    elif format == "json":
-        with open(metadata_loc, "r") as file:
-            content = json.load(file)
-            return _get_tracab_metadata_json(content)
 
 @logging_wrapper(__file__)
 def _get_tracab_metadata_json(metadata: dict) -> Metadata:
@@ -432,14 +433,16 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
     away_players_info = []
 
     for player in metadata["AwayTeam"]["Players"]:
-        home_players_info.append({
-            "PlayerId": player["PlayerID"],
-            "FirstName": player["FirstName"],
-            "LastName": player["LastName"],
-            "JerseyNo": player["JerseyNo"],
-            "StartFrameCount": player["StartFrameCount"],
-            "EndFrameCount": player["EndFrameCount"]
-        })
+        away_players_info.append(
+            {
+                "PlayerId": player["PlayerID"],
+                "FirstName": player["FirstName"],
+                "LastName": player["LastName"],
+                "JerseyNo": player["JerseyNo"],
+                "StartFrameCount": player["StartFrameCount"],
+                "EndFrameCount": player["EndFrameCount"],
+            }
+        )
 
     df_home_players = _get_players_metadata_v1(home_players_info)
     df_away_players = _get_players_metadata_v1(away_players_info)
