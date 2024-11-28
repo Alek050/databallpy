@@ -1,11 +1,11 @@
-import chardet
 import datetime as dt
-import os
 import json
+import os
+
+import chardet
 import numpy as np
 import pandas as pd
 import requests
-
 from bs4 import BeautifulSoup
 from lxml import etree
 from tqdm import tqdm
@@ -334,7 +334,8 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
 
 @logging_wrapper(__file__)
 def _get_metadata(metadata_loc: str) -> Metadata:
-    """Function that reads metadata (supports both .json and .xml) file and stores it in Metadata class
+    """Function that reads metadata (supports both .json and .xml) file and
+    stores it in Metadata class
 
     Args:
         meta_data_loc (str): location of the metadata file
@@ -348,7 +349,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     if format == "json":
         with open(metadata_loc, "r") as file:
             content = json.load(file)
-            
+
             return _get_tracab_metadata_json(content)
     else:
         with open(metadata_loc, "rb") as file:
@@ -367,8 +368,12 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             message = "Unknown type of tracab metadata, please open an issue on GitHub."
             raise ValueError(message)
 
+
 @logging_wrapper(__file__)
 def _get_tracab_metadata_json(metadata: dict) -> Metadata:
+    """
+    Function that reads metadata from .json file and stores it in Metadata class.
+    """
     match_id = int(metadata["GameID"])
     pitch_size_x = float(metadata["PitchLongSide"])
     pitch_size_y = float(metadata["PitchShortSide"])
@@ -397,8 +402,18 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
             start_frame_corrected = start_frame % (frame_rate * 60 * 60 * 24)
             end_frame_corrected = end_frame % (frame_rate * 60 * 60 * 24)
 
-            frames_dict["start_datetime_td"].append(date + dt.timedelta(milliseconds=int((start_frame_corrected / frame_rate) * 1_000)))
-            frames_dict["end_datetime_td"].append(date + dt.timedelta(milliseconds=int((end_frame_corrected / frame_rate) * 1_000)))
+            frames_dict["start_datetime_td"].append(
+                date
+                + dt.timedelta(
+                    milliseconds=int((start_frame_corrected / frame_rate) * 1_000)
+                )
+            )
+            frames_dict["end_datetime_td"].append(
+                date
+                + dt.timedelta(
+                    milliseconds=int((end_frame_corrected / frame_rate) * 1_000)
+                )
+            )
         else:
             frames_dict["start_frame"].append(MISSING_INT)
             frames_dict["end_frame"].append(MISSING_INT)
@@ -419,14 +434,16 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
     home_players_info = []
 
     for player in metadata["HomeTeam"]["Players"]:
-        home_players_info.append({
-            "PlayerId": player["PlayerID"],
-            "FirstName": player["FirstName"],
-            "LastName": player["LastName"],
-            "JerseyNo": player["JerseyNo"],
-            "StartFrameCount": player["StartFrameCount"],
-            "EndFrameCount": player["EndFrameCount"]
-        })
+        home_players_info.append(
+            {
+                "PlayerId": player["PlayerID"],
+                "FirstName": player["FirstName"],
+                "LastName": player["LastName"],
+                "JerseyNo": player["JerseyNo"],
+                "StartFrameCount": player["StartFrameCount"],
+                "EndFrameCount": player["EndFrameCount"],
+            }
+        )
 
     away_team_id = metadata["AwayTeam"]["TeamID"]
     away_team_name = metadata["AwayTeam"]["LongName"]
@@ -464,6 +481,7 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
         away_formation="",
         country="",
     )
+
 
 @logging_wrapper(__file__)
 def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
