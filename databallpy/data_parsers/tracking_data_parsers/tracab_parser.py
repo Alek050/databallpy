@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from lxml import etree
 from tqdm import tqdm
+from line_profiler import profile
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.sportec_metadata_parser import (
@@ -16,10 +17,10 @@ from databallpy.data_parsers.sportec_metadata_parser import (
     _get_sportec_open_data_url,
 )
 from databallpy.data_parsers.tracking_data_parsers.utils import (
-    _add_ball_data_to_dict,
+    # _add_ball_data_to_dict,
     _add_datetime,
     _add_periods_to_tracking_data,
-    _add_player_tracking_data_to_dict,
+    # _add_player_tracking_data_to_dict,
     _adjust_start_end_frames,
     _get_matchtime,
     _insert_missing_rows,
@@ -28,7 +29,8 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import localize_datetime
-
+from databallpy.utils.utils import _to_float
+from rusty_databallpy import rusty_read_tracab_txt_data
 
 @logging_wrapper(__file__)
 def load_tracab_tracking_data(
@@ -276,16 +278,27 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
     Returns:
         pd.DataFrame: contains tracking data
     """
+    # rusty_data = rusty_read_tracab_txt_data(tracab_loc)
+    data = fill_data_dict(tracab_loc)
 
-    if verbose:
-        print(f"Reading in {tracab_loc}", end="")
+    df = pd.DataFrame(data)
+    # rusty_df = pd.DataFrame(rusty_data)
+    # exclude_cols = ["ball_possession", "ball_status"]
+    # include_cols = [col for col in rusty_df.columns if col not in exclude_cols]
+    # rusty_df.loc[:, rusty_df.columns.isin(include_cols)] = rusty_df.loc[:, rusty_df.columns.isin(include_cols)].apply(pd.to_numeric, errors='coerce').replace([-999, -999.0], np.nan)
 
+    mask = df.columns.str.contains("_x|_y|_z")
+    df.loc[:, mask] = np.round(df.loc[:, mask] / 100, 3)  # change cm to m
+    df = _insert_missing_rows(df, "frame")
+    return df
+
+@profile
+def fill_data_dict(tracab_loc) -> dict:
     with open(tracab_loc, "r") as file:
-        lines = file.readlines()
-    if verbose:
-        print(" - Completed")
+        size_lines = len(file.readlines())
 
-    size_lines = len(lines)
+    team_ids = {0: "away", 1: "home"}
+    home_away_map = {"H": "home", "A": "away"}
 
     data = {
         "frame": [np.nan] * size_lines,
@@ -295,41 +308,43 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         "ball_status": [None] * size_lines,
         "ball_possession": [None] * size_lines,
     }
-    team_ids = {0: "away", 1: "home"}
-    home_away_map = {"H": "home", "A": "away"}
+    
+    with open(tracab_loc, "r") as file:
+        for idx, (frame, players_info, ball_info, _) in enumerate(
+            (line.split(":") for line in file)
+        ):
+            data["frame"][idx] = int(frame)
 
-    if verbose:
-        lines = tqdm(
-            lines, desc="Writing lines to dataframe", unit=" lines", leave=False
-        )
+            players = players_info.split(";")[:-1]
+            for team_id, _, shirt_num, x, y, _ in (player.split(",") for player in players):
+                team = team_ids.get(int(team_id))
+                if team is None:  # player is unknown or referee
+                    continue
+                # data = _add_player_tracking_data_to_dict(team, shirt_num, x, y, data, idx)
+                try:
+                    data[f"{team}_{shirt_num}_x"][idx] = float(x)
+                    data[f"{team}_{shirt_num}_y"][idx] = float(y)
+                except KeyError:
+                    data[f"{team}_{shirt_num}_x"] = [np.nan] * len(data["frame"])
+                    data[f"{team}_{shirt_num}_y"] = [np.nan] * len(data["frame"])
+                    data[f"{team}_{shirt_num}_x"][idx] = float(x)
+                    data[f"{team}_{shirt_num}_y"][idx] = float(y)
+                
 
-    for idx, (frame, players_info, ball_info, _) in enumerate(
-        (line.split(":") for line in lines)
-    ):
-        data["frame"][idx] = int(frame)
+            ball_x, ball_y, ball_z, _, possession, status = ball_info.split(";")[0].split(
+                ","
+            )[:6]
 
-        players = players_info.split(";")[:-1]
-        for team_id, _, shirt_num, x, y, _ in (player.split(",") for player in players):
-            team = team_ids.get(int(team_id))
-            if team is None:  # player is unknown or referee
-                continue
-            data = _add_player_tracking_data_to_dict(team, shirt_num, x, y, data, idx)
-
-        ball_x, ball_y, ball_z, _, possession, status = ball_info.split(";")[0].split(
-            ","
-        )[:6]
-
-        possession = home_away_map[possession]
-        data = _add_ball_data_to_dict(
-            ball_x, ball_y, ball_z, possession, status.lower(), data, idx
-        )
-
-    df = pd.DataFrame(data)
-
-    mask = df.columns.str.contains("_x|_y|_z")
-    df.loc[:, mask] = np.round(df.loc[:, mask] / 100, 3)  # change cm to m
-    df = _insert_missing_rows(df, "frame")
-    return df
+            possession = home_away_map[possession]
+            data["ball_x"][idx] = _to_float(ball_x)
+            data["ball_y"][idx] = _to_float(ball_y)
+            data["ball_z"][idx] = _to_float(ball_z)
+            data["ball_possession"][idx] = possession
+            data["ball_status"][idx] = status.lower()
+            # data = _add_ball_data_to_dict(
+            #     ball_x, ball_y, ball_z, possession, status.lower(), data, idx
+            # )
+    return data
 
 
 @logging_wrapper(__file__)

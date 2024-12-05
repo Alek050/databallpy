@@ -15,7 +15,7 @@ from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
-
+from rusty_databallpy import rusty_needleman_wunch
 
 @logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
@@ -119,7 +119,8 @@ def synchronise_tracking_and_event_data(
                 all_events,
                 cost_functions,
             )
-            event_frame_dict = _needleman_wunsch(sim_mat)
+            # event_frame_dict = _needleman_wunsch(sim_mat)
+            event_frame_dict = rusty_needleman_wunch(sim_mat.astype(np.float32), -10., 0.)
 
             # assign events to tracking data frames
             for event, frame in event_frame_dict.items():
@@ -277,10 +278,9 @@ def _needleman_wunsch(
                 f"The algorithm got stuck due to an unexpected "
                 f"value of P[{i}, {j}]: {pointer_matrix[i, j]}"
             )
-
     frames = frames[::-1]
     events = events[::-1]
-
+    
     idx_events = [idx for idx, i in enumerate(events) if i > 0]
     event_frame_dict = {}
     for i in idx_events:
