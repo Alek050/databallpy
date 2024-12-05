@@ -1,0 +1,13 @@
+[package]
+name = "rusty_databallpy"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ndarray = "0.16.1"
+numpy = "0.21.0"
+polars = { version = "0.44.2", features = ["lazy", "polars-io"] }
+polars-io = { version = "0.44.2", features = ["parquet"] }
+pyo3 = { version = "0.21.0", features = ["extension-module"] }
+
+
