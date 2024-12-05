@@ -515,7 +515,7 @@ def create_smart_batches(tracking_data: pd.DataFrame) -> list[pd.Timestamp]:
         last_end_dt = end_dt
 
     # add last datetime with some room for the last events
-    end_datetimes.append(last_end_dt + pd.to_timedelta(3, unit="s"))
+    end_datetimes.append(last_end_dt + pd.to_timedelta(1, unit="h"))
 
     return end_datetimes
 
