@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "databallpy"
-version = "0.5.1"
+version = "0.5.2"
 description = "A package for loading, preprocessing, vizualising and synchronizing soccere event and tracking data."
 authors = [
     "Alexander Oonk <alexanderoonk26@gmail.com>",
@@ -100,6 +100,8 @@ select = [
     # pep8-naming
     "N",
 ]
+fixable = ["ALL"]
+unfixable = []
 
 
 [tool.ruff.lint.per-file-ignores]

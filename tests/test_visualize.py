@@ -166,6 +166,7 @@ class TestVisualize(unittest.TestCase):
             heatmap_overlay=x,
             overlay_cmap="viridis",
             events=["pass", "dribble"],
+            variable_of_interest="12",
         )
         self.assertIsInstance(fig, plt.Figure)
         self.assertIsInstance(ax, plt.Axes)
@@ -213,6 +214,15 @@ class TestVisualize(unittest.TestCase):
                 title="test_clip",
                 heatmap_overlay=np.zeros((4, 10, 10)),
             )
+        with self.assertRaises(DataBallPyError):
+            save_tracking_video(
+                match,
+                1,
+                3,
+                save_folder="tests/test_data",
+                title="test_clip",
+                heatmap_overlay=np.zeros((3, 10, 10, 10)),
+            )
 
         with self.assertRaises(DataBallPyError):
             save_tracking_video(
@@ -242,6 +252,7 @@ class TestVisualize(unittest.TestCase):
             3,
             save_folder="tests/test_data",
             title="test_clip",
+            add_player_possession=True,
             variable_of_interest=series,
             heatmap_overlay=heatmap,
             overlay_cmap="viridis",
@@ -338,6 +349,17 @@ class TestVisualize(unittest.TestCase):
                 False,
                 False,
                 [[2, 3, 4], [5, 6, 7]],
+                "viridis",
+            )
+        with self.assertRaises(DataBallPyError):
+            _pre_check_plot_td_inputs(
+                match,
+                match.tracking_data.iloc[0:1],
+                [],
+                None,
+                False,
+                False,
+                np.array([[[2, 3, 4], [5, 6, 7]], [[2, 3, 4], [5, 6, 7]]]),
                 "viridis",
             )
 

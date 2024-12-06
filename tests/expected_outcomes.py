@@ -1717,3 +1717,205 @@ TRACAB_SPORTEC_XML_TD = pd.DataFrame(
 TRACAB_SPORTEC_XML_TD["datetime"] = pd.to_datetime(
     TRACAB_SPORTEC_XML_TD["datetime"]
 ).dt.tz_convert("Europe/Berlin")
+
+MD_STATSBOMB = Metadata(
+    match_id=15946,
+    pitch_dimensions=(105.0, 68.0),
+    periods_frames=pd.DataFrame(
+        {
+            "period_id": [1, 2, 3, 4, 5],
+            "start_datetime_ed": [
+                pd.to_datetime("2018-08-18 22:15:00+00:00"),
+                pd.to_datetime("2018-08-18 23:15:00+00:00"),
+                pd.NaT,
+                pd.NaT,
+                pd.NaT,
+            ],
+            "end_datetime_ed": [
+                pd.to_datetime("2018-08-18 23:00:00+00:00"),
+                pd.to_datetime("2018-08-19 00:00:00+00:00"),
+                pd.NaT,
+                pd.NaT,
+                pd.NaT,
+            ],
+        }
+    ),
+    frame_rate=MISSING_INT,
+    home_team_id=217,
+    home_team_name="Barcelona",
+    home_players=pd.DataFrame(
+        {
+            "id": [5211, 8206, 8652],
+            "full_name": [
+                "Jordi Alba Ramos",
+                "Arturo Erasmo Vidal Pardo",
+                "Jasper Cillessen",
+            ],
+            "formation_place": [6, 10, MISSING_INT],
+            "position": ["defender", "midfielder", "unspecified"],
+            "starter": [True, False, False],
+            "shirt_num": [18, 22, 13],
+        }
+    ),
+    home_score=3,
+    home_formation="442",
+    away_team_id=206,
+    away_team_name="Deportivo Alavés",
+    away_players=pd.DataFrame(
+        {
+            "id": [6566, 6581, 6923],
+            "full_name": [
+                "Borja González Tomás",
+                "Jonathan Rodríguez Menéndez",
+                "Joaquín Navarro Jiménez",
+            ],
+            "formation_place": [16, 16, MISSING_INT],
+            "position": ["midfielder", "midfielder", "unspecified"],
+            "starter": [False, True, False],
+            "shirt_num": [18, 23, 15],
+        }
+    ),
+    away_score=0,
+    away_formation="451",
+    country="Spain",
+)
+
+ED_STATSBOMB = pd.DataFrame(
+    {
+        "event_id": [0, 1, 2, 3, 4],
+        "databallpy_event": ["pass", None, "shot", "dribble", "pass"],
+        "period_id": [1, 1, 1, 1, 1],
+        "minutes": [0, 0, 5, 7, 0],
+        "seconds": [11, 45, 39, 7, 11],
+        "player_id": [5211, 5211, 5211, 6581, 5211],
+        "team_id": [217, 217, 217, 206, 206],
+        "outcome": [False, None, False, False, False],
+        "start_x": [-30.0125, -4.7250, 47.1625, -27.4750, 30.0125],
+        "start_y": [32.64, 30.260, 11.560, -13.515, -32.64],
+        "datetime": [
+            pd.to_datetime("2018-08-18 22:15:11+00:00"),
+            pd.to_datetime("2018-08-18 22:15:45+00:00"),
+            pd.to_datetime("2018-08-18 22:20:39+00:00"),
+            pd.to_datetime("2018-08-18 22:22:07+00:00"),
+            pd.to_datetime("2018-08-18 22:15:11+00:00"),
+        ],
+        "statsbomb_event": ["pass", "carry", "shot", "dribble", "pass"],
+        "player_name": [
+            "Jordi Alba Ramos",
+            "Jordi Alba Ramos",
+            "Jordi Alba Ramos",
+            "Jonathan Rodríguez Menéndez",
+            "Jordi Alba Ramos",
+        ],
+        "team_name": [
+            "Barcelona",
+            "Barcelona",
+            "Barcelona",
+            "Deportivo Alavés",
+            "Deportivo Alavés",
+        ],
+        "statsbomb_outcome": ["Incomplete", "", "Off T", "Incomplete", "Incomplete"],
+    }
+)
+
+SHOT_EVENT_STATSBOMB = {
+    2: ShotEvent(
+        event_id=2,
+        period_id=1,
+        minutes=5,
+        seconds=39,
+        datetime=pd.to_datetime("2018-08-18 22:20:39+0000", utc=True),
+        start_x=47.1625,
+        start_y=11.560,
+        team_id=217,
+        team_side="home",
+        pitch_size=[105.0, 68.0],
+        player_id=5211,
+        jersey=18,
+        outcome=False,
+        related_event_id=["7fb36c67-4b6c-4c3d-bc52-4e1cd712e790"],
+        body_part="left_foot",
+        possession_type="open_play",
+        set_piece="no_set_piece",
+        _xt=0.07851,
+        outcome_str="miss_off_target",
+    )
+}
+
+PASS_EVENT_STATSBOMB = {
+    0: PassEvent(
+        event_id=0,
+        period_id=1,
+        minutes=0,
+        seconds=11,
+        datetime=pd.to_datetime("2018-08-18 22:15:11+0000", utc=True),
+        start_x=-30.0125,
+        start_y=32.64,
+        team_id=217,
+        team_side="home",
+        pitch_size=[105.0, 68.0],
+        player_id=5211,
+        jersey=18,
+        outcome=False,
+        related_event_id=["994ee6b7-0e8b-4168-ac79-81c68ee580f7"],
+        body_part="left_foot",
+        possession_type="corner_kick",
+        set_piece="corner_kick",
+        _xt=0.049,
+        outcome_str="unspecified",
+        end_x=26.3375,
+        end_y=24.225,
+        pass_type="through_ball",
+        receiver_player_id=5246,
+    ),
+    4: PassEvent(
+        event_id=4,
+        period_id=1,
+        minutes=0,
+        seconds=11,
+        datetime=pd.to_datetime("2018-08-18 22:15:11+0000", utc=True),
+        start_x=30.0125,
+        start_y=-32.64,
+        team_id=206,
+        team_side="away",
+        pitch_size=[105.0, 68.0],
+        player_id=5211,
+        jersey=18,
+        outcome=False,
+        related_event_id=["994ee6b7-0e8b-4168-ac79-81c68ee580f7"],
+        body_part="left_foot",
+        possession_type="corner_kick",
+        set_piece="corner_kick",
+        _xt=0.049,
+        outcome_str="unspecified",
+        end_x=-26.3375,
+        end_y=-24.225,
+        pass_type="through_ball",
+        receiver_player_id=5246,
+    ),
+}
+
+DRIBBLE_EVENT_STATSBOMB = {
+    3: DribbleEvent(
+        event_id=3,
+        period_id=1,
+        minutes=7,
+        seconds=7,
+        datetime=pd.to_datetime("2018-08-18 22:22:07+0000", utc=True),
+        start_x=-27.4750,
+        start_y=-13.515,
+        team_id=206,
+        team_side="away",
+        pitch_size=[105.0, 68.0],
+        player_id=6581,
+        jersey=23,
+        outcome=False,
+        related_event_id=["4c601a79-df4f-4001-902b-6fc9788718eb"],
+        body_part="unspecified",
+        possession_type="unspecified",
+        set_piece="unspecified",
+        _xt=0.001879,
+        duel_type="unspecified",
+        with_opponent=None,
+    )
+}

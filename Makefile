@@ -17,7 +17,6 @@ help:
 	$(call echotask,"deps","installs and updates all dependencies for developing")
 	$(call echotask,"format","formats code using ruff")
 	$(call echotask,"formatcheck","checks format using ruff")
-	$(call echotask,"lint","lints all code using ruff")
 	$(call echotask,"formatlint","formats and lints code using ruff")
 	$(call echotask,"test","runs all tests")
 	$(call echotask,"docs","runs sphinx code to create docs")
@@ -35,12 +34,7 @@ formatcheck:
 ruff_fix: ## Run ruff lint check with auto fix
 	poetry run ruff check --fix $(LINT_FILES)
 
-ruff: ## Run ruff lint checs
-	poetry run ruff check $(LINT_FILES)
-
-lint: formatcheck ruff
-
-formatlint: ruff format $(LINT_FILES)
+formatlint: format ruff_fix
 
 test:
 	$(PYTEST) $(PYTEST_ARGS_COV)
