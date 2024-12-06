@@ -2,15 +2,18 @@ import os
 import unittest
 from unittest.mock import MagicMock, mock_open, patch
 
+import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.tracking_data_parsers.tracab_parser import (
     _get_metadata,
     _get_players_metadata_v1,
     _get_tracking_data_txt,
+    fallback_fill_data_dict,
     load_sportec_open_tracking_data,
     load_tracab_tracking_data,
 )
+from databallpy.data_parsers.tracking_data_parsers.utils import _insert_missing_rows
 from databallpy.utils.constants import MISSING_INT
 from tests.expected_outcomes import (
     MD_TRACAB,
@@ -118,6 +121,24 @@ class TestTracabParser(unittest.TestCase):
         tracking_data = _get_tracking_data_txt(self.tracking_data_dat_loc, verbose=False)
         expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
+
+    def test_fallback_fill_data_dict(self):
+        data_dict = fallback_fill_data_dict(self.tracking_data_dat_loc, verbose=False)
+        df = pd.DataFrame(data_dict)
+        mask = df.columns.str.contains("_x|_y|_z")
+        df.loc[:, mask] = np.round(df.loc[:, mask] / 100, 3)
+        df = _insert_missing_rows(df, "frame")
+        first_cols = [
+            "frame",
+            "ball_x",
+            "ball_y",
+            "ball_z",
+            "ball_status",
+            "ball_possession",
+        ]
+        other_cols = [x for x in df.sort_index(axis=1).columns if x not in first_cols]
+        expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
+        pd.testing.assert_frame_equal(df[[*first_cols, *other_cols]], expected_td)
 
     @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.requests.get")
     @patch(

@@ -17,6 +17,7 @@ from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
 from rusty_databallpy import rusty_needleman_wunch
 
+
 @logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
     tracking_data: pd.DataFrame,
@@ -120,7 +121,9 @@ def synchronise_tracking_and_event_data(
                 cost_functions,
             )
             # event_frame_dict = _needleman_wunsch(sim_mat)
-            event_frame_dict = rusty_needleman_wunch(sim_mat.astype(np.float32), -10., 0.)
+            event_frame_dict = rusty_needleman_wunch(
+                sim_mat.astype(np.float32), -10.0, 0.0
+            )
 
             # assign events to tracking data frames
             for event, frame in event_frame_dict.items():
@@ -280,7 +283,7 @@ def _needleman_wunsch(
             )
     frames = frames[::-1]
     events = events[::-1]
-    
+
     idx_events = [idx for idx, i in enumerate(events) if i > 0]
     event_frame_dict = {}
     for i in idx_events:

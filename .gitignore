@@ -153,4 +153,9 @@ datasets/
 databallpy_config.ini
 
 _build/*
+*.lprof
+*.lock
+*.svg
+*.pickle
+
 

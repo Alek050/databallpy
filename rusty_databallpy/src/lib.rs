@@ -19,9 +19,13 @@ fn rusty_needleman_wunch(
 }
 
 #[pyfunction]
-fn rusty_read_tracab_txt_data(tracab_file_loc: &str) -> PyResult<()> {
-    read_tracab_tracking_data::save_tracab_dat_to_parquet(tracab_file_loc)?;
-    Ok(())
+fn rusty_read_tracab_txt_data(tracab_file_loc: &str, verbose:bool) -> PyResult<(
+    HashMap<String, Vec<f64>>,
+    HashMap<String, Vec<String>>,
+    Vec<i32>)> {
+
+    let (floats_dict, strings_dict, frames_vec) = read_tracab_tracking_data::read_tracab_txt_data(tracab_file_loc, verbose)?;
+    Ok((floats_dict, strings_dict, frames_vec))
 }
 
 

@@ -33,20 +33,6 @@ TD_TRACAB = pd.DataFrame(
             None,
             "home",
         ],
-        "home_34_x": [
-            -13.50,
-            -13.50,
-            -13.50,
-            np.nan,
-            -13.49,
-        ],
-        "home_34_y": [
-            -4.75,
-            -4.74,
-            -4.73,
-            np.nan,
-            -4.72,
-        ],
         "away_17_x": [
             13.22,
             13.21,
@@ -60,6 +46,20 @@ TD_TRACAB = pd.DataFrame(
             -13.17,
             np.nan,
             -13.18,
+        ],
+        "home_34_x": [
+            -13.50,
+            -13.50,
+            -13.50,
+            np.nan,
+            -13.49,
+        ],
+        "home_34_y": [
+            -4.75,
+            -4.74,
+            -4.73,
+            np.nan,
+            -4.72,
         ],
         "period_id": [1, 1, MISSING_INT, 2, 2],
         "datetime": pd.to_datetime(
