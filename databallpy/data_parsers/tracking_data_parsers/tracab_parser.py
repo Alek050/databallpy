@@ -168,37 +168,19 @@ def _get_tracking_data_xml(
     event, _ = next(context)
 
     frame_values = []
+    n_elements = 0
+    n_frames_first_half = None
+    frame_rate = None
     # first find the two frame sets of the ball to initialize the frames
     for event, elem in context:
+        n_elements += 1
         if event == "end" and elem.tag == "FrameSet" and elem.get("TeamId") == "BALL":
             frames = elem.findall("Frame")
             frame_values.extend([int(x.get("N")) for x in frames])
-            if elem.get("GameSection") == "firstHalf":
-                frames_df.loc[0, "start_frame"] = int(frames[0].get("N"))
-                frames_df.loc[0, "start_datetime_td"] = pd.to_datetime(
-                    frames[0].get("T")
-                ).tz_convert(None)
-                frames_df.loc[0, "end_frame"] = int(frames[-1].get("N"))
-                frames_df.loc[0, "end_datetime_td"] = pd.to_datetime(
-                    frames[-1].get("T")
-                ).tz_convert(None)
-                frame_rate = (
-                    1
-                    / (
-                        pd.to_datetime(frames[1].get("T")).tz_convert(None)
-                        - pd.to_datetime(frames[0].get("T")).tz_convert(None)
-                    ).total_seconds()
-                )
-                n_frames_first_half = len(frames)
-            else:  # second half
-                frames_df.loc[1, "start_frame"] = int(frames[0].get("N"))
-                frames_df.loc[1, "start_datetime_td"] = pd.to_datetime(
-                    frames[0].get("T")
-                ).tz_convert(None)
-                frames_df.loc[1, "end_frame"] = int(frames[-1].get("N"))
-                frames_df.loc[1, "end_datetime_td"] = pd.to_datetime(
-                    frames[-1].get("T")
-                ).tz_convert(None)
+            game_section = elem.get("GameSection")
+            frame_rate, n_frames_first_half = process_game_section(
+                frames, game_section, frames_df, frame_rate, n_frames_first_half
+            )
 
     size_lines = len(frame_values)
     data = {
@@ -215,7 +197,7 @@ def _get_tracking_data_xml(
     event, _ = next(context)
 
     if verbose:
-        context = tqdm(context, total=3400000)
+        context = tqdm(context, total=n_elements)
 
     for event, elem in context:
         if not (event == "end" and elem.tag == "FrameSet"):
@@ -268,6 +250,39 @@ def _get_tracking_data_xml(
     )
 
     return df, frames_df, frame_rate
+
+
+def process_game_section(
+    frames, game_section, frames_df, frame_rate=None, n_frames_first_half=None
+):
+    if game_section == "firstHalf":
+        frames_df.loc[0, "start_frame"] = int(frames[0].get("N"))
+        frames_df.loc[0, "start_datetime_td"] = pd.to_datetime(
+            frames[0].get("T")
+        ).tz_convert(None)
+        frames_df.loc[0, "end_frame"] = int(frames[-1].get("N"))
+        frames_df.loc[0, "end_datetime_td"] = pd.to_datetime(
+            frames[-1].get("T")
+        ).tz_convert(None)
+        frame_rate = (
+            1
+            / (
+                pd.to_datetime(frames[1].get("T")).tz_convert(None)
+                - pd.to_datetime(frames[0].get("T")).tz_convert(None)
+            ).total_seconds()
+        )
+        n_frames_first_half = len(frames)
+    else:  # second half
+        frames_df.loc[1, "start_frame"] = int(frames[0].get("N"))
+        frames_df.loc[1, "start_datetime_td"] = pd.to_datetime(
+            frames[0].get("T")
+        ).tz_convert(None)
+        frames_df.loc[1, "end_frame"] = int(frames[-1].get("N"))
+        frames_df.loc[1, "end_datetime_td"] = pd.to_datetime(
+            frames[-1].get("T")
+        ).tz_convert(None)
+
+    return frame_rate, n_frames_first_half
 
 
 @logging_wrapper(__file__)
