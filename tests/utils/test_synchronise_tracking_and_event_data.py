@@ -561,7 +561,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         tracking_data["datetime"] = pd.to_datetime(tracking_data["datetime"])
 
-        expected_res = pd.to_datetime(["2023-01-22 16:00:25", "2023-01-22 16:00:53"])
+        expected_res = pd.to_datetime(["2023-01-22 16:00:25", "2023-01-22 17:00:50"])
 
         res = create_smart_batches(tracking_data)
         assert all(res == expected_res)
