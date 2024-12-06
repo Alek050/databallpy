@@ -105,3 +105,7 @@
 ## new version
 
 - Added StatsBomb event data as provider (by [DaanGro](https://github.com/DaanGro))
+- Added json parser for tracab metadata (by [jan-swiatek](https://github.com/jan-swiatek))
+- Made last batch from smart batches in synchronisation last longer to include all events
+- Fixed bug in parsing tracab xml data
+- Fixed bug in combining players info from tracking and event metadata
