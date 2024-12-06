@@ -628,14 +628,20 @@ def align_player_and_team_ids(
         pd.DataFrame: tracking data with aligned player and team id's
     """
 
-    # Align player id's
-    if (
-        not set(event_metadata.home_players["id"])
-        == set(tracking_metadata.home_players["id"])
-    ) or (
-        not set(event_metadata.away_players["id"])
-        == set(tracking_metadata.away_players["id"])
-    ):
+    home_eq = (
+        tracking_metadata.home_players["id"]
+        .isin(event_metadata.home_players["id"])
+        .sum()
+        > 11
+    )
+    away_eq = (
+        tracking_metadata.away_players["id"]
+        .isin(event_metadata.away_players["id"])
+        .sum()
+        > 11
+    )
+
+    if not home_eq or not away_eq:
         tracking_metadata = align_player_ids(tracking_metadata, event_metadata)
 
     # Align team id's
