@@ -89,7 +89,6 @@
 - Fixed bug in match.add_tracking_data_features_to_shots, did not update properly after last release
 
 
-
 ## V0.5.2 (15/11/2024)
 
 - Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
@@ -102,7 +101,7 @@
 - `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
 
 
-## new version
+## V0.5.3 (10/12/2024)
 
 - Added StatsBomb event data as provider (by [DaanGro](https://github.com/DaanGro))
 - Added json parser for tracab metadata (by [jan-swiatek](https://github.com/jan-swiatek))

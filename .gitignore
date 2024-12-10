@@ -153,4 +153,8 @@ datasets/
 databallpy_config.ini
 
 _build/*
-
+*.lock
+*.lprof
+*.pickle
+*.mp4
+notebooks/*
