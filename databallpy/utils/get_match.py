@@ -12,6 +12,7 @@ from databallpy.data_parsers.event_data_parsers import (
     load_scisports_event_data,
     load_sportec_event_data,
     load_sportec_open_event_data,
+    load_statsbomb_event_data,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
@@ -40,6 +41,8 @@ def get_match(
     tracking_metadata_loc: str = None,
     event_data_loc: str = None,
     event_metadata_loc: str = None,
+    event_match_loc: str = None,
+    event_lineup_loc: str = None,
     tracking_data_provider: str = None,
     event_data_provider: str = None,
     check_quality: bool = True,
@@ -56,6 +59,10 @@ def get_match(
         event_data_loc (str, optional): location of the event data. Defaults to None.
         event_metadata_loc (str, optional): location of the metadata of the event data.
             Defaults to None.
+        event_match_loc (str, optional): location of the match file of the event data.
+            Only used for statsbomb event data. Defaults to None.
+        event_lineup_loc (str, optional): location of the lineup file of the event data.
+            Only used for statsbomb event data. Defaults to None.
         tracking_data_provider (str, optional): provider of the tracking data. Defaults
             to None. Supported providers are [tracab, metrica, inmotio]
         event_data_provider (str, optional): provider of the event data. Defaults to
@@ -77,10 +84,11 @@ def get_match(
         f"\n\tCheck quality: {str(check_quality)}"
         f"\n\tVerbose: {str(verbose)}"
     )
+
     if (
         event_data_loc
         and event_metadata_loc is None
-        and not event_data_provider == "scisports"
+        and event_data_provider not in ["scisports", "statsbomb"]
     ):
         raise ValueError(
             "Please provide an event metadata location when providing an event"
@@ -95,6 +103,12 @@ def get_match(
         raise ValueError(
             "Please provide an event data provider when providing an event"
             " metadata location"
+        )
+    elif event_data_provider == "statsbomb" and (
+        event_match_loc is None or event_lineup_loc is None
+    ):
+        raise ValueError(
+            "Please provivde both event_match_loc and event_lineup_loc when using statsbomb as event data provider"
         )
     elif tracking_data_loc and tracking_data_provider is None:
         raise ValueError(
@@ -123,8 +137,33 @@ def get_match(
         "metrica": True,
         "instat": False,
         "scisports": False,
+        "statsbomb": False,
         "sportec": True,
         "dfl": True,
+    }
+
+    uses_tracking_data = False
+    uses_event_data = False
+
+    # Check if event data should be loaded
+    if event_data_loc and event_data_provider:
+        event_data, event_metadata, databallpy_events = load_event_data(
+            event_data_loc=event_data_loc,
+            event_metadata_loc=event_metadata_loc,
+            event_data_provider=event_data_provider,
+            event_match_loc=event_match_loc,
+            event_lineup_loc=event_lineup_loc,
+        )
+        uses_event_data = True
+
+    event_precise_timestamps = {
+        "opta": True,
+        "metrica": True,
+        "instat": False,
+        "scisports": False,
+        "sportec": True,
+        "dfl": True,
+        "statsbomb": False,
     }
 
     LOGGER.info(
@@ -149,6 +188,8 @@ def get_match(
             event_data_loc=event_data_loc,
             event_metadata_loc=event_metadata_loc,
             event_data_provider=event_data_provider,
+            event_match_loc=event_match_loc,
+            event_lineup_loc=event_lineup_loc,
         )
         uses_event_data = True
 
@@ -345,7 +386,12 @@ def load_tracking_data(
 
 @logging_wrapper(__file__)
 def load_event_data(
-    *, event_data_loc: str, event_metadata_loc: str, event_data_provider: str
+    *,
+    event_data_loc: str,
+    event_metadata_loc: str,
+    event_data_provider: str,
+    event_match_loc: str,
+    event_lineup_loc: str,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the event data of a match
 
@@ -353,6 +399,8 @@ def load_event_data(
         event_data_loc (str): location of the event data file
         event_metadata_loc (str): location of the event metadata file
         event_data_provider (str): provider of the event data
+        event_match_loc (str): location of match file (specific to statsbomb)
+        event_lineup_loc (str): location of lineup file (specific to statsbomb)
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
@@ -363,6 +411,7 @@ def load_event_data(
         "metrica",
         "instat",
         "scisports",
+        "statsbomb",
         "sportec",
         "dfl",
     ]:
@@ -388,6 +437,12 @@ def load_event_data(
     elif event_data_provider == "scisports":
         event_data, event_metadata, databallpy_events = load_scisports_event_data(
             events_json=event_data_loc,
+        )
+    elif event_data_provider == "statsbomb":
+        event_data, event_metadata, databallpy_events = load_statsbomb_event_data(
+            events_loc=event_data_loc,
+            match_loc=event_match_loc,
+            lineup_loc=event_lineup_loc,
         )
     elif event_data_provider in ["sportec", "dfl"]:
         event_data, event_metadata, databallpy_events = load_sportec_event_data(
@@ -573,14 +628,20 @@ def align_player_and_team_ids(
         pd.DataFrame: tracking data with aligned player and team id's
     """
 
-    # Align player id's
-    if (
-        not set(event_metadata.home_players["id"])
-        == set(tracking_metadata.home_players["id"])
-    ) or (
-        not set(event_metadata.away_players["id"])
-        == set(tracking_metadata.away_players["id"])
-    ):
+    home_eq = (
+        tracking_metadata.home_players["id"]
+        .isin(event_metadata.home_players["id"])
+        .sum()
+        > 11
+    )
+    away_eq = (
+        tracking_metadata.away_players["id"]
+        .isin(event_metadata.away_players["id"])
+        .sum()
+        > 11
+    )
+
+    if not home_eq or not away_eq:
         tracking_metadata = align_player_ids(tracking_metadata, event_metadata)
 
     # Align team id's

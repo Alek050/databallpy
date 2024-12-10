@@ -39,7 +39,7 @@ class IndividualCloseToBallEvent:
         player_id (int | str): id of the player that performed the event
         jersey (int): jersey number of the player that performed the event
         outcome (bool): whether the event was successful or not
-        related_event_id (int | str | None): id of the event that the event is related
+        related_event_id (int | str | list | None): id of the event that the event is related
             to the current event.
 
     Properties:
@@ -60,7 +60,7 @@ class IndividualCloseToBallEvent:
     player_id: int | str
     jersey: int
     outcome: bool
-    related_event_id: int | str | None
+    related_event_id: int | str | list | None
 
     @property
     def base_df_attributes(self) -> list[str]:
@@ -166,7 +166,9 @@ class IndividualCloseToBallEvent:
         if not isinstance(self.outcome, bool):
             raise TypeError(f"outcome should be bool, not {type(self.outcome)}")
 
-        if not isinstance(self.related_event_id, (int, np.integer, str, type(None))):
+        if not isinstance(
+            self.related_event_id, (int, np.integer, str, list, type(None))
+        ):
             raise TypeError(
                 f"related_event_id should be int, not {type(self.related_event_id)}"
             )

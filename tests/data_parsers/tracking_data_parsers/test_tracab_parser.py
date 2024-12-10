@@ -23,13 +23,20 @@ from tests.expected_outcomes import (
 class TestTracabParser(unittest.TestCase):
     def setUp(self):
         self.tracking_data_dat_loc = "tests/test_data/tracab_td_test.dat"
-        self.metadata_dat_loc = "tests/test_data/tracab_metadata_test.xml"
+        self.metadata_json_loc = "tests/test_data/tracab_metadata_test.json"
+        self.metadata_xml_loc = "tests/test_data/tracab_metadata_test.xml"
         self.metadata_sportec_loc = "tests/test_data/sportec_metadata.xml"
         self.td_sportec_loc = "tests/test_data/tracab_xml_td_test.xml"
 
     def test_load_tracab_tracking_data(self):
         tracking_data, metadata = load_tracab_tracking_data(
-            self.tracking_data_dat_loc, self.metadata_dat_loc, verbose=False
+            self.tracking_data_dat_loc, self.metadata_json_loc, verbose=False
+        )
+        assert metadata == MD_TRACAB
+        pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
+
+        tracking_data, metadata = load_tracab_tracking_data(
+            self.tracking_data_dat_loc, self.metadata_xml_loc, verbose=False
         )
         assert metadata == MD_TRACAB
         pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
@@ -37,22 +44,44 @@ class TestTracabParser(unittest.TestCase):
     def test_load_tracab_tracking_data_errors(self):
         with self.assertRaises(ValueError):
             load_tracab_tracking_data(
-                self.tracking_data_dat_loc[:-3], self.metadata_dat_loc, verbose=False
+                self.tracking_data_dat_loc[:-3], self.metadata_json_loc, verbose=False
             )
+
         with self.assertRaises(FileNotFoundError):
             load_tracab_tracking_data(
                 self.tracking_data_dat_loc,
-                self.metadata_dat_loc + ".sml",
+                self.metadata_json_loc + ".json",
                 verbose=False,
             )
 
         with self.assertRaises(ValueError):
             load_tracab_tracking_data(
-                "tests/test_data/tracab_td_wrong_format.json", self.metadata_dat_loc
+                "tests/test_data/tracab_td_wrong_format.json", self.metadata_json_loc
+            )
+
+        with self.assertRaises(ValueError):
+            load_tracab_tracking_data(
+                self.tracking_data_dat_loc[:-3], self.metadata_xml_loc, verbose=False
+            )
+
+        with self.assertRaises(FileNotFoundError):
+            load_tracab_tracking_data(
+                self.tracking_data_dat_loc,
+                self.metadata_xml_loc + ".sml",
+                verbose=False,
+            )
+        with self.assertRaises(ValueError):
+            load_tracab_tracking_data(
+                "tests/test_data/tracab_td_wrong_format.json", self.metadata_xml_loc
             )
 
     def test_get_metadata(self):
-        metadata = _get_metadata(self.metadata_dat_loc)
+        metadata = _get_metadata(self.metadata_json_loc)
+        expected_metadata = MD_TRACAB.copy()
+        expected_metadata.periods_changed_playing_direction = None
+        self.assertEqual(metadata, expected_metadata)
+
+        metadata = _get_metadata(self.metadata_xml_loc)
         expected_metadata = MD_TRACAB.copy()
         expected_metadata.periods_changed_playing_direction = None
         self.assertEqual(metadata, expected_metadata)

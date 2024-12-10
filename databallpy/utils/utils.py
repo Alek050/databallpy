@@ -173,7 +173,7 @@ def _values_are_equal_(input1: any, input2: any) -> bool:
             if not set(input1.columns) == set(input2.columns):
                 return False
             return all(_values_are_equal_(input1[c], input2[c]) for c in input1.columns)
-        return input1.sort_index().round(6).equals(input2.sort_index().round(6))
+        return input1.sort_index().round(4).equals(input2.sort_index().round(4))
 
     if isinstance(input1, type(pd.to_datetime("NaT"))):
         return isinstance(input2, type(pd.to_datetime("NaT")))

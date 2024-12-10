@@ -11,6 +11,7 @@ DATABALLPY_SET_PIECES = [
     "corner_kick",
     "kick_off",
     "penalty",
+    "goal_kick",
     "no_set_piece",
     "unspecified",
 ]
@@ -33,6 +34,8 @@ DATABALLPY_POSSESSION_TYPES = [
     "free_kick",
     "throw_in",
     "penalty",
+    "kick_off",
+    "goal_kick",
     "rebound",
     "unspecified",
 ]
@@ -75,7 +78,7 @@ DATABALLPY_PASS_TYPES = [
 ]
 """The pass type strings that are supported in databallpy."""
 
-DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward"]
+DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward", "unspecified"]
 
 OPEN_MATCH_IDS_DFL = {
     "J03WMX": "1. FC Köln vs. FC Bayern München",
