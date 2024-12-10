@@ -507,6 +507,19 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
 def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
     """This version is used in the Netherlands"""
 
+    if soup.find("match") is not None:
+        return _get_tracab_metadata(soup)
+    elif soup.find("General") is not None:
+        return _get_sportec_metadata(metadata_loc)
+    else:
+        message = "Unknown type of tracab metadata, please open an issue on GitHub."
+        raise ValueError(message)
+
+
+@logging_wrapper(__file__)
+def _get_tracab_metadata(soup: BeautifulSoup) -> Metadata:
+    """This version is used in the Netherlands"""
+
     match_id = int(soup.find("match")["iId"])
     pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
