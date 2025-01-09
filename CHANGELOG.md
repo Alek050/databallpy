@@ -95,6 +95,7 @@
 - Added parser for DFL/Sportec Solutions event data
 - Added parser for Tracab xml format, used by DFL and Sportec solutions
 - Added integration for open data from DFL (open sourced by Bassek et al.)
+- Added support for Python 3.13
 
 ### Breaking changes
 - From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
@@ -108,3 +109,7 @@
 - Made last batch from smart batches in synchronisation last longer to include all events
 - Fixed bug in parsing tracab xml data
 - Fixed bug in combining players info from tracking and event metadata
+
+## NEXT VERSION
+
+- Support for Python 3.13
