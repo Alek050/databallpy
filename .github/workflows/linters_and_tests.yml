@@ -36,8 +36,21 @@ jobs:
       - name: setup
         uses: actions/checkout@v4
       
-      - name: setup ffmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v3
+      - name: Install ffmpeg on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install ffmpeg
+
+      - name: Install ffmpeg on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install ffmpeg on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install ffmpeg
 
       - name: Install poetry
         uses: snok/install-poetry@v1
