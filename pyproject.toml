@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<=3.13"
+python = ">=3.10,<=3.14"
 numpy = "^2.1"
 beautifulsoup4 = "^4.11.1"
 lxml = "^5.1"
