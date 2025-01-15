@@ -1783,6 +1783,13 @@ MD_STATSBOMB = Metadata(
 ED_STATSBOMB = pd.DataFrame(
     {
         "event_id": [0, 1, 2, 3, 4],
+        "statsbomb_event_id": [
+            "c723053c-b956-494b-bb5d-352e1833203a",
+            "4f2502b5-2014-4265-afa1-f011aa4fd32e",
+            "9107d374-2942-4876-a14f-1b9f86901c15",
+            "d9cbb43c-e1a4-45d1-a4b9-2151657bb62a",
+            "c723053c-b956-494b-bb5d-352e1833203a"
+        ],
         "databallpy_event": ["pass", None, "shot", "dribble", "pass"],
         "period_id": [1, 1, 1, 1, 1],
         "minutes": [0, 0, 5, 7, 0],

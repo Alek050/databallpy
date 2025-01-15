@@ -278,6 +278,7 @@ def _load_event_data(
     n = sum(event_mask)
     event_data = {
         "event_id": list(range(0, n)),
+        "statsbomb_event_id": [None] * n,
         "databallpy_event": [None] * n,
         "period_id": [MISSING_INT] * n,
         "minutes": [MISSING_INT] * n,
@@ -309,6 +310,7 @@ def _load_event_data(
 
     for id, event in enumerate(np.array(events_json)[event_mask]):
         event_data["event_id"][id] = id
+        event_data["statsbomb_event_id"][id] = event["id"]
         event_data["period_id"][id] = event.get("period", MISSING_INT)
         event_data["minutes"][id] = event.get("minute", MISSING_INT)
         event_data["seconds"][id] = event.get("second", np.nan)
