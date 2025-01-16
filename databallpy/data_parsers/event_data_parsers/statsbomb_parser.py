@@ -278,7 +278,6 @@ def _load_event_data(
     n = sum(event_mask)
     event_data = {
         "event_id": list(range(0, n)),
-        "statsbomb_event_id": [None] * n,
         "databallpy_event": [None] * n,
         "period_id": [MISSING_INT] * n,
         "minutes": [MISSING_INT] * n,
@@ -290,6 +289,7 @@ def _load_event_data(
         "start_y": [np.nan] * n,
         "datetime": [pd.NaT] * n,
         "statsbomb_event": [""] * n,
+        "statsbomb_event_id": [None] * n,
         "player_name": [""] * n,
         "team_name": [""] * n,
         "statsbomb_outcome": [""] * n,
