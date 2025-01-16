@@ -1800,6 +1800,13 @@ ED_STATSBOMB = pd.DataFrame(
             pd.to_datetime("2018-08-18 22:15:11+00:00"),
         ],
         "statsbomb_event": ["pass", "carry", "shot", "dribble", "pass"],
+        "statsbomb_event_id": [
+            "c723053c-b956-494b-bb5d-352e1833203a",
+            "4f2502b5-2014-4265-afa1-f011aa4fd32e",
+            "9107d374-2942-4876-a14f-1b9f86901c15",
+            "d9cbb43c-e1a4-45d1-a4b9-2151657bb62a",
+            "c723053c-b956-494b-bb5d-352e1833203a",
+        ],
         "player_name": [
             "Jordi Alba Ramos",
             "Jordi Alba Ramos",

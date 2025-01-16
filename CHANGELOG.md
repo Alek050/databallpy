@@ -113,3 +113,4 @@
 ## NEXT VERSION
 
 - Support for Python 3.13
+- Added event id of StatsBomb in event data (by [jan-swiatek](https://github.com/jan-swiatek))
