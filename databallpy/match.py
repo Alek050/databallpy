@@ -1093,6 +1093,17 @@ def check_inputs_match_object(match: Match):
             "Both values in pitch dimensions should by floats, current inputs "
             f"{[type(x) for x in match.pitch_dimensions]}"
         )
+    if not 70 < match.pitch_dimensions[0] < 130:
+        raise ValueError(
+            "The length of the pitch should be between 70 and 130 meters, "
+            f"current input is {match.pitch_dimensions[0]}"
+        )
+
+    if not 45 < match.pitch_dimensions[1] < 90:
+        raise ValueError(
+            "The width of the pitch should be between 45 and 90 meters, "
+            f"current input is {match.pitch_dimensions[1]}"
+        )
 
     # periods
     if not isinstance(match.periods, pd.DataFrame):

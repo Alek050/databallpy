@@ -395,8 +395,8 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
     Function that reads metadata from .json file and stores it in Metadata class.
     """
     match_id = int(metadata["GameID"])
-    pitch_size_x = float(metadata["PitchLongSide"])
-    pitch_size_y = float(metadata["PitchShortSide"])
+    pitch_size_x = float(metadata["PitchLongSide"]) / 100
+    pitch_size_y = float(metadata["PitchShortSide"]) / 100
     frame_rate = int(metadata["FrameRate"])
     datetime_string = metadata["Kickoff"]
     date = pd.to_datetime(datetime_string[:10])
