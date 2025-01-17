@@ -142,6 +142,15 @@ MD_TRACAB = Metadata(
     country="",
     periods_changed_playing_direction=[],
 )
+
+
+def opta_raw_to_scaled(val, new_dim, is_home):
+    new_val = (val - 50) / 100 * new_dim
+    if is_home:
+        return new_val * -1
+    return new_val
+
+
 ED_OPTA = pd.DataFrame(
     {
         "event_id": [
@@ -205,36 +214,36 @@ ED_OPTA = pd.DataFrame(
             1,
             0,
         ],
-        # field dimensions are [10, 10], for opta its standard [100, 100].
-        # So all values should be divided by 10 and minus  5 to get the
+        # field dimensions are [105, 50], for opta its standard [100, 100].
+        # So all values should be divided by 10 (or 5) and minus 50 (or 25) to get the
         # standard databallpy values.
         "start_x": [
-            5.0,
-            -5.0,
-            5.0,
-            -0.03,
-            1.84,
-            -1.9,
-            5.0,
-            1.57,
-            1.57,
-            -4.05,
-            4.05,
-            4.05,
+            opta_raw_to_scaled(0.0, 100, True),
+            opta_raw_to_scaled(0.0, 100, False),
+            opta_raw_to_scaled(0.0, 100, True),
+            opta_raw_to_scaled(49.7, 100, False),
+            opta_raw_to_scaled(31.6, 100, True),
+            opta_raw_to_scaled(31.0, 100, False),
+            opta_raw_to_scaled(0.0, 100, True),
+            opta_raw_to_scaled(65.7, 100, False),
+            opta_raw_to_scaled(34.3, 100, True),
+            opta_raw_to_scaled(9.5, 100, False),
+            opta_raw_to_scaled(9.5, 100, True),
+            opta_raw_to_scaled(9.5, 100, True),
         ],
         "start_y": [
-            5.0,
-            -5.0,
-            5.0,
-            0.01,
-            0.93,
-            -0.57,
-            5.0,
-            -2.68,
-            -2.68,
-            0.28,
-            -0.28,
-            -0.28,
+            opta_raw_to_scaled(0.0, 50, True),
+            opta_raw_to_scaled(0.0, 50, False),
+            opta_raw_to_scaled(0.0, 50, True),
+            opta_raw_to_scaled(50.1, 50, False),
+            opta_raw_to_scaled(40.7, 50, True),
+            opta_raw_to_scaled(44.3, 50, False),
+            opta_raw_to_scaled(0.0, 50, True),
+            opta_raw_to_scaled(23.2, 50, False),
+            opta_raw_to_scaled(76.8, 50, True),
+            opta_raw_to_scaled(52.8, 50, False),
+            opta_raw_to_scaled(52.8, 50, True),
+            opta_raw_to_scaled(52.8, 50, True),
         ],
         "datetime": np.array(
             [
@@ -517,7 +526,7 @@ for key, pass_event in PASS_EVENTS_OPTA.items():
 
 MD_OPTA = Metadata(
     match_id=1908,
-    pitch_dimensions=[10.0, 10.0],
+    pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
             "period_id": [1, 2, 3, 4, 5],

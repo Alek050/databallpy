@@ -41,25 +41,25 @@ class TestOptaParser(unittest.TestCase):
 
     def test_load_opta_event_data(self):
         event_data, metadata, dbp_events = load_opta_event_data(
-            self.f7_loc, self.f24_loc, pitch_dimensions=[10.0, 10.0]
+            self.f7_loc, self.f24_loc, pitch_dimensions=[100.0, 50.0]
         )
         pd.testing.assert_frame_equal(event_data, ED_OPTA)
         assert metadata == MD_OPTA
 
         # SHOT_EVENTS_OPTA is scaled to a pitch of [106, 68],
-        # while here [10, 10] is expected.
+        # while here [100, 50] is expected.
         expected_shot_events_opta = {}
         for shot_id, shot_event in SHOT_EVENTS_OPTA.items():
             expected_shot_events_opta[shot_id] = shot_event.copy()
-            expected_shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 10
-            expected_shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 10
+            expected_shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 100
+            expected_shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 50
             expected_shot_events_opta[shot_id]._xt = -1
             expected_shot_events_opta[shot_id]._xt = expected_shot_events_opta[
                 shot_id
             ].xt
             shot_event._xt = -1
             shot_event._xt = shot_event.xt
-            expected_shot_events_opta[shot_id].pitch_size = [10.0, 10.0]
+            expected_shot_events_opta[shot_id].pitch_size = [100.0, 50.0]
             expected_shot_events_opta[shot_id]._update_shot_angle()
             expected_shot_events_opta[shot_id]._update_ball_goal_distance()
             expected_shot_events_opta[shot_id].xg = expected_shot_events_opta[
@@ -73,7 +73,7 @@ class TestOptaParser(unittest.TestCase):
 
     def test_load_event_data_pass(self):
         event_data, metadata, dbp_events = load_opta_event_data(
-            self.f7_loc, "pass", pitch_dimensions=[10.0, 10.0]
+            self.f7_loc, "pass", pitch_dimensions=[100.0, 50.0]
         )
         assert metadata == MD_OPTA
         pd.testing.assert_frame_equal(event_data, pd.DataFrame())
@@ -81,36 +81,36 @@ class TestOptaParser(unittest.TestCase):
 
     def test_load_opta_event_data_errors(self):
         with self.assertRaises(TypeError):
-            load_opta_event_data(3, self.f24_loc, pitch_dimensions=[10.0, 10.0])
+            load_opta_event_data(3, self.f24_loc, pitch_dimensions=[100.0, 50.0])
         with self.assertRaises(TypeError):
             load_opta_event_data(
-                self.f7_loc, [self.f24_loc], pitch_dimensions=[10.0, 10.0]
+                self.f7_loc, [self.f24_loc], pitch_dimensions=[100.0, 50.0]
             )
         with self.assertRaises(ValueError):
             load_opta_event_data(
-                self.f7_loc + ".json", self.f24_loc, pitch_dimensions=[10.0, 10.0]
+                self.f7_loc + ".json", self.f24_loc, pitch_dimensions=[100.0, 50.0]
             )
         with self.assertRaises(ValueError):
             load_opta_event_data(
-                self.f7_loc, self.f24_loc[:-3], pitch_dimensions=[10.0, 10.0]
+                self.f7_loc, self.f24_loc[:-3], pitch_dimensions=[100.0, 50.0]
             )
 
     def test_load_metadata(self):
-        metadata = _load_metadata(self.f7_loc, [10.0, 10.0])
+        metadata = _load_metadata(self.f7_loc, [100.0, 50.0])
         assert metadata == MD_OPTA
 
     def test_load_metadata_multiple_matches(self):
-        metadata = _load_metadata(self.f7_loc_multiple_matches, [10.0, 10.0])
+        metadata = _load_metadata(self.f7_loc_multiple_matches, [100.0, 50.0])
         # the second match metadata is dropped
         assert metadata == MD_OPTA
 
     def test_load_metadata_no_timestamps_and_date(self):
         with self.assertRaises(ValueError):
-            _load_metadata(self.f7_loc_no_timestamps_and_date, [10.0, 10.0])
+            _load_metadata(self.f7_loc_no_timestamps_and_date, [100.0, 50.0])
 
     def test_load_metadata_no_timestamps(self):
         with self.assertWarns(DataBallPyWarning):
-            metadata = _load_metadata(self.f7_loc_no_timestamps, [10.0, 10.0])
+            metadata = _load_metadata(self.f7_loc_no_timestamps, [100.0, 50.0])
         expected_md = MD_OPTA.copy()
         pf = expected_md.periods_frames
         pf.loc[0, "start_datetime_ed"] = pd.to_datetime("20230122T111500+0000", utc=True)
@@ -166,12 +166,15 @@ class TestOptaParser(unittest.TestCase):
         expected_event_data = ED_OPTA.copy().drop("player_name", axis=1)
 
         # away team coordinates are changed later on in the pipeline
-        expected_event_data.loc[[0, 2, 4, 6, 8, 10, 11], ["start_x", "start_y"]] *= -1
+        expected_event_data.loc[
+            expected_event_data["team_id"] == 194, ["start_x", "start_y"]
+        ] *= -1
 
         # scaling of pitch dimension is done later on in the pipeline
-        expected_event_data.loc[:, ["start_x", "start_y"]] = (
-            expected_event_data.loc[:, ["start_x", "start_y"]] + 5
-        ) * 10
+        expected_event_data.loc[:, "start_x"] += 50
+        expected_event_data.loc[:, "start_y"] = (
+            expected_event_data.loc[:, "start_y"] + 25
+        ) * (100 / 50)
 
         pd.testing.assert_frame_equal(event_data, expected_event_data)
 

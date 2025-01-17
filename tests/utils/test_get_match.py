@@ -436,9 +436,9 @@ class TestGetMatch(unittest.TestCase):
         # while opta pitch dimensions = [106, 68]
         x_cols = [col for col in match.event_data.columns if "_x" in col]
         y_cols = [col for col in match.event_data.columns if "_y" in col]
-        match.event_data[x_cols] = match.event_data[x_cols] / 106.0 * 10
-        match.event_data[y_cols] = match.event_data[y_cols] / 68.0 * 10
-        match.pitch_dimensions = [10.0, 10.0]
+        match.event_data[x_cols] = match.event_data[x_cols] / 106.0 * 100
+        match.event_data[y_cols] = match.event_data[y_cols] / 68.0 * 50
+        match.pitch_dimensions = [100.0, 50.0]
 
         expected_match_opta = Match(
             tracking_data=pd.DataFrame(),
