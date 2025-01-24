@@ -698,7 +698,7 @@ def _pre_check_plot_td_inputs(
 
     if len(events) > 0:
         if not game.is_synchronised:
-            raise DataBallPyError("Match needs to be synchronised to add events.")
+            raise DataBallPyError("Game needs to be synchronised to add events.")
 
     if add_velocities:
         for player in game.get_column_ids() + ["ball"]:
