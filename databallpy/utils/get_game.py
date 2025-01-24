@@ -29,12 +29,12 @@ from databallpy.game import Game
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
+from databallpy.utils.warnings import deprecated
 
 LOGGER = create_logger(__name__)
 
 
 logging_wrapper(__file__)
-
 
 def get_game(
     tracking_data_loc: str = None,
@@ -678,3 +678,15 @@ def merge_player_info(
         event_metadata.away_players[player_cols], on="id"
     )
     return home_players, away_players
+
+@deprecated("`get_match` is deprecated and will be removed in version 0.8.0. Please use `get_game` instead")
+def get_match(*args, **kwargs):
+    return get_game(*args, **kwargs)
+
+@deprecated("`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead")
+def get_open_match(*args, **kwargs):
+    return get_open_game(*args, **kwargs)
+
+@deprecated("`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead")
+def get_saved_match(*args, **kwargs):
+    return get_saved_game(*args, **kwargs)

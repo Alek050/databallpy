@@ -32,7 +32,7 @@ from databallpy.utils.utils import (
     _values_are_equal_,
     get_next_possession_frame,
 )
-from databallpy.utils.warnings import DataBallPyWarning
+from databallpy.utils.warnings import DataBallPyWarning, deprecated
 
 LOGGER = create_logger(__file__)
 
@@ -63,7 +63,6 @@ def requires_event_data(func):
             )
 
     return wrapper
-
 
 @dataclass
 class Game:
@@ -1243,3 +1242,9 @@ def check_inputs_game_object(game: Game):
         # country
         if not isinstance(game.country, str):
             raise TypeError(f"country should be a string, not a {type(game.country)}")
+
+
+@deprecated("The `Match` class is deprecated and will removed in version 0.8.0. Please use the `Game` class instead.")
+class Match(Game):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
