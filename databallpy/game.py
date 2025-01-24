@@ -16,12 +16,12 @@ from databallpy.events import (
 )
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
-from databallpy.utils.logging import create_logger, logging_wrapper
-from databallpy.utils.match_utils import (
+from databallpy.utils.game_utils import (
     create_event_attributes_dataframe,
     player_column_id_to_full_name,
     player_id_to_column_id,
 )
+from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.synchronise_tracking_and_event_data import (
     align_event_data_datetime,
     pre_compute_synchronisation_variables,

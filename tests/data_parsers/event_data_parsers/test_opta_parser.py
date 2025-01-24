@@ -36,7 +36,7 @@ class TestOptaParser(unittest.TestCase):
         self.f7_loc_no_timestamps_and_date = (
             "tests/test_data/f7_test_no_timestamps_and_date.xml"
         )
-        self.f7_loc_multiple_matches = "tests/test_data/f7_test_multiple_matches.xml"
+        self.f7_loc_multiple_games = "tests/test_data/f7_test_multiple_games.xml"
         self.f24_loc = "tests/test_data/f24_test.xml"
 
     def test_load_opta_event_data(self):
@@ -99,9 +99,9 @@ class TestOptaParser(unittest.TestCase):
         metadata = _load_metadata(self.f7_loc, [100.0, 50.0])
         assert metadata == MD_OPTA
 
-    def test_load_metadata_multiple_matches(self):
-        metadata = _load_metadata(self.f7_loc_multiple_matches, [100.0, 50.0])
-        # the second match metadata is dropped
+    def test_load_metadata_multiple_games(self):
+        metadata = _load_metadata(self.f7_loc_multiple_games, [100.0, 50.0])
+        # the second game metadata is dropped
         assert metadata == MD_OPTA
 
     def test_load_metadata_no_timestamps_and_date(self):

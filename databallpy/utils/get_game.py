@@ -36,7 +36,7 @@ LOGGER = create_logger(__name__)
 logging_wrapper(__file__)
 
 
-def get_match(
+def get_game(
     tracking_data_loc: str = None,
     tracking_metadata_loc: str = None,
     event_data_loc: str = None,
@@ -49,7 +49,7 @@ def get_match(
     verbose: bool = True,
 ) -> Game:
     """
-    Function to get all information of a match given its datasources
+    Function to get all information of a game given its datasources
 
     Args:
         tracking_data_loc (str, optional): location of the tracking data.
@@ -59,7 +59,7 @@ def get_match(
         event_data_loc (str, optional): location of the event data. Defaults to None.
         event_metadata_loc (str, optional): location of the metadata of the event data.
             Defaults to None.
-        event_match_loc (str, optional): location of the match file of the event data.
+        event_game_loc (str, optional): location of the game file of the event data.
             Only used for statsbomb event data. Defaults to None.
         event_lineup_loc (str, optional): location of the lineup file of the event data.
             Only used for statsbomb event data. Defaults to None.
@@ -72,11 +72,11 @@ def get_match(
         verbose (bool, optional): whether or not to print info about progress
 
     Returns:
-        (Match): a Match object with all information available of the match.
+        (Game): a game object with all information available of the game.
 
     """
     LOGGER.info(
-        "Trying to load a new match in get_match();"
+        "Trying to load a new game in get_game();"
         f"\n\tTracking data loc: {str(tracking_data_loc)}"
         f"\n\tTracking data provider: {str(tracking_data_provider)}"
         f"\n\tEvent data loc: {str(event_data_loc)}"
@@ -168,7 +168,7 @@ def get_match(
 
     LOGGER.info(
         "Succesfully passed input checks. Attempting to load the base "
-        "data (get_match())."
+        "data (get_game())."
     )
 
     # Check if tracking data should be loaded
@@ -197,12 +197,12 @@ def get_match(
         raise ValueError("No data loaded, please provide data locations and providers")
 
     LOGGER.info(
-        f"Loaded data in get_match():\n\tTracking data: {str(uses_tracking_data)}"
+        f"Loaded data in get_game():\n\tTracking data: {str(uses_tracking_data)}"
         f"\n\tEvent data: {str(uses_event_data)}"
     )
 
     # extra checks when using both tracking and event data
-    LOGGER.info("Combining info from tracking and event data in get_match()")
+    LOGGER.info("Combining info from tracking and event data in get_game()")
     if uses_tracking_data and uses_event_data:
         tracking_metadata.periods_frames = merge_metadata_periods(
             tracking_metadata.periods_frames, event_metadata.periods_frames
@@ -233,8 +233,8 @@ def get_match(
     if uses_tracking_data:
         changed_periods = tracking_metadata.periods_changed_playing_direction
 
-    LOGGER.info("Creating match object in get_match()")
-    match = Game(
+    LOGGER.info("Creating game object in get_game()")
+    game = Game(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
         tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
         event_data=event_data if uses_event_data else pd.DataFrame(),
@@ -300,21 +300,21 @@ def get_match(
         else False,
         _periods_changed_playing_direction=changed_periods,
     )
-    LOGGER.info(f"Succesfully created match object: {match.name}")
-    return match
+    LOGGER.info(f"Succesfully created game object: {game.name}")
+    return game
 
 
 @logging_wrapper(__file__)
-def get_saved_match(name: str, path: str = os.getcwd()) -> Game:
-    """Function to load a saved match object
+def get_saved_game(name: str, path: str = os.getcwd()) -> Game:
+    """Function to load a saved game object
 
     Args:
-        name (str): the name with the to be loaded match, should be a pickle file
-        path (str, optional): path of directory where Match is saved. Defaults
+        name (str): the name with the to be loaded game, should be a pickle file
+        path (str, optional): path of directory where game is saved. Defaults
         to current working directory.
 
     Returns:
-        Match: All information about the match
+        Game: All information about the game
     """
 
     loc = (
@@ -325,17 +325,17 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Game:
     if not os.path.exists(loc):
         raise FileNotFoundError(
             f"Could not find {loc}. Set the `path` variable"
-            " to specify the right directory of the saved match."
+            " to specify the right directory of the saved game."
         )
     with open(loc, "rb") as f:
-        match = pickle.load(f)
+        game = pickle.load(f)
 
-    if not isinstance(match, Game):
+    if not isinstance(game, Game):
         raise TypeError(
-            f"Expected a databallpy.Match object, but loaded a {type(match)}."
-            " Insert the location of a match object to load a match."
+            f"Expected a databallpy.game.Game object, but loaded a {type(game)}."
+            " Insert the location of a game object to load a game."
         )
-    return match
+    return game
 
 
 @logging_wrapper(__file__)
@@ -346,7 +346,7 @@ def load_tracking_data(
     tracking_data_provider: str,
     verbose: bool = True,
 ) -> tuple[pd.DataFrame, Metadata]:
-    """Function to load the tracking data of a match
+    """Function to load the tracking data of a game
 
     Args:
         tracking_data_loc (str): location of the tracking data file
@@ -355,7 +355,7 @@ def load_tracking_data(
         verbose (bool, optional): whether or not to print info about progress
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the match
+        Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the game
     """
 
     if tracking_data_provider not in ["tracab", "metrica", "inmotio", "sportec", "dfl"]:
@@ -393,7 +393,7 @@ def load_event_data(
     event_match_loc: str,
     event_lineup_loc: str,
 ) -> tuple[pd.DataFrame, Metadata]:
-    """Function to load the event data of a match
+    """Function to load the event data of a game
 
     Args:
         event_data_loc (str): location of the event data file
@@ -403,7 +403,7 @@ def load_event_data(
         event_lineup_loc (str): location of lineup file (specific to statsbomb)
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
+        Tuple[pd.DataFrame, Metadata]: event data and metadata of the game
     """
 
     if event_data_provider not in [
@@ -452,12 +452,12 @@ def load_event_data(
 
 
 @logging_wrapper(__file__)
-def get_open_match(
+def get_open_game(
     provider: str = "sportec",
-    match_id: str = "J03WMX",
+    game_id: str = "J03WMX",
     verbose: bool = True,
 ) -> Game:
-    """Function to load a match object from an open datasource
+    """Function to load a game object from an open datasource
 
     Args:
         provider (str, optional): What provider to get the open data from.
@@ -466,12 +466,12 @@ def get_open_match(
         in the terminal, Defaults to True.
 
     Returns:
-        Match: All information about the match
+        Game: All information about the game
     """
     provider_options = ["metrica", "dfl", "sportec", "tracab"]
     if provider not in provider_options:
         raise ValueError(
-            f"Open match provider should be in {provider_options}, not {provider}."
+            f"Open game provider should be in {provider_options}, not {provider}."
         )
 
     if provider == "metrica":
@@ -480,11 +480,11 @@ def get_open_match(
 
     elif provider in ["dfl", "tracab", "sportec"]:
         tracking_data, metadata = load_sportec_open_tracking_data(
-            match_id=match_id,
+            game_id=game_id,
             verbose=verbose,
         )
         event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(
-            match_id=match_id
+            game_id=game_id
         )
 
     periods_cols = ed_metadata.periods_frames.columns.difference(
@@ -499,7 +499,7 @@ def get_open_match(
         axis=1,
     )
 
-    match = Game(
+    game = Game(
         tracking_data=tracking_data,
         tracking_data_provider=provider,
         event_data=event_data,
@@ -535,7 +535,7 @@ def get_open_match(
         _event_timestamp_is_precise=True,
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
-    return match
+    return game
 
 
 @logging_wrapper(__file__)

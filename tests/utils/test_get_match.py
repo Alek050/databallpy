@@ -16,7 +16,7 @@ from databallpy.data_parsers.tracking_data_parsers import (
 )
 from databallpy.game import Game
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.get_match import get_match, get_open_match, get_saved_match
+from databallpy.utils.get_game import get_game, get_open_game, get_saved_game
 from tests.expected_outcomes import (
     DRIBBLE_EVENT_STATSBOMB,
     DRIBBLE_EVENTS_METRICA,
@@ -51,7 +51,7 @@ from tests.expected_outcomes import (
 from ..mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
 
-class TestGetMatch(unittest.TestCase):
+class TestGetGame(unittest.TestCase):
     def setUp(self):
         self.td_tracab_loc = "tests/test_data/tracab_td_test.dat"
         self.md_tracab_loc = "tests/test_data/tracab_metadata_test.xml"
@@ -155,7 +155,7 @@ class TestGetMatch(unittest.TestCase):
 
         self.td_tracab["period_id"] = [1, 1, MISSING_INT, 2, 2]
 
-        self.expected_match_tracab_opta = Game(
+        self.expected_game_tracab_opta = Game(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
             event_data=self.corrected_ed,
@@ -203,7 +203,7 @@ class TestGetMatch(unittest.TestCase):
             "end_datetime_ed"
         ]
 
-        self.expected_match_metrica = Game(
+        self.expected_game_metrica = Game(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",
             event_data=self.ed_metrica,
@@ -321,7 +321,7 @@ class TestGetMatch(unittest.TestCase):
             }
         )
 
-        self.expected_match_inmotio_instat = Game(
+        self.expected_game_inmotio_instat = Game(
             tracking_data=self.td_inmotio,
             tracking_data_provider="inmotio",
             event_data=self.ed_instat,
@@ -344,9 +344,9 @@ class TestGetMatch(unittest.TestCase):
             _periods_changed_playing_direction=[],
         )
 
-        self.expected_match_inmotio_instat._periods_changed_playing_direction = [2]
+        self.expected_game_inmotio_instat._periods_changed_playing_direction = [2]
 
-        self.match_to_sync = get_match(
+        self.game_to_sync = get_game(
             tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
             tracking_metadata_loc="tests/test_data/sync/tracab_metadata_sync_test.xml",
             tracking_data_provider="tracab",
@@ -356,7 +356,7 @@ class TestGetMatch(unittest.TestCase):
             check_quality=False,
         )
 
-        self.expected_match_tracab = Game(
+        self.expected_game_tracab = Game(
             tracking_data=TD_TRACAB,
             tracking_data_provider="tracab",
             event_data=pd.DataFrame(),
@@ -386,31 +386,31 @@ class TestGetMatch(unittest.TestCase):
         self.statsbomb_match_loc = "tests/test_data/statsbomb_match_test.json"
         self.statsbomb_lineup_loc = "tests/test_data/statsbomb_lineup_test.json"
 
-    def test_get_match_wrong_inputs(self):
+    def test_get_game_wrong_inputs(self):
         with self.assertRaises(ValueError):
-            get_match(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
+            get_game(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
 
         with self.assertRaises(ValueError):
-            get_match(
+            get_game(
                 event_data_loc=self.ed_opta_loc, event_metadata_loc=self.md_opta_loc
             )
 
         with self.assertRaises(ValueError):
-            get_match(event_metadata_loc=self.md_opta_loc)
+            get_game(event_metadata_loc=self.md_opta_loc)
 
         with self.assertRaises(ValueError):
-            get_match(
+            get_game(
                 tracking_data_loc=self.td_tracab_loc,
                 tracking_metadata_loc=self.md_tracab_loc,
             )
 
         with self.assertRaises(ValueError):
-            get_match(
+            get_game(
                 tracking_data_loc=self.td_tracab_loc, tracking_data_provider="tracab"
             )
 
-    def test_get_match_opta_tracab(self):
-        match = get_match(
+    def test_get_game_opta_tracab(self):
+        game = get_game(
             tracking_data_loc=self.td_tracab_loc,
             tracking_metadata_loc=self.md_tracab_loc,
             event_data_loc=self.ed_opta_loc,
@@ -419,28 +419,28 @@ class TestGetMatch(unittest.TestCase):
             event_data_provider=self.ed_provider,
             check_quality=True,
         )
-        assert match == self.expected_match_tracab_opta
+        assert game == self.expected_game_tracab_opta
 
-    def test_get_match_no_valid_input(self):
+    def test_get_game_no_valid_input(self):
         with self.assertRaises(ValueError):
-            get_match()
+            get_game()
 
-    def test_get_match_only_event_data(self):
-        match = get_match(
+    def test_get_game_only_event_data(self):
+        game = get_game(
             event_data_loc=self.ed_opta_loc,
             event_metadata_loc=self.md_opta_loc,
             event_data_provider="opta",
         )
 
-        # expected_match pitch dimensions = [10, 10],
+        # expected_game pitch dimensions = [10, 10],
         # while opta pitch dimensions = [106, 68]
-        x_cols = [col for col in match.event_data.columns if "_x" in col]
-        y_cols = [col for col in match.event_data.columns if "_y" in col]
-        match.event_data[x_cols] = match.event_data[x_cols] / 106.0 * 100
-        match.event_data[y_cols] = match.event_data[y_cols] / 68.0 * 50
-        match.pitch_dimensions = [100.0, 50.0]
+        x_cols = [col for col in game.event_data.columns if "_x" in col]
+        y_cols = [col for col in game.event_data.columns if "_y" in col]
+        game.event_data[x_cols] = game.event_data[x_cols] / 106.0 * 100
+        game.event_data[y_cols] = game.event_data[y_cols] / 68.0 * 50
+        game.pitch_dimensions = [100.0, 50.0]
 
-        expected_match_opta = Game(
+        expected_game_opta = Game(
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=ED_OPTA,
@@ -466,20 +466,20 @@ class TestGetMatch(unittest.TestCase):
             _event_timestamp_is_precise=True,
         )
 
-        assert match == expected_match_opta
+        assert game == expected_game_opta
 
-    def test_get_match_only_tracking_data(self):
-        match = get_match(
+    def test_get_game_only_tracking_data(self):
+        game = get_game(
             tracking_data_loc=self.td_tracab_loc,
             tracking_metadata_loc=self.md_tracab_loc,
             tracking_data_provider="tracab",
             check_quality=False,
         )
-        assert match == self.expected_match_tracab
+        assert game == self.expected_game_tracab
 
-    def test_get_match_wrong_provider(self):
+    def test_get_game_wrong_provider(self):
         with self.assertRaises(ValueError):
-            get_match(
+            get_game(
                 tracking_data_loc=self.td_tracab_loc,
                 tracking_metadata_loc=self.md_tracab_loc,
                 event_data_loc=self.ed_opta_loc,
@@ -490,7 +490,7 @@ class TestGetMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            get_match(
+            get_game(
                 tracking_data_loc=self.td_tracab_loc,
                 tracking_metadata_loc=self.md_tracab_loc,
                 event_data_loc=self.ed_opta_loc,
@@ -500,8 +500,8 @@ class TestGetMatch(unittest.TestCase):
                 check_quality=False,
             )
 
-    def test_get_match_inmotio_instat_unaligned_player_ids(self):
-        match_instat_inmotio_unaligned_input = get_match(
+    def test_get_game_inmotio_instat_unaligned_player_ids(self):
+        game_instat_inmotio_unaligned_input = get_game(
             tracking_data_loc=self.td_inmotio_loc,
             tracking_metadata_loc=self.md_inmotio_loc,
             tracking_data_provider="inmotio",
@@ -510,14 +510,14 @@ class TestGetMatch(unittest.TestCase):
             event_data_provider="instat",
             check_quality=False,
         )
-        expected_match = self.expected_match_inmotio_instat.copy()
-        expected_match.home_players.loc[:, "id"] = [100, 200]
-        expected_match.event_data.loc[[0, 1], "player_id"] = [200, 100]
+        expected_game = self.expected_game_inmotio_instat.copy()
+        expected_game.home_players.loc[:, "id"] = [100, 200]
+        expected_game.event_data.loc[[0, 1], "player_id"] = [200, 100]
 
-        assert match_instat_inmotio_unaligned_input == expected_match
+        assert game_instat_inmotio_unaligned_input == expected_game
 
-    def test_get_match_inmotio_instat(self):
-        match_instat_inmotio = get_match(
+    def test_get_game_inmotio_instat(self):
+        game_instat_inmotio = get_game(
             tracking_data_loc=self.td_inmotio_loc,
             tracking_metadata_loc=self.md_inmotio_loc,
             tracking_data_provider="inmotio",
@@ -527,10 +527,10 @@ class TestGetMatch(unittest.TestCase):
             check_quality=False,
         )
 
-        assert match_instat_inmotio == self.expected_match_inmotio_instat
+        assert game_instat_inmotio == self.expected_game_inmotio_instat
 
-    def test_get_match_metrica_data(self):
-        res = get_match(
+    def test_get_game_metrica_data(self):
+        res = get_game(
             tracking_data_loc=self.td_metrica_loc,
             tracking_metadata_loc=self.md_metrica_loc,
             tracking_data_provider="metrica",
@@ -539,10 +539,10 @@ class TestGetMatch(unittest.TestCase):
             event_data_provider="metrica",
             check_quality=False,
         )
-        assert res == self.expected_match_metrica
+        assert res == self.expected_game_metrica
 
-    def test_get_match_sportec(self):
-        expected_match_sportec = Game(
+    def test_get_game_sportec(self):
+        expected_game_sportec = Game(
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=SPORTEC_EVENT_DATA.copy(),
@@ -567,16 +567,16 @@ class TestGetMatch(unittest.TestCase):
             shot_events=SPORTEC_DATABALLPY_EVENTS["shot_events"],
             dribble_events=SPORTEC_DATABALLPY_EVENTS["dribble_events"],
         )
-        res = get_match(
+        res = get_game(
             event_data_loc=self.sportec_event_loc,
             event_metadata_loc=self.sportec_metadata_loc,
             event_data_provider="sportec",
         )
 
-        self.assertEqual(res, expected_match_sportec)
+        self.assertEqual(res, expected_game_sportec)
 
-    def test_get_match_statsbomb(self):
-        expected_match_statsbomb = Game(
+    def test_get_game_statsbomb(self):
+        expected_game_statsbomb = Game(
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=ED_STATSBOMB,
@@ -602,34 +602,34 @@ class TestGetMatch(unittest.TestCase):
             dribble_events=DRIBBLE_EVENT_STATSBOMB,
         )
 
-        res = get_match(
+        res = get_game(
             event_data_loc=self.statsbomb_event_loc,
             event_match_loc=self.statsbomb_match_loc,
             event_lineup_loc=self.statsbomb_lineup_loc,
             event_data_provider="statsbomb",
         )
-        self.assertEqual(res, expected_match_statsbomb)
+        self.assertEqual(res, expected_game_statsbomb)
 
-    def test_get_match_statsbomb_input_missing(self):
+    def test_get_game_statsbomb_input_missing(self):
         with self.assertRaises(ValueError):
-            get_match(
+            get_game(
                 event_data_loc=self.statsbomb_event_loc,
                 event_match_loc=self.statsbomb_match_loc,
                 event_data_provider="statsbomb",
             )
 
-    @patch("databallpy.utils.get_match.load_sportec_open_event_data")
-    @patch("databallpy.utils.get_match.load_sportec_open_tracking_data")
-    def test_get_open_match_sportec(self, mock_tracking_data, mock_event_data):
+    @patch("databallpy.utils.get_game.load_sportec_open_event_data")
+    @patch("databallpy.utils.get_game.load_sportec_open_tracking_data")
+    def test_get_open_game_sportec(self, mock_tracking_data, mock_event_data):
         mock_tracking_data.return_value = (TRACAB_SPORTEC_XML_TD, SPORTEC_METADATA_TD)
         mock_event_data.return_value = (
             SPORTEC_EVENT_DATA,
             SPORTEC_METADATA_ED,
             SPORTEC_DATABALLPY_EVENTS,
         )
-        match = get_open_match()
+        game = get_open_game()
 
-        expected_match_sportec = Game(
+        expected_game_sportec = Game(
             tracking_data=TRACAB_SPORTEC_XML_TD.copy(),
             tracking_data_provider="sportec",
             event_data=SPORTEC_EVENT_DATA.copy(),
@@ -665,7 +665,7 @@ class TestGetMatch(unittest.TestCase):
             allow_synchronise_tracking_and_event_data=True,
         )
 
-        self.assertEqual(match, expected_match_sportec)
+        self.assertEqual(game, expected_game_sportec)
 
     @patch(
         "requests.get",
@@ -676,40 +676,40 @@ class TestGetMatch(unittest.TestCase):
             Mock(text=MD_METRICA_RAW),
         ],
     )
-    def test_get_open_match(self, _):
-        match = get_open_match(provider="metrica")
-        pd.testing.assert_frame_equal(match.periods, self.expected_match_metrica.periods)
-        expected_match = self.expected_match_metrica.copy()
-        expected_match._periods_changed_playing_direction = []
-        expected_match.allow_synchronise_tracking_and_event_data = True
-        assert match == expected_match
+    def test_get_open_game(self, _):
+        game = get_open_game(provider="metrica")
+        pd.testing.assert_frame_equal(game.periods, self.expected_game_metrica.periods)
+        expected_game = self.expected_game_metrica.copy()
+        expected_game._periods_changed_playing_direction = []
+        expected_game.allow_synchronise_tracking_and_event_data = True
+        assert game == expected_game
 
         with self.assertRaises(ValueError):
-            get_open_match(provider="wrong")
+            get_open_game(provider="wrong")
 
-    def test_get_saved_match(self):
-        expected_match = self.expected_match_metrica
-        expected_match.save_game(name="test_match", path="tests/test_data")
-        saved_match = get_saved_match(name="test_match", path="tests/test_data")
-        assert expected_match == saved_match
-        assert saved_match != self.expected_match_tracab_opta
+    def test_get_saved_game(self):
+        expected_game = self.expected_game_metrica
+        expected_game.save_game(name="test_game", path="tests/test_data")
+        saved_game = get_saved_game(name="test_game", path="tests/test_data")
+        assert expected_game == saved_game
+        assert saved_game != self.expected_game_tracab_opta
 
-    def test_get_saved_match_errors(self):
+    def test_get_saved_game_errors(self):
         with self.assertRaises(FileNotFoundError):
-            get_saved_match(name="test_match2", path="tests/test_data")
+            get_saved_game(name="test_game2", path="tests/test_data")
         with self.assertRaises(TypeError):
-            get_saved_match(name="not_a_match_but_a_list.pickle", path="tests/test_data")
+            get_saved_game(name="not_a_game_but_a_list.pickle", path="tests/test_data")
 
-    def test_get_match_scisports(self):
-        res_match = get_match(
+    def test_get_game_scisports(self):
+        res_game = get_game(
             event_data_loc="tests/test_data/scisports_test.json",
             event_data_provider="scisports",
         )
-        pd.testing.assert_frame_equal(res_match.event_data, ED_SCISPORTS)
-        pd.testing.assert_frame_equal(res_match.periods, MD_SCISPORTS.periods_frames)
-        pd.testing.assert_frame_equal(res_match.home_players, MD_SCISPORTS.home_players)
-        pd.testing.assert_frame_equal(res_match.away_players, MD_SCISPORTS.away_players)
+        pd.testing.assert_frame_equal(res_game.event_data, ED_SCISPORTS)
+        pd.testing.assert_frame_equal(res_game.periods, MD_SCISPORTS.periods_frames)
+        pd.testing.assert_frame_equal(res_game.home_players, MD_SCISPORTS.home_players)
+        pd.testing.assert_frame_equal(res_game.away_players, MD_SCISPORTS.away_players)
 
-        self.assertTrue(len(res_match.shot_events) == 2)
-        self.assertTrue(len(res_match.pass_events) == 3)
-        self.assertTrue(len(res_match.dribble_events) == 1)
+        self.assertTrue(len(res_game.shot_events) == 2)
+        self.assertTrue(len(res_game.pass_events) == 3)
+        self.assertTrue(len(res_game.dribble_events) == 1)

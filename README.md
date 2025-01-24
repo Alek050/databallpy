@@ -43,7 +43,7 @@
 
 A package for loading, synchronizing, and analyzing your soccer event- and tracking data.
 
-This package is developed to create a standardized way to analyse soccer matches using both event- and tracking data. Other packages, like [kloppy][kloppy-url] and [floodlight][floodlight-url], already standardize the import of data sources. The current package goes a step further in combining different data streams from the same match. In this case, the `Match` object combines information from the event and tracking data. The main current feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article][soccer-sync-url], to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
+This package is developed to create a standardized way to analyse soccer games using both event- and tracking data. Other packages, like [kloppy][kloppy-url] and [floodlight][floodlight-url], already standardize the import of data sources. The current package goes a step further in combining different data streams from the same game. In this case, the `Game` object combines information from the event and tracking data. The main current feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article][soccer-sync-url], to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
 
 ## Final goal for DataBallPy
 
@@ -51,14 +51,14 @@ Although reading in and synchronising data is already very helpfull to get start
 
 ## V0.5.2 (15/11/2024)
 
-- Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
+- Added `game.get_column_ids` with filters for team, player positions and minimal minutes played filters.
 - Added parser for DFL/Sportec Solutions event data
 - Added parser for Tracab xml format, used by DFL and Sportec solutions
 - Added integration for open data from DFL (open sourced by Bassek et al.)
 
 ### Breaking changes
-- From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
-- `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
+- From now on, `game.home_players_column_ids()` and `game.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `game.get_column_ids()` in future version.
+- `get_open_game()` will now, by default, load in game `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed game from Metrica. To load in the metrica game, please parse `provider="metrica"` in the key word arguments.
 
 ## Installation
 
@@ -68,13 +68,13 @@ $ pip install databallpy
 
 ## Usage
 
-The package is centered around the `Match` object. A `Match` has tracking data, event data metadata about the match.
+The package is centered around the `Game` object. A `Game` has tracking data, event data metadata about the game.
 For a more elaborate example, see the [Getting Started][getting-started-url].
 
 ```python
-from databallpy import get_match, get_open_match
+from databallpy import get_game, get_open_game
 
-match = get_match(
+game = get_game(
   tracking_data_loc="../data/tracking_data.dat",
   tracking_metadata_loc="../data/tracking_metadata.xml",
   tracking_data_provider="tracab"
@@ -83,8 +83,8 @@ match = get_match(
   event_data_provider="opta",
 )
 
-# or get the open match provided by the DFL (Sportec Solutions)
-match = get_open_match()
+# or get the open game provided by the DFL (Sportec Solutions)
+game = get_open_game()
 ```
 
 > [!note]
@@ -107,7 +107,7 @@ match = get_open_match()
 >
 > If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 
-See [the documentation][docs-url] of the `Match` object and the [example usage][example-url] for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Match` object.
+See [the documentation][docs-url] of the `Game` object and the [example usage][example-url] for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Game` object.
 
 ## Features
 
@@ -136,7 +136,7 @@ As you can see, the timing (and placing) of the events do not correspond good wi
 After running the following command, the events are better synchronized to the tracking data:
 
 ```batch
-$ match.synchronise_tracking_and_event_data()
+$ game.synchronise_tracking_and_event_data()
 ```
 
 <video width="640" height="480" controls>
@@ -156,7 +156,7 @@ DataBallPy offers a variety of visualizations to help you understand the data be
 ### Soccer Specific Metrics
 
 - [Covered Distance][covered-distance-url]: Calculate the covered distance in different velocity and acceleration zones.
-- [Pressure][pressure-url]: Calculate the pressure any player in the match (Herold & Kempe, 2022).
+- [Pressure][pressure-url]: Calculate the pressure any player in the game (Herold & Kempe, 2022).
 - [Team Possession][team-possession-url]: Calculate the team possession based on the synchronised event data.
 - [Individual Player Possession][individual_possession-url]: Calculate the individual player possession based on the tracking data (Vidal-Codina et al., 2022).
 - [Simple Expected Goals (xG) model][Expected-Goals-url]: Calculate the simple expected goals model.

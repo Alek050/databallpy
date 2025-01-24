@@ -10,15 +10,15 @@ from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 
 
-def anonymise_match(
-    match: Game,
+def anonymise_game(
+    game: Game,
     keys_df: pd.DataFrame,
     base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True),
 ) -> tuple[Game, pd.DataFrame]:
-    """Function to anonymise a match. The function will replace all player names with a
+    """Function to anonymise a game. The function will replace all player names with a
     unique identifier as well as all teams. Furthermore, it will replace all player
     jersey numbers with a counter from 1 to n_players in that team. Finally, it will
-    replace all datetime objects to datetime.time objects so that every match starts at
+    replace all datetime objects to datetime.time objects so that every game starts at
     1980 15:00:00.
 
     Since soccer data often has names and teams that are known, a hash is not enough.
@@ -29,16 +29,16 @@ def anonymise_match(
     'P-' + pseudonym. For teams, the pseudonym is 'T-' + pseudonym.
 
     Args:
-        match (Match): match to anonymise
+        game (Game): game to anonymise
         keys_df (pd.DataFrame): df containing the keys for known players and teams. If
             new player of team is found, a random key will be generated and added to
             this df.
         base_time (Timestamp, optional): The base timestamp to which to set the
-            start of the match datetime.
+            start of the game datetime.
             Defaults to pd.to_datetime("1980-1-1 15:00:00", utc=True).
 
     Returns:
-        tuple[Match, pd.DataFrame]: tuple containing the match with anonymised players
+        tuple[Game, pd.DataFrame]: tuple containing the game with anonymised players
             and teams and the potentially updated keys dataframe.
 
     Raises:
@@ -60,13 +60,13 @@ def anonymise_match(
     if len(keys_df.columns) > 4:
         raise DataBallPyError("keys_df is not allowed to have more than 4 columns")
 
-    match = match.copy()
-    match, keys_df = anonymise_players(match, keys_df)
-    match, keys_df = anonymise_teams(match, keys_df)
-    match = anonymise_datetime(match, base_time)
+    game = game.copy()
+    game, keys_df = anonymise_players(game, keys_df)
+    game, keys_df = anonymise_teams(game, keys_df)
+    game = anonymise_datetime(game, base_time)
 
-    # Return match
-    return match, keys_df
+    # Return game
+    return game, keys_df
 
 
 def add_new_pseudonym(
@@ -190,8 +190,8 @@ def get_player_mappings(
     )
 
 
-def anonymise_players(match: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFrame]:
-    """Function to anonymise all players in a match. The function will replace all
+def anonymise_players(game: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFrame]:
+    """Function to anonymise all players in a game. The function will replace all
     player ids with a unique identifier. It will first look if the player id is
     already in the keys dataframe. If not, it will create a new pseudonym for that
     player. After that, it will replace all player names with their pseudonym.
@@ -199,11 +199,11 @@ def anonymise_players(match: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFra
     in that team. The player name will be replaced with the team_side + the counter.
 
     Args:
-        match (Match): match to anonymise players for
+        game (Game): game to anonymise players for
         keys (pd.DataFrame): dataframe containing all keys of teams and players
 
     Returns:
-        tuple[Match, pd.DataFrame]: tuple containing the match with anonymised players
+        tuple[Game, pd.DataFrame]: tuple containing the game with anonymised players
             and the potentially updated keys dataframe.
     """
 
@@ -213,49 +213,45 @@ def anonymise_players(match: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFra
         home_players_jersey_map,
         away_players_jersey_map,
         keys,
-    ) = get_player_mappings(match.home_players, match.away_players, keys)
+    ) = get_player_mappings(game.home_players, game.away_players, keys)
 
-    match.home_players["id"] = match.home_players["id"].map(player_id_map)
-    match.away_players["id"] = match.away_players["id"].map(player_id_map)
-    match.home_players["full_name"] = match.home_players["full_name"].map(
-        player_name_map
-    )
-    match.away_players["full_name"] = match.away_players["full_name"].map(
-        player_name_map
-    )
-    match.home_players["shirt_num"] = match.home_players["shirt_num"].map(
+    game.home_players["id"] = game.home_players["id"].map(player_id_map)
+    game.away_players["id"] = game.away_players["id"].map(player_id_map)
+    game.home_players["full_name"] = game.home_players["full_name"].map(player_name_map)
+    game.away_players["full_name"] = game.away_players["full_name"].map(player_name_map)
+    game.home_players["shirt_num"] = game.home_players["shirt_num"].map(
         home_players_jersey_map
     )
-    match.away_players["shirt_num"] = match.away_players["shirt_num"].map(
+    game.away_players["shirt_num"] = game.away_players["shirt_num"].map(
         away_players_jersey_map
     )
 
     # update tracking data
-    if len(match.tracking_data) > 0:
-        match.tracking_data = rename_tracking_data_columns(
-            match.tracking_data, home_players_jersey_map, "home"
+    if len(game.tracking_data) > 0:
+        game.tracking_data = rename_tracking_data_columns(
+            game.tracking_data, home_players_jersey_map, "home"
         )
-        match.tracking_data = rename_tracking_data_columns(
-            match.tracking_data, away_players_jersey_map, "away"
+        game.tracking_data = rename_tracking_data_columns(
+            game.tracking_data, away_players_jersey_map, "away"
         )
 
     # update event data
-    if len(match.event_data) > 0:
-        match.event_data["player_name"] = match.event_data["player_name"].map(
+    if len(game.event_data) > 0:
+        game.event_data["player_name"] = game.event_data["player_name"].map(
             player_name_map
         )
-        match.event_data["player_id"] = match.event_data["player_id"].map(player_id_map)
-        if "to_player_name" in match.event_data.columns:
-            match.event_data["to_player_name"] = match.event_data["to_player_name"].map(
+        game.event_data["player_id"] = game.event_data["player_id"].map(player_id_map)
+        if "to_player_name" in game.event_data.columns:
+            game.event_data["to_player_name"] = game.event_data["to_player_name"].map(
                 player_name_map
             )
-        if "to_player_id" in match.event_data.columns:
-            match.event_data["to_player_id"] = match.event_data["to_player_id"].map(
+        if "to_player_id" in game.event_data.columns:
+            game.event_data["to_player_id"] = game.event_data["to_player_id"].map(
                 player_id_map
             )
 
         # update databallpy events
-        for event in match.all_events.values():
+        for event in game.all_events.values():
             event.player_id = player_id_map[event.player_id]
 
             if event.team_side == "home":
@@ -263,18 +259,16 @@ def anonymise_players(match: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFra
             else:
                 event.jersey = away_players_jersey_map[event.jersey]
 
-        if match._passes_df is not None:
-            match.passes_df["player_id"] = match.passes_df["player_id"].map(
-                player_id_map
-            )
-        if match._shots_df is not None:
-            match.shots_df["player_id"] = match.shots_df["player_id"].map(player_id_map)
-        if match._dribbles_df is not None:
-            match.dribbles_df["player_id"] = match.dribbles_df["player_id"].map(
+        if game._passes_df is not None:
+            game.passes_df["player_id"] = game.passes_df["player_id"].map(player_id_map)
+        if game._shots_df is not None:
+            game.shots_df["player_id"] = game.shots_df["player_id"].map(player_id_map)
+        if game._dribbles_df is not None:
+            game.dribbles_df["player_id"] = game.dribbles_df["player_id"].map(
                 player_id_map
             )
 
-    return match, keys
+    return game, keys
 
 
 def rename_tracking_data_columns(
@@ -352,162 +346,156 @@ def get_team_mappings(
     return team_id_map, team_name_map, keys
 
 
-def anonymise_teams(match: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFrame]:
-    """Function to anonymise the teams in a match. The function will replace all
+def anonymise_teams(game: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFrame]:
+    """Function to anonymise the teams in a game. The function will replace all
     team ids with a unique identifier. It will first look if the team name is
     already in the keys dataframe. If not, it will create a new pseudonym for that
     team. After that, it will replace all team names with their pseudonym. Both
     team names and team ids will be replaced with the same pseudonym.
 
     Args:
-        match (Match): match to anonymise teams for
+        game (Game): game to anonymise teams for
         keys (pd.DataFrame): dataframe containing all keys of teams and players
 
     Returns:
-        tuple[Match, pd.DataFrame]: tuple containing the match with anonymised teams
+        tuple[Game, pd.DataFrame]: tuple containing the game with anonymised teams
             and the potentially updated keys dataframe.
     """
 
     team_id_map, team_name_map, keys = get_team_mappings(
-        match.home_team_name,
-        match.away_team_name,
-        match.home_team_id,
-        match.away_team_id,
+        game.home_team_name,
+        game.away_team_name,
+        game.home_team_id,
+        game.away_team_id,
         keys,
     )
 
-    match.home_team_id = team_id_map[match.home_team_id]
-    match.away_team_id = team_id_map[match.away_team_id]
-    match.home_team_name = team_name_map[match.home_team_name]
-    match.away_team_name = team_name_map[match.away_team_name]
+    game.home_team_id = team_id_map[game.home_team_id]
+    game.away_team_id = team_id_map[game.away_team_id]
+    game.home_team_name = team_name_map[game.home_team_name]
+    game.away_team_name = team_name_map[game.away_team_name]
 
-    if len(match.event_data) > 0:
+    if len(game.event_data) > 0:
         for event in (
-            list(match.shot_events.values())
-            + list(match.pass_events.values())
-            + list(match.dribble_events.values())
+            list(game.shot_events.values())
+            + list(game.pass_events.values())
+            + list(game.dribble_events.values())
         ):
             event.team_id = team_id_map[event.team_id]
 
-        match.event_data["team_id"] = match.event_data["team_id"].map(team_id_map)
-        if match._passes_df is not None:
-            match.passes_df["team_id"] = match.passes_df["team_id"].map(team_id_map)
-        if match._shots_df is not None:
-            match.shots_df["team_id"] = match.shots_df["team_id"].map(team_id_map)
-        if match._dribbles_df is not None:
-            match.dribbles_df["team_id"] = match.dribbles_df["team_id"].map(team_id_map)
+        game.event_data["team_id"] = game.event_data["team_id"].map(team_id_map)
+        if game._passes_df is not None:
+            game.passes_df["team_id"] = game.passes_df["team_id"].map(team_id_map)
+        if game._shots_df is not None:
+            game.shots_df["team_id"] = game.shots_df["team_id"].map(team_id_map)
+        if game._dribbles_df is not None:
+            game.dribbles_df["team_id"] = game.dribbles_df["team_id"].map(team_id_map)
 
-    return match, keys
+    return game, keys
 
 
 def anonymise_datetime(
-    match: Game, base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True)
+    game: Game, base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True)
 ) -> Game:
-    """Function to anonymise the datetime of a match. The function will replace all
+    """Function to anonymise the datetime of a game. The function will replace all
     datetime objects so that the tracking data starts exactly at the base_time. The
     function will change the event data datetime accordingly to keep the same time
     difference between the two sources. The function will also change the frame column
     in the tracking data since it is sometimes based on a timestamp.
 
     Args:
-        match (Match): match to anonymise datetime for
+        game (Game): game to anonymise datetime for
         base_time (Timestamp, optional): The base timestamp.
             Defaults to pd.to_datetime("1980-1-1 15:00:00", utc=True).
 
     Returns:
-        Match: match with anonymised datetime
+        Game: game with anonymised datetime
     """
 
     dt_delta_defined = False
-    if len(match.tracking_data) > 0:
+    if len(game.tracking_data) > 0:
         dt_delta, dt_delta_defined = (
-            match.tracking_data["datetime"].iloc[0] - base_time,
+            game.tracking_data["datetime"].iloc[0] - base_time,
             True,
         )
 
-        match.tracking_data["datetime"] = (
-            match.tracking_data["datetime"].dt.tz_convert("UTC") - dt_delta
+        game.tracking_data["datetime"] = (
+            game.tracking_data["datetime"].dt.tz_convert("UTC") - dt_delta
         )
-        match.periods["start_datetime_td"] = (
-            match.periods["start_datetime_td"].dt.tz_convert("UTC") - dt_delta
+        game.periods["start_datetime_td"] = (
+            game.periods["start_datetime_td"].dt.tz_convert("UTC") - dt_delta
         )
-        match.periods["end_datetime_td"] = (
-            match.periods["end_datetime_td"].dt.tz_convert("UTC") - dt_delta
-        )
-
-        new_frames = np.arange(len(match.tracking_data)) + 1
-        frame_map = dict(zip(match.tracking_data["frame"], new_frames))
-        max_frame = frame_map[match.tracking_data["frame"].max()]
-        match.tracking_data["frame"] = np.arange(len(match.tracking_data)) + 1
-        match.periods["start_frame"] = (
-            match.periods["start_frame"].map(frame_map).fillna(max_frame).astype(int)
-        )
-        match.periods["end_frame"] = (
-            match.periods["end_frame"].map(frame_map).fillna(max_frame).astype(int)
+        game.periods["end_datetime_td"] = (
+            game.periods["end_datetime_td"].dt.tz_convert("UTC") - dt_delta
         )
 
-        match.home_players["start_frame"] = (
-            match.home_players["start_frame"]
-            .map(frame_map)
-            .fillna(max_frame)
-            .astype(int)
+        new_frames = np.arange(len(game.tracking_data)) + 1
+        frame_map = dict(zip(game.tracking_data["frame"], new_frames))
+        max_frame = frame_map[game.tracking_data["frame"].max()]
+        game.tracking_data["frame"] = np.arange(len(game.tracking_data)) + 1
+        game.periods["start_frame"] = (
+            game.periods["start_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
-        match.home_players["end_frame"] = (
-            match.home_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
-        )
-        match.away_players["start_frame"] = (
-            match.away_players["start_frame"]
-            .map(frame_map)
-            .fillna(max_frame)
-            .astype(int)
-        )
-        match.away_players["end_frame"] = (
-            match.away_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
+        game.periods["end_frame"] = (
+            game.periods["end_frame"].map(frame_map).fillna(max_frame).astype(int)
         )
 
-    if len(match.event_data) > 0:
+        game.home_players["start_frame"] = (
+            game.home_players["start_frame"].map(frame_map).fillna(max_frame).astype(int)
+        )
+        game.home_players["end_frame"] = (
+            game.home_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
+        )
+        game.away_players["start_frame"] = (
+            game.away_players["start_frame"].map(frame_map).fillna(max_frame).astype(int)
+        )
+        game.away_players["end_frame"] = (
+            game.away_players["end_frame"].map(frame_map).fillna(max_frame).astype(int)
+        )
+
+    if len(game.event_data) > 0:
         if not dt_delta_defined:
             dt_delta, dt_delta_defined = (
-                match.event_data["datetime"].iloc[0] - base_time,
+                game.event_data["datetime"].iloc[0] - base_time,
                 True,
             )
 
-        match.event_data["datetime"] = (
-            match.event_data["datetime"].dt.tz_convert("UTC") - dt_delta
+        game.event_data["datetime"] = (
+            game.event_data["datetime"].dt.tz_convert("UTC") - dt_delta
         )
-        match.periods["start_datetime_ed"] = (
-            match.periods["start_datetime_ed"].dt.tz_convert("UTC") - dt_delta
+        game.periods["start_datetime_ed"] = (
+            game.periods["start_datetime_ed"].dt.tz_convert("UTC") - dt_delta
         )
-        match.periods["end_datetime_ed"] = (
-            match.periods["end_datetime_ed"].dt.tz_convert("UTC") - dt_delta
+        game.periods["end_datetime_ed"] = (
+            game.periods["end_datetime_ed"].dt.tz_convert("UTC") - dt_delta
         )
 
-        if match._is_synchronised:
-            match.event_data["tracking_frame"] = (
-                match.event_data["tracking_frame"]
+        if game._is_synchronised:
+            game.event_data["tracking_frame"] = (
+                game.event_data["tracking_frame"]
                 .map(frame_map)
                 .fillna(MISSING_INT)
                 .astype(int)
             )
 
         for event in (
-            list(match.shot_events.values())
-            + list(match.pass_events.values())
-            + list(match.dribble_events.values())
+            list(game.shot_events.values())
+            + list(game.pass_events.values())
+            + list(game.dribble_events.values())
         ):
             event.datetime = event.datetime.tz_convert("UTC") - dt_delta
 
-        if match._passes_df is not None:
-            match.passes_df["datetime"] = (
-                match.passes_df["datetime"].dt.tz_convert("UTC") - dt_delta
+        if game._passes_df is not None:
+            game.passes_df["datetime"] = (
+                game.passes_df["datetime"].dt.tz_convert("UTC") - dt_delta
             )
-        if match._shots_df is not None:
-            match.shots_df["datetime"] = (
-                match.shots_df["datetime"].dt.tz_convert("UTC") - dt_delta
+        if game._shots_df is not None:
+            game.shots_df["datetime"] = (
+                game.shots_df["datetime"].dt.tz_convert("UTC") - dt_delta
             )
-        if match._dribbles_df is not None:
-            match.dribbles_df["datetime"] = (
-                match.dribbles_df["datetime"].dt.tz_convert("UTC") - dt_delta
+        if game._dribbles_df is not None:
+            game.dribbles_df["datetime"] = (
+                game.dribbles_df["datetime"].dt.tz_convert("UTC") - dt_delta
             )
 
-    return match
+    return game

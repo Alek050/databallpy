@@ -39,7 +39,7 @@ class TestQualityCheckTrackingData(unittest.TestCase):
                 "ball_status": ["alive"] * 13,
                 "home_1_x": [1, 1, 40, 1, 4, 42, 4, 43, 3, 41, 0, 40, 40],
                 "home_1_y": [1, 1, 40, 1, 4, 41, 4, 43, 3, 41, 0, 40, 40],
-                "matchtime_td": ["00:00:00"] * 13,
+                "gametime_td": ["00:00:00"] * 13,
             }
         )
 
@@ -50,7 +50,7 @@ class TestQualityCheckTrackingData(unittest.TestCase):
                 "ball_status": ["alive"] * 13,
                 "home_1_x": [1] * 13,
                 "home_1_y": [1] * 13,
-                "matchtime_td": ["00:00:00"] * 13,
+                "gametime_td": ["00:00:00"] * 13,
             }
         )
 

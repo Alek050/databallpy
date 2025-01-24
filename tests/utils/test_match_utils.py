@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from databallpy.utils.match_utils import (
+from databallpy.utils.game_utils import (
     create_event_attributes_dataframe,
     player_column_id_to_full_name,
     player_id_to_column_id,

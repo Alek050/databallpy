@@ -40,18 +40,18 @@ logging_wrapper(__file__)
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> tuple[pd.DataFrame, Metadata]:
-    """This function retrieves the metadata and event data of a specific match. The x
+    """This function retrieves the metadata and event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         event_data_loc (str): location of the event_data.json file
         event_data_metadata_loc (str): location of the metadata.json file
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: the event data of the match and the  metadata
+        Tuple[pd.DataFrame, Metadata]: the event data of the game and the  metadata
     """
     if not isinstance(event_data_loc, str):
         raise TypeError(
@@ -84,15 +84,15 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
         metdata_loc (str): location of the metadata.json file
 
     Returns:
-        pd.DataFrame: metadata of the match
+        pd.DataFrame: metadata of the game
     """
     with open(metadata_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
     with open(metadata_loc, "r", encoding=encoding) as f:
         data = f.read()
     metadata_json = json.loads(data)
-    match_info = metadata_json["data"]["match_info"][0]
-    country = match_info["tournament_name"].split(".")[0]
+    game_info = metadata_json["data"]["match_info"][0]
+    country = game_info["tournament_name"].split(".")[0]
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [pd.to_datetime("NaT", utc=True)] * 5,
@@ -101,7 +101,7 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
 
     # No idea why the instat times need to be subtracted by 3 hours to get to utc time
     periods["start_datetime_ed"][0] = pd.to_datetime(
-        match_info["match_date"], utc=True
+        game_info["match_date"], utc=True
     ) - dt.timedelta(hours=3)
     periods["end_datetime_ed"][0] = periods["start_datetime_ed"][0] + dt.timedelta(
         minutes=45
@@ -124,19 +124,19 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     )
 
     metadata = Metadata(
-        match_id=int(match_info["id"]),
+        game_id=int(game_info["id"]),
         pitch_dimensions=[np.nan, np.nan],
         periods_frames=pd.DataFrame(periods),
         frame_rate=np.nan,
-        home_team_id=int(match_info["team1_id"]),
-        home_team_name=str(match_info["team1_name"]),
+        home_team_id=int(game_info["team1_id"]),
+        home_team_name=str(game_info["team1_name"]),
         home_players=pd.DataFrame(columns=["id", "full_name", "shirt_num"]),
-        home_score=int(match_info["score"].split(":")[0]),
+        home_score=int(game_info["score"].split(":")[0]),
         home_formation="",
-        away_team_id=int(match_info["team2_id"]),
-        away_team_name=str(match_info["team2_name"]),
+        away_team_id=int(game_info["team2_id"]),
+        away_team_name=str(game_info["team2_name"]),
         away_players=pd.DataFrame(columns=["id", "full_name", "shirt_num"]),
-        away_score=int(match_info["score"].split(":")[1]),
+        away_score=int(game_info["score"].split(":")[1]),
         away_formation="",
         country=country,
     )
@@ -153,7 +153,7 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
         event_data_loc (str): location of the event_data.json file
 
     Returns:
-        pd.DataFrame: updated metadata of the match
+        pd.DataFrame: updated metadata of the game
     """
     with open(event_data_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -230,16 +230,16 @@ logging_wrapper(__file__)
 
 
 def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
-    """Function to load the event_data.json file, the events of the match.
+    """Function to load the event_data.json file, the events of the game.
     Note: this function does ignore qualifiers for now
 
 
     Args:
         event_data_loc (str): location of the event_data.json file
-        metadata(Metadata): metadata of the match
+        metadata(Metadata): metadata of the game
 
     Returns:
-        pd.DataFrame: event data of the match
+        pd.DataFrame: event data of the game
     """
     with open(event_data_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]

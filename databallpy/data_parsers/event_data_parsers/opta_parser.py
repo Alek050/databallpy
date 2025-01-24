@@ -185,11 +185,11 @@ def load_opta_event_data(
 ) -> tuple[
     pd.DataFrame, Metadata, dict[str, dict[str, dict[str, IndividualCloseToBallEvent]]]
 ]:
-    """This function retrieves the metadata and event data of a specific match. The x
+    """This function retrieves the metadata and event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         f7_loc (str): location of the f7.xml file.
@@ -197,7 +197,7 @@ def load_opta_event_data(
         pitch_dimensions (list, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the game, the metadata,
         and the databallpy_events.
     """
     if not isinstance(f7_loc, str):
@@ -286,7 +286,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         pitch_dimensions (list): the length and width of the pitch in meters
 
     Returns:
-        MetaData: all metadata information of the current match
+        MetaData: all metadata information of the current game
     """
     with open(f7_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -295,15 +295,15 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     soup = BeautifulSoup(lines, "xml")
 
     if len(soup.find_all("SoccerDocument")) > 1:
-        # Multiple matches found in f7.xml file
+        # Multiple games found in f7.xml file
         # Eliminate the rest of the `SoccerDocument` elements
-        for match in soup.find_all("SoccerDocument")[1:]:
-            match.decompose()
+        for game in soup.find_all("SoccerDocument")[1:]:
+            game.decompose()
 
-    # Obtain match id
-    match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
+    # Obtain game id
+    game_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
     country = soup.find("Country").text
-    # Obtain match start and end of period datetime
+    # Obtain game start and end of period datetime
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [],
@@ -323,7 +323,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
             start_date = pd.to_datetime(soup.find("Date").text)
             warnings.warn(
                 message="Using estimated date for event data since specific information"
-                " is not provided in the f7 metadata. Estimated start of match"
+                " is not provided in the f7 metadata. Estimated start of game"
                 f" = {start_date}",
                 category=DataBallPyWarning,
             )
@@ -395,7 +395,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         teams_player_info[team_info["side"]] = player_info
 
     metadata = Metadata(
-        match_id=match_id,
+        game_id=game_id,
         pitch_dimensions=pitch_dimensions,
         periods_frames=periods,
         frame_rate=MISSING_INT,
@@ -471,12 +471,12 @@ def _load_event_data(
     players: pd.DataFrame,
     pitch_dimensions: list = [106.0, 68.0],
 ) -> tuple[pd.DataFrame, dict[str, dict[str | int, IndividualCloseToBallEvent]]]:
-    """Function to load the f27 .xml, the events of the match.
+    """Function to load the f27 .xml, the events of the game.
     Note: this function does ignore most qualifiers for now.
 
     Args:
         f24_loc (str): location of the f24.xml file
-        country (str): country of the match
+        country (str): country of the game
         away_team_id (int): id of the away team
         players (pd.DataFrame): dataframe with player information.
         pitch_dimensions (list, optional): dimensions of the pitch.
@@ -484,7 +484,7 @@ def _load_event_data(
 
 
     Returns:
-        pd.DataFrame: all events of the match in a pd dataframe
+        pd.DataFrame: all events of the game in a pd dataframe
         dict: dict with "shot_events", "dribble_events", "pass_events", "other_events"
              as key and a dict with the BaseIndividualCloseToBallEvent instances
     """
@@ -988,7 +988,7 @@ def _update_pass_outcome(
     outcome of passes that result in a goal.
 
     Args:
-        event_data (pd.DataFrame): all event data of the match
+        event_data (pd.DataFrame): all event data of the game
         shot_events (dict): list of ShotEvent instances
         pass_events (dict): list of PassEvent instances
 

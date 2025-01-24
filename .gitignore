@@ -142,7 +142,7 @@ dmypy.json
 .DS_Store
 
 # testing files
-docs/create_anonimised_match.py
+docs/create_anonimised_game.py
 test.py
 data/
 .vscode/

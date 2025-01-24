@@ -47,12 +47,12 @@ class TestMetricaMetadataParser(unittest.TestCase):
 
     def test_get_sportec_open_data_url(self):
         with self.assertRaises(ValueError):
-            _get_sportec_open_data_url(match_id="unknown", data_type="metadata")
+            _get_sportec_open_data_url(game_id="unknown", data_type="metadata")
         with self.assertRaises(ValueError):
-            _get_sportec_open_data_url(match_id="J03WMX", data_type="wrong")
+            _get_sportec_open_data_url(game_id="J03WMX", data_type="wrong")
 
         self.assertEqual(
-            _get_sportec_open_data_url(match_id="J03WMX", data_type="metadata"),
+            _get_sportec_open_data_url(game_id="J03WMX", data_type="metadata"),
             SPORTEC_BASE_URL
             + "/"
             + SPORTEC_METADATA_ID_MAP["J03WMX"]

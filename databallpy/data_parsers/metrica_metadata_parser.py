@@ -17,7 +17,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
 
     Args:
         metadata_loc (str): locatin of the metadata
-        metadata (Metadata): the Metadata of the match
+        metadata (Metadata): the Metadata of the game
 
     Returns:
         pd.DataFrame: df with for every frame what players are referred to in
@@ -68,7 +68,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
 def _get_metadata(
     metadata_loc: str, is_tracking_data: bool = True, is_event_data: bool = False
 ) -> Metadata:
-    """Function to get the metadata of the match
+    """Function to get the metadata of the game
 
     Args:
         metadata_loc (str): Location of the metadata .xml file
@@ -78,7 +78,7 @@ def _get_metadata(
         Defaults to False
 
     Returns:
-        Metadata: all information of the match
+        Metadata: all information of the game
     """
     if os.path.exists(metadata_loc):
         with open(metadata_loc, "rb") as file:
@@ -89,7 +89,7 @@ def _get_metadata(
     else:
         soup = BeautifulSoup(metadata_loc.strip(), "xml")
 
-    match_id = _to_int(soup.find("Session").attrs["id"])
+    game_id = _to_int(soup.find("Session").attrs["id"])
     pitch_size_x = _to_float(soup.find("FieldSize").find("Width").text)
     pitch_size_y = _to_float(soup.find("FieldSize").find("Height").text)
     frame_rate = _to_int(soup.find("FrameRate").text)
@@ -248,7 +248,7 @@ def _get_metadata(
     away_players = team_dicts[1]["player_dict"]
 
     metadata = Metadata(
-        match_id=_to_int(match_id),
+        game_id=_to_int(game_id),
         pitch_dimensions=[float(pitch_size_x), float(pitch_size_y)],
         periods_frames=pd.DataFrame(periods_dict),
         frame_rate=_to_int(frame_rate),
@@ -284,10 +284,10 @@ def _update_metadata(td_channels: pd.DataFrame, metadata: Metadata) -> Metadata:
         td_channels (pd.DataFrame): tracking data channels, what indexes in the
         tracking data belong to which players, all players in the first line are
         starters
-        metadata (Metadata): metadata of the match
+        metadata (Metadata): metadata of the game
 
     Returns:
-        Metadata: updated metadata of the match
+        Metadata: updated metadata of the game
     """
     home_formation = [0, 0, 0, 0]
     away_formation = [0, 0, 0, 0]

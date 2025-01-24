@@ -6,16 +6,16 @@ def _normalize_playing_direction_tracking(
     td: pd.DataFrame, periods: pd.DataFrame
 ) -> tuple[pd.DataFrame, list[int]]:
     """Function to represent the home team as playing from left to right for the
-    full match, and the away team from right to left.
+    full game, and the away team from right to left.
 
     Args:
-        td (pd.DataFrame): tracking data of the match
+        td (pd.DataFrame): tracking data of the game
         periods (pd.DataFrame): description of the start and end frames of the periods
 
     Returns:
-        Tuple[pd.DataFrame, list]: tracking data of the match, normalized in x and y
+        Tuple[pd.DataFrame, list]: tracking data of the game, normalized in x and y
         direction in such a way that the home team is represented of playing from left
-        to right for the full match. The period ids of the periods in which the
+        to right for the full game. The period ids of the periods in which the
         playing direction changed are returned as well.
     """
 

@@ -10,9 +10,9 @@ Get Match
 
 Match object
 ----------------------
-`databallpy.match.Match`
+`databallpy.game.Game`
 
-.. autoclass:: databallpy.match.Match
+.. autoclass:: databallpy.game.Game
     :members:
     :show-inheritance:
     :inherited-members:

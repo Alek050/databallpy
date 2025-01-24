@@ -116,7 +116,7 @@ class TestTracabParser(unittest.TestCase):
 
     def test_get_tracking_data_txt(self):
         tracking_data = _get_tracking_data_txt(self.tracking_data_dat_loc, verbose=False)
-        expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
+        expected_td = TD_TRACAB.drop(["gametime_td", "period_id", "datetime"], axis=1)
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.requests.get")
@@ -158,28 +158,28 @@ class TestTracabParser(unittest.TestCase):
         mock_load_tracab_tracking_data.return_value = (pd.DataFrame(), "mock_metadata")
         mock_rename.return_value = "triggered"
 
-        match_id = "J03WMX"
+        game_id = "J03WMX"
         verbose = True
         expected_metadata_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", match_id, "metadata.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "metadata.xml"
         )
         expected_tracking_data_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", match_id, "tracking_data.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data.xml"
         )
 
         # Call the function
-        result = load_sportec_open_tracking_data(match_id, verbose)
+        result = load_sportec_open_tracking_data(game_id, verbose)
 
         # Verify the function calls
         mock_makedirs.assert_called_once_with(
-            os.path.join(os.getcwd(), "datasets", "IDSSE", match_id), exist_ok=True
+            os.path.join(os.getcwd(), "datasets", "IDSSE", game_id), exist_ok=True
         )
         self.assertEqual(mock_requests_get.call_count, 1)
         self.assertEqual(mock_session.return_value.get.call_count, 1)
         mock_open.assert_any_call(expected_metadata_path, "wb")
         mock_open.assert_any_call(
             os.path.join(
-                os.getcwd(), "datasets", "IDSSE", match_id, "tracking_data_temp.xml"
+                os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data_temp.xml"
             ),
             "wb",
         )

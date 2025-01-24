@@ -9,7 +9,7 @@ from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 @dataclass
 class Metadata:
-    match_id: int
+    game_id: int
     pitch_dimensions: list
     periods_frames: pd.DataFrame
     frame_rate: int
@@ -31,11 +31,11 @@ class Metadata:
 
     @logging_wrapper(__file__)
     def __post_init__(self):
-        # match id
-        if not isinstance(self.match_id, (int, str)):
+        # game id
+        if not isinstance(self.game_id, (int, str)):
             raise TypeError(
-                f"match_id ({self.match_id}) should be an integer, not "
-                f"{type(self.match_id)}"
+                f"game_id ({self.game_id}) should be an integer, not "
+                f"{type(self.game_id)}"
             )
 
         # pitch_dimensions

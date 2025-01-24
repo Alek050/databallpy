@@ -5,8 +5,8 @@ from databallpy.data_parsers.metadata import Metadata
 from databallpy.utils.constants import MISSING_INT
 
 
-def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:
-    """Transforms the number of seconds into matchtime format
+def _to_gametime(secs: int, max_m: int, start_m: int) -> str:
+    """Transforms the number of seconds into gametime format
 
     Args:
         s (int): number of seconds since period started
@@ -14,7 +14,7 @@ def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:
         start_m (int): start of the period in minutes
 
     Returns:
-        str: the time in matchtime format
+        str: the time in gametime format
     """
     seconds = str(secs % 60)
     if len(seconds) == 1:
@@ -34,10 +34,10 @@ def _to_matchtime(secs: int, max_m: int, start_m: int) -> str:
     return time_string
 
 
-def _get_matchtime(
+def _get_gametime(
     timestamp_column: pd.Series, period_column: pd.Series, metadata: Metadata
 ) -> list:
-    """Gives a list with time in the matchtime format based
+    """Gives a list with time in the gametime format based
     on the original timestamps and framerate
 
     Args:
@@ -48,7 +48,7 @@ def _get_matchtime(
         information on start and end of periods
 
     Returns:
-        list: for every frame the match time.
+        list: for every frame the game time.
     """
     frame_rate = metadata.frame_rate
     periods_frames = metadata.periods_frames
@@ -80,7 +80,7 @@ def _get_matchtime(
     start_m_dict = {1: 0, 2: 45, 3: 90, 4: 105}
     max_m_dict = {1: 45, 2: 90, 3: 105, 4: 120}
 
-    matchtime_list = []
+    gametime_list = []
     for p in [1, 2, 3, 4]:
         frame_end_current_p = periods_frames.loc[
             periods_frames["period_id"] == p, "end_frame"
@@ -92,20 +92,19 @@ def _get_matchtime(
             n_frames_break = frame_start_next_p - frame_end_current_p - 1
         else:
             n_frames_break = 0
-        matchtime_list_period = []
+        gametime_list_period = []
         for seconds in df[df["period_id"] == p]["seconds"].unique():
-            matchtime_list_period.extend(
-                [_to_matchtime(int(seconds), max_m_dict[p], start_m_dict[p])]
-                * frame_rate
+            gametime_list_period.extend(
+                [_to_gametime(int(seconds), max_m_dict[p], start_m_dict[p])] * frame_rate
             )
-        matchtime_list_period = matchtime_list_period[: n_frames_period[p] + 1]
-        matchtime_list_period.extend(["Break"] * n_frames_break)
-        matchtime_list.extend(matchtime_list_period)
+        gametime_list_period = gametime_list_period[: n_frames_period[p] + 1]
+        gametime_list_period.extend(["Break"] * n_frames_break)
+        gametime_list.extend(gametime_list_period)
 
     for _ in df[df["period_id"] == 5]["seconds"].unique():
-        matchtime_list.extend(["Penalty Shootout"] * frame_rate)
+        gametime_list.extend(["Penalty Shootout"] * frame_rate)
 
-    matchtime_list = matchtime_list[: len(df)]
-    len_diff = len(timestamp_column) - len(matchtime_list)
+    gametime_list = gametime_list[: len(df)]
+    len_diff = len(timestamp_column) - len(gametime_list)
     to_add = [None] * len_diff
-    return to_add + matchtime_list
+    return to_add + gametime_list

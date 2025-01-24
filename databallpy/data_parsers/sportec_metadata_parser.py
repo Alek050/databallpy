@@ -36,10 +36,10 @@ SPORTEC_TRACKING_DATA_ID_MAP = {
 }
 
 
-def _get_sportec_open_data_url(match_id: str, data_type: str) -> str:
-    if match_id not in SPORTEC_EVENT_DATA_ID_MAP:
+def _get_sportec_open_data_url(game_id: str, data_type: str) -> str:
+    if game_id not in SPORTEC_EVENT_DATA_ID_MAP:
         raise ValueError(
-            f"Unknown match id {match_id}, please specify one of "
+            f"Unknown game id {game_id}, please specify one of "
             f"{list(SPORTEC_EVENT_DATA_ID_MAP.keys())}"
         )
 
@@ -56,7 +56,7 @@ def _get_sportec_open_data_url(match_id: str, data_type: str) -> str:
         )
 
     return (
-        f"{SPORTEC_BASE_URL}/{data_type_map[data_type][match_id]}"
+        f"{SPORTEC_BASE_URL}/{data_type_map[data_type][game_id]}"
         f"?private_link={SPORTEC_PRIVATE_LINK}"
     )
 
@@ -91,7 +91,7 @@ DFB_POSITIONS = {
 
 
 def _get_sportec_metadata(metadata_loc: str, only_event_data: bool = False) -> Metadata:
-    """Get the metadata of sportec. This metadata is used for matches form the
+    """Get the metadata of sportec. This metadata is used for gamees form the
     German Bundesliga, the data is assumed to be distributed by the shell company
     SporTec Solutions under the DFL.
 
@@ -167,7 +167,7 @@ def _get_sportec_metadata(metadata_loc: str, only_event_data: bool = False) -> M
         )
 
     return Metadata(
-        match_id=soup.find("General")["MatchId"],
+        game_id=soup.find("General")["MatchId"],
         pitch_dimensions=[pitch_size_x, pitch_size_y],
         periods_frames=frames_df,
         frame_rate=MISSING_INT,

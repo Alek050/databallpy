@@ -17,7 +17,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_datetime,
     _add_periods_to_tracking_data,
     _add_player_tracking_data_to_dict,
-    _get_matchtime,
+    _get_gametime,
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
@@ -41,7 +41,7 @@ def load_metrica_tracking_data(
         TypeError: if tracking_data_loc is not a string or io.StringIO
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
+        Tuple[pd.DataFrame, Metadata]: tracking and metadata of the game
     """
 
     if isinstance(tracking_data_loc, str):
@@ -81,7 +81,7 @@ def load_metrica_tracking_data(
     tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
     )
-    tracking_data["matchtime_td"] = _get_matchtime(
+    tracking_data["gametime_td"] = _get_gametime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
     return tracking_data, metadata
@@ -96,7 +96,7 @@ def load_metrica_open_tracking_data(
     Args:
         verbose (bool): Whether or not to print info in the terminal. Defaults to True.
     Returns:
-        Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
+        Tuple[pd.DataFrame, Metadata]: tracking and metadata of the game
     """
     td_data_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_tracking.txt"
@@ -132,7 +132,7 @@ def _get_tracking_data(
         terminal. Defaults to True.
 
     Returns:
-        pd.DataFrame: tracking data of the match in a pd dataframe
+        pd.DataFrame: tracking data of the game in a pd dataframe
     """
 
     if isinstance(tracking_data_loc, str):

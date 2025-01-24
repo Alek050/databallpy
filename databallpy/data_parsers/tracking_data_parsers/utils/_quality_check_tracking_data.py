@@ -71,7 +71,7 @@ def _check_missing_player_data(
         bool: wheter to allow syncronise tracking and event data.
     """
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
-        tracking_data["matchtime_td"] != "Break"
+        tracking_data["gametime_td"] != "Break"
     )
     home_players = [
         x for x in tracking_data.columns if "home" in x and ("_x" in x or "_y" in x)
@@ -101,7 +101,7 @@ def _check_missing_player_data(
                     " when the ball status is alive. Syncronising tracking and event"
                     " data is disabled due to bad quality of the tracking data."
                     "\nIf you still wish to syncronise the data, please set "
-                    "allow_syncronise_tracking_and_event_data to True in your match "
+                    "allow_syncronise_tracking_and_event_data to True in your game "
                     "object."
                 )
             )
@@ -123,7 +123,7 @@ def _check_missing_ball_data(tracking_data: pd.DataFrame, framerate: int) -> Non
 
     """
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
-        tracking_data["matchtime_td"] != "Break"
+        tracking_data["gametime_td"] != "Break"
     )
     valid_frames = ~np.isnan(
         tracking_data.loc[mask_ball_alive, ["ball_x", "ball_y"]]
@@ -173,7 +173,7 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
         )
     velocity_ball = tracking_data["ball_velocity"]
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
-        tracking_data["matchtime_td"] != "Break"
+        tracking_data["gametime_td"] != "Break"
     )
     valid_frames = velocity_ball[mask_ball_alive][1:] < 50
 
@@ -289,7 +289,7 @@ def _max_sequence_invalid_frames(
 ) -> int:
     """Function that gives the max sequence length of invalid frames.
     Based on include_start_finish,the function ignores the first and last
-    sequence of invalid values (when a player doesn't start or ends the match)
+    sequence of invalid values (when a player doesn't start or ends the game)
 
     Args:
         valid_frames (pd.Series): series where valid frames are True
