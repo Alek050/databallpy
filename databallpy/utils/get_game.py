@@ -59,7 +59,7 @@ def get_game(
         event_data_loc (str, optional): location of the event data. Defaults to None.
         event_metadata_loc (str, optional): location of the metadata of the event data.
             Defaults to None.
-        event_game_loc (str, optional): location of the game file of the event data.
+        event_match_loc (str, optional): location of the game file of the event data.
             Only used for statsbomb event data. Defaults to None.
         event_lineup_loc (str, optional): location of the lineup file of the event data.
             Only used for statsbomb event data. Defaults to None.
