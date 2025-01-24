@@ -5,16 +5,16 @@ import numpy as np
 import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 
-from databallpy.match import Match
+from databallpy.game import Game
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 
 
 def anonymise_match(
-    match: Match,
+    match: Game,
     keys_df: pd.DataFrame,
     base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True),
-) -> tuple[Match, pd.DataFrame]:
+) -> tuple[Game, pd.DataFrame]:
     """Function to anonymise a match. The function will replace all player names with a
     unique identifier as well as all teams. Furthermore, it will replace all player
     jersey numbers with a counter from 1 to n_players in that team. Finally, it will
@@ -190,7 +190,7 @@ def get_player_mappings(
     )
 
 
-def anonymise_players(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataFrame]:
+def anonymise_players(match: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFrame]:
     """Function to anonymise all players in a match. The function will replace all
     player ids with a unique identifier. It will first look if the player id is
     already in the keys dataframe. If not, it will create a new pseudonym for that
@@ -352,7 +352,7 @@ def get_team_mappings(
     return team_id_map, team_name_map, keys
 
 
-def anonymise_teams(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataFrame]:
+def anonymise_teams(match: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFrame]:
     """Function to anonymise the teams in a match. The function will replace all
     team ids with a unique identifier. It will first look if the team name is
     already in the keys dataframe. If not, it will create a new pseudonym for that
@@ -401,8 +401,8 @@ def anonymise_teams(match: Match, keys: pd.DataFrame) -> tuple[Match, pd.DataFra
 
 
 def anonymise_datetime(
-    match: Match, base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True)
-) -> Match:
+    match: Game, base_time: Timestamp = pd.to_datetime("1980-1-1 15:00:00", utc=True)
+) -> Game:
     """Function to anonymise the datetime of a match. The function will replace all
     datetime objects so that the tracking data starts exactly at the base_time. The
     function will change the event data datetime accordingly to keep the same time

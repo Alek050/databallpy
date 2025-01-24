@@ -10,7 +10,7 @@ import pandas as pd
 from matplotlib.colors import Colormap
 from tqdm import tqdm
 
-from databallpy.match import Match
+from databallpy.game import Game
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import logging_wrapper
 
@@ -244,7 +244,7 @@ def plot_soccer_pitch(
 
 @logging_wrapper(__file__)
 def plot_events(
-    match: Match,
+    match: Game,
     events: list[str] = [],
     outcome: int = None,
     player_ids: list[str] = [],
@@ -392,7 +392,7 @@ def plot_events(
 
 @logging_wrapper(__file__)
 def plot_tracking_data(
-    match: Match,
+    match: Game,
     idx: int,
     team_colors: list[str] = ["green", "red"],
     *,
@@ -502,7 +502,7 @@ def plot_tracking_data(
 @logging_wrapper(__file__)
 @requires_ffmpeg
 def save_tracking_video(
-    match: Match,
+    match: Game,
     start_idx: int,
     end_idx: int,
     save_folder: str,
@@ -666,7 +666,7 @@ def save_tracking_video(
 
 @logging_wrapper(__file__)
 def _pre_check_plot_td_inputs(
-    match: Match,
+    match: Game,
     td: pd.DataFrame,
     events: list[str],
     variable_of_interest: str | None,
@@ -676,7 +676,7 @@ def _pre_check_plot_td_inputs(
     cmap: Colormap | str | None,
 ):
     """Function to check if the inputs for the save_match_clip function are correct."""
-    if not isinstance(match, Match):
+    if not isinstance(match, Game):
         raise DataBallPyError("match should be an instance of databallpy.Match")
 
     if variable_of_interest is not None:
@@ -742,7 +742,7 @@ def _pre_check_plot_td_inputs(
 def _plot_heatmap_overlay(
     ax: plt.axes,
     heatmap_overlay: np.ndarray,
-    match: Match,
+    match: Game,
     cmap: Colormap,
     variable_fig_objs: list,
 ) -> tuple[plt.figure, plt.axes]:
@@ -767,7 +767,7 @@ def _plot_heatmap_overlay(
 
 
 def _plot_velocities(
-    ax: plt.axes, td: pd.DataFrame, idx: int, match: Match, variable_fig_objs: list
+    ax: plt.axes, td: pd.DataFrame, idx: int, match: Game, variable_fig_objs: list
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the velocities of the current frame."""
     # Player velocities
@@ -807,7 +807,7 @@ def _plot_single_frame(
     team_colors: list[str],
     variable_fig_objs: list,
     td: pd.DataFrame,
-    match: Match,
+    match: Game,
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the single frame of the current frame."""
     # Scatter plot the teams
@@ -861,7 +861,7 @@ def _plot_variable_of_interest(
     ax: plt.axes,
     value: any,
     variable_fig_objs: list,
-    match: Match,
+    match: Game,
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the variable of interest of the current frame."""
     fig_obj = ax.text(
@@ -876,7 +876,7 @@ def _plot_variable_of_interest(
 
 
 def _plot_player_possession(
-    ax: plt.axes, column_id: str, idx: int, match: Match, variable_fig_objs: list
+    ax: plt.axes, column_id: str, idx: int, match: Game, variable_fig_objs: list
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the player possession of the current frame."""
     if pd.isnull(column_id) or pd.isnull(match.tracking_data.loc[idx, f"{column_id}_x"]):
@@ -898,7 +898,7 @@ def _plot_player_possession(
 
 
 def _plot_events(
-    ax: plt.axes, td: pd.DataFrame, idx: int, match: Match, variable_fig_objs: list
+    ax: plt.axes, td: pd.DataFrame, idx: int, match: Game, variable_fig_objs: list
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the events of the current frame."""
     event = (

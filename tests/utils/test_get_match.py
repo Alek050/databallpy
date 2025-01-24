@@ -14,7 +14,7 @@ from databallpy.data_parsers.tracking_data_parsers import (
     load_metrica_tracking_data,
     load_tracab_tracking_data,
 )
-from databallpy.match import Match
+from databallpy.game import Game
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_match import get_match, get_open_match, get_saved_match
 from tests.expected_outcomes import (
@@ -155,7 +155,7 @@ class TestGetMatch(unittest.TestCase):
 
         self.td_tracab["period_id"] = [1, 1, MISSING_INT, 2, 2]
 
-        self.expected_match_tracab_opta = Match(
+        self.expected_match_tracab_opta = Game(
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
             event_data=self.corrected_ed,
@@ -203,7 +203,7 @@ class TestGetMatch(unittest.TestCase):
             "end_datetime_ed"
         ]
 
-        self.expected_match_metrica = Match(
+        self.expected_match_metrica = Game(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",
             event_data=self.ed_metrica,
@@ -321,7 +321,7 @@ class TestGetMatch(unittest.TestCase):
             }
         )
 
-        self.expected_match_inmotio_instat = Match(
+        self.expected_match_inmotio_instat = Game(
             tracking_data=self.td_inmotio,
             tracking_data_provider="inmotio",
             event_data=self.ed_instat,
@@ -356,7 +356,7 @@ class TestGetMatch(unittest.TestCase):
             check_quality=False,
         )
 
-        self.expected_match_tracab = Match(
+        self.expected_match_tracab = Game(
             tracking_data=TD_TRACAB,
             tracking_data_provider="tracab",
             event_data=pd.DataFrame(),
@@ -440,7 +440,7 @@ class TestGetMatch(unittest.TestCase):
         match.event_data[y_cols] = match.event_data[y_cols] / 68.0 * 50
         match.pitch_dimensions = [100.0, 50.0]
 
-        expected_match_opta = Match(
+        expected_match_opta = Game(
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=ED_OPTA,
@@ -542,7 +542,7 @@ class TestGetMatch(unittest.TestCase):
         assert res == self.expected_match_metrica
 
     def test_get_match_sportec(self):
-        expected_match_sportec = Match(
+        expected_match_sportec = Game(
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=SPORTEC_EVENT_DATA.copy(),
@@ -576,7 +576,7 @@ class TestGetMatch(unittest.TestCase):
         self.assertEqual(res, expected_match_sportec)
 
     def test_get_match_statsbomb(self):
-        expected_match_statsbomb = Match(
+        expected_match_statsbomb = Game(
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=ED_STATSBOMB,
@@ -629,7 +629,7 @@ class TestGetMatch(unittest.TestCase):
         )
         match = get_open_match()
 
-        expected_match_sportec = Match(
+        expected_match_sportec = Game(
             tracking_data=TRACAB_SPORTEC_XML_TD.copy(),
             tracking_data_provider="sportec",
             event_data=SPORTEC_EVENT_DATA.copy(),
@@ -689,7 +689,7 @@ class TestGetMatch(unittest.TestCase):
 
     def test_get_saved_match(self):
         expected_match = self.expected_match_metrica
-        expected_match.save_match(name="test_match", path="tests/test_data")
+        expected_match.save_game(name="test_match", path="tests/test_data")
         saved_match = get_saved_match(name="test_match", path="tests/test_data")
         assert expected_match == saved_match
         assert saved_match != self.expected_match_tracab_opta
