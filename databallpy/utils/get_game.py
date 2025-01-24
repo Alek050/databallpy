@@ -36,6 +36,7 @@ LOGGER = create_logger(__name__)
 
 logging_wrapper(__file__)
 
+
 def get_game(
     tracking_data_loc: str = None,
     tracking_metadata_loc: str = None,
@@ -679,14 +680,23 @@ def merge_player_info(
     )
     return home_players, away_players
 
-@deprecated("`get_match` is deprecated and will be removed in version 0.8.0. Please use `get_game` instead")
+
+@deprecated(
+    "`get_match` is deprecated and will be removed in version 0.8.0. Please use `get_game` instead"
+)
 def get_match(*args, **kwargs):
     return get_game(*args, **kwargs)
 
-@deprecated("`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead")
+
+@deprecated(
+    "`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead"
+)
 def get_open_match(*args, **kwargs):
     return get_open_game(*args, **kwargs)
 
-@deprecated("`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead")
+
+@deprecated(
+    "`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead"
+)
 def get_saved_match(*args, **kwargs):
     return get_saved_game(*args, **kwargs)
