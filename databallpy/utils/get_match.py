@@ -25,7 +25,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _quality_check_tracking_data,
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
-from databallpy.match import Match
+from databallpy.game import Game
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
@@ -47,7 +47,7 @@ def get_match(
     event_data_provider: str = None,
     check_quality: bool = True,
     verbose: bool = True,
-) -> Match:
+) -> Game:
     """
     Function to get all information of a match given its datasources
 
@@ -234,7 +234,7 @@ def get_match(
         changed_periods = tracking_metadata.periods_changed_playing_direction
 
     LOGGER.info("Creating match object in get_match()")
-    match = Match(
+    match = Game(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
         tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
         event_data=event_data if uses_event_data else pd.DataFrame(),
@@ -305,7 +305,7 @@ def get_match(
 
 
 @logging_wrapper(__file__)
-def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
+def get_saved_match(name: str, path: str = os.getcwd()) -> Game:
     """Function to load a saved match object
 
     Args:
@@ -330,7 +330,7 @@ def get_saved_match(name: str, path: str = os.getcwd()) -> Match:
     with open(loc, "rb") as f:
         match = pickle.load(f)
 
-    if not isinstance(match, Match):
+    if not isinstance(match, Game):
         raise TypeError(
             f"Expected a databallpy.Match object, but loaded a {type(match)}."
             " Insert the location of a match object to load a match."
@@ -456,7 +456,7 @@ def get_open_match(
     provider: str = "sportec",
     match_id: str = "J03WMX",
     verbose: bool = True,
-) -> Match:
+) -> Game:
     """Function to load a match object from an open datasource
 
     Args:
@@ -499,7 +499,7 @@ def get_open_match(
         axis=1,
     )
 
-    match = Match(
+    match = Game(
         tracking_data=tracking_data,
         tracking_data_provider=provider,
         event_data=event_data,

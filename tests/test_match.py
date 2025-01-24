@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from databallpy.match import Match
+from databallpy.game import Game
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_match import get_match
 from databallpy.utils.warnings import DataBallPyWarning
@@ -100,7 +100,7 @@ class TestMatch(unittest.TestCase):
     def test_match_post_init(self):
         # tracking data
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data="tracking_data",
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -122,7 +122,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data.drop(
                     columns=["datetime"]
                 ),
@@ -148,7 +148,7 @@ class TestMatch(unittest.TestCase):
         with self.assertRaises(TypeError):
             td = self.expected_match_tracab_opta.tracking_data.copy()
             td["datetime"] = td["datetime"].astype(str)
-            Match(
+            Game(
                 tracking_data=td,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -171,7 +171,7 @@ class TestMatch(unittest.TestCase):
         with self.assertRaises(ValueError):
             td = self.expected_match_tracab_opta.tracking_data.copy()
             td["datetime"] = td["datetime"].dt.tz_localize(None)
-            Match(
+            Game(
                 tracking_data=td,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -193,7 +193,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=pd.DataFrame(
                     {"frame": [1], "home_1_x": [12], "ball_z": [13]}
                 ),
@@ -218,7 +218,7 @@ class TestMatch(unittest.TestCase):
 
         # tracking data provider
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=14.3,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -241,7 +241,7 @@ class TestMatch(unittest.TestCase):
 
         # event data
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data="event_data",
@@ -263,7 +263,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=pd.DataFrame(
@@ -291,7 +291,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=pd.DataFrame(
@@ -325,7 +325,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=pd.DataFrame(
@@ -362,7 +362,7 @@ class TestMatch(unittest.TestCase):
 
         # event data provider
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -385,7 +385,7 @@ class TestMatch(unittest.TestCase):
 
         # pitch dimensions
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -407,7 +407,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -429,7 +429,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -451,7 +451,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -473,7 +473,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -496,7 +496,7 @@ class TestMatch(unittest.TestCase):
 
         # periods
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -518,7 +518,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -540,7 +540,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -562,7 +562,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -588,7 +588,7 @@ class TestMatch(unittest.TestCase):
             periods["start_datetime_ed"] = periods["start_datetime_ed"].dt.tz_localize(
                 None
             )
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -611,7 +611,7 @@ class TestMatch(unittest.TestCase):
 
         # frame rate
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -633,7 +633,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -656,7 +656,7 @@ class TestMatch(unittest.TestCase):
 
         # team id
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -679,7 +679,7 @@ class TestMatch(unittest.TestCase):
 
         # team name
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -702,7 +702,7 @@ class TestMatch(unittest.TestCase):
 
         # team score
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -724,7 +724,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -747,7 +747,7 @@ class TestMatch(unittest.TestCase):
 
         # team formation
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -769,7 +769,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -792,7 +792,7 @@ class TestMatch(unittest.TestCase):
 
         # team players
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -814,7 +814,7 @@ class TestMatch(unittest.TestCase):
             )
 
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -840,7 +840,7 @@ class TestMatch(unittest.TestCase):
         wrong_pos = self.expected_match_tracab_opta.away_players.copy()
         wrong_pos["position"] = "unknown_position"
         with self.assertRaises(ValueError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -865,7 +865,7 @@ class TestMatch(unittest.TestCase):
         with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_match_tracab_opta.tracking_data.copy()
             td_changed["ball_x"] += 10.0
-            Match(
+            Game(
                 tracking_data=td_changed,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -890,7 +890,7 @@ class TestMatch(unittest.TestCase):
             td_changed = self.expected_match_tracab_opta.tracking_data.copy()
             td_changed["ball_y"] += 10.0
 
-            Match(
+            Game(
                 tracking_data=td_changed,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -915,7 +915,7 @@ class TestMatch(unittest.TestCase):
         with self.assertRaises(DataBallPyError):
             td_changed = self.expected_match_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "home_34_x"] = 3.0
-            Match(
+            Game(
                 tracking_data=td_changed,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -939,7 +939,7 @@ class TestMatch(unittest.TestCase):
         with self.assertRaises(DataBallPyError):
             td_changed = self.expected_match_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "away_17_x"] = -3.0
-            Match(
+            Game(
                 tracking_data=td_changed,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -962,7 +962,7 @@ class TestMatch(unittest.TestCase):
 
         # country
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -984,7 +984,7 @@ class TestMatch(unittest.TestCase):
             )
         # shot_events
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -1007,7 +1007,7 @@ class TestMatch(unittest.TestCase):
             )
         # shot_events
         with self.assertRaises(TypeError):
-            Match(
+            Game(
                 tracking_data=self.expected_match_tracab_opta.tracking_data,
                 tracking_data_provider=self.td_provider,
                 event_data=self.expected_match_tracab_opta.event_data,
@@ -1059,7 +1059,7 @@ class TestMatch(unittest.TestCase):
     def test__repr__(self):
         assert (
             self.expected_match_metrica.__repr__()
-            == "databallpy.match.Match object: Team A 0 - 2 Team B 2019-02-21 03:30:07"
+            == "databallpy.game.Game object: Team A 0 - 2 Team B 2019-02-21 03:30:07"
         )
         assert (
             self.expected_match_metrica.name == "Team A 0 - 2 Team B 2019-02-21 03:30:07"
@@ -1605,7 +1605,7 @@ class TestMatch(unittest.TestCase):
         )
         match = self.match_to_sync.copy()
         match.allow_synchronise_tracking_and_event_data = True
-        match.save_match(path=os.path.join("tests", "test_data"))
+        match.save_game(path=os.path.join("tests", "test_data"))
         assert os.path.exists(
             os.path.join(
                 "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"

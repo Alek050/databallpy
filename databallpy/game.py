@@ -45,7 +45,7 @@ def requires_tracking_data(func):
         else:
             raise DataBallPyError(
                 "No tracking data available, please load "
-                "Match object with tracking data first."
+                "Game object with tracking data first."
             )
 
     return wrapper
@@ -59,22 +59,22 @@ def requires_event_data(func):
         else:
             raise DataBallPyError(
                 "No event data available, please load "
-                "Match object with event data first."
+                "Game object with event data first."
             )
 
     return wrapper
 
 
 @dataclass
-class Match:
+class Game:
     """
-    This is the match class. It contains all information of the match and has
-    some simple functions to easily obtain information about the match.
+    This is the game class. It contains all information of the game and has
+    some simple functions to easily obtain information about the game.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match.
+        tracking_data (pd.DataFrame): Tracking data of the game.
         tracking_data_provider (str): Provider of the tracking data.
-        event_data (pd.DataFrame): Event data of the match.
+        event_data (pd.DataFrame): Event data of the game.
         event_data_provider (str): Provider of the event data.
         pitch_dimensions (Tuple): The size of the pitch in meters in x and y direction.
         periods (pd.DataFrame): The start and end idicators of all periods.
@@ -82,14 +82,14 @@ class Match:
         home_team_id (int): The id of the home team.
         home_team_name (str): The name of the home team.
         home_players (pd.DataFrame): Information about the home players.
-        home_score (int): Number of goals scored over the match by the home team.
+        home_score (int): Number of goals scored over the game by the home team.
         home_formation (str): Indication of the formation of the home team.
         away_team_id (int): The id of the away team.
         away_team_name (str): The name of the away team.
         away_players (pd.DataFrame): Information about the away players.
-        away_score (int): Number of goals scored over the match by the away team.
+        away_score (int): Number of goals scored over the game by the away team.
         away_formation (str): Indication of the formation of the away team.
-        country (str): The country where the match was played.
+        country (str): The country where the game was played.
         shot_events (dict): A dictionary with all instances of shot events.
         dribble_events (dict): A dictionary with all instances of dribble events.
         pass_events (dict): A dictionary with all instances of pass events.
@@ -130,24 +130,24 @@ class Match:
     # to save the preprocessing status
     _is_synchronised: bool = False
     # to indicate if the timestamps are precise or just the proposed timestamps of the
-    # match (precisely 20:00 for start of match). This is important for the
+    # game (precisely 20:00 for start of game). This is important for the
     # synchronisation of the tracking and event data
     _tracking_timestamp_is_precise: bool = False
     _event_timestamp_is_precise: bool = False
     _periods_changed_playing_direction: list[int] = None
 
     def __repr__(self):
-        return "databallpy.match.Match object: " + self.name
+        return "databallpy.game.Game object: " + self.name
 
     def __post_init__(self):
-        check_inputs_match_object(self)
+        check_inputs_game_object(self)
 
     @property
     def tracking_timestamp_is_precise(self) -> bool:
         """Function to check if the tracking timestamps are precise or not
-        Timesamp is considered precise if the start of the match is not exactly
-        at the start of the initial match time (e.g. 20:00:00), but at the
-        actual start of the match (e.g. 20:00:03.2378).
+        Timesamp is considered precise if the start of the game is not exactly
+        at the start of the initial game time (e.g. 20:00:00), but at the
+        actual start of the game (e.g. 20:00:03.2378).
 
         Returns:
             bool: True if the tracking timestamps are precise, False otherwise
@@ -157,9 +157,9 @@ class Match:
     @property
     def event_timestamp_is_precise(self) -> bool:
         """Function to check if the event timestamps are precise or not
-        Timesamp is considered precise if the start of the match is not exactly
-        at the start of the initial match time (e.g. 20:00:00), but at the
-        actual start of the match (e.g. 20:00:03.2378).
+        Timesamp is considered precise if the start of the game is not exactly
+        at the start of the initial game time (e.g. 20:00:00), but at the
+        actual start of the game (e.g. 20:00:03.2378).
 
         Returns:
             bool: True if the event timestamps are precise, False otherwise
@@ -177,10 +177,10 @@ class Match:
 
     @property
     def date(self) -> pd.Timestamp | None:
-        """Function to get the date of the match
+        """Function to get the date of the game
 
         Returns:
-            pd.Timestamp | None: The date of the match
+            pd.Timestamp | None: The date of the game
         """
         if "start_datetime_td" in self.periods.columns:
             return self.periods.loc[
@@ -199,13 +199,13 @@ class Match:
     ) -> dict[
         int | str, DribbleEvent | PassEvent | ShotEvent | IndividualCloseToBallEvent
     ]:
-        """Function to get all events in the match
+        """Function to get all events in the game
 
         Returns:
             dict[
                 int | str,
                 DribbleEvent | PassEvent | ShotEvent | IndividualCloseToBallEvent
-                ]: All events in the match
+                ]: All events in the game
         """
         return {
             **self.shot_events,
@@ -216,10 +216,10 @@ class Match:
 
     @property
     def name(self) -> str:
-        """Function to get the name of the match
+        """Function to get the name of the game
 
         Returns:
-            str: The name of the match
+            str: The name of the game
         """
         home_text = f"{self.home_team_name} {self.home_score}"
         away_text = f"{self.away_score} {self.away_team_name}"
@@ -249,7 +249,7 @@ class Match:
                 {goalkeeper, defender, midfielder, forward}. Defaults to
                 ["goalkeeper", "defender", "midfielder", "forward"].
             min_minutes_played (float | int, optional): The minimum number of minutes a
-                player needs to have played during the match to be returned.
+                player needs to have played during the game to be returned.
                 Defaults to 1.0.
 
         Raises:
@@ -309,15 +309,15 @@ class Match:
         about the home team players
 
         Depreciation: This function is depreciated and will be removed in version
-        0.7.0. Please use match.get_column_ids(team="home").
+        0.7.0. Please use game.get_column_ids(team="home").
 
         Returns:
             list[str]: All column ids of the home team players
         """
 
         warnings.warn(
-            "match.home_players_column_ids is depreciated and will be removed in "
-            "version 0.7. Please use match.get_column_ids(team='home')",
+            "game.home_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use game.get_column_ids(team='home')",
             DeprecationWarning,
         )
         return [
@@ -332,15 +332,15 @@ class Match:
         about the away team players
 
         Depreciation: This function is depreciated and will be removed in version
-        0.7.0. Please use match.get_column_ids(team="away").
+        0.7.0. Please use game.get_column_ids(team="away").
 
         Returns:
             list[str]: All column ids of the away team players
         """
 
         warnings.warn(
-            "match.away_players_column_ids is depreciated and will be removed in "
-            "version 0.7. Please use match.get_column_ids(team='away')",
+            "game.away_players_column_ids is depreciated and will be removed in "
+            "version 0.7. Please use game.get_column_ids(team='away')",
             DeprecationWarning,
         )
         return [
@@ -382,80 +382,78 @@ class Match:
     @property
     @requires_event_data
     def shots_df(self) -> pd.DataFrame:
-        """Function to get all shots in the match
+        """Function to get all shots in the game
 
         Returns:
-            pd.DataFrame: DataFrame with all information of the shots in the match
+            pd.DataFrame: DataFrame with all information of the shots in the game
         """
 
         if self._shots_df is None:
-            LOGGER.info("Creating the match._shots_df dataframe in match.shots_df")
+            LOGGER.info("Creating the game._shots_df dataframe in game.shots_df")
 
             self._shots_df = create_event_attributes_dataframe(self.shot_events)
 
-            LOGGER.info(
-                "Successfully created match._shots_df dataframe in match.shots_df"
-            )
-        LOGGER.info("Returning the pre-loaded match._shots_df in match.shots_df")
+            LOGGER.info("Successfully created game._shots_df dataframe in game.shots_df")
+        LOGGER.info("Returning the pre-loaded game._shots_df in game.shots_df")
         return self._shots_df
 
     @property
     @requires_event_data
     def dribbles_df(self) -> pd.DataFrame:
-        """Function to get all info of the dribbles in the match
+        """Function to get all info of the dribbles in the game
 
         Returns:
-            pd.DataFrame: DataFrame with all information of the dribbles in the match"""
+            pd.DataFrame: DataFrame with all information of the dribbles in the game"""
 
         if self._dribbles_df is None:
-            LOGGER.info("Creating the match._dribbles_df dataframe in match.dribbles_df")
+            LOGGER.info("Creating the game._dribbles_df dataframe in game.dribbles_df")
             self._dribbles_df = create_event_attributes_dataframe(self.dribble_events)
 
             LOGGER.info(
-                "Successfully created match._dribbles_df dataframe in match.dribbles_df"
+                "Successfully created game._dribbles_df dataframe in game.dribbles_df"
             )
-        LOGGER.info("Returning the pre-loaded match._dribbles_df in match.dribbles_df")
+        LOGGER.info("Returning the pre-loaded game._dribbles_df in game.dribbles_df")
         return self._dribbles_df
 
     @property
     @requires_event_data
     def passes_df(self) -> pd.DataFrame:
-        """Function to get all info of the passes in the match
+        """Function to get all info of the passes in the game
 
         Returns:
-            pd.DataFrame: DataFrame with all information of the passes in the match"""
+            pd.DataFrame: DataFrame with all information of the passes in the game"""
 
         if self._passes_df is None:
-            LOGGER.info("Creating the match._passes_df dataframe in match.passes_df")
+            LOGGER.info("Creating the game._passes_df dataframe in game.passes_df")
             self._passes_df = create_event_attributes_dataframe(self.pass_events)
 
             LOGGER.info(
-                "Successfully created match._passes_df dataframe in match.passes_df"
+                "Successfully created game._passes_df dataframe in game.passes_df"
             )
-        LOGGER.info("Returning the pre-loaded match._passes_df in match.passes_df")
+        LOGGER.info("Returning the pre-loaded game._passes_df in game.passes_df")
         return self._passes_df
 
     @property
     @requires_event_data
     def other_events_df(self) -> pd.DataFrame:
-        """Function to get all info of the other events in the match
+        """Function to get all info of the other events in the game
 
         Returns:
             pd.DataFrame: DataFrame with all information of the other events in the
-                match
+                game
         """
 
         if self._other_events_df is None:
             LOGGER.info(
-                "Creating the match.other_events_df dataframe in match.other_events_df"
+                "Creating the game.other_events_df dataframe in game.other_events_df"
             )
             other_events_df = create_event_attributes_dataframe(
                 self.other_events, add_name=True
             )
 
             LOGGER.info(
-                "Successfully created match.other_events_df dataframe in "
-                "match.other_events_df"
+                "Successfully created game.other_events_df dataframe in "
+                "game.other_events_df"
             )
         return other_events_df
 
@@ -467,7 +465,7 @@ class Match:
             event_id (int): The id of the event
 
         Raises:
-            ValueError: if the event with the given event_id is not found in the match
+            ValueError: if the event with the given event_id is not found in the game
 
         Returns:
             Databallpy Event: The event with the given event_id
@@ -475,22 +473,22 @@ class Match:
         if event_id in self.all_events.keys():
             return self.all_events[event_id]
         else:
-            raise ValueError(f"Event with id {event_id} not found in the match.")
+            raise ValueError(f"Event with id {event_id} not found in the game.")
 
     def get_frames(
         self, frames: int | list[int], playing_direction: str = "team_oriented"
     ) -> pd.DataFrame:
-        """Function to get the frame of the match with the given frame
+        """Function to get the frame of the game with the given frame
 
         Args:
-            frames (int|list[int]): The frames of the match
+            frames (int|list[int]): The frames of the game
             playing_direction (str, optional): The coordinate system of the frame.
                 Defaults to "team_oriented", options are {team_oriented,
                 possession_oriented}. For more info on the coordinate systems, see
                 the documentation
 
         Returns:
-            pd.DataFrame: The frame of the match with the given frames
+            pd.DataFrame: The frame of the game with the given frames
         """
         if isinstance(frames, (int, np.integer)):
             frames = [frames]
@@ -499,7 +497,7 @@ class Match:
             frame for frame in frames if frame not in self.tracking_data["frame"].values
         ]
         if len(unrecognized_frames) > 0:
-            raise ValueError(f"Frame(s) {unrecognized_frames} not found in the match.")
+            raise ValueError(f"Frame(s) {unrecognized_frames} not found in the game.")
 
         if playing_direction == "team_oriented":
             return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
@@ -543,12 +541,12 @@ class Match:
                 the databallpy documentation
 
         Raises:
-            ValueError: if the event with the given event_id is not found in the match
+            ValueError: if the event with the given event_id is not found in the game
             ValueError: if the event with the given event_id is not found in the
                 tracking data
 
         Returns:
-            pd.DataFrame: The frame of the match with the given event_id
+            pd.DataFrame: The frame of the game with the given event_id
         """
         if not self._is_synchronised:
             raise DataBallPyError(
@@ -818,7 +816,7 @@ class Match:
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
 
         Args:
-            match (Match): Match object
+            game (Game): Game object
             n_batches (int or str): the number of batches that are created. A
                 higher number of batches reduces the time the code takes to load,
                 but reduces the accuracy for events close to the splits.
@@ -904,7 +902,7 @@ class Match:
         self._is_synchronised = True
 
     def __eq__(self, other):
-        if not isinstance(other, Match):
+        if not isinstance(other, Game):
             return False
         for current_field in fields(self):
             if not _values_are_equal_(
@@ -914,25 +912,25 @@ class Match:
 
         return True
 
-    def copy(self) -> "Match":
-        """Function to create a copy of the match object
+    def copy(self) -> "Game":
+        """Function to create a copy of the game object
 
         Returns:
-            Match: copy of the match object
+            Game: copy of the game object
         """
         copied_kwargs = {
             f.name: _copy_value_(getattr(self, f.name)) for f in fields(self)
         }
-        return Match(**copied_kwargs)
+        return Game(**copied_kwargs)
 
-    def save_match(
+    def save_game(
         self, name: str = None, path: str = None, verbose: bool = True
     ) -> None:
-        """Function to save the current match object to a pickle file
+        """Function to save the current game object to a pickle file
 
         Args:
             name (str): name of the pickle file, if not provided or not a string,
-            the name will be the name of the match
+            the name will be the name of the game
             path (str): path to the directory where the pickle file will be saved, if
             not provided, the current working directory will be used
             verbose (bool): if True, saved name will be printed
@@ -945,40 +943,40 @@ class Match:
         with open(pickle_path, "wb") as f:
             pickle.dump(self, f)
         if verbose:
-            print(f"Match saved to {os.path.join(path, name)}.pickle")
-        LOGGER.info(f"Match saved to {os.path.join(path, name)}.pickle")
+            print(f"Game saved to {os.path.join(path, name)}.pickle")
+        LOGGER.info(f"Game saved to {os.path.join(path, name)}.pickle")
 
 
 @logging_wrapper(__file__)
-def check_inputs_match_object(match: Match):
-    """Function to check if the inputs of the match object are correct
+def check_inputs_game_object(game: Game):
+    """Function to check if the inputs of the game object are correct
 
     Args:
-        match (Match): match object
+        game (Game): game object
     """
-    LOGGER.info("Checking the inputs of the match object")
+    LOGGER.info("Checking the inputs of the game object")
     # tracking_data
-    if not isinstance(match.tracking_data, pd.DataFrame):
+    if not isinstance(game.tracking_data, pd.DataFrame):
         raise TypeError(
-            f"tracking data should be a pandas df, not a {type(match.tracking_data)}"
+            f"tracking data should be a pandas df, not a {type(game.tracking_data)}"
         )
 
-    if len(match.tracking_data) > 0:
+    if len(game.tracking_data) > 0:
         for col in ["frame", "ball_x", "ball_y", "datetime"]:
-            if col not in match.tracking_data.columns.to_list():
+            if col not in game.tracking_data.columns.to_list():
                 raise ValueError(
                     f"No {col} in tracking_data columns, this is manditory!"
                 )
 
         # tracking_data_provider
-        if not isinstance(match.tracking_data_provider, str):
+        if not isinstance(game.tracking_data_provider, str):
             raise TypeError(
                 "tracking data provider should be a string, not a "
-                f"{type(match.tracking_data_provider)}"
+                f"{type(game.tracking_data_provider)}"
             )
 
         # tracking data ball status
-        ball_status_value_counts = match.tracking_data["ball_status"].value_counts()
+        ball_status_value_counts = game.tracking_data["ball_status"].value_counts()
         if len(ball_status_value_counts) != 2:
             message = (
                 "ball status should be divided over dead and alive, "
@@ -993,11 +991,11 @@ def check_inputs_match_object(match: Match):
             )
         else:
             frames_alive = ball_status_value_counts["alive"]
-            minutes_alive = frames_alive / (match.frame_rate * 60)
+            minutes_alive = frames_alive / (game.frame_rate * 60)
             if minutes_alive < 45:
                 message = (
                     f"The ball status is alive for {round(minutes_alive, 2)}"
-                    " in the full match. ball status is uses for synchronisation "
+                    " in the full game. ball status is uses for synchronisation "
                     "check the quality of the data before synchronising event and "
                     "tracking data."
                 )
@@ -1008,17 +1006,17 @@ def check_inputs_match_object(match: Match):
                 )
 
         # check if the first frame is at (0, 0)
-        ball_alive_mask = match.tracking_data["ball_status"] == "alive"
-        if len(match.tracking_data.loc[ball_alive_mask]) > 0:
-            first_frame = match.tracking_data.loc[
+        ball_alive_mask = game.tracking_data["ball_status"] == "alive"
+        if len(game.tracking_data.loc[ball_alive_mask]) > 0:
+            first_frame = game.tracking_data.loc[
                 ball_alive_mask, "ball_x"
             ].first_valid_index()
             if (
-                not abs(match.tracking_data.loc[first_frame, "ball_x"]) < 7.0
-                or not abs(match.tracking_data.loc[first_frame, "ball_y"]) < 5.0
+                not abs(game.tracking_data.loc[first_frame, "ball_x"]) < 7.0
+                or not abs(game.tracking_data.loc[first_frame, "ball_y"]) < 5.0
             ):
-                x_start = match.tracking_data.loc[first_frame, "ball_x"]
-                y_start = match.tracking_data.loc[first_frame, "ball_y"]
+                x_start = game.tracking_data.loc[first_frame, "ball_x"]
+                y_start = game.tracking_data.loc[first_frame, "ball_y"]
                 message = (
                     "The middle point of the pitch should be (0, 0), "
                     f"now the kick-off is at ({x_start}, {y_start}). "
@@ -1032,21 +1030,21 @@ def check_inputs_match_object(match: Match):
                 warnings.warn(message=message, category=DataBallPyWarning)
 
         # check if there is a valid datetime object
-        if not pd.api.types.is_datetime64_any_dtype(match.tracking_data["datetime"]):
+        if not pd.api.types.is_datetime64_any_dtype(game.tracking_data["datetime"]):
             raise TypeError(
                 "datetime column in tracking data should be a datetime dtype, not a "
-                f"{type(match.tracking_data['datetime'])}"
+                f"{type(game.tracking_data['datetime'])}"
             )
         # also make sure it is tz sensitive
-        if match.tracking_data["datetime"].dt.tz is None:
+        if game.tracking_data["datetime"].dt.tz is None:
             raise ValueError("datetime column in tracking data should have a timezone")
 
     # event_data
-    if not isinstance(match.event_data, pd.DataFrame):
+    if not isinstance(game.event_data, pd.DataFrame):
         raise TypeError(
-            f"event data should be a pandas df, not a {type(match.event_data)}"
+            f"event data should be a pandas df, not a {type(game.event_data)}"
         )
-    if len(match.event_data) > 0:
+    if len(game.event_data) > 0:
         for col in [
             "event_id",
             "databallpy_event",
@@ -1058,88 +1056,87 @@ def check_inputs_match_object(match: Match):
             "datetime",
             "player_name",
         ]:
-            if col not in match.event_data.columns.to_list():
+            if col not in game.event_data.columns.to_list():
                 raise ValueError(f"{col} not in event data columns, this is manditory!")
 
-        if not pd.api.types.is_datetime64_any_dtype(match.event_data["datetime"]):
+        if not pd.api.types.is_datetime64_any_dtype(game.event_data["datetime"]):
             raise TypeError(
                 "datetime column in event_data should be a datetime dtype, not a "
-                f"{type(match.event_data['datetime'])}"
+                f"{type(game.event_data['datetime'])}"
             )
 
-        if match.event_data["datetime"].dt.tz is None:
+        if game.event_data["datetime"].dt.tz is None:
             raise ValueError("datetime column in event_data should have a timezone")
 
         # event_data_provider
-        if not isinstance(match.event_data_provider, str):
+        if not isinstance(game.event_data_provider, str):
             raise TypeError(
                 "event data provider should be a string, not a "
-                f"{type(match.event_data_provider)}"
+                f"{type(game.event_data_provider)}"
             )
 
     # pitch_dimensions
-    if not isinstance(match.pitch_dimensions, (list, tuple)):
+    if not isinstance(game.pitch_dimensions, (list, tuple)):
         raise TypeError(
-            f"pitch_dimensions ({match.pitch_dimensions}) should be a "
-            f"list, not a {type(match.pitch_dimensions)}"
+            f"pitch_dimensions ({game.pitch_dimensions}) should be a "
+            f"list, not a {type(game.pitch_dimensions)}"
         )
-    if not len(match.pitch_dimensions) == 2:
+    if not len(game.pitch_dimensions) == 2:
         raise ValueError(
             "pitch_dimensions should contain, two values: a length and a width "
-            f"of the pitch, current input is {match.pitch_dimensions}"
+            f"of the pitch, current input is {game.pitch_dimensions}"
         )
-    if not all([isinstance(x, (float, np.floating)) for x in match.pitch_dimensions]):
+    if not all([isinstance(x, (float, np.floating)) for x in game.pitch_dimensions]):
         raise TypeError(
             "Both values in pitch dimensions should by floats, current inputs "
-            f"{[type(x) for x in match.pitch_dimensions]}"
+            f"{[type(x) for x in game.pitch_dimensions]}"
         )
-    if not 70 < match.pitch_dimensions[0] < 130:
+    if not 70 < game.pitch_dimensions[0] < 130:
         raise ValueError(
             "The length of the pitch should be between 70 and 130 meters, "
-            f"current input is {match.pitch_dimensions[0]}"
+            f"current input is {game.pitch_dimensions[0]}"
         )
 
-    if not 45 < match.pitch_dimensions[1] < 90:
+    if not 45 < game.pitch_dimensions[1] < 90:
         raise ValueError(
             "The width of the pitch should be between 45 and 90 meters, "
-            f"current input is {match.pitch_dimensions[1]}"
+            f"current input is {game.pitch_dimensions[1]}"
         )
 
     # periods
-    if not isinstance(match.periods, pd.DataFrame):
+    if not isinstance(game.periods, pd.DataFrame):
         raise TypeError(
-            "periods_frames should be a pandas dataframe, not a "
-            f"{type(match.periods)}"
+            "periods_frames should be a pandas dataframe, not a " f"{type(game.periods)}"
         )
-    if "period_id" not in match.periods.columns:
+    if "period_id" not in game.periods.columns:
         raise ValueError("'period' should be one of the columns in period_frames")
     if any(
         [
-            x not in match.periods["period_id"].value_counts().index
+            x not in game.periods["period_id"].value_counts().index
             for x in [1, 2, 3, 4, 5]
         ]
-    ) or not all(match.periods["period_id"].value_counts() == 1):
-        res = match.periods["period_id"]
+    ) or not all(game.periods["period_id"].value_counts() == 1):
+        res = game.periods["period_id"]
         raise ValueError(
             "'period' column in period_frames should contain only the values "
             f"[1, 2, 3, 4, 5]. Now it's {res}"
         )
 
-    for col in [col for col in match.periods if "datetime" in col]:
-        if not pd.isnull(match.periods[col]).all() and match.periods[col].dt.tz is None:
+    for col in [col for col in game.periods if "datetime" in col]:
+        if not pd.isnull(game.periods[col]).all() and game.periods[col].dt.tz is None:
             raise ValueError(f"{col} column in periods should have a timezone")
 
     # frame_rate
-    if not pd.isnull(match.frame_rate) and not match.frame_rate == MISSING_INT:
-        if not isinstance(match.frame_rate, (int, np.integer)):
+    if not pd.isnull(game.frame_rate) and not game.frame_rate == MISSING_INT:
+        if not isinstance(game.frame_rate, (int, np.integer)):
             raise TypeError(
-                f"frame_rate should be an integer, not a {type(match.frame_rate)}"
+                f"frame_rate should be an integer, not a {type(game.frame_rate)}"
             )
-        if match.frame_rate < 1:
-            raise ValueError(f"frame_rate should be positive, not {match.frame_rate}")
+        if game.frame_rate < 1:
+            raise ValueError(f"frame_rate should be positive, not {game.frame_rate}")
 
     # team id's
-    for team, team_id in zip(["home", "away"], [match.home_team_id, match.away_team_id]):
+    for team, team_id in zip(["home", "away"], [game.home_team_id, game.away_team_id]):
         if not isinstance(team_id, (int, np.integer)) and not isinstance(team_id, str):
             raise TypeError(
                 f"{team} team id should be an integer or string, not a "
@@ -1147,14 +1144,12 @@ def check_inputs_match_object(match: Match):
             )
 
     # team names
-    for team, name in zip(
-        ["home", "away"], [match.home_team_name, match.away_team_name]
-    ):
+    for team, name in zip(["home", "away"], [game.home_team_name, game.away_team_name]):
         if not isinstance(name, str):
             raise TypeError(f"{team} team name should be a string, not a {type(name)}")
 
     # team scores
-    for team, score in zip(["home", "away"], [match.home_score, match.away_score]):
+    for team, score in zip(["home", "away"], [game.home_score, game.away_score]):
         if not pd.isnull(score) and not score == MISSING_INT:
             if not isinstance(score, (int, np.integer)):
                 raise TypeError(
@@ -1164,9 +1159,7 @@ def check_inputs_match_object(match: Match):
                 raise ValueError(f"{team} team score should positive, not {score}")
 
     # team formations
-    for team, form in zip(
-        ["home", "away"], [match.home_formation, match.away_formation]
-    ):
+    for team, form in zip(["home", "away"], [game.home_formation, game.away_formation]):
         if form is not None and not form == MISSING_INT:
             if not isinstance(form, str):
                 raise TypeError(
@@ -1179,7 +1172,7 @@ def check_inputs_match_object(match: Match):
                 )
 
     # team players
-    for team, players in zip(["home", "away"], [match.home_players, match.away_players]):
+    for team, players in zip(["home", "away"], [game.home_players, game.away_players]):
         if not isinstance(players, pd.DataFrame):
             raise TypeError(
                 f"{team} team players should be a pandas dataframe, not a "
@@ -1201,37 +1194,34 @@ def check_inputs_match_object(match: Match):
             )
 
         # check for direction of play
-        for _, period_row in match.periods.iterrows():
+        for _, period_row in game.periods.iterrows():
             if "start_frame" not in period_row.index:
                 continue
             frame = period_row["start_frame"]
-            if (
-                len(match.tracking_data[match.tracking_data["frame"] == frame].index)
-                == 0
-            ):
+            if len(game.tracking_data[game.tracking_data["frame"] == frame].index) == 0:
                 continue
-            idx = match.tracking_data[match.tracking_data["frame"] == frame].index[0]
+            idx = game.tracking_data[game.tracking_data["frame"] == frame].index[0]
             period = period_row["period_id"]
-            home_x = [x + "_x" for x in match.home_players_column_ids()]
-            away_x = [x + "_x" for x in match.away_players_column_ids()]
-            if match.tracking_data.loc[idx, home_x].mean() > 0:
-                centroid_x = match.tracking_data.loc[idx, home_x].mean()
+            home_x = [x + "_x" for x in game.home_players_column_ids()]
+            away_x = [x + "_x" for x in game.away_players_column_ids()]
+            if game.tracking_data.loc[idx, home_x].mean() > 0:
+                centroid_x = game.tracking_data.loc[idx, home_x].mean()
                 raise DataBallPyError(
                     "The home team should be represented as playing from left to "
-                    f"right the whole match. At the start of period {period} the x "
+                    f"right the whole game. At the start of period {period} the x "
                     f"centroid of the home team is {centroid_x}."
                 )
 
-            if match.tracking_data.loc[idx, away_x].mean() < 0:
-                centroid_x = match.tracking_data.loc[idx, away_x].mean()
+            if game.tracking_data.loc[idx, away_x].mean() < 0:
+                centroid_x = game.tracking_data.loc[idx, away_x].mean()
                 raise DataBallPyError(
                     "The away team should be represented as playingfrom right to "
-                    f"left the whole match. At the start  of period {period} the x "
+                    f"left the whole game. At the start  of period {period} the x "
                     f"centroid ofthe away team is {centroid_x}."
                 )
 
         # check databallpy_events
-        databallpy_events = [match.dribble_events, match.shot_events, match.pass_events]
+        databallpy_events = [game.dribble_events, game.shot_events, game.pass_events]
         for event_dict, event_name, event_type in zip(
             databallpy_events,
             ["dribble", "shot", "pass"],
@@ -1251,5 +1241,5 @@ def check_inputs_match_object(match: Match):
                     )
 
         # country
-        if not isinstance(match.country, str):
-            raise TypeError(f"country should be a string, not a {type(match.country)}")
+        if not isinstance(game.country, str):
+            raise TypeError(f"country should be a string, not a {type(game.country)}")
