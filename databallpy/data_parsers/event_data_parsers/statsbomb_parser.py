@@ -52,22 +52,22 @@ def load_statsbomb_event_data(
     lineup_loc: str,
     pitch_dimensions: tuple = (105.0, 68.0),
 ) -> tuple[pd.DataFrame, Metadata, dict]:
-    """This function retrieves the metadata and event data of a specific match. The x
+    """This function retrieves the metadata and event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         events_loc (str): location of the event.json file.
-        match_loc (str): location of the match.json file.
+        game_loc (str): location of the game.json file.
         lineup_loc (str): location of the lineup.json file.
         pitch_dimensions (tuple, optional): the length and width of the pitch. Input
             should be in yards (as this is statsbomb standard (120, 80)) and is
             recalculated to meters in this function. Defaults to (105.0, 68.0)
 
     Returns:
-        Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the gameh, the metadata,
         and the databallpy_events.
     """
     LOGGER.info(f"Loading Statsbomb event data: events_loc: {events_loc}")
@@ -131,7 +131,7 @@ def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> 
         pitch_dimensions (tuple): the length and width of the pitch in meters
 
     Returns:
-        MetaData: all metadata information of the current match
+        MetaData: all metadata information of the current game
     """
     with open(match_loc, "r", encoding="utf-8") as f:
         match_json = json.load(f)[0]
@@ -147,21 +147,21 @@ def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> 
     home_players = _get_player_info(lineup_json[home_index]["lineup"])
     away_players = _get_player_info(lineup_json[away_index]["lineup"])
 
-    match_start = pd.to_datetime(
+    game_start = pd.to_datetime(
         match_json["match_date"] + " " + match_json["kick_off"], utc=True
     )
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [
-            match_start,
-            match_start + pd.to_timedelta(60, unit="minutes"),
+            game_start,
+            game_start + pd.to_timedelta(60, unit="minutes"),
             pd.NaT,
             pd.NaT,
             pd.NaT,
         ],
         "end_datetime_ed": [
-            match_start + pd.to_timedelta(45, unit="minutes"),
-            match_start + pd.to_timedelta(105, unit="minutes"),
+            game_start + pd.to_timedelta(45, unit="minutes"),
+            game_start + pd.to_timedelta(105, unit="minutes"),
             pd.NaT,
             pd.NaT,
             pd.NaT,
@@ -169,7 +169,7 @@ def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> 
     }
 
     metadata = Metadata(
-        match_id=match_json["match_id"],
+        game_id=match_json["match_id"],
         pitch_dimensions=pitch_dimensions,
         periods_frames=pd.DataFrame(periods),
         frame_rate=MISSING_INT,
@@ -235,19 +235,19 @@ def _get_player_info(players_data: list) -> pd.DataFrame:
 def _load_event_data(
     events_loc: str, metadata: Metadata, pitch_dimensions: tuple
 ) -> tuple[pd.DataFrame, dict, Metadata]:
-    """This function retrieves the event data of a specific match. The x
+    """This function retrieves the event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         events_loc (str): location of the events.json file
-        metadata (Metadata): metadata of the match
+        metadata (Metadata): metadata of the game
         pitch_dimensions (tuple): the length and with of the pitch in meters.
 
     Returns:
-        Tuple[pd.DataFrame, dict, Metadata]: the event data of the match, the
+        Tuple[pd.DataFrame, dict, Metadata]: the event data of the game, the
             databallpy_events, and the updated metadata
     """
     with open(events_loc, "r", encoding="utf-8") as f:
@@ -441,7 +441,7 @@ def _get_shot_event(
     x_multiplier: float,
     y_multiplier: float,
 ) -> ShotEvent:
-    """This function retrieves the shot event of a specific match.
+    """This function retrieves the shot event of a specific game.
 
     Args:
         event (dict): the shot event.
@@ -494,7 +494,7 @@ def _get_pass_event(
     x_multiplier: float,
     y_multiplier: float,
 ) -> PassEvent:
-    """This function retrieves the pass event of a specific match.
+    """This function retrieves the pass event of a specific game.
 
     Args:
         event (dict): the shot event.

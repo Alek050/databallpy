@@ -20,8 +20,8 @@ def add_team_possession(
 
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data for a match
-        event_data (pd.DataFrame): Event data for a match
+        tracking_data (pd.DataFrame): Tracking data for a game
+        event_data (pd.DataFrame): Event data for a game
         home_team_id (int): The ID of the home team.
         inplace (bool, optional): Whether to modify the DataFrame in place.
             Defaults to False.

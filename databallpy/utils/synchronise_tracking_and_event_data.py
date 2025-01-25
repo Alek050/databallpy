@@ -35,9 +35,9 @@ def synchronise_tracking_and_event_data(
        the ball should move towards the goal.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
-        event_data (pd.DataFrame): Event data of the match
-        all_events (dict): Dictionary containing all the events of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
+        event_data (pd.DataFrame): Event data of the game
+        all_events (dict): Dictionary containing all the events of the game
         cost_functions (dict, optional): Dictionary containing the cost functions that
             are used to calculate the similarity between the tracking and event data.
             The keys of the dictionary are the event types, the values are the cost
@@ -156,7 +156,7 @@ def _create_sim_mat(
     Args:
         tracking_batch (pd.DataFrame): batch of tracking data
         event_batch (pd.DataFrame): batch of event data
-        all_events (dict): dictionary containing all the events of the match
+        all_events (dict): dictionary containing all the events of the game
         cost_functions (dict, optional): dictionary containing the cost functions that
 
     Returns:
@@ -296,8 +296,8 @@ def pre_compute_cost_function_variables(
     following variables are computed: time_diff, and ball_event_diff.
 
     Args:
-        tracking_batch (pd.DataFrame): Tracking data batch of the match
-        event_batch (pd.DataFrame): Event data batch of the match
+        tracking_batch (pd.DataFrame): Tracking data batch of the game
+        event_batch (pd.DataFrame): Event data batch of the game
 
     Returns:
         tuple[np.ndarray, np.ndarray]: Tuple containing the precomputed variables
@@ -330,7 +330,7 @@ def pre_compute_synchronisation_variables(
     ball_acceleration_sqrt, goal_angle_home_team, and goal_angle_away_team.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         frame_rate (int): Frame rate of the tracking_data
         pitch_dimensions (tuple): Tuple containing the pitch dimensions
 
@@ -394,7 +394,7 @@ def create_naive_batches(
 
     Args:
         n_batches_per_half (int):  the number of batches that are created per half.
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
 
     Returns:
         list: The end datetimes of the batches.
@@ -458,7 +458,7 @@ def create_smart_batches(tracking_data: pd.DataFrame) -> list[pd.Timestamp]:
 
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
 
     Returns:
         List: List containing the end datetimes of the batches.
@@ -528,8 +528,8 @@ def align_event_data_datetime(
     tracking frame from all event datetimes.
 
     Args:
-        event_data (pd.DataFrame): Event data of the match that needs to be synced
-        tracking_data (pd.DataFrame): Tracking data of the match
+        event_data (pd.DataFrame): Event data of the game that needs to be synced
+        tracking_data (pd.DataFrame): Tracking data of the game
         offset (float, optional): Offset in seconds that is added to the difference
             between the first event and the first tracking frame. This is done because
             this way the event is synced to the last frame the ball is close to a
@@ -581,7 +581,7 @@ def get_time_difference_cost(
 
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime
@@ -616,7 +616,7 @@ def get_distance_ball_event_cost(
     the default values are used, except for d and e, which are set to 5 and 6.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
         ball_event_distance (np.ndarray[float], optional): Array containing the distance
         **kwargs: Keyword arguments that can be passed to the sigmoid function
@@ -651,7 +651,7 @@ def get_distance_ball_player_cost(
     the default values are used, except for d and e, which are set to 5 and 2.5.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
@@ -686,7 +686,7 @@ def get_ball_acceleration_cost(
     passed.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         _ (any): Event that needs to be synced. This argument is not used in this
             function
         **kwargs: Keyword arguments that can be passed to the sigmoid function
@@ -716,7 +716,7 @@ def get_player_ball_distance_increase_cost(
     values are used, except for d and e, which are set to -8.0.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
@@ -750,7 +750,7 @@ def get_ball_goal_angle_cost(
     for d and e, which are set to 6 and 0.2 * np.pi.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (ShotEvent): Event that needs to be synced
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
@@ -826,7 +826,7 @@ def base_pass_cost_function(
     5. The increase in distance between the player and the ball
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (PassEvent): Pass event that needs to be synced
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime
@@ -873,7 +873,7 @@ def base_shot_cost_function(
     6. The angle between the ball moving direction and the goal
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (ShotEvent): Shot event that needs to be synced
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime
@@ -919,7 +919,7 @@ def base_general_cost_ball_event(
     3. Distance between the ball and the player in the tracking data
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the match
+        tracking_data (pd.DataFrame): Tracking data of the game
         event (ShotEvent, DribbleEvent, PassEvent): Event that needs to be synced
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime

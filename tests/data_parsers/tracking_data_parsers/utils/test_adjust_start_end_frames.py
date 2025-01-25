@@ -87,7 +87,7 @@ class TestAdjustStartEndFrames(unittest.TestCase):
         self.period_id = 1
 
         self.metadata = Metadata(
-            match_id=1,
+            game_id=1,
             pitch_dimensions=[100.0, 50.0],
             periods_frames=pd.DataFrame(
                 {

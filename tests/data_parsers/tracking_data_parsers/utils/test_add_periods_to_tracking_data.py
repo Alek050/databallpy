@@ -34,7 +34,7 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
                 "away_35_y",
                 "datetime",
                 "period_id",
-                "matchtime_td",
+                "gametime_td",
             ]
         )
         pd.testing.assert_frame_equal(res, TD_METRICA)

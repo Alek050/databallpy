@@ -183,7 +183,7 @@ def _values_are_equal_(input1: any, input2: any) -> bool:
         "PassEvent",
         "DribbleEvent",
         "TackleEvent",
-        "Match",
+        "Game",
         "IndividualCloseToBallEvent",
         "IndividualOnBallEvent",
     ]
@@ -238,7 +238,7 @@ def _copy_value_(value: any) -> any:
         "PassEvent",
         "DribbleEvent",
         "TackleEvent",
-        "Match",
+        "Game",
         "IndividualCloseToBallEvent",
         "IndividualOnBallEvent",
     ]

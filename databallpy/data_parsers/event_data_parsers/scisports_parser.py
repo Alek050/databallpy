@@ -21,18 +21,18 @@ BODY_PART_MAPPING = {
 def load_scisports_event_data(
     events_json: str, pitch_dimensions: tuple = (106.0, 68.0)
 ) -> tuple[pd.DataFrame, Metadata, dict]:
-    """This function retrieves the metadata and event data of a specific match. The x
+    """This function retrieves the metadata and event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         events_json (str): location of the event.json file.
         pitch_dimensions (tuple, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the game, the metadata,
         and the databallpy_events.
     """
     if not isinstance(pitch_dimensions, (tuple, list)) or len(pitch_dimensions) != 2:
@@ -48,14 +48,14 @@ def load_scisports_event_data(
 
 @logging_wrapper(__file__)
 def _load_metadata(events_json: str, pitch_dimensions: tuple) -> Metadata:
-    """This function retrieves the metadata of a specific match.
+    """This function retrieves the metadata of a specific game.
 
     Args:
         events_json (str): location of the events.json file.
         pitch_dimensions (tuple): the length and width of the pitch in meters.
 
     Returns:
-        Metadata: the metadata of the match.
+        Metadata: the metadata of the game.
     """
     with open(events_json, "r", encoding="utf-8") as f:
         events_json = json.load(f)
@@ -67,7 +67,7 @@ def _load_metadata(events_json: str, pitch_dimensions: tuple) -> Metadata:
     )
 
     metadata = Metadata(
-        match_id=events_json["metaData"]["id"],
+        game_id=events_json["metaData"]["id"],
         pitch_dimensions=pitch_dimensions,
         periods_frames=periods_frames,
         frame_rate=MISSING_INT,
@@ -90,14 +90,14 @@ def _load_metadata(events_json: str, pitch_dimensions: tuple) -> Metadata:
 def _get_players(
     events_json: dict, home_team_id: int
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """This function retrieves the players of a specific match.
+    """This function retrieves the players of a specific game.
 
     Args:
         events_json (dict): the events.json file.
         home_team_id (int): the id of the home team.
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame]: the home and away players of the match.
+        tuple[pd.DataFrame, pd.DataFrame]: the home and away players of the game.
     """
 
     home_players = {
@@ -159,15 +159,15 @@ def _get_players(
 
 
 def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.DataFrame:
-    """This function retrieves the periods and frames of a specific match.
+    """This function retrieves the periods and frames of a specific game.
 
     Args:
         events_json (dict): the events.json file.
-        date (pd.Timestamp): the date of the match.
-        tz (str): the timezone of the match.
+        date (pd.Timestamp): the date of the game.
+        tz (str): the timezone of the game.
 
     Returns:
-        pd.DataFrame: the periods and frames of the match.
+        pd.DataFrame: the periods and frames of the game.
     """
     first_half_start_ms = [
         event["startTimeMs"]
@@ -221,18 +221,18 @@ def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.Da
 
 @logging_wrapper(__file__)
 def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame, dict]:
-    """This function retrieves the event data of a specific match. The x
+    """This function retrieves the event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         events_json (str): location of the events.json file.
-        metadata (Metadata): the metadata of the match.
+        metadata (Metadata): the metadata of the game.
 
     Returns:
-        Tuple[pd.DataFrame, dict]: the event data of the match and the databallpy_events
+        Tuple[pd.DataFrame, dict]: the event data of the game and the databallpy_events
     """
     with open(events_json, "r", encoding="utf-8") as f:
         events_json = json.load(f)
@@ -357,15 +357,15 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
 
 
 def _get_shot_event(event: dict, id: int, players: pd.DataFrame) -> ShotEvent:
-    """This function retrieves the shot event of a specific match.
+    """This function retrieves the shot event of a specific game.
 
     Args:
         event (dict): the shot event.
         id (int): the id of the event.
-        players (pd.DataFrame): the players of the match.
+        players (pd.DataFrame): the players of the game.
 
     Returns:
-        ShotEvent: the shot event of the match.
+        ShotEvent: the shot event of the game.
     """
 
     shot_result_mappping = {
@@ -400,15 +400,15 @@ def _get_shot_event(event: dict, id: int, players: pd.DataFrame) -> ShotEvent:
 
 
 def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
-    """This function retrieves the pass event of a specific match.
+    """This function retrieves the pass event of a specific game.
 
     Args:
         event (dict): the pass event.
         id (int): the id of the event.
-        players (pd.DataFrame): the players of the match.
+        players (pd.DataFrame): the players of the game.
 
     Returns:
-        PassEvent: the pass event of the match.
+        PassEvent: the pass event of the game.
     """
 
     pass_type_mapping = {
@@ -474,15 +474,15 @@ def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
 
 
 def _get_tackle_event(event: dict, id: int, players: pd.DataFrame) -> TackleEvent:
-    """This function retrieves the tackle event of a specific match.
+    """This function retrieves the tackle event of a specific game.
 
     Args:
         event (dict): the pass event.
         id (int): the id of the event.
-        players (pd.DataFrame): the players of the match.
+        players (pd.DataFrame): the players of the game.
 
     Returns:
-        TackleEvent: the tackle event of the match.
+        TackleEvent: the tackle event of the game.
     """
     return TackleEvent(
         event_id=id,
@@ -503,15 +503,15 @@ def _get_tackle_event(event: dict, id: int, players: pd.DataFrame) -> TackleEven
 
 
 def _get_dribble_event(event: dict, id: int, players: pd.DataFrame) -> DribbleEvent:
-    """This function retrieves the dribble event of a specific match.
+    """This function retrieves the dribble event of a specific game.
 
     Args:
         event (dict): the dribble event.
         id (int): the id of the event.
-        players (pd.DataFrame): the players of the match.
+        players (pd.DataFrame): the players of the game.
 
     Returns:
-        DribbleEvent: the dribble event of the match.
+        DribbleEvent: the dribble event of the game.
     """
     return DribbleEvent(
         event_id=id,

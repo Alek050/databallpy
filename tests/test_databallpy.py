@@ -1,5 +1,8 @@
+import unittest
+
 from databallpy import __version__
 
 
-def test_version():
-    assert __version__ == "0.5.3"
+class TestDataballpy(unittest.TestCase):
+    def test_version(self):
+        assert __version__ == "0.5.3"

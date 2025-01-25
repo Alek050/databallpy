@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
-from databallpy.utils.get_match import get_match
+from databallpy.utils.get_game import get_game
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
     _needleman_wunsch,
@@ -36,7 +36,7 @@ from tests.expected_outcomes import (
 
 class TestSynchroniseTrackingAndEventData(unittest.TestCase):
     def setUp(self) -> None:
-        self.match_to_sync = get_match(
+        self.game_to_sync = get_game(
             tracking_data_loc="tests/test_data/sync/tracab_td_sync_test.dat",
             tracking_metadata_loc="tests/test_data/sync/tracab_metadata_sync_test.xml",
             tracking_data_provider="tracab",
@@ -45,13 +45,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             event_data_provider="opta",
             check_quality=False,
         )
-        self.match_to_sync.allow_synchronise_tracking_and_event_data = True
-        self.match_to_sync._tracking_timestamp_is_precise = False
+        self.game_to_sync.allow_synchronise_tracking_and_event_data = True
+        self.game_to_sync._tracking_timestamp_is_precise = False
 
-        self.match_to_sync.tracking_data["ball_acceleration"] = np.array(
+        self.game_to_sync.tracking_data["ball_acceleration"] = np.array(
             [180.0, 180.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150.0, 0]
         )
-        self.match_to_sync.tracking_data["ball_velocity"] = np.array(
+        self.game_to_sync.tracking_data["ball_velocity"] = np.array(
             [
                 1.0,
                 80.0,
@@ -68,11 +68,11 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                 239.0,
             ]
         )
-        self.match_to_sync.event_data.loc[8, "databallpy_event"] = "shot"
+        self.game_to_sync.event_data.loc[8, "databallpy_event"] = "shot"
 
     def test_synchronise_tracking_and_event_data_normal_condition(self):
-        expected_event_data = self.match_to_sync.event_data.copy()
-        expected_tracking_data = self.match_to_sync.tracking_data.copy()
+        expected_event_data = self.game_to_sync.event_data.copy()
+        expected_tracking_data = self.game_to_sync.tracking_data.copy()
         expected_tracking_data["period_id"] = [1] * 13
         expected_tracking_data["datetime"] = [
             pd.to_datetime("2023-01-22 16:46:39.720000+01:00").tz_convert(
@@ -182,31 +182,29 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             0.331058,
             0.503890,
         ]
-        match_to_sync = self.match_to_sync.copy()
+        game_to_sync = self.game_to_sync.copy()
 
-        match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
-        pd.testing.assert_frame_equal(
-            match_to_sync.tracking_data, expected_tracking_data
-        )
+        game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+        pd.testing.assert_frame_equal(game_to_sync.tracking_data, expected_tracking_data)
 
-        pd.testing.assert_frame_equal(match_to_sync.event_data, expected_event_data)
+        pd.testing.assert_frame_equal(game_to_sync.event_data, expected_event_data)
 
-        match_to_sync = self.match_to_sync.copy()
-        match_to_sync.tracking_data.loc[:, "ball_status"] = "dead"
+        game_to_sync = self.game_to_sync.copy()
+        game_to_sync.tracking_data.loc[:, "ball_status"] = "dead"
         with self.assertRaises(IndexError):
-            match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+            game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
 
     def test_synchonise_tracking_and_event_data_error(self):
         with self.assertRaises(KeyError):
-            match = self.match_to_sync.copy()
-            match.tracking_data.drop(columns=match.tracking_data.columns, inplace=True)
+            game = self.game_to_sync.copy()
+            game.tracking_data.drop(columns=game.tracking_data.columns, inplace=True)
             synchronise_tracking_and_event_data(
-                match.tracking_data, match.event_data, match.all_events, verbose=False
+                game.tracking_data, game.event_data, game.all_events, verbose=False
             )
 
     def test_synchronise_tracking_and_event_data_non_aligned_timestamps(self):
-        expected_event_data = self.match_to_sync.event_data.copy()
-        expected_tracking_data = self.match_to_sync.tracking_data.copy()
+        expected_event_data = self.game_to_sync.event_data.copy()
+        expected_tracking_data = self.game_to_sync.tracking_data.copy()
         expected_tracking_data["period_id"] = [1] * 13
         expected_tracking_data["datetime"] = [
             pd.to_datetime("2023-01-22 16:46:39.720000+01:00").tz_convert(
@@ -317,18 +315,16 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             0.503890,
         ]
         expected_event_data["datetime"] += pd.to_timedelta(1, unit="hours")
-        match_to_sync = self.match_to_sync.copy()
-        match_to_sync._tracking_timestamp_is_precise = True
-        match_to_sync._event_timestamp_is_precise = True
-        match_to_sync.event_data["datetime"] += pd.to_timedelta(1, unit="hours")
+        game_to_sync = self.game_to_sync.copy()
+        game_to_sync._tracking_timestamp_is_precise = True
+        game_to_sync._event_timestamp_is_precise = True
+        game_to_sync.event_data["datetime"] += pd.to_timedelta(1, unit="hours")
 
-        match_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+        game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
 
-        pd.testing.assert_frame_equal(
-            match_to_sync.tracking_data, expected_tracking_data
-        )
+        pd.testing.assert_frame_equal(game_to_sync.tracking_data, expected_tracking_data)
 
-        pd.testing.assert_frame_equal(match_to_sync.event_data, expected_event_data)
+        pd.testing.assert_frame_equal(game_to_sync.event_data, expected_event_data)
 
     def test_needleman_wunsch(self):
         sim_list = [
@@ -380,38 +376,38 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
     def test_create_sim_mat(self):
         expected_res = RES_SIM_MAT
 
-        tracking_data = self.match_to_sync.tracking_data.copy()
+        tracking_data = self.game_to_sync.tracking_data.copy()
         date = pd.to_datetime(
-            str(self.match_to_sync.periods.iloc[0, 3])[:10]
+            str(self.game_to_sync.periods.iloc[0, 3])[:10]
         ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
-            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
+            + dt.timedelta(milliseconds=int(x / self.game_to_sync.frame_rate * 1000))
             for x in tracking_data["frame"]
         ]
         tracking_data["ball_acceleration_sqrt"] = 5.0
         tracking_data["goal_angle_home_team"] = 0.0
         tracking_data["goal_angle_away_team"] = 0.0
         tracking_data.reset_index(inplace=True)
-        event_data = self.match_to_sync.event_data.copy()
+        event_data = self.game_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            all_events=self.match_to_sync.all_events,
+            all_events=self.game_to_sync.all_events,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
     def test_create_sim_mat_missing_player(self):
         expected_res = RES_SIM_MAT_MISSING_PLAYER
 
-        tracking_data = self.match_to_sync.tracking_data.copy()
+        tracking_data = self.game_to_sync.tracking_data.copy()
         date = pd.to_datetime(
-            str(self.match_to_sync.periods.iloc[0, 3])[:10]
+            str(self.game_to_sync.periods.iloc[0, 3])[:10]
         ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
-            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
+            + dt.timedelta(milliseconds=int(x / self.game_to_sync.frame_rate * 1000))
             for x in tracking_data["frame"]
         ]
         tracking_data.reset_index(inplace=True)
@@ -420,39 +416,39 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data["ball_acceleration_sqrt"] = 5.0
         tracking_data["goal_angle_home_team"] = 0.0
         tracking_data["goal_angle_away_team"] = 0.0
-        event_data = self.match_to_sync.event_data.copy()
+        event_data = self.game_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            all_events=self.match_to_sync.all_events,
+            all_events=self.game_to_sync.all_events,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05, atol=1e-05)
 
     def test_create_sim_mat_without_player(self):
         expected_res = RES_SIM_MAT_NO_PLAYER
 
-        tracking_data = self.match_to_sync.tracking_data.copy()
+        tracking_data = self.game_to_sync.tracking_data.copy()
         date = pd.to_datetime(
-            str(self.match_to_sync.periods.iloc[0, 3])[:10]
+            str(self.game_to_sync.periods.iloc[0, 3])[:10]
         ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
-            + dt.timedelta(milliseconds=int(x / self.match_to_sync.frame_rate * 1000))
+            + dt.timedelta(milliseconds=int(x / self.game_to_sync.frame_rate * 1000))
             for x in tracking_data["frame"]
         ]
         tracking_data["ball_acceleration_sqrt"] = 5.0
         tracking_data["goal_angle_home_team"] = 0.0
         tracking_data["goal_angle_away_team"] = 0.0
         tracking_data.reset_index(inplace=True)
-        event_data = self.match_to_sync.event_data.copy()
+        event_data = self.game_to_sync.event_data.copy()
         event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
 
         def _assert_sim_mats_equal(tracking_data, event_data):
             res = _create_sim_mat(
                 tracking_batch=tracking_data,
                 event_batch=event_data,
-                all_events=self.match_to_sync.all_events,
+                all_events=self.game_to_sync.all_events,
             )
             np.testing.assert_allclose(expected_res, res, rtol=1e-05)
 
@@ -465,7 +461,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         _assert_sim_mats_equal(tracking_data, event_data)
 
     def test_pre_compute_synchronisation_variables(self):
-        expected_td = self.match_to_sync.tracking_data.copy()
+        expected_td = self.game_to_sync.tracking_data.copy()
         expected_td["goal_angle_home_team"] = [
             0.19953378014112227,
             0.2249295894248988,
@@ -537,7 +533,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
 
         res_tracking_data = pre_compute_synchronisation_variables(
-            tracking_data=self.match_to_sync.tracking_data.copy(),
+            tracking_data=self.game_to_sync.tracking_data.copy(),
             frame_rate=25,
             pitch_dimensions=(106, 68),
         )
@@ -567,10 +563,10 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         assert all(res == expected_res)
 
     def test_align_event_data_datetime(self):
-        event_data = self.match_to_sync.event_data.copy()
+        event_data = self.game_to_sync.event_data.copy()
         start_dt = event_data.loc[0, "datetime"]
         event_data["datetime"] = start_dt + pd.to_timedelta(1, unit="hours")
-        tracking_data = self.match_to_sync.tracking_data.copy()
+        tracking_data = self.game_to_sync.tracking_data.copy()
         tracking_data["datetime"] = [
             start_dt + pd.to_timedelta(x, unit="seconds") for x in range(13)
         ]
@@ -584,8 +580,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         pd.testing.assert_frame_equal(res_event_data, expected_event_data)
 
     def test_get_time_difference_cost(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)  # pass
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)  # pass
 
         time_diff = (
             (tracking_data["datetime"] - event.datetime).dt.total_seconds().values
@@ -599,8 +595,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
 
     def test_get_distance_ball_event_cost(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)
         ball_event_distance = np.sqrt(
             (tracking_data["ball_x"] - event.start_x) ** 2
             + (tracking_data["ball_y"] - event.start_y) ** 2
@@ -619,8 +615,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
 
     def test_get_distance_ball_player_cost(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)
         event.jersey = 2
         event.team_side = "home"
         ball_player_distance = np.sqrt(
@@ -639,8 +635,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
 
     def test_get_ball_acceleration_cost(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)
         ball_acceleration = tracking_data["ball_acceleration"]
 
         res = get_ball_acceleration_cost(tracking_data, event)
@@ -654,8 +650,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
 
     def test_get_player_ball_distance_increase_cost(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)
         event.jersey = 2
         event.team_side = "home"
         player_ball_diff = np.sqrt(
@@ -680,7 +676,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                 "ball_y": [-15, -10, -5],
             }
         )
-        event = self.match_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(2499594225)
         event.jersey = 2
         event.team_side = "away"
 
@@ -720,8 +716,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
 
     def test_base_general_cost_ball_event(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)
 
         res = base_general_cost_ball_event(tracking_data, event)
         expected_res = combine_cost_functions(
@@ -734,8 +730,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
     def test_base_pass_cost_function(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)
 
         res = base_pass_cost_function(tracking_data, event)
 
@@ -751,8 +747,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
     def test_base_shot_cost_function(self):
-        tracking_data = self.match_to_sync.tracking_data.copy()
-        event = self.match_to_sync.get_event(2499594225)
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(2499594225)
 
         res = base_shot_cost_function(tracking_data, event)
 

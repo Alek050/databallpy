@@ -13,8 +13,8 @@ from databallpy.data_parsers.tracking_data_parsers.utils._add_player_tracking_da
 from databallpy.data_parsers.tracking_data_parsers.utils._adjust_start_end_frames import (
     _adjust_start_end_frames,
 )
-from databallpy.data_parsers.tracking_data_parsers.utils._get_matchtime import (
-    _get_matchtime,
+from databallpy.data_parsers.tracking_data_parsers.utils._get_gametime import (
+    _get_gametime,
 )
 from databallpy.data_parsers.tracking_data_parsers.utils._insert_missing_rows import (
     _insert_missing_rows,
