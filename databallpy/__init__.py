@@ -1,6 +1,7 @@
 from importlib.metadata import version
 
 from databallpy.utils.get_game import (
+    Game,
     get_game,
     get_match,
     get_open_game,

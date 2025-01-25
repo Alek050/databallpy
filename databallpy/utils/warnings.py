@@ -17,7 +17,7 @@ def deprecated(message):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            warnings.warn(message, category=DeprecationWarning, stacklevel=2)
+            warnings.warn(message, category=DeprecationWarning, stacklevel=3)
             return func(*args, **kwargs)
 
         return wrapper

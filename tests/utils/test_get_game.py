@@ -16,7 +16,14 @@ from databallpy.data_parsers.tracking_data_parsers import (
 )
 from databallpy.game import Game
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.get_game import get_game, get_open_game, get_saved_game
+from databallpy.utils.get_game import (
+    get_game,
+    get_match,
+    get_open_game,
+    get_open_match,
+    get_saved_game,
+    get_saved_match,
+)
 from tests.expected_outcomes import (
     DRIBBLE_EVENT_STATSBOMB,
     DRIBBLE_EVENTS_METRICA,
@@ -421,6 +428,18 @@ class TestGetGame(unittest.TestCase):
         )
         assert game == self.expected_game_tracab_opta
 
+        with self.assertWarns(DeprecationWarning):
+            match = get_match(
+                tracking_data_loc=self.td_tracab_loc,
+                tracking_metadata_loc=self.md_tracab_loc,
+                event_data_loc=self.ed_opta_loc,
+                event_metadata_loc=self.md_opta_loc,
+                tracking_data_provider=self.td_provider,
+                event_data_provider=self.ed_provider,
+                check_quality=True,
+            )
+        assert match == self.expected_game_tracab_opta
+
     def test_get_game_no_valid_input(self):
         with self.assertRaises(ValueError):
             get_game()
@@ -667,6 +686,10 @@ class TestGetGame(unittest.TestCase):
 
         self.assertEqual(game, expected_game_sportec)
 
+        with self.assertWarns(DeprecationWarning):
+            match = get_open_match()
+        self.assertEqual(match, expected_game_sportec)
+
     @patch(
         "requests.get",
         side_effect=[
@@ -693,6 +716,10 @@ class TestGetGame(unittest.TestCase):
         saved_game = get_saved_game(name="test_game", path="tests/test_data")
         assert expected_game == saved_game
         assert saved_game != self.expected_game_tracab_opta
+
+        with self.assertWarns(DeprecationWarning):
+            saved_match = get_saved_match(name="test_game", path="tests/test_data")
+        assert saved_game == saved_match
 
     def test_get_saved_game_errors(self):
         with self.assertRaises(FileNotFoundError):
