@@ -11,11 +11,11 @@ def _adjust_start_end_frames(td: pd.DataFrame, metadata: Metadata) -> Metadata:
     the metadata to make them correspond.
 
     Args:
-        td (pd.DataFrame): tracking data of the match
-        metadata (Metadata): metadata of the match
+        td (pd.DataFrame): tracking data of the game
+        metadata (Metadata): metadata of the game
 
     Returns:
-        Metadata: metadata of the match, may be with adjusted start and end frames
+        Metadata: metadata of the game, may be with adjusted start and end frames
     """
 
     home_players_x_columns = [
@@ -74,7 +74,7 @@ def _adjust_start_end_frames(td: pd.DataFrame, metadata: Metadata) -> Metadata:
 
         if adjust_end_frame:
             # this can only shorten the periods when tracking data stops earlier than
-            # metadata implies that the match ends.
+            # metadata implies that the game ends.
             new_end_frame = td.loc[td["period_id"] == period_row["period_id"]].iloc[-1][
                 "frame"
             ]
@@ -82,7 +82,7 @@ def _adjust_start_end_frames(td: pd.DataFrame, metadata: Metadata) -> Metadata:
             new_end_dt = td.loc[td["frame"] == new_end_frame, "datetime"].iloc[0]
             metadata.periods_frames.loc[i, "end_datetime_td"] = new_end_dt
 
-    # if match starts later than indicated in period one, delete all unescesary rows
+    # if game starts later than indicated in period one, delete all unescesary rows
     mask = (
         td["frame"]
         < metadata.periods_frames.loc[
@@ -111,7 +111,7 @@ def _find_new_start_frame(
     above 12.5 m/s/s is assumed to be the start of the period.
 
     Args:
-        td (pd.DataFrame): tracking data of the match
+        td (pd.DataFrame): tracking data of the game
         period_id (int): period id of the period for which the start frame should be
             found
         home_players_x_columns (list): columns of the x positions of the home players

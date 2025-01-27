@@ -4,17 +4,17 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.data_parsers.tracking_data_parsers.utils._get_matchtime import (
-    _get_matchtime,
-    _to_matchtime,
+from databallpy.data_parsers.tracking_data_parsers.utils._get_gametime import (
+    _get_gametime,
+    _to_gametime,
 )
 from databallpy.utils.utils import MISSING_INT
 
 
-class TestGetMatchtime(unittest.TestCase):
+class TestGetGameTime(unittest.TestCase):
     def setUp(self):
         self.metadata = Metadata(
-            match_id=123,
+            game_id=123,
             pitch_dimensions=[100.0, 50.0],
             periods_frames=pd.DataFrame(
                 {
@@ -39,7 +39,7 @@ class TestGetMatchtime(unittest.TestCase):
             country="",
         )
 
-    def test_get_matchtime(self):
+    def test_get_gametime(self):
         input = []
         input.extend([1509993, 1509994, 1509995])
         input.extend([1509996])
@@ -75,14 +75,14 @@ class TestGetMatchtime(unittest.TestCase):
         expected_result.extend(["Break"])
         expected_result.extend(["Penalty Shootout"] * 3)
         expected_result = pd.Series(expected_result)
-        expected_result = expected_result.rename("matchtime")
+        expected_result = expected_result.rename("gametime")
 
-        result_list = _get_matchtime(input, period_column, self.metadata)
+        result_list = _get_gametime(input, period_column, self.metadata)
         result = pd.Series(result_list)
-        result = result.rename("matchtime")
+        result = result.rename("gametime")
         pd.testing.assert_series_equal(expected_result, result)
 
-    def test_to_matchtime(self):
+    def test_to_gametime(self):
         test_frames = [12030, 67100, 67600, 52377, 73566, 19500, 22800, 19500, 22800]
         seconds = [int(x) // self.metadata.frame_rate for x in test_frames]
         periods = [1, 1, 1, 2, 2, 3, 3, 4, 4]
@@ -93,7 +93,7 @@ class TestGetMatchtime(unittest.TestCase):
         res = []
 
         for s, p in zip(seconds, periods):
-            res.append(_to_matchtime(s, max_m[p], start_m[p]))
+            res.append(_to_gametime(s, max_m[p], start_m[p]))
 
         expected_res = [
             "08:01",

@@ -212,20 +212,20 @@ class TestSportecParser(unittest.TestCase):
             {"mock_key": {"mock_subkey": "mock_value"}},
         )
 
-        match_id = "J03WMX"
+        game_id = "J03WMX"
         expected_metadata_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", match_id, "metadata.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "metadata.xml"
         )
         expected_event_data_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", match_id, "event_data.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "event_data.xml"
         )
 
         # Call the function
-        result = load_sportec_open_event_data(match_id)
+        result = load_sportec_open_event_data(game_id)
 
         # Verify the function calls
         mock_makedirs.assert_called_once_with(
-            os.path.join(os.getcwd(), "datasets", "IDSSE", match_id), exist_ok=True
+            os.path.join(os.getcwd(), "datasets", "IDSSE", game_id), exist_ok=True
         )
         self.assertEqual(mock_requests_get.call_count, 2)
         mock_open.assert_any_call(expected_metadata_path, "wb")

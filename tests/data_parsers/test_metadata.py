@@ -7,7 +7,7 @@ from databallpy.data_parsers.metadata import Metadata
 
 class TestMetadata(unittest.TestCase):
     def setUp(self):
-        self.match_id = 12
+        self.game_id = 12
         self.pitch_dimensions = [100.0, 50.0]
         self.periods_frames = pd.DataFrame(
             {
@@ -43,7 +43,7 @@ class TestMetadata(unittest.TestCase):
 
     def test_metadata__eq__(self):
         metadata1 = Metadata(
-            match_id=self.match_id,
+            game_id=self.game_id,
             pitch_dimensions=self.pitch_dimensions,
             periods_frames=self.periods_frames,
             frame_rate=self.frame_rate,
@@ -61,7 +61,7 @@ class TestMetadata(unittest.TestCase):
         )
 
         metadata2 = Metadata(
-            match_id=2,
+            game_id=2,
             pitch_dimensions=self.pitch_dimensions,
             periods_frames=self.periods_frames,
             frame_rate=self.frame_rate,
@@ -82,10 +82,10 @@ class TestMetadata(unittest.TestCase):
         assert metadata1 != "metadata"
 
     def test_metadata_post_init(self):
-        # match id
+        # game id
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=["12"],
+                game_id=["12"],
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -105,7 +105,7 @@ class TestMetadata(unittest.TestCase):
         # pitch dimension
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions="12",
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -124,7 +124,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=[10.0],
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -142,7 +142,7 @@ class TestMetadata(unittest.TestCase):
             )
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=[10, 10.0],
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -162,7 +162,7 @@ class TestMetadata(unittest.TestCase):
         # periods frames
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=12,
                 frame_rate=self.frame_rate,
@@ -181,7 +181,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=pd.DataFrame({"test": []}),
                 frame_rate=self.frame_rate,
@@ -200,7 +200,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=pd.DataFrame({"period_id": [0, 1, 2, 3, 4]}),
                 frame_rate=self.frame_rate,
@@ -219,7 +219,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=pd.DataFrame({"period_id": [1, 1, 2, 3, 4, 5]}),
                 frame_rate=self.frame_rate,
@@ -242,7 +242,7 @@ class TestMetadata(unittest.TestCase):
                 None
             )
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=periods,
                 frame_rate=self.frame_rate,
@@ -262,7 +262,7 @@ class TestMetadata(unittest.TestCase):
         # frame rate
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=12.0,
@@ -283,7 +283,7 @@ class TestMetadata(unittest.TestCase):
             periods = self.periods_frames.copy()
             periods["start_datetime_ed"] = pd.to_datetime("NaT")
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=periods,
                 frame_rate=-10,
@@ -303,7 +303,7 @@ class TestMetadata(unittest.TestCase):
         # team id
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -323,7 +323,7 @@ class TestMetadata(unittest.TestCase):
         # team name
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -343,7 +343,7 @@ class TestMetadata(unittest.TestCase):
         # team score
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -362,7 +362,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -382,7 +382,7 @@ class TestMetadata(unittest.TestCase):
         # team formation
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -401,7 +401,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -421,7 +421,7 @@ class TestMetadata(unittest.TestCase):
         # team players
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -440,7 +440,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,
@@ -459,7 +459,7 @@ class TestMetadata(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             Metadata(
-                match_id=self.match_id,
+                game_id=self.game_id,
                 pitch_dimensions=self.pitch_dimensions,
                 periods_frames=self.periods_frames,
                 frame_rate=self.frame_rate,

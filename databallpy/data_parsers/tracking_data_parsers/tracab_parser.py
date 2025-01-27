@@ -21,7 +21,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_periods_to_tracking_data,
     _add_player_tracking_data_to_dict,
     _adjust_start_end_frames,
-    _get_matchtime,
+    _get_gametime,
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
@@ -74,7 +74,7 @@ def load_tracab_tracking_data(
     )
     tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
 
-    tracking_data["matchtime_td"] = _get_matchtime(
+    tracking_data["gametime_td"] = _get_gametime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
     tracking_data, changed_periods = _normalize_playing_direction_tracking(
@@ -87,19 +87,19 @@ def load_tracab_tracking_data(
 
 @logging_wrapper(__file__)
 def load_sportec_open_tracking_data(
-    match_id: str, verbose: bool
+    game_id: str, verbose: bool
 ) -> tuple[pd.DataFrame, Metadata]:
     """Load the tracking data from the sportec open data platform
 
     Args:
-        match_id (str): The id of the match
+        game_id (str): The id of the game
         verbose (bool): Whether to print info about the loading of the data.
 
     Returns:
         tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
     """
-    metadata_url = _get_sportec_open_data_url(match_id, "metadata")
-    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", match_id)
+    metadata_url = _get_sportec_open_data_url(game_id, "metadata")
+    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", game_id)
     os.makedirs(save_path, exist_ok=True)
     if not os.path.exists(os.path.join(save_path, "metadata.xml")):
         metadata = requests.get(metadata_url)
@@ -111,7 +111,7 @@ def load_sportec_open_tracking_data(
             print("Downloading open tracking data...", end="\r")
         session = requests.Session()
         response = session.get(
-            _get_sportec_open_data_url(match_id, "tracking_data"), stream=True
+            _get_sportec_open_data_url(game_id, "tracking_data"), stream=True
         )
         total_size = int(response.headers.get("content-length", 0))
 
@@ -394,7 +394,7 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
     """
     Function that reads metadata from .json file and stores it in Metadata class.
     """
-    match_id = int(metadata["GameID"])
+    game_id = int(metadata["GameID"])
     pitch_size_x = float(metadata["PitchLongSide"]) / 100
     pitch_size_y = float(metadata["PitchShortSide"]) / 100
     frame_rate = int(metadata["FrameRate"])
@@ -485,7 +485,7 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
     df_away_players = _get_players_metadata_v1(away_players_info)
 
     return Metadata(
-        match_id=match_id,
+        game_id=game_id,
         pitch_dimensions=[pitch_size_x, pitch_size_y],
         periods_frames=df_frames,
         frame_rate=frame_rate,
@@ -507,7 +507,7 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
 def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
     """This version is used in the Netherlands"""
 
-    match_id = int(soup.find("match")["iId"])
+    game_id = int(soup.find("match")["iId"])
     pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
     pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
     frame_rate = int(soup.find("match")["iFrameRateFps"])
@@ -582,7 +582,7 @@ def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
     df_away_players = _get_players_metadata_v1(away_players_info)
 
     metadata = Metadata(
-        match_id=match_id,
+        game_id=game_id,
         pitch_dimensions=[pitch_size_x, pitch_size_y],
         periods_frames=df_frames,
         frame_rate=frame_rate,

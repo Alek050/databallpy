@@ -71,7 +71,7 @@ TD_TRACAB = pd.DataFrame(
                 "2023-01-14 16:46:39.880000",
             ]
         ).tz_localize("Europe/Amsterdam"),
-        "matchtime_td": [
+        "gametime_td": [
             "00:00",
             "00:00",
             "Break",
@@ -83,7 +83,7 @@ TD_TRACAB = pd.DataFrame(
 
 
 MD_TRACAB = Metadata(
-    match_id=1908,
+    game_id=1908,
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
@@ -525,7 +525,7 @@ for key, pass_event in PASS_EVENTS_OPTA.items():
     PASS_EVENTS_OPTA_TRACAB[key].end_y = PASS_EVENTS_OPTA_TRACAB[key].end_y / 68 * 50
 
 MD_OPTA = Metadata(
-    match_id=1908,
+    game_id=1908,
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
@@ -614,7 +614,7 @@ TD_METRICA = pd.DataFrame(
             utc=True,
         ),
         "period_id": [1, 1, 1, 2, 2, 2],
-        "matchtime_td": ["00:00", "00:00", "00:01", "45:00", "45:00", "45:01"],
+        "gametime_td": ["00:00", "00:00", "00:01", "45:00", "45:00", "45:01"],
     }
 )
 
@@ -847,7 +847,7 @@ TACKLE_EVENTS_METRICA = {
 
 
 MD_METRICA_TD = Metadata(
-    match_id=9999,
+    game_id=9999,
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
@@ -909,7 +909,7 @@ MD_METRICA_TD = Metadata(
 
 
 MD_METRICA_ED = Metadata(
-    match_id=9999,
+    game_id=9999,
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
@@ -1006,12 +1006,12 @@ TD_INMOTIO = pd.DataFrame(
             ]
         ).tz_localize("Europe/Amsterdam"),
         "period_id": [MISSING_INT, 1, 1, MISSING_INT, 2, 2],
-        "matchtime_td": ["", "00:00", "00:00", "Break", "45:00", "45:00"],
+        "gametime_td": ["", "00:00", "00:00", "Break", "45:00", "45:00"],
     }
 )
 
 MD_INMOTIO = Metadata(
-    match_id=9999,
+    game_id=9999,
     pitch_dimensions=[100.0, 50.0],
     periods_frames=pd.DataFrame(
         {
@@ -1076,7 +1076,7 @@ MD_INMOTIO = Metadata(
 )
 
 MD_INSTAT = Metadata(
-    match_id=9999,
+    game_id=9999,
     pitch_dimensions=[np.nan, np.nan],
     periods_frames=pd.DataFrame(
         {
@@ -1213,7 +1213,7 @@ RES_SIM_MAT_NO_PLAYER = np.array(
 )
 
 MD_SCISPORTS = Metadata(
-    match_id="some_id",
+    game_id="some_id",
     pitch_dimensions=(106.0, 68.0),
     periods_frames=pd.DataFrame(
         {
@@ -1447,7 +1447,7 @@ ED_SCISPORTS = pd.DataFrame(
 
 
 SPORTEC_METADATA_TD = Metadata(
-    match_id="Match-1",
+    game_id="Match-1",
     pitch_dimensions=[105.0, 68.0],
     periods_frames=pd.DataFrame(
         {
@@ -1720,7 +1720,7 @@ TRACAB_SPORTEC_XML_TD = pd.DataFrame(
         "away_1_x": [np.nan, np.nan, np.nan, 52.0, 50.1, 33.2],
         "period_id": [1, 1, 1, 2, 2, 2],
         "away_1_y": [np.nan, np.nan, np.nan, -8.1, -4.8, -18.8],
-        "matchtime_td": ["00:00", "00:01", "00:02", "45:00", "45:01", "45:02"],
+        "gametime_td": ["00:00", "00:01", "00:02", "45:00", "45:01", "45:02"],
     }
 )
 TRACAB_SPORTEC_XML_TD["datetime"] = pd.to_datetime(
@@ -1728,7 +1728,7 @@ TRACAB_SPORTEC_XML_TD["datetime"] = pd.to_datetime(
 ).dt.tz_convert("Europe/Berlin")
 
 MD_STATSBOMB = Metadata(
-    match_id=15946,
+    game_id=15946,
     pitch_dimensions=(105.0, 68.0),
     periods_frames=pd.DataFrame(
         {

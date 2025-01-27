@@ -7,7 +7,7 @@ from databallpy.utils.utils import _copy_value_, _values_are_equal_
 @dataclass
 class TackleEvent(IndividualCloseToBallEvent):
     """
-    Class to represent a tackle event in a soccer match.
+    Class to represent a tackle event in a soccer game.
 
     Args:
         event_id (int): distinct id of the event

@@ -80,7 +80,7 @@ DATABALLPY_PASS_TYPES = [
 
 DATABALLPY_POSITIONS = ["goalkeeper", "defender", "midfielder", "forward", "unspecified"]
 
-OPEN_MATCH_IDS_DFL = {
+OPEN_GAME_IDS_DFL = {
     "J03WMX": "1. FC Köln vs. FC Bayern München",
     "J03WN1": "VfL Bochum 1848 vs. Bayer 04 Leverkusen",
     "J03WPY": "Fortuna Düsseldorf vs. 1. FC Nürnberg",

@@ -109,26 +109,26 @@ def load_sportec_event_data(
 
 @logging_wrapper(__file__)
 def load_sportec_open_event_data(
-    match_id: str,
+    game_id: str,
 ) -> tuple[pd.DataFrame, Metadata, dict[str, dict]]:
-    """Function to (down)load on open match from Sportec/Tracab
+    """Function to (down)load on open game from Sportec/Tracab
 
     Args:
-        match_id (str): The id of the open match
+        game_id (str): The id of the open game
 
     Returns:
         tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
             metadata, and the databallpy events dictionary.
     """
-    metadata_url = _get_sportec_open_data_url(match_id, "metadata")
-    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", match_id)
+    metadata_url = _get_sportec_open_data_url(game_id, "metadata")
+    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", game_id)
     os.makedirs(save_path, exist_ok=True)
     if not os.path.exists(os.path.join(save_path, "metadata.xml")):
         metadata = requests.get(metadata_url)
         with open(os.path.join(save_path, "metadata.xml"), "wb") as f:
             f.write(metadata.content)
     if not os.path.exists(os.path.join(save_path, "event_data.xml")):
-        event_data = requests.get(_get_sportec_open_data_url(match_id, "event_data"))
+        event_data = requests.get(_get_sportec_open_data_url(game_id, "event_data"))
         with open(os.path.join(save_path, "event_data.xml"), "wb") as f:
             f.write(event_data.content)
 
@@ -147,7 +147,7 @@ def _get_sportec_event_data(
 
     Args:
         event_data_loc (str): location of the event data xml file
-        metadata (Metadata): Metadata object of the match
+        metadata (Metadata): Metadata object of the game
 
     Returns:
         tuple[pd.DataFrame, dict[str, dict]]: the event data and the databallpy events
@@ -266,7 +266,7 @@ def _initialize_search_variables(
     """Function to get the base variables for the event data.
     The function calculates the center of the pitch, and the start
     datetimes of the first and second half, needed later for calculating
-    the minutes/seconds and period of the match.
+    the minutes/seconds and period of the game.
 
     Args:
         soup (bs4.element.Tag): The soup of an event
