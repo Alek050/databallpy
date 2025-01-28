@@ -620,17 +620,8 @@ TD_METRICA = pd.DataFrame(
 
 ED_METRICA = pd.DataFrame(
     {
-        "event_id": [3, 4, 5, 6, 7, 8, 9, 9],
-        "type_id": [
-            5,
-            1,
-            10,
-            2,
-            2,
-            2,
-            9,
-            9,
-        ],
+        
+        "event_id": [0, 1, 2, 3, 4, 5, 6, 7],
         "databallpy_event": [
             None,
             "pass",
@@ -665,7 +656,7 @@ ED_METRICA = pd.DataFrame(
             "FIFATMA",
             "FIFATMA",
         ],
-        "outcome": [MISSING_INT, 0, 1, 0, 1, 1, 0, MISSING_INT],
+        "is_successful": [None, False, True, False, True, True, False, None],
         "start_x": [np.nan, 0.0, 20.0, 20.0, 20.0, 20.0, -20.0, -20.0],
         "start_y": [np.nan, -5.0, 5, 5, 5, 5, -20.0, -20.0],
         "to_player_id": [
@@ -681,8 +672,8 @@ ED_METRICA = pd.DataFrame(
         "to_player_name": [None, "Player 35", None, None, None, None, None, None],
         "end_x": [np.nan, -20.0, -40.0, -40.0, -40.0, -40.0, np.nan, np.nan],
         "end_y": [np.nan, -15.0, 0.0, 0.0, 0.0, 0.0, np.nan, np.nan],
-        "td_frame": [1, 3, 5, 7, 7, 7, 10, 10],
-        "metrica_event": [
+        "original_event_id": [3, 4, 5, 6, 7, 8, 9, 9],
+        "original_event": [
             "set piece",
             "pass",
             "carry",
@@ -692,6 +683,17 @@ ED_METRICA = pd.DataFrame(
             "tackle",
             "challenge",
         ],
+        "event_type_id": [
+            5,
+            1,
+            10,
+            2,
+            2,
+            2,
+            9,
+            9,
+        ],
+        "td_frame": [1, 3, 5, 7, 7, 7, 10, 10],
         "datetime": [
             pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
             pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
@@ -702,12 +704,14 @@ ED_METRICA = pd.DataFrame(
             pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
             pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
         ],
+        
     }
 )
+ED_METRICA["is_successful"] = ED_METRICA["is_successful"].astype("boolean")
 
 SHOT_EVENTS_METRICA = {
-    6: ShotEvent(
-        event_id=6,
+    3: ShotEvent(
+        event_id=3,
         period_id=2,
         minutes=1,
         seconds=16.08,
@@ -728,8 +732,8 @@ SHOT_EVENTS_METRICA = {
         outcome_str="miss",
         first_touch=False,
     ),
-    7: ShotEvent(
-        event_id=7,
+    4: ShotEvent(
+        event_id=4,
         period_id=2,
         minutes=1,
         seconds=16.08,
@@ -750,8 +754,8 @@ SHOT_EVENTS_METRICA = {
         outcome_str="goal",
         first_touch=False,
     ),
-    8: ShotEvent(
-        event_id=8,
+    5: ShotEvent(
+        event_id=5,
         period_id=2,
         minutes=1,
         seconds=16.08,
@@ -775,8 +779,8 @@ SHOT_EVENTS_METRICA = {
 }
 
 DRIBBLE_EVENTS_METRICA = {
-    5: DribbleEvent(
-        event_id=5,
+    2: DribbleEvent(
+        event_id=2,
         period_id=2,
         minutes=1,
         seconds=15.08,
@@ -800,8 +804,8 @@ DRIBBLE_EVENTS_METRICA = {
 }
 
 PASS_EVENTS_METRICA = {
-    4: PassEvent(
-        event_id=4,
+    1: PassEvent(
+        event_id=1,
         period_id=1,
         minutes=1,
         seconds=4.22,
@@ -827,8 +831,8 @@ PASS_EVENTS_METRICA = {
 }
 
 TACKLE_EVENTS_METRICA = {
-    9: TackleEvent(
-        event_id=9,
+    6: TackleEvent(
+        event_id=6,
         period_id=2,
         minutes=1,
         seconds=20.0,
@@ -1129,15 +1133,15 @@ MD_INSTAT = Metadata(
 
 ED_INSTAT = pd.DataFrame(
     {
-        "event_id": [10107, 10110, 10111, 10112],
-        "type_id": [1012, 1011, 2010, 2011],
+        
+        "event_id": [6, 7, 8, 9],
         "databallpy_event": ["pass", "pass", None, None],
         "period_id": [1, 1, 1, 1],
-        "minutes": [0.0, 0.0, 0.0, 0.0],
+        "minutes": [0, 0, 0, 0],
         "seconds": [5.37, 20.93, 23.64, 28.64],
         "player_id": [2, 1, 3, MISSING_INT],
         "team_id": [1, 1, 2, MISSING_INT],
-        "outcome": [0, 1, MISSING_INT, MISSING_INT],
+        "is_successful": [False, True, pd.NA, pd.NA],
         "start_x": [0, 35.4, 35.5, np.nan],
         "start_y": [0, -18.0, -40.5, np.nan],
         "end_x": [-20.1, 40.5, np.nan, np.nan],
@@ -1148,15 +1152,19 @@ ED_INSTAT = pd.DataFrame(
             pd.to_datetime("2023-01-01 20:00:23.640").tz_localize("Europe/Amsterdam"),
             pd.to_datetime("2023-01-01 20:00:28.640").tz_localize("Europe/Amsterdam"),
         ],
-        "instat_event": [
+        "original_event_id": [10107, 10110, 10111, 10112],
+        "original_event": [
             "Attacking pass inaccurate",
             "Attacking pass accurate",
             "Challenge",
             "Challenge",
         ],
+        "event_type_id": [1012, 1011, 2010, 2011],
         "player_name": ["Player 2", "Player 1", "Player 11", None],
+       
     }
 )
+ED_INSTAT["is_successful"] = ED_INSTAT["is_successful"].astype("boolean")
 
 RES_SIM_MAT = np.array(
     [

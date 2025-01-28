@@ -3,6 +3,8 @@ import pickle
 
 import pandas as pd
 
+from databallpy.schemas import EventDataSchema
+
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers import (
     load_instat_event_data,
@@ -183,17 +185,6 @@ def get_game(
         databallpy_events = {}
         uses_tracking_data = True
 
-    # Check if event data should be loaded
-    if event_data_loc and event_data_provider:
-        event_data, event_metadata, databallpy_events = load_event_data(
-            event_data_loc=event_data_loc,
-            event_metadata_loc=event_metadata_loc,
-            event_data_provider=event_data_provider,
-            event_match_loc=event_match_loc,
-            event_lineup_loc=event_lineup_loc,
-        )
-        uses_event_data = True
-
     if not uses_event_data and not uses_tracking_data:
         raise ValueError("No data loaded, please provide data locations and providers")
 
@@ -234,6 +225,8 @@ def get_game(
     if uses_tracking_data:
         changed_periods = tracking_metadata.periods_changed_playing_direction
 
+
+    EventDataSchema.validate(event_data)
     LOGGER.info("Creating game object in get_game()")
     game = Game(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
