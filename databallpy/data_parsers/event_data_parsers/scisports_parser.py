@@ -244,14 +244,14 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "minutes": [],
         "seconds": [],
         "player_id": [],
+        "player_name": [],
         "team_id": [],
-        "outcome": [],
+        "is_successful": [],
         "start_x": [],
         "start_y": [],
         "datetime": [],
-        "scisports_event": [],
-        "player_name": [],
-        "team_name": [],
+        "original_event_id": [],
+        "original_event": [],
     }
 
     databallpy_event_mapping = {
@@ -274,6 +274,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     ).tz_localize(metadata.periods_frames["start_datetime_ed"].iloc[0].tz)
     for id, event in enumerate(events_json["events"]):
         event_data["event_id"].append(id)
+        event_data["original_event_id"].append(id)
 
         event_data["period_id"].append(event["partId"])
         event_data["minutes"].append(MISSING_INT)
@@ -290,9 +291,8 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         event_data["datetime"].append(
             date + pd.to_timedelta(event["startTimeMs"], unit="ms")
         )
-        event_data["scisports_event"].append(event["baseTypeName"].lower())
+        event_data["original_event"].append(event["baseTypeName"].lower())
         event_data["player_name"].append(event["playerName"])
-        event_data["team_name"].append(event["teamName"])
 
         if event["baseTypeName"] in databallpy_event_mapping:
             databallpy_event = databallpy_event_mapping[event["baseTypeName"]]
@@ -303,7 +303,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
                     else "tackle"
                 )
             event_data["databallpy_event"].append(databallpy_event)
-            event_data["outcome"].append(event["resultId"] == 1)
+            event_data["is_successful"].append(event["resultId"] == 1)
             if databallpy_event == "shot" and not event["playerId"] == -1:
                 shot_events[id] = _get_shot_event(event, id, all_players)
             elif databallpy_event == "pass" and not event["playerId"] == -1:
@@ -314,7 +314,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
                 other_events[id] = _get_tackle_event(event, id, all_players)
         else:
             event_data["databallpy_event"].append(None)
-            event_data["outcome"].append(MISSING_INT)
+            event_data["is_successful"].append(None)
 
     event_data = pd.DataFrame(event_data)
     event_data["player_name"] = event_data["player_name"].str.replace(
@@ -328,7 +328,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     event_data.loc[
         event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
     ] *= -1
-    event_data["outcome"] = event_data["outcome"].astype("int64")
+    event_data["is_successful"] = event_data["is_successful"].astype("boolean")
 
     for event in {
         **shot_events,

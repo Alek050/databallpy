@@ -281,18 +281,18 @@ def _load_event_data(
         "databallpy_event": [None] * n,
         "period_id": [MISSING_INT] * n,
         "minutes": [MISSING_INT] * n,
-        "seconds": [MISSING_INT] * n,
+        "seconds": [np.nan] * n,
         "player_id": [MISSING_INT] * n,
+        "player_name": [None] * n,
         "team_id": [MISSING_INT] * n,
-        "outcome": [None] * n,
+        "is_successful": [None] * n,
         "start_x": [np.nan] * n,
         "start_y": [np.nan] * n,
         "datetime": [pd.NaT] * n,
-        "statsbomb_event": [""] * n,
-        "statsbomb_event_id": [None] * n,
-        "player_name": [""] * n,
-        "team_name": [""] * n,
-        "statsbomb_outcome": [""] * n,
+        "original_event": [None] * n,
+        "original_event_id": [None] * n,
+        "original_outcome": [""] * n,
+        "team_name": [None] * n,
     }
 
     databallpy_mapping = {
@@ -310,10 +310,10 @@ def _load_event_data(
 
     for id, event in enumerate(np.array(events_json)[event_mask]):
         event_data["event_id"][id] = id
-        event_data["statsbomb_event_id"][id] = event["id"]
+        event_data["original_event_id"][id] = event["id"]
         event_data["period_id"][id] = event.get("period", MISSING_INT)
         event_data["minutes"][id] = event.get("minute", MISSING_INT)
-        event_data["seconds"][id] = event.get("second", np.nan)
+        event_data["seconds"][id] = float(event.get("second", np.nan))
         event_data["player_id"][id] = (
             event["player"]["id"] if "player" in event.keys() else MISSING_INT
         )
@@ -331,7 +331,7 @@ def _load_event_data(
             metadata.periods_frames["start_datetime_ed"][event["period"] - 1]
             + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")
         )
-        event_data["statsbomb_event"][id] = (
+        event_data["original_event"][id] = (
             event["type"]["name"].lower().replace("*", "")
         )
         event_data["player_name"][id] = (
@@ -363,7 +363,7 @@ def _load_event_data(
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
                 )
-                event_data["outcome"][id] = (
+                event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Goal"
                 )
 
@@ -377,7 +377,7 @@ def _load_event_data(
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
                 )
-                event_data["outcome"][id] = (
+                event_data["is_successful"][id] = (
                     event[event_type_object].get("outcome") is None
                 )
             elif databallpy_event == "dribble":
@@ -390,17 +390,18 @@ def _load_event_data(
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
                 )
-                event_data["outcome"][id] = (
+                event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Complete"
                 )
 
         if event_type_object in event.keys():
-            if "outcome" in event[event_type_object]:
-                event_data["statsbomb_outcome"][id] = event[event_type_object][
+            if "is_successful" in event[event_type_object]:
+                event_data["original_outcome"][id] = event[event_type_object][
                     "outcome"
                 ]["name"]
 
     event_data = pd.DataFrame(event_data)
+    event_data["is_successful"] = event_data["is_successful"].astype("boolean")
 
     event_data.loc[event_data["team_id"] == metadata.away_team_id, ["start_x"]] *= -1
     event_data.loc[event_data["team_id"] == metadata.home_team_id, ["start_y"]] *= -1

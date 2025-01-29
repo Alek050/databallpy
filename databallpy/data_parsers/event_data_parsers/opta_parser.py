@@ -246,7 +246,7 @@ def load_opta_event_data(
             event_data["player_id"]
         )
 
-        event_data["player_name"] = None
+        event_data.insert(6, "player_name", None)
         event_data.loc[home_mask, "player_name"] = event_data.loc[
             home_mask, "player_id"
         ].map(home_players)
@@ -543,7 +543,7 @@ def _load_event_data(
         result_dict["original_event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
         result_dict["minutes"].append(int(event.attrs["min"]))
-        result_dict["seconds"].append(int(event.attrs["sec"]))
+        result_dict["seconds"].append(float(event.attrs["sec"]))
 
         if "player_id" in event.attrs.keys():
             result_dict["player_id"].append(int(event.attrs["player_id"]))
@@ -552,7 +552,7 @@ def _load_event_data(
 
         result_dict["team_id"].append(int(event.attrs["team_id"]))
         if event_name in ["pass", "take on", "tackle"]:
-            result_dict["is_successful"].append(bool(event.attrs["outcome"]))
+            result_dict["is_successful"].append(int(event.attrs["outcome"]))
         else:
             result_dict["is_successful"].append(None)
         result_dict["start_x"].append(float(event.attrs["x"]))
@@ -597,10 +597,11 @@ def _load_event_data(
     )
     event_data.loc[
         event_data["original_event"].isin(["miss", "post", "attempt saved"]), "is_successful"
-    ] = False
-    event_data.loc[event_data["original_event"].isin(["goal", "own goal"]), "is_successful"] = True
+    ] = 0
+    event_data.loc[event_data["original_event"].isin(["goal", "own goal"]), "is_successful"] = 1
     event_data["datetime"] = convert_datetime(event_data["datetime"], country)
-    event_data["is_successful"] = event_data["is_successful"].astype("boolean")
+    event_data["is_successful"] = event_data["is_successful"].astype("Int64").astype("boolean")
+    event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
     # reassign the outcome of passes that result in a shot that is scored to 'assist'
     pass_events = _update_pass_outcome(event_data, shot_events, pass_events)
 
@@ -1008,9 +1009,9 @@ def _update_pass_outcome(
     Returns:
         dict: updated list of PassEvent instances
     """
-    event_ids = event_data[event_data["original_event"] == "goal"].event_id.to_list()
-    for goal_event_ids in event_ids:
-        shot_event = shot_events[goal_event_ids]
+    goal_event_ids = event_data.loc[event_data["original_event"] == "goal", "event_id"].to_list()
+    for goal_event_id in goal_event_ids:
+        shot_event = shot_events[goal_event_id]
         related_event_id = shot_event.related_event_id
 
         if related_event_id is None or related_event_id == MISSING_INT:
@@ -1023,7 +1024,7 @@ def _update_pass_outcome(
 
         if related_pass.shape[0] == 0:
             continue
-
+        
         if related_pass.shape[0] > 1:
             # compute time diff to find the pass that is closest and before the shot
             shot_secs = shot_event.minutes * 60 + shot_event.seconds

@@ -153,21 +153,8 @@ def opta_raw_to_scaled(val, new_dim, is_home):
 
 ED_OPTA = pd.DataFrame(
     {
-        "event_id": [
-            2499582269,
-            2499594199,
-            2499594195,
-            2499594225,
-            2499594243,
-            2499594271,
-            2499594279,
-            2499594285,
-            2499594291,
-            2512690515,
-            2512690516,
-            2512690517,
-        ],
-        "type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 16, 15],
+        
+        "event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
         "databallpy_event": [
             None,
             None,
@@ -182,9 +169,9 @@ ED_OPTA = pd.DataFrame(
             "shot",
             "shot",
         ],
-        "period_id": [16, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1],
+        "period_id": [-1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1],
         "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9, 9, 9],
-        "seconds": [0, 0, 0, 1, 4, 6, 9, 10, 10, 17, 17, 17],
+        "seconds": [0., 0., 0., 1., 4., 6., 9., 10., 10., 17., 17., 17.],
         "player_id": [
             MISSING_INT,
             MISSING_INT,
@@ -199,20 +186,34 @@ ED_OPTA = pd.DataFrame(
             184934,
             184934,
         ],
+        "player_name": [
+            None,
+            None,
+            None,
+            "Piet Schrijvers",
+            "Pepijn Blok",
+            "Jan Boskamp",
+            "Pepijn Blok",
+            "Jan Boskamp",
+            "Pepijn Blok",
+            "Jan Boskamp",
+            "Pepijn Blok",
+            "Pepijn Blok",
+        ],
         "team_id": [194, 3, 194, 3, 194, 3, 194, 3, 194, 3, 194, 194],
-        "outcome": [
-            MISSING_INT,
-            MISSING_INT,
-            MISSING_INT,
-            1,
-            0,
-            MISSING_INT,
-            MISSING_INT,
-            0,
-            1,
-            1,
-            1,
-            0,
+        "is_successful": [
+            None,
+            None,
+            None,
+            True,
+            False,
+            None,
+            None,
+            False,
+            True,
+            True,
+            True,
+            False,
         ],
         # field dimensions are [105, 50], for opta its standard [100, 100].
         # So all values should be divided by 10 (or 5) and minus 50 (or 25) to get the
@@ -262,7 +263,22 @@ ED_OPTA = pd.DataFrame(
             ],
             dtype="datetime64[ns]",
         ),
-        "opta_event": [
+        "original_event_id": [1, 2, 2, 3, 22, 5, 6, 7, 8, 9, 10, 11],
+        "original_annotation_id": [
+            2499582269,
+            2499594199,
+            2499594195,
+            2499594225,
+            2499594243,
+            2499594271,
+            2499594279,
+            2499594285,
+            2499594291,
+            2512690515,
+            2512690516,
+            2512690517,
+        ],
+        "original_event": [
             "team set up",
             "start",
             "start",
@@ -276,31 +292,18 @@ ED_OPTA = pd.DataFrame(
             "goal",
             "attempt saved",
         ],
-        "opta_id": [1, 2, 2, 3, 22, 5, 6, 7, 8, 9, 10, 11],
-        "player_name": [
-            None,
-            None,
-            None,
-            "Piet Schrijvers",
-            "Pepijn Blok",
-            "Jan Boskamp",
-            "Pepijn Blok",
-            "Jan Boskamp",
-            "Pepijn Blok",
-            "Jan Boskamp",
-            "Pepijn Blok",
-            "Pepijn Blok",
-        ],
+        "event_type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 16, 15],
     }
 )
 
 ED_OPTA["datetime"] = pd.to_datetime(ED_OPTA["datetime"]).dt.tz_localize(
     "Europe/Amsterdam"
 )
+ED_OPTA["is_successful"] = ED_OPTA["is_successful"].astype("boolean")
 
 SHOT_EVENTS_OPTA = {
-    2512690515: ShotEvent(
-        event_id=2512690515,
+    9: ShotEvent(
+        event_id=9,
         period_id=1,
         minutes=9,
         seconds=17,
@@ -325,8 +328,8 @@ SHOT_EVENTS_OPTA = {
         y_target=54.3 / 100 * 7.32 - (7.32 / 2),
         first_touch=False,
     ),
-    2512690516: ShotEvent(
-        event_id=2512690516,
+    10: ShotEvent(
+        event_id=10,
         period_id=1,
         minutes=9,
         seconds=17,
@@ -352,8 +355,8 @@ SHOT_EVENTS_OPTA = {
         y_target=54.3 / 100 * 7.32 - (7.32 / 2),
         first_touch=False,
     ),
-    2512690517: ShotEvent(
-        event_id=2512690517,
+    11: ShotEvent(
+        event_id=11,
         period_id=1,
         minutes=9,
         seconds=17,
@@ -390,8 +393,8 @@ for key, shot_event in SHOT_EVENTS_OPTA.items():
     SHOT_EVENTS_OPTA_TRACAB[key].start_y = SHOT_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
 
 DRIBBLE_EVENTS_OPTA = {
-    2499594285: DribbleEvent(
-        event_id=2499594285,
+    7: DribbleEvent(
+        event_id=7,
         period_id=2,
         minutes=30,
         seconds=10,
@@ -427,8 +430,8 @@ for key, dribble_event in DRIBBLE_EVENTS_OPTA.items():
     )
 
 TACKLE_EVENTS_OPTA = {
-    2499594291: TackleEvent(
-        event_id=2499594291,
+    8: TackleEvent(
+        event_id=8,
         period_id=2,
         minutes=31,
         seconds=10,
@@ -459,8 +462,8 @@ for key, tackle_event in TACKLE_EVENTS_OPTA.items():
 
 
 PASS_EVENTS_OPTA = {
-    2499594225: PassEvent(
-        event_id=2499594225,
+    3: PassEvent(
+        event_id=3,
         period_id=1,
         minutes=0,
         seconds=1,
@@ -485,8 +488,8 @@ PASS_EVENTS_OPTA = {
         end_y=np.nan,
         pass_type="unspecified",
     ),
-    2499594243: PassEvent(
-        event_id=2499594243,
+    4: PassEvent(
+        event_id=4,
         period_id=1,
         minutes=0,
         seconds=4,
@@ -1319,6 +1322,23 @@ ED_SCISPORTS = pd.DataFrame(
             101,
             101,
         ],
+        "player_name": [
+            "not_applicable",
+            "not_applicable",
+            "home player 1",
+            "home player 2",
+            "away player 1",
+            "home player 1",
+            "home player 2",
+            "home player 2",
+            "not_applicable",
+            "away player 2",
+            "away player 1",
+            "away player 1",
+            "not_applicable",
+            "home player 1",
+            "home player 1",
+        ],
         "team_id": [
             100,
             200,
@@ -1336,22 +1356,22 @@ ED_SCISPORTS = pd.DataFrame(
             100,
             100,
         ],
-        "outcome": [
-            MISSING_INT,
-            MISSING_INT,
-            MISSING_INT,
-            MISSING_INT,
-            MISSING_INT,
-            1,
-            1,
-            0,
-            MISSING_INT,
-            1,
-            0,
-            1,
-            MISSING_INT,
-            1,
-            0,
+        "is_successful": [
+            None,
+            None,
+            None,
+            None,
+            None,
+            True,
+            True,
+            False,
+            None,
+            True,
+            False,
+            True,
+            None,
+            True,
+            False,
         ],
         "start_x": [
             0.0,
@@ -1402,7 +1422,8 @@ ED_SCISPORTS = pd.DataFrame(
                 "2023-01-01 00:00:15.0",
             ]
         ).tz_localize("Europe/Amsterdam"),
-        "scisports_event": ["formation"] * 2
+        "original_event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+        "original_event": ["formation"] * 2
         + ["position"] * 3
         + [
             "pass",
@@ -1416,42 +1437,10 @@ ED_SCISPORTS = pd.DataFrame(
             "defensive_duel",
             "foul",
         ],
-        "player_name": [
-            "not_applicable",
-            "not_applicable",
-            "home player 1",
-            "home player 2",
-            "away player 1",
-            "home player 1",
-            "home player 2",
-            "home player 2",
-            "not_applicable",
-            "away player 2",
-            "away player 1",
-            "away player 1",
-            "not_applicable",
-            "home player 1",
-            "home player 1",
-        ],
-        "team_name": [
-            "Team 1",
-            "Team 2",
-            "Team 1",
-            "Team 1",
-            "Team 2",
-            "Team 1",
-            "Team 1",
-            "Team 1",
-            "Team 2",
-            "Team 2",
-            "Team 2",
-            "Team 2",
-            "Team 2",
-            "Team 1",
-            "Team 1",
-        ],
+        
     }
 )
+ED_SCISPORTS["is_successful"] = ED_SCISPORTS["is_successful"].astype("boolean")
 
 
 SPORTEC_METADATA_TD = Metadata(
@@ -1542,14 +1531,22 @@ SPORTEC_METADATA_ED.frame_rate = MISSING_INT
 
 SPORTEC_EVENT_DATA = pd.DataFrame(
     {
-        "event_id": [12, 13, 14, 15, 17, 18],
+        "event_id": [0, 1, 2, 3, 4, 5],
         "databallpy_event": ["pass", "shot", "pass", None, "dribble", None],
         "period_id": [1, 1, 2, 2, 2, 2],
         "minutes": [0, 6, 45, 72, 83, 84],
         "seconds": [0, 24.2, 0, 26.5, 19.6, 9.5],
         "player_id": ["B-1", "B-3", "A-1", "A-3", "A-5", "B-2"],
+        "player_name": [
+            "Mike Wunderlich",
+            "Kevin Kraus",
+            "Adam Bodzek",
+            "Rouwen Hennings",
+            "Raphael Wolf",
+            "Andreas Luthe",
+        ],
         "team_id": ["Team2", "Team2", "Team1", "Team1", "Team1", "Team2"],
-        "outcome": [True, False, True, None, True, None],
+        "is_successful": [True, False, True, None, True, None],
         "start_x": np.array([52.5, 98.41, 52.5, 63.44, 15.19, 44.28]) - 52.5,
         "start_y": np.array([34.00, 36.55, 34.00, 40.54, 4.39, 12.24]) - 34.0,
         "datetime": [
@@ -1560,7 +1557,8 @@ SPORTEC_EVENT_DATA = pd.DataFrame(
             "2022-11-11T20:09:28.600+01:00",
             "2022-11-11T20:10:18.500+01:00",
         ],
-        "sportec_event": [
+        "original_event_id": [12, 13, 14, 15, 17, 18],
+        "original_event": [
             "Pass",
             "SavedShot",
             "Pass",
@@ -1568,16 +1566,11 @@ SPORTEC_EVENT_DATA = pd.DataFrame(
             "dribbledAround",
             "OtherBallAction",
         ],
-        "player_name": [
-            "Mike Wunderlich",
-            "Kevin Kraus",
-            "Adam Bodzek",
-            "Rouwen Hennings",
-            "Raphael Wolf",
-            "Andreas Luthe",
-        ],
+       
     }
 )
+SPORTEC_EVENT_DATA["is_successful"] = SPORTEC_EVENT_DATA["is_successful"].astype("boolean")
+
 SPORTEC_EVENT_DATA["datetime"] = pd.to_datetime(
     SPORTEC_EVENT_DATA["datetime"]
 ).dt.tz_convert("Europe/Berlin")
@@ -1587,8 +1580,8 @@ SPORTEC_EVENT_DATA.loc[
 
 SPORTEC_DATABALLPY_EVENTS = {
     "shot_events": {
-        13: ShotEvent(
-            event_id=13,
+        1: ShotEvent(
+            event_id=1,
             period_id=1,
             minutes=6,
             seconds=24.2,
@@ -1612,8 +1605,8 @@ SPORTEC_DATABALLPY_EVENTS = {
         )
     },
     "pass_events": {
-        12: PassEvent(
-            event_id=12,
+        0: PassEvent(
+            event_id=0,
             period_id=1,
             minutes=0,
             seconds=0,
@@ -1642,8 +1635,8 @@ SPORTEC_DATABALLPY_EVENTS = {
             pass_type="unspecified",
             receiver_player_id="B-3",
         ),
-        14: PassEvent(
-            event_id=14,
+        2: PassEvent(
+            event_id=2,
             period_id=2,
             minutes=45,
             seconds=0,
@@ -1674,8 +1667,8 @@ SPORTEC_DATABALLPY_EVENTS = {
         ),
     },
     "dribble_events": {
-        17: DribbleEvent(
-            event_id=17,
+        4: DribbleEvent(
+            event_id=4,
             period_id=2,
             minutes=83,
             seconds=19.6,

@@ -78,13 +78,6 @@ def load_sportec_event_data(
             metadata, and the databallpy events dictionary.
     """
 
-    # if not os.path.exists(event_data_loc):
-    #     LOGGER.error(f"Event data not found at {event_data_loc}")
-    #     raise FileNotFoundError(f"Event data not found at {event_data_loc}")
-    # if not os.path.exists(metadata_loc):
-    #     LOGGER.error(f"Metadata not found at {metadata_loc}")
-    #     raise FileNotFoundError(f"Metadata not found at {metadata_loc}")
-
     metadata = _get_sportec_metadata(metadata_loc, only_event_data=True)
     event_data, databallpy_events = _get_sportec_event_data(event_data_loc, metadata)
 
@@ -174,11 +167,12 @@ def _get_sportec_event_data(
         "seconds": [np.nan] * len(all_events),
         "player_id": [None] * len(all_events),
         "team_id": [None] * len(all_events),
-        "outcome": [None] * len(all_events),
+        "is_successful": [None] * len(all_events),
         "start_x": [np.nan] * len(all_events),
         "start_y": [np.nan] * len(all_events),
         "datetime": ["NaT"] * len(all_events),
-        "sportec_event": [None] * len(all_events),
+        "original_event_id": [MISSING_INT] * len(all_events),
+        "original_event": [None] * len(all_events),
     }
 
     pitch_center, period_start_times, swap_half = _initialize_search_variables(
@@ -207,7 +201,8 @@ def _get_sportec_event_data(
         )
         kwargs["minutes"] = int((45 * dt_idx) + time_diff_s // 60)
         kwargs["seconds"] = time_diff_s % 60
-        kwargs["event_id"] = int(event["EventId"])
+        kwargs["event_id"] = idx
+        kwargs["original_event_id"] = int(event["EventId"])
 
         kwargs["start_x"] = float(event["X-Position"]) - pitch_center[0]
         kwargs["start_y"] = float(event["Y-Position"]) - pitch_center[1]
@@ -222,7 +217,7 @@ def _get_sportec_event_data(
 
         event = next_tag if next_tag is not None else event.find_next()
 
-        kwargs["sportec_event"] = event.name
+        kwargs["original_event"] = event.name
         kwargs["player_id"] = event.get("Player", event.get("Winner"))
         kwargs["team_id"] = event.get("Team", event.get("WinnerTeam"))
 
@@ -236,7 +231,9 @@ def _get_sportec_event_data(
             kwargs, dbp_event = _handle_tackling_game_event(event, metadata, kwargs)
             if isinstance(dbp_event, DribbleEvent):
                 databallpy_events["dribble_events"][dbp_event.event_id] = dbp_event
-
+        
+        if "outcome" in kwargs.keys():
+            kwargs["is_successful"] = kwargs.pop("outcome")        
         result_dict = update_results_dict(result_dict, idx, **kwargs)
 
     event_data = pd.DataFrame(result_dict)
@@ -245,18 +242,16 @@ def _get_sportec_event_data(
     )
     event_data = event_data.sort_values("datetime").reset_index(drop=True)
 
-    event_data = (
-        event_data.merge(
-            pd.concat([metadata.home_players, metadata.away_players])[
-                ["full_name", "id"]
-            ],
-            left_on="player_id",
-            right_on="id",
-            how="left",
-        )
-        .drop(columns=["id"])
-        .rename(columns={"full_name": "player_name"})
+    all_players = pd.concat([metadata.home_players, metadata.away_players])[["full_name", "id"]]
+    player_name_series = pd.Series(event_data.index, None, dtype=str)
+    player_name_series[~pd.isnull(event_data["player_id"])] = event_data.loc[~pd.isnull(event_data["player_id"]), "player_id"].apply(
+        lambda x: all_players.loc[
+            all_players["id"] == x, "full_name"
+        ].iloc[0]
     )
+    event_data.insert(6, "player_name", player_name_series)
+    event_data["is_successful"] = event_data["is_successful"].astype("boolean")
+
     return event_data, databallpy_events
 
 
@@ -313,7 +308,7 @@ def _handle_tackling_game_event(
         tuple[dict, DribbleEvent | None]: The updated kwargs for the
         event data, and the dribble event or None if it was not a dribble event
     """
-    kwargs_dict["sportec_event"] = event.get("WinnerResult", event.name)
+    kwargs_dict["original_event"] = event.get("WinnerResult", event.name)
     if not event["WinnerResult"] == "dribbledAround":
         return kwargs_dict, None
 
@@ -326,7 +321,7 @@ def _handle_tackling_game_event(
     kwargs_dict["related_event_id"] = None
     kwargs_dict["databallpy_event"] = "dribble"
 
-    temp_exclude = ["sportec_event", "databallpy_event"]
+    temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
 
     dribble_event = DribbleEvent(
         **{k: v for k, v in kwargs_dict.items() if k not in temp_exclude} | {"_xt": -1}
@@ -350,7 +345,7 @@ def _handle_shot_event(
     """
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
 
-    kwargs_dict["sportec_event"] = event.find_next().name
+    kwargs_dict["original_event"] = event.find_next().name
     kwargs_dict["databallpy_event"] = "shot"
     kwargs_dict["related_event_id"] = None
     kwargs_dict["body_part"] = SPORTEC_BODY_PARTS.get(
@@ -362,7 +357,7 @@ def _handle_shot_event(
     kwargs_dict["outcome"] = SPORTEC_SHOT_OUTCOMES[event.find_next().name] == "goal"
     kwargs_dict["outcome_str"] = SPORTEC_SHOT_OUTCOMES[event.find_next().name]
 
-    temp_exclude = ["sportec_event", "databallpy_event"]
+    temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
 
     shot_event = ShotEvent(
         **{k: v for k, v in kwargs_dict.items() if k not in temp_exclude} | {"_xt": -1}
@@ -385,7 +380,7 @@ def _handle_play_event(
         the databallpy pass event
     """
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
-    kwargs_dict["sportec_event"] = event.find_next().name
+    kwargs_dict["original_event"] = event.find_next().name
     kwargs_dict["databallpy_event"] = "pass"
     kwargs_dict["outcome"] = event["Evaluation"] == "successfullyCompleted"
     kwargs_dict["related_event_id"] = None
@@ -401,7 +396,7 @@ def _handle_play_event(
     )
     kwargs_dict["receiver_player_id"] = event.get("Recipient", None)
 
-    temp_exclude = ["sportec_event", "databallpy_event"]
+    temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
 
     pass_event = PassEvent(
         **{k: v for k, v in kwargs_dict.items() if k not in temp_exclude} | {"_xt": -1}
