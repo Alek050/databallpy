@@ -246,7 +246,7 @@ def plot_soccer_pitch(
 def plot_events(
     game: Game,
     events: list[str] = [],
-    outcome: int = None,
+    outcome: bool | None = None,
     player_ids: list[str] = [],
     team_id: int | str | None = None,
     fig: plt.figure = None,
@@ -261,8 +261,8 @@ def plot_events(
         game (Game): All information about a game
         events (list, optional): Filter of events you want to plot, if empty,
             all events are plotted. Defaults to [].
-        outcome (int, optional): Filter if the event should have a succesfull
-            outcome (1) or not (0), if None, all outcomes are included.
+        outcome (bool, optional): Filter if the event should have a succesfull
+            outcome (True) or not (False), if None, all outcomes are included.
             Defaults to None.
         player_ids (list, optional): Filter for what players to include, if empty,
             all players are included. Defaults to [].
@@ -297,10 +297,12 @@ def plot_events(
             )
         mask = (mask) & (event_data["databallpy_event"].isin(events))
     if outcome is not None:
-        if outcome not in [0, 1]:
-            raise ValueError(f"'outcome' should be either 0 or 1, not {outcome}")
+        if outcome not in [False, True]:
+            raise ValueError(
+                f"'is_successful' should be either True or False, not {outcome}"
+            )
 
-        mask = (mask) & (event_data["outcome"] == outcome)
+        mask = (mask) & (event_data["is_successful"] == outcome)
     if len(player_ids) > 0:
         for wrong_id in [
             x for x in player_ids if x not in event_data["player_id"].unique()

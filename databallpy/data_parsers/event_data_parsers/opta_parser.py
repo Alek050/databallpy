@@ -565,7 +565,11 @@ def _load_event_data(
 
         if event_name in ["pass", "offside pass"]:
             pass_events[i_event] = _make_pass_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players, id=i_event,
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
         if event_name in [
@@ -577,30 +581,49 @@ def _load_event_data(
             "own goal",
         ]:
             shot_events[i_event] = _make_shot_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players, id=i_event
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
         if event_name == "take on":
             dribble_events[i_event] = _make_dribble_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players, id=i_event
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
         if event_name == "tackle":
             other_events[i_event] = _make_tackle_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players, id=i_event
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
     event_data["databallpy_event"] = (
-        event_data["original_event"].map(OPTA_TO_DATABALLPY_MAP).replace([np.nan], [None])
+        event_data["original_event"]
+        .map(OPTA_TO_DATABALLPY_MAP)
+        .replace([np.nan], [None])
     )
     event_data.loc[
-        event_data["original_event"].isin(["miss", "post", "attempt saved"]), "is_successful"
+        event_data["original_event"].isin(["miss", "post", "attempt saved"]),
+        "is_successful",
     ] = 0
-    event_data.loc[event_data["original_event"].isin(["goal", "own goal"]), "is_successful"] = 1
+    event_data.loc[
+        event_data["original_event"].isin(["goal", "own goal"]), "is_successful"
+    ] = 1
     event_data["datetime"] = convert_datetime(event_data["datetime"], country)
-    event_data["is_successful"] = event_data["is_successful"].astype("Int64").astype("boolean")
+    event_data["is_successful"] = (
+        event_data["is_successful"].astype("Int64").astype("boolean")
+    )
     event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
     # reassign the outcome of passes that result in a shot that is scored to 'assist'
     pass_events = _update_pass_outcome(event_data, shot_events, pass_events)
@@ -704,7 +727,6 @@ def _make_shot_event_instance(
     players: pd.DataFrame,
     id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
-
 ):
     """Function to create a shot class based on the qualifiers of the event
 
@@ -888,7 +910,7 @@ def _get_close_to_ball_event_info(
     pitch_dimensions: list | tuple,
     away_team_id: int | str,
     players: pd.DataFrame,
-    id: int
+    id: int,
 ) -> dict:
     """Function to get the base event data from the event based on
     the CloseToBallEvent class.
@@ -1009,14 +1031,16 @@ def _update_pass_outcome(
     Returns:
         dict: updated list of PassEvent instances
     """
-    goal_event_ids = event_data.loc[event_data["original_event"] == "goal", "event_id"].to_list()
+    goal_event_ids = event_data.loc[
+        event_data["original_event"] == "goal", "event_id"
+    ].to_list()
     for goal_event_id in goal_event_ids:
         shot_event = shot_events[goal_event_id]
         related_event_id = shot_event.related_event_id
 
         if related_event_id is None or related_event_id == MISSING_INT:
             continue
-        
+
         related_pass = event_data[
             (event_data["original_event_id"] == related_event_id)
             & (event_data["databallpy_event"] == "pass")
@@ -1024,7 +1048,7 @@ def _update_pass_outcome(
 
         if related_pass.shape[0] == 0:
             continue
-        
+
         if related_pass.shape[0] > 1:
             # compute time diff to find the pass that is closest and before the shot
             shot_secs = shot_event.minutes * 60 + shot_event.seconds

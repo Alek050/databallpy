@@ -231,9 +231,9 @@ def _get_sportec_event_data(
             kwargs, dbp_event = _handle_tackling_game_event(event, metadata, kwargs)
             if isinstance(dbp_event, DribbleEvent):
                 databallpy_events["dribble_events"][dbp_event.event_id] = dbp_event
-        
+
         if "outcome" in kwargs.keys():
-            kwargs["is_successful"] = kwargs.pop("outcome")        
+            kwargs["is_successful"] = kwargs.pop("outcome")
         result_dict = update_results_dict(result_dict, idx, **kwargs)
 
     event_data = pd.DataFrame(result_dict)
@@ -242,13 +242,13 @@ def _get_sportec_event_data(
     )
     event_data = event_data.sort_values("datetime").reset_index(drop=True)
 
-    all_players = pd.concat([metadata.home_players, metadata.away_players])[["full_name", "id"]]
+    all_players = pd.concat([metadata.home_players, metadata.away_players])[
+        ["full_name", "id"]
+    ]
     player_name_series = pd.Series(event_data.index, None, dtype=str)
-    player_name_series[~pd.isnull(event_data["player_id"])] = event_data.loc[~pd.isnull(event_data["player_id"]), "player_id"].apply(
-        lambda x: all_players.loc[
-            all_players["id"] == x, "full_name"
-        ].iloc[0]
-    )
+    player_name_series[~pd.isnull(event_data["player_id"])] = event_data.loc[
+        ~pd.isnull(event_data["player_id"]), "player_id"
+    ].apply(lambda x: all_players.loc[all_players["id"] == x, "full_name"].iloc[0])
     event_data.insert(6, "player_name", player_name_series)
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
 

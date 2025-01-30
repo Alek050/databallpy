@@ -3,8 +3,6 @@ import pickle
 
 import pandas as pd
 
-from databallpy.schemas import EventDataSchema
-
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers import (
     load_instat_event_data,
@@ -28,6 +26,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.game import Game
+from databallpy.schemas import EventDataSchema
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
@@ -157,6 +156,7 @@ def get_game(
             event_match_loc=event_match_loc,
             event_lineup_loc=event_lineup_loc,
         )
+        EventDataSchema.validate(event_data)
         uses_event_data = True
 
     event_precise_timestamps = {
@@ -182,7 +182,8 @@ def get_game(
             tracking_data_provider=tracking_data_provider,
             verbose=verbose,
         )
-        databallpy_events = {}
+        if not uses_event_data:
+            databallpy_events = {}
         uses_tracking_data = True
 
     if not uses_event_data and not uses_tracking_data:
@@ -225,8 +226,6 @@ def get_game(
     if uses_tracking_data:
         changed_periods = tracking_metadata.periods_changed_playing_direction
 
-
-    EventDataSchema.validate(event_data)
     LOGGER.info("Creating game object in get_game()")
     game = Game(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),

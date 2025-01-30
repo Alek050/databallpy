@@ -291,7 +291,7 @@ def _load_event_data(
         "datetime": [pd.NaT] * n,
         "original_event": [None] * n,
         "original_event_id": [None] * n,
-        "original_outcome": [""] * n,
+        "original_outcome": [None] * n,
         "team_name": [None] * n,
     }
 
@@ -331,9 +331,7 @@ def _load_event_data(
             metadata.periods_frames["start_datetime_ed"][event["period"] - 1]
             + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")
         )
-        event_data["original_event"][id] = (
-            event["type"]["name"].lower().replace("*", "")
-        )
+        event_data["original_event"][id] = event["type"]["name"].lower().replace("*", "")
         event_data["player_name"][id] = (
             event["player"]["name"] if "player" in event.keys() else None
         )
@@ -395,10 +393,10 @@ def _load_event_data(
                 )
 
         if event_type_object in event.keys():
-            if "is_successful" in event[event_type_object]:
-                event_data["original_outcome"][id] = event[event_type_object][
-                    "outcome"
-                ]["name"]
+            if "outcome" in event[event_type_object]:
+                event_data["original_outcome"][id] = event[event_type_object]["outcome"][
+                    "name"
+                ]
 
     event_data = pd.DataFrame(event_data)
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")

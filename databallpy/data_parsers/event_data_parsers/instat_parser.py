@@ -325,9 +325,11 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     event_data["databallpy_event"] = event_data["original_event"].apply(
         lambda x: INSTAT_DATABALLPY_MAP.get(x, [None])[0]
     )
-    event_data["is_successful"] = event_data["original_event"].apply(
-        lambda x: INSTAT_DATABALLPY_MAP.get(x, [None, None])[1]
-    ).astype("boolean")
+    event_data["is_successful"] = (
+        event_data["original_event"]
+        .apply(lambda x: INSTAT_DATABALLPY_MAP.get(x, [None, None])[1])
+        .astype("boolean")
+    )
 
     potential_kick_off_events = ["pass", "shot"]
     x_start, y_start = (

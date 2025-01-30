@@ -402,13 +402,15 @@ class TestOptaParser(unittest.TestCase):
             if event.outcome_str == "goal":
                 event.related_event_id = 120
 
-        event_data.loc[event_data["databallpy_event"] == "pass", "original_event_id"] = 120
+        event_data.loc[event_data["databallpy_event"] == "pass", "original_event_id"] = (
+            120
+        )
 
         # the pass event with event_id 120 has two options
         assert len(event_data.loc[event_data["original_event_id"] == 120]) == 2
 
         res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
-        
+
         expected_passes[4].outcome_str = "assist"
         for key, event in res_passes.items():
             assert key in expected_passes.keys()

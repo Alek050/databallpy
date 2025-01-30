@@ -153,7 +153,6 @@ def opta_raw_to_scaled(val, new_dim, is_home):
 
 ED_OPTA = pd.DataFrame(
     {
-        
         "event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
         "databallpy_event": [
             None,
@@ -171,7 +170,7 @@ ED_OPTA = pd.DataFrame(
         ],
         "period_id": [-1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1],
         "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9, 9, 9],
-        "seconds": [0., 0., 0., 1., 4., 6., 9., 10., 10., 17., 17., 17.],
+        "seconds": [0.0, 0.0, 0.0, 1.0, 4.0, 6.0, 9.0, 10.0, 10.0, 17.0, 17.0, 17.0],
         "player_id": [
             MISSING_INT,
             MISSING_INT,
@@ -623,7 +622,6 @@ TD_METRICA = pd.DataFrame(
 
 ED_METRICA = pd.DataFrame(
     {
-        
         "event_id": [0, 1, 2, 3, 4, 5, 6, 7],
         "databallpy_event": [
             None,
@@ -707,7 +705,6 @@ ED_METRICA = pd.DataFrame(
             pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
             pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
         ],
-        
     }
 )
 ED_METRICA["is_successful"] = ED_METRICA["is_successful"].astype("boolean")
@@ -1136,7 +1133,6 @@ MD_INSTAT = Metadata(
 
 ED_INSTAT = pd.DataFrame(
     {
-        
         "event_id": [6, 7, 8, 9],
         "databallpy_event": ["pass", "pass", None, None],
         "period_id": [1, 1, 1, 1],
@@ -1164,7 +1160,6 @@ ED_INSTAT = pd.DataFrame(
         ],
         "event_type_id": [1012, 1011, 2010, 2011],
         "player_name": ["Player 2", "Player 1", "Player 11", None],
-       
     }
 )
 ED_INSTAT["is_successful"] = ED_INSTAT["is_successful"].astype("boolean")
@@ -1437,7 +1432,6 @@ ED_SCISPORTS = pd.DataFrame(
             "defensive_duel",
             "foul",
         ],
-        
     }
 )
 ED_SCISPORTS["is_successful"] = ED_SCISPORTS["is_successful"].astype("boolean")
@@ -1566,10 +1560,11 @@ SPORTEC_EVENT_DATA = pd.DataFrame(
             "dribbledAround",
             "OtherBallAction",
         ],
-       
     }
 )
-SPORTEC_EVENT_DATA["is_successful"] = SPORTEC_EVENT_DATA["is_successful"].astype("boolean")
+SPORTEC_EVENT_DATA["is_successful"] = SPORTEC_EVENT_DATA["is_successful"].astype(
+    "boolean"
+)
 
 SPORTEC_EVENT_DATA["datetime"] = pd.to_datetime(
     SPORTEC_EVENT_DATA["datetime"]
@@ -1796,10 +1791,17 @@ ED_STATSBOMB = pd.DataFrame(
         "databallpy_event": ["pass", None, "shot", "dribble", "pass"],
         "period_id": [1, 1, 1, 1, 1],
         "minutes": [0, 0, 5, 7, 0],
-        "seconds": [11, 45, 39, 7, 11],
+        "seconds": [11.0, 45.0, 39, 7, 11],
         "player_id": [5211, 5211, 5211, 6581, 5211],
+        "player_name": [
+            "Jordi Alba Ramos",
+            "Jordi Alba Ramos",
+            "Jordi Alba Ramos",
+            "Jonathan Rodríguez Menéndez",
+            "Jordi Alba Ramos",
+        ],
         "team_id": [217, 217, 217, 206, 206],
-        "outcome": [False, None, False, False, False],
+        "is_successful": [False, None, False, False, False],
         "start_x": [-30.0125, -4.7250, 47.1625, -27.4750, 30.0125],
         "start_y": [32.64, 30.260, 11.560, -13.515, -32.64],
         "datetime": [
@@ -1809,21 +1811,15 @@ ED_STATSBOMB = pd.DataFrame(
             pd.to_datetime("2018-08-18 22:22:07+00:00"),
             pd.to_datetime("2018-08-18 22:15:11+00:00"),
         ],
-        "statsbomb_event": ["pass", "carry", "shot", "dribble", "pass"],
-        "statsbomb_event_id": [
+        "original_event": ["pass", "carry", "shot", "dribble", "pass"],
+        "original_event_id": [
             "c723053c-b956-494b-bb5d-352e1833203a",
             "4f2502b5-2014-4265-afa1-f011aa4fd32e",
             "9107d374-2942-4876-a14f-1b9f86901c15",
             "d9cbb43c-e1a4-45d1-a4b9-2151657bb62a",
             "c723053c-b956-494b-bb5d-352e1833203a",
         ],
-        "player_name": [
-            "Jordi Alba Ramos",
-            "Jordi Alba Ramos",
-            "Jordi Alba Ramos",
-            "Jonathan Rodríguez Menéndez",
-            "Jordi Alba Ramos",
-        ],
+        "original_outcome": ["Incomplete", None, "Off T", "Incomplete", "Incomplete"],
         "team_name": [
             "Barcelona",
             "Barcelona",
@@ -1831,9 +1827,9 @@ ED_STATSBOMB = pd.DataFrame(
             "Deportivo Alavés",
             "Deportivo Alavés",
         ],
-        "statsbomb_outcome": ["Incomplete", "", "Off T", "Incomplete", "Incomplete"],
     }
 )
+ED_STATSBOMB["is_successful"] = ED_STATSBOMB["is_successful"].astype("boolean")
 
 SHOT_EVENT_STATSBOMB = {
     2: ShotEvent(
