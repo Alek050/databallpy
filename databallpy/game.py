@@ -810,6 +810,7 @@ class Game:
         n_batches: int | str = "smart",
         verbose: bool = True,
         offset: int = 1.0,
+        optimize: bool = True,
         cost_functions: dict = {},
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
@@ -829,6 +830,9 @@ class Game:
                 because this way the event is synced to the last frame the ball is close
                 to a player. Which often corresponds with the event (pass and shots).
                 Defaults to 1.0.
+            optimize (bool, optional): Whether or not to optimize the algorithm. If
+                errors or warnings are raised, try if setting to False works. Defaults
+                to True.
             cost_functions (dict, optional): Dictionary containing the cost functions
                 that are used to calculate the similarity between the tracking and event
                 data. The keys of the dictionary are the event types, the values are the
@@ -865,6 +869,7 @@ class Game:
             all_events=self.all_events,
             cost_functions=cost_functions,
             n_batches=n_batches,
+            optimize=optimize,
             verbose=verbose,
         )
         # update tracking and event data
