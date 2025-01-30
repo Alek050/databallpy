@@ -76,3 +76,6 @@ class TestMatchUtils(unittest.TestCase):
             }
         )
         pd.testing.assert_frame_equal(df, expected_df)
+
+        df = create_event_attributes_dataframe({})
+        pd.testing.assert_frame_equal(df, pd.DataFrame())

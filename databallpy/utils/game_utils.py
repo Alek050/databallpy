@@ -66,7 +66,7 @@ def create_event_attributes_dataframe(
         pd.DataFrame: DataFrame with the attributes of the events
     """
     if len(events.values()) == 0:
-        return
+        return pd.DataFrame()
     attributes = list(events.values())[0].df_attributes
     res_dict = {
         attr: [getattr(event, attr) for event in events.values()] for attr in attributes
