@@ -3,20 +3,33 @@ import numpy as np
 import math
 import warnings
 
-from features.differentiate import _differentiate
-from features.player_possession import get_distance_between_ball_and_players, get_initial_possessions, get_start_end_idxs, get_valid_gains, get_ball_losses_and_updated_gain_idxs
-from features.covered_distance import _validate_inputs, _parse_intervals, _add_covered_distance_interval
-from features.filters import savgol_filter
+from databallpy.utils.constants import MISSING_INT
+from databallpy.features.differentiate import _differentiate
+from databallpy.features.player_possession import get_distance_between_ball_and_players, get_initial_possessions, get_start_end_idxs, get_valid_gains, get_ball_losses_and_updated_gain_idxs
+from databallpy.features.covered_distance import _validate_inputs, _parse_intervals, _add_covered_distance_interval
+from databallpy.features.filters import savgol_filter
 from databallpy.features.feature_utils import _check_column_ids
 from databallpy.features.pressure import calculate_l, calculate_variable_dfront, calculate_z
-from databallpy.features.pitch_control import get_pitch_control_single_frame, KDTree
+from databallpy.features.pitch_control import get_pitch_control_single_frame
+from scipy.spatial import KDTree
+
+
 
 class TrackingData(pd.DataFrame):
+    def __init__(self, *args, provider:str, frame_rate: int, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.provider = provider
+        self.frame_rate = frame_rate
+
+    @property
+    def _constructor(self):
+        def wrapper(*args, provider=self.provider, frame_rate=self.frame_rate, **kwargs):
+            return TrackingData(*args, provider=provider, frame_rate=frame_rate, **kwargs)
+        return wrapper
 
     def add_velocity(
         self,
         column_ids: str | list[str],
-        frame_rate: float,
         filter_type: str = None,
         window_length: int = 7,
         polyorder: int = 2,
@@ -28,7 +41,6 @@ class TrackingData(pd.DataFrame):
         Args:
             self
             column_ids (str | list[str]): columns for which velocity should be calculated.
-            frame_rate (float): framerate of the tracking data.
             filter_type (str, optional): filter type to use. Defaults to None.
                 Options are `moving_average` and `savitzky_golay`.
             window_length (int, optional): window size for the filter. Defaults to 7.
@@ -61,7 +73,7 @@ class TrackingData(pd.DataFrame):
             self,
             new_name="velocity",
             metric="",
-            frame_rate=frame_rate,
+            frame_rate=self.frame_rate,
             filter_type=filter_type,
             window=window_length,
             poly_order=polyorder,
@@ -74,7 +86,6 @@ class TrackingData(pd.DataFrame):
     def add_acceleration(
         self,
         column_ids: str | list[str],
-        frame_rate: float,
         filter_type: str = None,
         window_length: int = 25,
         polyorder: int = 2,
@@ -87,7 +98,6 @@ class TrackingData(pd.DataFrame):
             self,
             column_ids (str | list[str]): columns for which acceleration should be
                 calculated
-            frame_rate (float): framerate of the tracking data
             filter_type (str, optional): filter type to use. Defaults to None.
                 Options are `moving_average` and `savitzky_golay`.
             window_length (int, optional): window size for the filter. Defaults to 25.
@@ -130,12 +140,13 @@ class TrackingData(pd.DataFrame):
             self,
             new_name="acceleration",
             metric="v",
-            frame_rate=frame_rate,
+            frame_rate=self.frame_rate,
             filter_type=filter_type,
             window=window_length,
             poly_order=polyorder,
             column_ids=column_ids,
             max_val=max_acceleration,
+            inplace=True,
         )
 
     def get_individual_player_possession(
@@ -162,7 +173,7 @@ class TrackingData(pd.DataFrame):
                 Defaults to 0.
 
         Returns:
-            None The tracking data with a new column `player_possession`. 
+            None
         """
         if "ball_velocity" not in self.columns:
             raise ValueError(
@@ -199,7 +210,6 @@ class TrackingData(pd.DataFrame):
     def get_covered_distance(
         self,
         column_ids: list[str],
-        frame_rate: int,
         velocity_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] = (),
         acceleration_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] = (),
         start_idx: int | None = None,
@@ -214,7 +224,6 @@ class TrackingData(pd.DataFrame):
             self.
             column_ids (list[str]): columns for which covered distance should be
                 calculated
-            frame_rate (int): framerate of the tracking data
             velocity_intervals (optional): tuple that contains the velocity interval(s).
                 Defaults to ()
             acceleration_intervals (optional): tuple that contains the acceleration
@@ -238,7 +247,7 @@ class TrackingData(pd.DataFrame):
         _validate_inputs(
             self,
             column_ids,
-            frame_rate,
+            self.frame_rate,
             acceleration_intervals,
             start_idx,
             end_idx,
@@ -271,7 +280,7 @@ class TrackingData(pd.DataFrame):
         tracking_data_velocity.columns = tracking_data_velocity.columns.str.replace(
             "_velocity", ""
         )
-        distance_per_frame = tracking_data_velocity / frame_rate
+        distance_per_frame = tracking_data_velocity / self.frame_rate
 
         start_idx = start_idx if start_idx is not None else self.index[0]
         end_idx = end_idx if end_idx is not None else self.index[-1]
@@ -314,8 +323,6 @@ class TrackingData(pd.DataFrame):
                 is selected. Defaults to 2.
 
         """
-        if not isinstance(self, pd.DataFrame):
-            raise TypeError(f"df should be of type pd.DataFrame, not {type(self)}")
         if isinstance(column_ids, str):
             column_ids = [column_ids]
         _check_column_ids(self, column_ids)
@@ -378,6 +385,7 @@ class TrackingData(pd.DataFrame):
         """
         if index > len(self) or index < 0:
             raise ValueError(f"index should be greater than 0 and smaller the number of frames, which is {len(self)}. The value {index} doesn't satisfy these conditions.")
+        
         td_frame = self.iloc[index, :]
         
         if d_front == "variable":
@@ -558,3 +566,60 @@ class TrackingData(pd.DataFrame):
             all_assigned_players = all_assigned_players[0]
 
         return all_distances, all_assigned_players
+    
+    def add_team_possession(
+        self,
+        event_data: pd.DataFrame,
+        home_team_id: int,
+    ) -> None | pd.DataFrame:
+        """Function to add a column 'ball_possession' to the tracking data, indicating
+        which team has possession of the ball at each frame, either 'home' or 'away'.
+
+        Raises:
+            ValueError: If the tracking and event data are not synchronised.
+            ValueError: If the home_team_id is not in the event data.
+
+
+        Args:
+            self
+            event_data (EventData): Event data for a game
+            home_team_id (int): The ID of the home team.
+
+        Returns:
+            None
+        """
+
+        if "event_id" not in self.columns:
+            raise ValueError(
+                "Tracking and event data are not synchronised, please synchronise the"
+                " data first"
+            )
+        if home_team_id not in event_data.team_id.unique():
+            raise ValueError(
+                "The home team ID is not in the event data, please check" " the home team ID"
+            )
+
+
+        on_ball_events = ["pass", "dribble", "shot"]
+        current_team_id = event_data.loc[
+            ~pd.isnull(event_data["databallpy_event"]), "team_id"
+        ].iloc[0]
+        start_idx = 0
+        self["ball_possession"] = None
+        for event_id in [x for x in self.event_id if x != MISSING_INT]:
+            event = event_data[event_data.event_id == event_id].iloc[0]
+
+            if (
+                event["databallpy_event"] in on_ball_events
+                and event.team_id != current_team_id
+                and event.outcome == 1
+            ):
+                end_idx = self[self.event_id == event_id].index[0]
+                team = "home" if current_team_id == home_team_id else "away"
+                self.loc[start_idx:end_idx, "ball_possession"] = team
+
+                current_team_id = event.team_id
+                start_idx = end_idx
+
+        last_team = "home" if current_team_id == home_team_id else "away"
+        self.loc[start_idx:, "ball_possession"] = last_team
