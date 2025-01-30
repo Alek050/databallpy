@@ -131,17 +131,17 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
         expected_tracking_data["event_id"] = [
             MISSING_INT,
-            2499594225,
+            3,
             MISSING_INT,
-            2499594243,
-            MISSING_INT,
-            MISSING_INT,
+            4,
             MISSING_INT,
             MISSING_INT,
-            2499594285,
             MISSING_INT,
             MISSING_INT,
-            2499594291,
+            7,
+            MISSING_INT,
+            MISSING_INT,
+            8,
             MISSING_INT,
         ]
         expected_tracking_data["sync_certainty"] = [
@@ -263,17 +263,17 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ]
         expected_tracking_data["event_id"] = [
             MISSING_INT,
-            2499594225,
+            3,
             MISSING_INT,
-            2499594243,
-            MISSING_INT,
-            MISSING_INT,
+            4,
             MISSING_INT,
             MISSING_INT,
-            2499594285,
             MISSING_INT,
             MISSING_INT,
-            2499594291,
+            7,
+            MISSING_INT,
+            MISSING_INT,
+            8,
             MISSING_INT,
         ]
         expected_tracking_data["sync_certainty"] = [
@@ -390,7 +390,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data["goal_angle_away_team"] = 0.0
         tracking_data.reset_index(inplace=True)
         event_data = self.game_to_sync.event_data.copy()
-        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
+        event_data = event_data[
+            event_data["event_type_id"].isin([1, 3, 7])
+        ].reset_index()
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
@@ -417,7 +419,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data["goal_angle_home_team"] = 0.0
         tracking_data["goal_angle_away_team"] = 0.0
         event_data = self.game_to_sync.event_data.copy()
-        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
+        event_data = event_data[
+            event_data["event_type_id"].isin([1, 3, 7])
+        ].reset_index()
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
@@ -442,7 +446,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data["goal_angle_away_team"] = 0.0
         tracking_data.reset_index(inplace=True)
         event_data = self.game_to_sync.event_data.copy()
-        event_data = event_data[event_data["type_id"].isin([1, 3, 7])].reset_index()
+        event_data = event_data[
+            event_data["event_type_id"].isin([1, 3, 7])
+        ].reset_index()
 
         def _assert_sim_mats_equal(tracking_data, event_data):
             res = _create_sim_mat(
@@ -581,7 +587,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_get_time_difference_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)  # pass
+        event = self.game_to_sync.get_event(3)  # pass
 
         time_diff = (
             (tracking_data["datetime"] - event.datetime).dt.total_seconds().values
@@ -596,7 +602,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_get_distance_ball_event_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
         ball_event_distance = np.sqrt(
             (tracking_data["ball_x"] - event.start_x) ** 2
             + (tracking_data["ball_y"] - event.start_y) ** 2
@@ -616,7 +622,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_get_distance_ball_player_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
         event.jersey = 2
         event.team_side = "home"
         ball_player_distance = np.sqrt(
@@ -636,7 +642,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_get_ball_acceleration_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
         ball_acceleration = tracking_data["ball_acceleration"]
 
         res = get_ball_acceleration_cost(tracking_data, event)
@@ -651,7 +657,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_get_player_ball_distance_increase_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
         event.jersey = 2
         event.team_side = "home"
         player_ball_diff = np.sqrt(
@@ -676,7 +682,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                 "ball_y": [-15, -10, -5],
             }
         )
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
         event.jersey = 2
         event.team_side = "away"
 
@@ -717,7 +723,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_base_general_cost_ball_event(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
 
         res = base_general_cost_ball_event(tracking_data, event)
         expected_res = combine_cost_functions(
@@ -731,7 +737,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_base_pass_cost_function(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
 
         res = base_pass_cost_function(tracking_data, event)
 
@@ -748,7 +754,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
     def test_base_shot_cost_function(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(2499594225)
+        event = self.game_to_sync.get_event(3)
 
         res = base_shot_cost_function(tracking_data, event)
 
