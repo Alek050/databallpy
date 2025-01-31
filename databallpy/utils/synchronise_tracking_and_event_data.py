@@ -1,7 +1,7 @@
 import inspect
 
-import numpy as np
 import numba
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -17,10 +17,10 @@ from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
 
-
 FRAME_UNASSIGNED = 3
 EVENT_FRAME_MATCH = 2
 EVENT_UNASSIGNED = 4
+
 
 @logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
@@ -208,13 +208,14 @@ def _create_sim_mat(
 
     return sim_mat
 
+
 @logging_wrapper(__file__)
 @numba.njit(cache=True)
 def _needleman_wunsch(
     sim_mat,
-    enable_optimization = True,
-    gap_event = -10,
-    gap_frame = 0.2,
+    enable_optimization=True,
+    gap_event=-10,
+    gap_frame=0.2,
 ) -> dict:
     """
     Function that calculates the optimal alignment between events and frames
@@ -317,6 +318,7 @@ def _needleman_wunsch(
         event_frame_dict[events[frame_index] - 1] = frames[frame_index] - 1
 
     return event_frame_dict
+
 
 def pre_compute_cost_function_variables(
     tracking_batch: pd.DataFrame, event_batch: pd.DataFrame
@@ -838,6 +840,7 @@ def combine_cost_functions(costs: list) -> np.ndarray[float]:
     total_array = np.array(costs)
     total_array[:, np.isnan(total_array).all(axis=0)] = 1
     return np.nanmean(total_array, axis=0)
+
 
 def base_pass_cost_function(
     tracking_data: pd.DataFrame,
