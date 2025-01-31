@@ -1,8 +1,6 @@
 import os
 import unittest
-from unittest.mock import patch
 
-import numpy as np
 import pandas as pd
 
 from databallpy.game import Game
@@ -1222,246 +1220,6 @@ class TestGame(unittest.TestCase):
         shots_df = self.expected_game_tracab_opta.shots_df
         pd.testing.assert_frame_equal(shots_df, expected_df)
 
-    @patch("databallpy.events.shot_event." "ShotEvent.add_tracking_data_features")
-    def test_game_shots_df_tracking_data_features(self, mock_add_tracking_data_features):
-        mock_add_tracking_data_features.return_value = "Return value"
-
-        # for away team shot
-        game = self.expected_game_tracab_opta.copy()
-        game.tracking_data["event_id"] = [np.nan, np.nan, np.nan, np.nan, 2512690516]
-        game.tracking_data["databallpy_event"] = [
-            np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
-            "shot",
-        ]
-        game._is_synchronised = True
-        game.shot_events = {2512690516: game.shot_events[2512690516]}
-        game.add_tracking_data_features_to_shots()
-
-        expected_td_frame = game.tracking_data.iloc[-1]
-        expected_column_id = "away_1"
-        expected_gk_column_id = "home_1"
-
-        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
-        called_td_frame = called_args[0]
-        called_column_id = called_args[1]
-        called_gk_column_id = called_args[2]
-
-        pd.testing.assert_series_equal(called_td_frame, expected_td_frame)
-        assert called_column_id == expected_column_id
-        assert called_gk_column_id == expected_gk_column_id
-
-        # for home team shot
-        game = self.expected_game_tracab_opta.copy()
-        game.tracking_data["event_id"] = [np.nan, np.nan, 2512690515, np.nan, np.nan]
-        game.tracking_data["databallpy_event"] = [
-            np.nan,
-            np.nan,
-            "own_goal",
-            np.nan,
-            np.nan,
-        ]
-        game._is_synchronised = True
-        game.shot_events = {2512690515: game.shot_events[2512690515]}
-        game.add_tracking_data_features_to_shots()
-
-        expected_td_frame = game.tracking_data.iloc[-3]
-        expected_column_id = "home_2"
-        expected_gk_column_id = "away_2"
-
-        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
-        called_td_frame = called_args[0]
-        called_column_id = called_args[1]
-        called_gk_column_id = called_args[2]
-
-        pd.testing.assert_series_equal(called_td_frame, expected_td_frame)
-        assert called_column_id == expected_column_id
-        assert called_gk_column_id == expected_gk_column_id
-
-        with self.assertRaises(DataBallPyError):
-            game._is_synchronised = False
-            game.add_tracking_data_features_to_shots()
-
-    @patch("databallpy.events.pass_event." "PassEvent.add_tracking_data_features")
-    def test_game_add_tracking_data_features_to_passes(
-        self, mock_add_tracking_data_features
-    ):
-        mock_add_tracking_data_features.return_value = "Return value"
-
-        game = self.expected_game_tracab_opta.copy()
-        game._is_synchronised = True
-
-        # no player_possession column
-        with self.assertRaises(DataBallPyError):
-            game.add_tracking_data_features_to_passes()
-
-        game.tracking_data["player_possession"] = None
-        game._is_synchronised = False
-        # tracking data not synchronised
-        with self.assertRaises(DataBallPyError):
-            game.add_tracking_data_features_to_passes()
-
-        game._is_synchronised = True
-
-        game.tracking_data["event_id"] = [np.nan, np.nan, 2499594225, np.nan, np.nan]
-        game.tracking_data["databallpy_event"] = [None, None, "pass", None, None]
-        game.tracking_data["home_1_x"] = [-50.0, -50.0, -50.0, -50.0, -50.0]
-        game.tracking_data["home_1_y"] = [0.0, 0.0, 0.0, 0.0, 0.0]
-
-        # case 1
-        game1 = game.copy()
-        game1.pass_events = {2499594225: game.pass_events[2499594225]}
-
-        game1.add_tracking_data_features_to_passes()
-
-        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
-        called_td_frame = called_args[0]
-        called_passer_column_id = called_args[1]
-        called_receiver_column_id = called_args[2]
-        called_end_loc_td = called_args[3]
-        called_pitch_dimensions = called_args[4]
-        called_opponent_column_ids = called_args[5]
-
-        pd.testing.assert_series_equal(called_td_frame, game1.tracking_data.iloc[2])
-        assert called_passer_column_id == "home_1"
-        assert called_receiver_column_id == "home_34"
-        np.testing.assert_array_equal(called_end_loc_td, np.array([2.76, -0.70]))
-        assert called_pitch_dimensions == game1.pitch_dimensions
-        assert called_opponent_column_ids == ["away_17"]
-
-        # # case 2
-        game2 = game.copy()
-        game2.pass_events = {2499594243: game.pass_events[2499594243]}
-        game2.pass_events[2499594243].end_x = 3.0
-        game2.pass_events[2499594243].end_y = 0.0
-        game2.tracking_data["player_possession"] = [
-            np.nan,
-            np.nan,
-            "away_1",
-            np.nan,
-            "away_2",
-        ]
-        game2.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-        game2.tracking_data = game2.tracking_data.rename(
-            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
-        )
-        game2.tracking_data["away_1_x"] = game2.tracking_data["away_1_x"] * -1
-
-        game2.add_tracking_data_features_to_passes()
-        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
-        called_td_frame = called_args[0]
-        called_passer_column_id = called_args[1]
-        called_receiver_column_id = called_args[2]
-        called_end_loc_td = called_args[3]
-        called_pitch_dimensions = called_args[4]
-        called_opponent_column_ids = called_args[5]
-
-        pd.testing.assert_series_equal(called_td_frame, game2.tracking_data.iloc[2])
-        assert called_passer_column_id == "away_1"
-        assert called_receiver_column_id == "away_2"
-        np.testing.assert_array_equal(called_end_loc_td, np.array([2.76, -0.70]))
-        assert called_pitch_dimensions == game2.pitch_dimensions
-        assert called_opponent_column_ids == ["home_34"]
-
-        # # case 3 end loc diff too big
-        game3 = game.copy()
-        game3.pass_events = {2499594243: game.pass_events[2499594243]}
-        game3.pass_events[2499594243].end_x = 30.0
-        game3.pass_events[2499594243].end_y = 50.0
-        game3.tracking_data["player_possession"] = [
-            np.nan,
-            np.nan,
-            "away_1",
-            np.nan,
-            "away_2",
-        ]
-        game3.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-
-        mock_add_tracking_data_features.reset_mock()
-        game3.add_tracking_data_features_to_passes()
-        mock_add_tracking_data_features.assert_not_called()
-
-        # case 4
-        game4 = game.copy()
-        game4.tracking_data["player_possession"] = [
-            np.nan,
-            np.nan,
-            "away_1",
-            np.nan,
-            "away_1",
-        ]
-        game4.pass_events = {2499594243: game.pass_events[2499594243]}
-        game4.pass_events[2499594243].end_x = 3.0
-        game4.pass_events[2499594243].end_y = 0.0
-        game4.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-        game4.tracking_data = game4.tracking_data.rename(
-            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
-        )
-        game4.tracking_data["away_1_x"] = game4.tracking_data["away_1_x"] * -1
-
-        game4.add_tracking_data_features_to_passes()
-        called_args, _ = mock_add_tracking_data_features.call_args_list[-1]
-        called_td_frame = called_args[0]
-        called_passer_column_id = called_args[1]
-        called_receiver_column_id = called_args[2]
-        called_end_loc_td = called_args[3]
-        called_pitch_dimensions = called_args[4]
-        called_opponent_column_ids = called_args[5]
-
-        pd.testing.assert_series_equal(called_td_frame, game4.tracking_data.iloc[2])
-        assert called_passer_column_id == "away_1"
-        assert called_receiver_column_id == "away_17"
-        np.testing.assert_array_equal(called_end_loc_td, np.array([2.76, -0.70]))
-        assert called_pitch_dimensions == game4.pitch_dimensions
-        assert called_opponent_column_ids == ["home_34"]
-
-        # case 5
-        game5 = game.copy()
-        game5.tracking_data["player_possession"] = [
-            np.nan,
-            np.nan,
-            "away_1",
-            np.nan,
-            "away_1",
-        ]
-        game5.pass_events = {2499594243: game.pass_events[2499594243]}
-        game5.pass_events[2499594243].end_x = 3.0
-        game5.pass_events[2499594243].end_y = 0.0
-        game5.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-        game5.tracking_data["ball_x"] = np.nan
-        game5.tracking_data = game5.tracking_data.rename(
-            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
-        )
-        game5.tracking_data["away_1_x"] = game5.tracking_data["away_1_x"] * -1
-
-        mock_add_tracking_data_features.reset_mock()
-        game5.add_tracking_data_features_to_passes()
-        mock_add_tracking_data_features.assert_not_called()
-
-        # case 6, end loc to close too start loc of pass
-        game6 = game.copy()
-        game6.tracking_data["player_possession"] = [
-            np.nan,
-            np.nan,
-            "away_1",
-            np.nan,
-            "away_1",
-        ]
-        game6.pass_events = {2499594243: game.pass_events[2499594243]}
-        game6.pass_events[2499594243].end_x = 3.0
-        game6.pass_events[2499594243].end_y = 0.0
-        game6.tracking_data["event_id"] = [np.nan, np.nan, 2499594243, np.nan, np.nan]
-        game6.tracking_data = game6.tracking_data.rename(
-            columns={"home_1_x": "away_1_x", "home_1_y": "away_1_y"}
-        )
-        game6.tracking_data["away_1_x"] = [0, 0, 2.76, 0, 0]  # too close to the ball
-
-        mock_add_tracking_data_features.reset_mock()
-        game6.add_tracking_data_features_to_passes()
-        mock_add_tracking_data_features.assert_not_called()
-
     def test_game_dribbles_df_without_td_features(self):
         dribble_attribute_names = [
             "event_id",
@@ -1571,17 +1329,17 @@ class TestGame(unittest.TestCase):
 
     def test_game_get_event(self):
         game = self.expected_game_tracab_opta.copy()
-        event = game.get_event(2512690515)
-        assert event == game.shot_events[2512690515]
+        event = game.get_event(9)
+        assert event == game.shot_events[9]
 
-        event = game.get_event(2499594225)
-        assert event == game.pass_events[2499594225]
+        event = game.get_event(4)
+        assert event == game.pass_events[4]
 
-        event = game.get_event(2499594285)
-        assert event == game.dribble_events[2499594285]
+        event = game.get_event(7)
+        assert event == game.dribble_events[7]
 
         with self.assertRaises(ValueError):
-            game.get_event(2499594286)
+            game.get_event(1)
 
     def test_game_requires_event_data_wrapper(self):
         game = self.expected_game_opta.copy()

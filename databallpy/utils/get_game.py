@@ -26,6 +26,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.game import Game
+from databallpy.schemas import EventDataSchema
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
@@ -155,6 +156,7 @@ def get_game(
             event_match_loc=event_match_loc,
             event_lineup_loc=event_lineup_loc,
         )
+        EventDataSchema.validate(event_data)
         uses_event_data = True
 
     event_precise_timestamps = {
@@ -180,19 +182,9 @@ def get_game(
             tracking_data_provider=tracking_data_provider,
             verbose=verbose,
         )
-        databallpy_events = {}
+        if not uses_event_data:
+            databallpy_events = {}
         uses_tracking_data = True
-
-    # Check if event data should be loaded
-    if event_data_loc and event_data_provider:
-        event_data, event_metadata, databallpy_events = load_event_data(
-            event_data_loc=event_data_loc,
-            event_metadata_loc=event_metadata_loc,
-            event_data_provider=event_data_provider,
-            event_match_loc=event_match_loc,
-            event_lineup_loc=event_lineup_loc,
-        )
-        uses_event_data = True
 
     if not uses_event_data and not uses_tracking_data:
         raise ValueError("No data loaded, please provide data locations and providers")

@@ -38,6 +38,7 @@ requests = "^2.31"
 scipy = "^1.11"
 pandas = "^2.1"
 chardet = "^5.2.0"
+pandera = "^0.22.1"
 
 [tool.poetry.group.developing]
 optional = true
