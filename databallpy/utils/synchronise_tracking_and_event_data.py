@@ -286,20 +286,25 @@ def _needleman_wunsch(
                 pointer_matrix[frame_index + 1, event_index + 1] = EVENT_UNASSIGNED
 
     # Solve
-    frames = np.zeros(n_frames + n_events, dtype=np.int16)
-    events = np.zeros(n_frames + n_events, dtype=np.int16)
+    frame_index = n_frames
+    event_index = n_events
+    frames = np.zeros(n_frames, dtype=np.int32)
+    events = np.zeros(n_frames, dtype=np.int32)
     count = 0
     while frame_index > 0 or event_index > 0:
-        if pointer_matrix[frame_index, event_index] == FRAME_UNASSIGNED:
+        if (
+            pointer_matrix[frame_index, event_index] == FRAME_UNASSIGNED
+        ):  # frame unassigned
             frames[count] = frame_index
-            events[count] = 0
             frame_index -= 1
-        elif pointer_matrix[frame_index, event_index] == EVENT_FRAME_MATCH:
+        elif pointer_matrix[frame_index, event_index] == EVENT_FRAME_MATCH:  # match
             frames[count] = frame_index
             events[count] = event_index
             frame_index -= 1
             event_index -= 1
-        elif pointer_matrix[frame_index, event_index] == EVENT_UNASSIGNED:
+        elif (
+            pointer_matrix[frame_index, event_index] == EVENT_UNASSIGNED
+        ):  # event unassigned
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
             )
@@ -308,11 +313,11 @@ def _needleman_wunsch(
                 f"The algorithm got stuck due to an unexpected "
                 f"value of P[{frame_index}, {event_index}]: {pointer_matrix[frame_index, event_index]}"
             )
-
+        count += 1
     frames = frames[::-1]
     events = events[::-1]
 
-    idx_events = [idx for idx, i in enumerate(events) if i > 0]
+    idx_events = np.where(events > 0)[0]
     event_frame_dict = {}
     for frame_index in idx_events:
         event_frame_dict[events[frame_index] - 1] = frames[frame_index] - 1
