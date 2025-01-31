@@ -1,6 +1,7 @@
 import inspect
 
 import numpy as np
+import numba
 import pandas as pd
 from tqdm import tqdm
 
@@ -16,6 +17,10 @@ from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
 
+
+FRAME_UNASSIGNED = 3
+EVENT_FRAME_MATCH = 2
+EVENT_UNASSIGNED = 4
 
 @logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
@@ -203,13 +208,13 @@ def _create_sim_mat(
 
     return sim_mat
 
-
 @logging_wrapper(__file__)
+@numba.njit(cache=True)
 def _needleman_wunsch(
-    sim_mat: np.ndarray,
-    enable_optimization: bool = True,
-    gap_event: int = -10,
-    gap_frame: int = 0.2,
+    sim_mat,
+    enable_optimization = True,
+    gap_event = -10,
+    gap_frame = 0.2,
 ) -> dict:
     """
     Function that calculates the optimal alignment between events and frames
@@ -228,11 +233,11 @@ def _needleman_wunsch(
     """
     n_frames, n_events = np.shape(sim_mat)
 
-    function_matrix = np.zeros((n_frames + 1, n_events + 1))
+    function_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.float32)
     function_matrix[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
     function_matrix[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
 
-    pointer_matrix = np.zeros((n_frames + 1, n_events + 1))
+    pointer_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.int16)
     pointer_matrix[:, 0] = 3
     pointer_matrix[0, :] = 4
 
@@ -271,30 +276,29 @@ def _needleman_wunsch(
             # Determine the maximum value and set the pointer matrix accordingly
             if gap_f >= match and gap_f >= gap_e:
                 function_matrix[frame_index + 1, event_index + 1] = gap_f
-                pointer_matrix[frame_index + 1, event_index + 1] = 3
+                pointer_matrix[frame_index + 1, event_index + 1] = FRAME_UNASSIGNED
             elif match >= gap_e:
                 function_matrix[frame_index + 1, event_index + 1] = match
-                pointer_matrix[frame_index + 1, event_index + 1] = 2
+                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_FRAME_MATCH
             else:
                 function_matrix[frame_index + 1, event_index + 1] = gap_e
-                pointer_matrix[frame_index + 1, event_index + 1] = 4
+                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_UNASSIGNED
 
     # Solve
-    frame_index = n_frames
-    event_index = n_events
-    frames = []
-    events = []
+    frames = np.zeros(n_frames + n_events, dtype=np.int16)
+    events = np.zeros(n_frames + n_events, dtype=np.int16)
+    count = 0
     while frame_index > 0 or event_index > 0:
-        if pointer_matrix[frame_index, event_index] == 3:  # frame unassigned
-            frames.append(frame_index)
-            events.append(0)
+        if pointer_matrix[frame_index, event_index] == FRAME_UNASSIGNED:
+            frames[count] = frame_index
+            events[count] = 0
             frame_index -= 1
-        elif pointer_matrix[frame_index, event_index] == 2:  # match
-            frames.append(frame_index)
-            events.append(event_index)
+        elif pointer_matrix[frame_index, event_index] == EVENT_FRAME_MATCH:
+            frames[count] = frame_index
+            events[count] = event_index
             frame_index -= 1
             event_index -= 1
-        elif pointer_matrix[frame_index, event_index] == 4:  # event unassigned
+        elif pointer_matrix[frame_index, event_index] == EVENT_UNASSIGNED:
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
             )
@@ -313,7 +317,6 @@ def _needleman_wunsch(
         event_frame_dict[events[frame_index] - 1] = frames[frame_index] - 1
 
     return event_frame_dict
-
 
 def pre_compute_cost_function_variables(
     tracking_batch: pd.DataFrame, event_batch: pd.DataFrame
@@ -835,7 +838,6 @@ def combine_cost_functions(costs: list) -> np.ndarray[float]:
     total_array = np.array(costs)
     total_array[:, np.isnan(total_array).all(axis=0)] = 1
     return np.nanmean(total_array, axis=0)
-
 
 def base_pass_cost_function(
     tracking_data: pd.DataFrame,
