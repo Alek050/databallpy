@@ -7,12 +7,15 @@ from databallpy.game import Game
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.utils.warnings import DataBallPyWarning
+from databallpy.schemas import TrackingDataSchema
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
     PASS_EVENTS_OPTA_TRACAB,
     SHOT_EVENTS_OPTA_TRACAB,
     TACKLE_EVENTS_OPTA_TRACAB,
 )
+
+from pandera.errors import SchemaError
 
 
 class TestGame(unittest.TestCase):
@@ -100,130 +103,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data="tracking_data",
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
-        with self.assertRaises(ValueError):
-            Game(
-                tracking_data=self.expected_game_tracab_opta.tracking_data.drop(
-                    columns=["datetime"]
-                ),
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
-        with self.assertRaises(TypeError):
-            td = self.expected_game_tracab_opta.tracking_data.copy()
-            td["datetime"] = td["datetime"].astype(str)
-            Game(
-                tracking_data=td,
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-        with self.assertRaises(ValueError):
-            td = self.expected_game_tracab_opta.tracking_data.copy()
-            td["datetime"] = td["datetime"].dt.tz_localize(None)
-            Game(
-                tracking_data=td,
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
-        with self.assertRaises(ValueError):
-            Game(
-                tracking_data=pd.DataFrame(
-                    {"frame": [1], "home_1_x": [12], "ball_z": [13]}
-                ),
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
-        # tracking data provider
-        with self.assertRaises(TypeError):
-            Game(
-                tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=14.3,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -241,12 +124,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data="event_data",
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -263,7 +144,6 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=pd.DataFrame(
                     {
                         "event_id": [1],
@@ -274,7 +154,6 @@ class TestGame(unittest.TestCase):
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -291,7 +170,6 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=pd.DataFrame(
                     {
                         "event_id": [1],
@@ -308,7 +186,6 @@ class TestGame(unittest.TestCase):
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -325,7 +202,6 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=pd.DataFrame(
                     {
                         "event_id": [1],
@@ -344,7 +220,6 @@ class TestGame(unittest.TestCase):
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -362,12 +237,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=["opta"],
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -385,12 +258,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions={1: 22, 2: 11},
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -407,12 +278,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=[10.0, 11.0, 12.0],
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -429,12 +298,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=[10, 11.0],
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -451,12 +318,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=[10.0, 68.0],
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -473,12 +338,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=[105.0, 101.0],
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -496,12 +359,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=[1, 2, 3, 4, 5],
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -518,12 +379,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=pd.DataFrame({"times": [1, 2, 3, 4, 5]}),
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -540,12 +399,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=pd.DataFrame({"period_id": [0, 1, 2, 3, 4]}),
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -562,12 +419,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=pd.DataFrame({"period_idw": [1, 1, 2, 3, 4, 5]}),
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -588,57 +443,10 @@ class TestGame(unittest.TestCase):
             )
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
-        # frame rate
-        with self.assertRaises(TypeError):
-            Game(
-                tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=25.0,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
-        with self.assertRaises(ValueError):
-            Game(
-                tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=-25,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -656,12 +464,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=123.0,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -679,12 +485,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -702,12 +506,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=11.5,
@@ -724,12 +526,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -747,12 +547,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -769,12 +567,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation="one-four-three-three",
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -792,12 +588,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -814,12 +608,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -840,12 +632,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -859,68 +649,16 @@ class TestGame(unittest.TestCase):
                 country=self.expected_game_tracab_opta.country,
             )
 
-        # pitch axis
-        with self.assertWarns(DataBallPyWarning):
-            td_changed = self.expected_game_tracab_opta.tracking_data.copy()
-            td_changed["ball_x"] += 10.0
-            Game(
-                tracking_data=td_changed,
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
-        with self.assertWarns(DataBallPyWarning):
-            td_changed = self.expected_game_tracab_opta.tracking_data.copy()
-            td_changed["ball_y"] += 10.0
-
-            Game(
-                tracking_data=td_changed,
-                tracking_data_provider=self.td_provider,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-            )
-
         # playing direction
         with self.assertRaises(DataBallPyError):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "home_34_x"] = 3.0
             Game(
                 tracking_data=td_changed,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -939,12 +677,10 @@ class TestGame(unittest.TestCase):
             td_changed.loc[0, "away_17_x"] = -3.0
             Game(
                 tracking_data=td_changed,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -962,12 +698,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -984,12 +718,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -1007,12 +739,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                tracking_data_provider=self.td_provider,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
-                frame_rate=self.expected_game_tracab_opta.frame_rate,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
                 home_formation=self.expected_game_tracab_opta.home_formation,
                 home_score=self.expected_game_tracab_opta.home_score,
@@ -1101,7 +831,7 @@ class TestGame(unittest.TestCase):
 
     def test_game_get_column_ids(self):
         game = self.expected_game_tracab_opta.copy()
-        game.frame_rate = 1
+        game.tracking_data.frame_rate = 1
         game.home_players = pd.DataFrame(
             {
                 "id": [1, 2, 3, 4],

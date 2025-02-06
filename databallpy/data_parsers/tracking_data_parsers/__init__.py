@@ -9,3 +9,5 @@ from databallpy.data_parsers.tracking_data_parsers.tracab_parser import (
     load_sportec_open_tracking_data,
     load_tracab_tracking_data,
 )
+
+from databallpy.data_parsers.tracking_data_parsers.tracking_data import TrackingData

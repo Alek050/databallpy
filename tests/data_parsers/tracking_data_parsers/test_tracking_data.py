@@ -3,10 +3,15 @@ import numpy as np
 import pandas as pd
 import math
 
-from databallpy.features.pressure import calculate_variable_dfront, calculate_l, calculate_z
+from databallpy.features.pressure import (
+    calculate_variable_dfront,
+    calculate_l,
+    calculate_z,
+)
 from databallpy.utils.utils import MISSING_INT
 
 from databallpy.data_parsers.tracking_data_parsers.tracking_data import TrackingData
+
 
 class TestTrackingData(unittest.TestCase):
     def setUp(self):
@@ -44,7 +49,7 @@ class TestTrackingData(unittest.TestCase):
                 "away_2_ax": [1, -0.5, -1, 1, 0.5, -1],
                 "away_2_ay": [0, 0, 0, 0, 0, 0],
                 "away_2_acceleration": [1, 0.5, 1, 1, 0.5, 1],
-            }, 
+            },
             provider="test",
             frame_rate=1,
         )
@@ -97,7 +102,7 @@ class TestTrackingData(unittest.TestCase):
                 ],
             },
             provider="test",
-            frame_rate = 1,
+            frame_rate=1,
         )
         self.expected_output_vel = TrackingData(
             {
@@ -115,7 +120,7 @@ class TestTrackingData(unittest.TestCase):
                 ],
             },
             provider="test",
-            frame_rate = 1,
+            frame_rate=1,
         )
 
         self.expected_output_acc = TrackingData(
@@ -144,7 +149,7 @@ class TestTrackingData(unittest.TestCase):
                 ],
             },
             provider="test",
-            frame_rate = 1,
+            frame_rate=1,
         )
         self.td_pitch_control = TrackingData(
             {
@@ -435,7 +440,9 @@ class TestTrackingData(unittest.TestCase):
     def test_approximate_voronoi(self):
         tracking_data = self.td_pitch_control.copy()
 
-        output_dists, output_col_ids = tracking_data.get_approximate_voronoi([20, 20], 5, 3)
+        output_dists, output_col_ids = tracking_data.get_approximate_voronoi(
+            [20, 20], 5, 3
+        )
 
         assert output_dists.shape == output_col_ids.shape == (2, 3, 5)
 
@@ -471,7 +478,9 @@ class TestTrackingData(unittest.TestCase):
         np.testing.assert_array_equal(output_col_ids, expected_col_ids)
         np.testing.assert_array_almost_equal(output_dists, expected_dists)
 
-        dists, col_ids = tracking_data.get_approximate_voronoi([20, 20], 5, 3, start_idx=0, end_idx=0)
+        dists, col_ids = tracking_data.get_approximate_voronoi(
+            [20, 20], 5, 3, start_idx=0, end_idx=0
+        )
 
         assert dists.shape == col_ids.shape == (3, 5)
         np.testing.assert_array_equal(col_ids, expected_col_ids[0])
@@ -528,10 +537,14 @@ class TestTrackingData(unittest.TestCase):
         assert "player_possession" not in tracking_data.columns
         tracking_data.get_individual_player_possession()
         assert "player_possession" in tracking_data.columns
-        np.testing.assert_array_equal(tracking_data["player_possession"], expected_possession)
+        np.testing.assert_array_equal(
+            tracking_data["player_possession"], expected_possession
+        )
 
         with self.assertRaises(ValueError):
-            tracking_data.get_individual_player_possession(tracking_data.drop(columns=["ball_velocity"], inplace=True))
+            tracking_data.get_individual_player_possession(
+                tracking_data.drop(columns=["ball_velocity"], inplace=True)
+            )
 
     def test_get_pressure_on_player_specified_d_front(self):
         tracking_data = self.td_pressure.copy()
@@ -583,7 +596,7 @@ class TestTrackingData(unittest.TestCase):
         self.assertAlmostEqual(result, expected_pressure, places=4)
 
     def get_pressure_on_player_wrong_input(self):
-        tracking_data:TrackingData = self.td_pressure.copy()
+        tracking_data: TrackingData = self.td_pressure.copy()
         with self.assertRaises(ValueError):
             tracking_data.get_pressure_on_player(
                 index=100,

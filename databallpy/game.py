@@ -13,6 +13,7 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
+from databallpy.data_parsers.tracking_data_parsers.tracking_data import TrackingData
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.game_utils import (
@@ -70,13 +71,11 @@ class Game:
     some simple functions to easily obtain information about the game.
 
     Args:
-        tracking_data (pd.DataFrame): Tracking data of the game.
-        tracking_data_provider (str): Provider of the tracking data.
+        tracking_data (TrackingData): Tracking data of the game.
         event_data (pd.DataFrame): Event data of the game.
         event_data_provider (str): Provider of the event data.
         pitch_dimensions (Tuple): The size of the pitch in meters in x and y direction.
         periods (pd.DataFrame): The start and end idicators of all periods.
-        frame_rate (int): The frequency of the tracking data.
         home_team_id (int): The id of the home team.
         home_team_name (str): The name of the home team.
         home_players (pd.DataFrame): Information about the home players.
@@ -96,13 +95,11 @@ class Game:
         event data can be synchronised. If False, it can not. Default = False.
     """
 
-    tracking_data: pd.DataFrame
-    tracking_data_provider: str
+    tracking_data: TrackingData
     event_data: pd.DataFrame
     event_data_provider: str
     pitch_dimensions: list[float, float]
     periods: pd.DataFrame
-    frame_rate: int
     home_team_id: int
     home_team_name: str
     home_players: pd.DataFrame
@@ -290,7 +287,9 @@ class Game:
 
         if not (players["start_frame"] == MISSING_INT).all():
             players = players[
-                (players["end_frame"] - players["start_frame"]) / self.frame_rate / 60
+                (players["end_frame"] - players["start_frame"])
+                / self.tracking_data.frame_rate
+                / 60
                 >= min_minutes_played
             ]
 
@@ -621,7 +620,7 @@ class Game:
             raise DataBallPyError(message)
 
         self.tracking_data = pre_compute_synchronisation_variables(
-            self.tracking_data, self.frame_rate, self.pitch_dimensions
+            self.tracking_data, self.tracking_data.frame_rate, self.pitch_dimensions
         )
         # reduce standard error by aligning trakcing and event data on first event
         changed_event_data = align_event_data_datetime(
@@ -725,88 +724,18 @@ def check_inputs_game_object(game: Game):
     """
     LOGGER.info("Checking the inputs of the game object")
     # tracking_data
-    if not isinstance(game.tracking_data, pd.DataFrame):
+    if not isinstance(game.tracking_data, TrackingData):
         raise TypeError(
-            f"tracking data should be a pandas df, not a {type(game.tracking_data)}"
+            f"tracking data should be an instance of the TrackingData class, not a {type(game.tracking_data)}"
         )
 
     if len(game.tracking_data) > 0:
-        for col in ["frame", "ball_x", "ball_y", "datetime"]:
-            if col not in game.tracking_data.columns.to_list():
-                raise ValueError(
-                    f"No {col} in tracking_data columns, this is manditory!"
-                )
-
-        # tracking_data_provider
-        if not isinstance(game.tracking_data_provider, str):
+        # tracking data provider
+        if not isinstance(game.tracking_data.provider, str):
             raise TypeError(
                 "tracking data provider should be a string, not a "
-                f"{type(game.tracking_data_provider)}"
+                f"{type(game.tracking_data.provider)}"
             )
-
-        # tracking data ball status
-        ball_status_value_counts = game.tracking_data["ball_status"].value_counts()
-        if len(ball_status_value_counts) != 2:
-            message = (
-                "ball status should be divided over dead and alive, "
-                f"found value counts: {ball_status_value_counts}. Any further "
-                "function that uses the ball status, such as the synchronisation, "
-                "might not work anymore."
-            )
-            LOGGER.warning(message)
-            warnings.warn(
-                message=message,
-                category=DataBallPyWarning,
-            )
-        else:
-            frames_alive = ball_status_value_counts["alive"]
-            minutes_alive = frames_alive / (game.frame_rate * 60)
-            if minutes_alive < 45:
-                message = (
-                    f"The ball status is alive for {round(minutes_alive, 2)}"
-                    " in the full game. ball status is uses for synchronisation "
-                    "check the quality of the data before synchronising event and "
-                    "tracking data."
-                )
-                LOGGER.warning(message)
-                warnings.warn(
-                    message=message,
-                    category=DataBallPyWarning,
-                )
-
-        # check if the first frame is at (0, 0)
-        ball_alive_mask = game.tracking_data["ball_status"] == "alive"
-        if len(game.tracking_data.loc[ball_alive_mask]) > 0:
-            first_frame = game.tracking_data.loc[
-                ball_alive_mask, "ball_x"
-            ].first_valid_index()
-            if (
-                not abs(game.tracking_data.loc[first_frame, "ball_x"]) < 7.0
-                or not abs(game.tracking_data.loc[first_frame, "ball_y"]) < 5.0
-            ):
-                x_start = game.tracking_data.loc[first_frame, "ball_x"]
-                y_start = game.tracking_data.loc[first_frame, "ball_y"]
-                message = (
-                    "The middle point of the pitch should be (0, 0), "
-                    f"now the kick-off is at ({x_start}, {y_start}). "
-                    "Either the recording has started too late or the ball_status "
-                    "is not set to 'alive' in the beginning. Please check and "
-                    " change the tracking data if desired."
-                    "\n NOTE: The quality of the synchronisation of the tracking "
-                    "and event data might be affected."
-                )
-                LOGGER.warning(message)
-                warnings.warn(message=message, category=DataBallPyWarning)
-
-        # check if there is a valid datetime object
-        if not pd.api.types.is_datetime64_any_dtype(game.tracking_data["datetime"]):
-            raise TypeError(
-                "datetime column in tracking data should be a datetime dtype, not a "
-                f"{type(game.tracking_data['datetime'])}"
-            )
-        # also make sure it is tz sensitive
-        if game.tracking_data["datetime"].dt.tz is None:
-            raise ValueError("datetime column in tracking data should have a timezone")
 
     # event_data
     if not isinstance(game.event_data, pd.DataFrame):
@@ -896,13 +825,18 @@ def check_inputs_game_object(game: Game):
             raise ValueError(f"{col} column in periods should have a timezone")
 
     # frame_rate
-    if not pd.isnull(game.frame_rate) and not game.frame_rate == MISSING_INT:
-        if not isinstance(game.frame_rate, (int, np.integer)):
+    if (
+        not pd.isnull(game.tracking_data.frame_rate)
+        and not game.tracking_data.frame_rate == MISSING_INT
+    ):
+        if not isinstance(game.tracking_data.frame_rate, (int, np.integer)):
             raise TypeError(
-                f"frame_rate should be an integer, not a {type(game.frame_rate)}"
+                f"frame_rate should be an integer, not a {type(game.tracking_data.frame_rate)}"
             )
-        if game.frame_rate < 1:
-            raise ValueError(f"frame_rate should be positive, not {game.frame_rate}")
+        if game.tracking_data.frame_rate < 1:
+            raise ValueError(
+                f"frame_rate should be positive, not {game.tracking_data.frame_rate}"
+            )
 
     # team id's
     for team, team_id in zip(["home", "away"], [game.home_team_id, game.away_team_id]):

@@ -10,6 +10,7 @@ from databallpy.data_parsers.event_data_parsers import (
     load_opta_event_data,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
+    TrackingData,
     load_inmotio_tracking_data,
     load_metrica_tracking_data,
     load_tracab_tracking_data,
@@ -69,6 +70,11 @@ class TestGetGame(unittest.TestCase):
 
         self.td_tracab, self.md_tracab = load_tracab_tracking_data(
             self.td_tracab_loc, self.md_tracab_loc
+        )
+        self.td_tracab = TrackingData(
+            self.td_tracab,
+            provider=self.td_provider,
+            frame_rate=1,
         )
         self.ed_opta, self.md_opta, self.dbp_events = load_opta_event_data(
             f7_loc=self.md_opta_loc, f24_loc=self.ed_opta_loc
@@ -164,12 +170,10 @@ class TestGetGame(unittest.TestCase):
 
         self.expected_game_tracab_opta = Game(
             tracking_data=self.td_tracab,
-            tracking_data_provider=self.td_provider,
             event_data=self.corrected_ed,
             event_data_provider=self.ed_provider,
             pitch_dimensions=self.md_tracab.pitch_dimensions,
             periods=self.expected_periods_tracab_opta,
-            frame_rate=self.md_tracab.frame_rate,
             home_team_id=self.md_opta.home_team_id,
             home_formation=self.md_opta.home_formation,
             home_score=self.md_opta.home_score,
@@ -197,6 +201,11 @@ class TestGetGame(unittest.TestCase):
         self.td_metrica, self.md_metrica = load_metrica_tracking_data(
             self.td_metrica_loc, self.md_metrica_loc
         )
+        self.td_metrica = TrackingData(
+            self.td_metrica,
+            provider="metrica",
+            frame_rate=1,
+        )
         self.td_metrica["period_id"] = [1, 1, 1, 2, 2, 2]
         self.ed_metrica, md_metrica_ed, _ = load_metrica_event_data(
             self.ed_metrica_loc, self.md_metrica_loc
@@ -212,12 +221,10 @@ class TestGetGame(unittest.TestCase):
 
         self.expected_game_metrica = Game(
             tracking_data=self.td_metrica,
-            tracking_data_provider="metrica",
             event_data=self.ed_metrica,
             event_data_provider="metrica",
             pitch_dimensions=self.md_metrica.pitch_dimensions,
             periods=self.md_metrica.periods_frames,
-            frame_rate=self.md_metrica.frame_rate,
             home_team_id=self.md_metrica.home_team_id,
             home_formation=self.md_metrica.home_formation,
             home_score=self.md_metrica.home_score,
@@ -243,7 +250,11 @@ class TestGetGame(unittest.TestCase):
         self.td_inmotio, self.md_inmotio = load_inmotio_tracking_data(
             self.td_inmotio_loc, self.md_inmotio_loc, verbose=False
         )
-
+        self.td_inmotio = TrackingData(
+            self.td_inmotio,
+            provider="inmotio",
+            frame_rate=1,
+        )
         self.ed_instat_loc = "tests/test_data/instat_ed_test.json"
         self.md_instat_loc = "tests/test_data/instat_md_test.json"
         self.ed_instat, self.md_instat, _ = load_instat_event_data(
@@ -330,12 +341,10 @@ class TestGetGame(unittest.TestCase):
 
         self.expected_game_inmotio_instat = Game(
             tracking_data=self.td_inmotio,
-            tracking_data_provider="inmotio",
             event_data=self.ed_instat,
             event_data_provider="instat",
             pitch_dimensions=self.md_inmotio.pitch_dimensions,
             periods=self.expected_periods_inmotio_instat,
-            frame_rate=self.md_inmotio.frame_rate,
             home_team_id=self.md_instat.home_team_id,
             home_formation=self.md_instat.home_formation,
             home_score=self.md_instat.home_score,
@@ -363,14 +372,18 @@ class TestGetGame(unittest.TestCase):
             check_quality=False,
         )
 
+        tracab_td = TrackingData(
+            TD_TRACAB,
+            provider="tracab",
+            frame_rate=MD_TRACAB.frame_rate,
+        )
+
         self.expected_game_tracab = Game(
-            tracking_data=TD_TRACAB,
-            tracking_data_provider="tracab",
+            tracking_data=tracab_td,
             event_data=pd.DataFrame(),
             event_data_provider=None,
             pitch_dimensions=MD_TRACAB.pitch_dimensions,
             periods=MD_TRACAB.periods_frames,
-            frame_rate=MD_TRACAB.frame_rate,
             home_team_id=MD_TRACAB.home_team_id,
             home_formation=MD_TRACAB.home_formation,
             home_score=MD_TRACAB.home_score,
@@ -460,13 +473,11 @@ class TestGetGame(unittest.TestCase):
         game.pitch_dimensions = [100.0, 50.0]
 
         expected_game_opta = Game(
-            tracking_data=pd.DataFrame(),
-            tracking_data_provider=None,
+            tracking_data=TrackingData(),
             event_data=ED_OPTA,
             event_data_provider="opta",
             pitch_dimensions=MD_OPTA.pitch_dimensions,
             periods=MD_OPTA.periods_frames,
-            frame_rate=MD_OPTA.frame_rate,
             home_team_id=MD_OPTA.home_team_id,
             home_formation=MD_OPTA.home_formation,
             home_score=MD_OPTA.home_score,
@@ -562,13 +573,11 @@ class TestGetGame(unittest.TestCase):
 
     def test_get_game_sportec(self):
         expected_game_sportec = Game(
-            tracking_data=pd.DataFrame(),
-            tracking_data_provider=None,
+            tracking_data=TrackingData(),
             event_data=SPORTEC_EVENT_DATA.copy(),
             event_data_provider="sportec",
             pitch_dimensions=SPORTEC_METADATA_ED.pitch_dimensions,
             periods=SPORTEC_METADATA_ED.periods_frames,
-            frame_rate=SPORTEC_METADATA_ED.frame_rate,
             home_team_id=SPORTEC_METADATA_ED.home_team_id,
             home_formation=SPORTEC_METADATA_ED.home_formation,
             home_score=SPORTEC_METADATA_ED.home_score,
@@ -596,13 +605,11 @@ class TestGetGame(unittest.TestCase):
 
     def test_get_game_statsbomb(self):
         expected_game_statsbomb = Game(
-            tracking_data=pd.DataFrame(),
-            tracking_data_provider=None,
+            tracking_data=TrackingData(),
             event_data=ED_STATSBOMB,
             event_data_provider="statsbomb",
             pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
             periods=MD_STATSBOMB.periods_frames,
-            frame_rate=MD_STATSBOMB.frame_rate,
             home_team_id=MD_STATSBOMB.home_team_id,
             home_formation=MD_STATSBOMB.home_formation,
             home_score=MD_STATSBOMB.home_score,
@@ -648,9 +655,13 @@ class TestGetGame(unittest.TestCase):
         )
         game = get_open_game()
 
+        td = TrackingData(
+            TRACAB_SPORTEC_XML_TD,
+            provider="sportec",
+            frame_rate=SPORTEC_METADATA_TD.frame_rate,
+        )
         expected_game_sportec = Game(
-            tracking_data=TRACAB_SPORTEC_XML_TD.copy(),
-            tracking_data_provider="sportec",
+            tracking_data=td,
             event_data=SPORTEC_EVENT_DATA.copy(),
             event_data_provider="sportec",
             pitch_dimensions=SPORTEC_METADATA_ED.pitch_dimensions,
@@ -663,7 +674,6 @@ class TestGetGame(unittest.TestCase):
                 right_index=True,
                 how="outer",
             ),
-            frame_rate=SPORTEC_METADATA_TD.frame_rate,
             home_team_id=SPORTEC_METADATA_ED.home_team_id,
             home_formation=SPORTEC_METADATA_ED.home_formation,
             home_score=SPORTEC_METADATA_ED.home_score,

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy import get_game
+from databallpy.data_parsers.tracking_data_parsers import TrackingData
 from databallpy.utils.anonymise_game import (
     add_new_pseudonym,
     anonymise_datetime,
@@ -49,6 +50,7 @@ class TestAnonymiseGame(unittest.TestCase):
         tracking_data["home_1_y"] = [0, 0, 0, 0, 0]
         tracking_data["away_2_x"] = [10, 10, 10, 10, 10]
         tracking_data["away_2_y"] = [10, 10, 12, 120, 12]
+        tracking_data = TrackingData(tracking_data)
         self.game.tracking_data = tracking_data.copy()
 
     @patch("databallpy.utils.anonymise_game.anonymise_players")
@@ -398,7 +400,7 @@ class TestAnonymiseGame(unittest.TestCase):
     def test_anonymise_datetime_no_tracking_data(self):
         input_game = self.game.copy()
         input_game._is_synchronised = False
-        input_game.tracking_data = pd.DataFrame()
+        input_game.tracking_data = TrackingData()
         input_game.periods.drop(
             columns=[
                 "start_frame",

@@ -5,18 +5,33 @@ import warnings
 
 from databallpy.utils.constants import MISSING_INT
 from databallpy.features.differentiate import _differentiate
-from databallpy.features.player_possession import get_distance_between_ball_and_players, get_initial_possessions, get_start_end_idxs, get_valid_gains, get_ball_losses_and_updated_gain_idxs
-from databallpy.features.covered_distance import _validate_inputs, _parse_intervals, _add_covered_distance_interval
+from databallpy.features.player_possession import (
+    get_distance_between_ball_and_players,
+    get_initial_possessions,
+    get_start_end_idxs,
+    get_valid_gains,
+    get_ball_losses_and_updated_gain_idxs,
+)
+from databallpy.features.covered_distance import (
+    _validate_inputs,
+    _parse_intervals,
+    _add_covered_distance_interval,
+)
 from databallpy.features.filters import savgol_filter
 from databallpy.features.feature_utils import _check_column_ids
-from databallpy.features.pressure import calculate_l, calculate_variable_dfront, calculate_z
+from databallpy.features.pressure import (
+    calculate_l,
+    calculate_variable_dfront,
+    calculate_z,
+)
 from databallpy.features.pitch_control import get_pitch_control_single_frame
 from scipy.spatial import KDTree
 
 
-
 class TrackingData(pd.DataFrame):
-    def __init__(self, *args, provider:str, frame_rate: int, **kwargs):
+    def __init__(
+        self, *args, provider: str = "", frame_rate: int = MISSING_INT, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.provider = provider
         self.frame_rate = frame_rate
@@ -24,7 +39,10 @@ class TrackingData(pd.DataFrame):
     @property
     def _constructor(self):
         def wrapper(*args, provider=self.provider, frame_rate=self.frame_rate, **kwargs):
-            return TrackingData(*args, provider=provider, frame_rate=frame_rate, **kwargs)
+            return TrackingData(
+                *args, provider=provider, frame_rate=frame_rate, **kwargs
+            )
+
         return wrapper
 
     def add_velocity(
@@ -35,7 +53,7 @@ class TrackingData(pd.DataFrame):
         polyorder: int = 2,
         max_velocity: float = np.inf,
     ) -> None:
-        """Function that adds velocity columns to the tracking data based on the position 
+        """Function that adds velocity columns to the tracking data based on the position
            columns
 
         Args:
@@ -82,7 +100,6 @@ class TrackingData(pd.DataFrame):
             inplace=True,
         )
 
-
     def add_acceleration(
         self,
         column_ids: str | list[str],
@@ -91,7 +108,7 @@ class TrackingData(pd.DataFrame):
         polyorder: int = 2,
         max_acceleration: float = np.inf,
     ) -> None:
-        """Function that adds acceleration columns to the tracking data based on the 
+        """Function that adds acceleration columns to the tracking data based on the
            position columns
 
         Args:
@@ -183,7 +200,9 @@ class TrackingData(pd.DataFrame):
 
         distances_df = get_distance_between_ball_and_players(self)
         initial_possession = get_initial_possessions(pz_radius, distances_df)
-        possession_start_idxs, possession_end_idxs = get_start_end_idxs(initial_possession)
+        possession_start_idxs, possession_end_idxs = get_start_end_idxs(
+            initial_possession
+        )
         valid_gains = get_valid_gains(
             self,
             possession_start_idxs,
@@ -214,7 +233,7 @@ class TrackingData(pd.DataFrame):
         acceleration_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] = (),
         start_idx: int | None = None,
         end_idx: int | None = None,
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """Calculates the distance covered based on the velocity magnitude at each frame.
             This function requires the `add_velocity` function to be called. Optionally,
             it can also calculate the distance covered within specified velocity and/or
@@ -303,7 +322,7 @@ class TrackingData(pd.DataFrame):
                 )
 
         return pd.DataFrame(result_dict, index=column_ids)
-    
+
     def filter_tracking_data(
         self,
         column_ids: str | list[str],
@@ -384,10 +403,12 @@ class TrackingData(pd.DataFrame):
         :returns: numpy array with pressure on player of the specified frame
         """
         if index > len(self) or index < 0:
-            raise ValueError(f"index should be greater than 0 and smaller the number of frames, which is {len(self)}. The value {index} doesn't satisfy these conditions.")
-        
+            raise ValueError(
+                f"index should be greater than 0 and smaller the number of frames, which is {len(self)}. The value {index} doesn't satisfy these conditions."
+            )
+
         td_frame = self.iloc[index, :]
-        
+
         if d_front == "variable":
             d_front = calculate_variable_dfront(
                 td_frame, column_id, pitch_length=pitch_size[0]
@@ -469,7 +490,9 @@ class TrackingData(pd.DataFrame):
         end_idx = self.index[-1] if end_idx is None else end_idx
         tracking_data = self.loc[start_idx:end_idx]
 
-        pitch_control = np.zeros((len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32)
+        pitch_control = np.zeros(
+            (len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32
+        )
 
         # precompute player ball distances
         col_ids = [
@@ -494,7 +517,7 @@ class TrackingData(pd.DataFrame):
                 player_ball_distances=player_ball_distances.loc[idx],
             )
         return np.array(pitch_control)
-    
+
     def get_approximate_voronoi(
         self,
         pitch_dimensions: list[float, float],
@@ -533,8 +556,12 @@ class TrackingData(pd.DataFrame):
             x_bins[:-1] + np.diff(x_bins) / 2, y_bins[:-1] + np.diff(y_bins) / 2
         )
 
-        all_distances = np.empty((len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32)
-        all_assigned_players = np.empty((len(tracking_data), n_y_bins, n_x_bins), dtype="U7")
+        all_distances = np.empty(
+            (len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32
+        )
+        all_assigned_players = np.empty(
+            (len(tracking_data), n_y_bins, n_x_bins), dtype="U7"
+        )
         for i, (_, frame) in enumerate(tracking_data.iterrows()):
             player_column_ids = np.array(
                 [
@@ -553,7 +580,9 @@ class TrackingData(pd.DataFrame):
             ).astype(np.float64)
 
             tree = KDTree(player_positions)
-            cell_centers = np.column_stack((cell_centers_x.ravel(), cell_centers_y.ravel()))
+            cell_centers = np.column_stack(
+                (cell_centers_x.ravel(), cell_centers_y.ravel())
+            )
             distances, nearest_player_indices = tree.query(cell_centers)
 
             all_assigned_players[i] = player_column_ids[nearest_player_indices].reshape(
@@ -566,7 +595,7 @@ class TrackingData(pd.DataFrame):
             all_assigned_players = all_assigned_players[0]
 
         return all_distances, all_assigned_players
-    
+
     def add_team_possession(
         self,
         event_data: pd.DataFrame,
@@ -596,9 +625,9 @@ class TrackingData(pd.DataFrame):
             )
         if home_team_id not in event_data.team_id.unique():
             raise ValueError(
-                "The home team ID is not in the event data, please check" " the home team ID"
+                "The home team ID is not in the event data, please check"
+                " the home team ID"
             )
-
 
         on_ball_events = ["pass", "dribble", "shot"]
         current_team_id = event_data.loc[

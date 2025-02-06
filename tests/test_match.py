@@ -29,12 +29,10 @@ class TestMatch(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             match = Match(
                 tracking_data=self.game.tracking_data,
-                tracking_data_provider="tracab",
                 event_data=self.game.event_data,
                 event_data_provider="opta",
                 pitch_dimensions=self.game.pitch_dimensions,
                 periods=self.game.periods,
-                frame_rate=self.game.frame_rate,
                 home_team_id=self.game.home_team_id,
                 home_formation=self.game.home_formation,
                 home_score=self.game.home_score,

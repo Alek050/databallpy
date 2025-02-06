@@ -382,7 +382,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
-            + dt.timedelta(milliseconds=int(x / self.game_to_sync.frame_rate * 1000))
+            + dt.timedelta(
+                milliseconds=int(x / self.game_to_sync.tracking_data.frame_rate * 1000)
+            )
             for x in tracking_data["frame"]
         ]
         tracking_data["ball_acceleration_sqrt"] = 5.0
@@ -409,7 +411,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
-            + dt.timedelta(milliseconds=int(x / self.game_to_sync.frame_rate * 1000))
+            + dt.timedelta(
+                milliseconds=int(x / self.game_to_sync.tracking_data.frame_rate * 1000)
+            )
             for x in tracking_data["frame"]
         ]
         tracking_data.reset_index(inplace=True)
@@ -438,7 +442,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         ).tz_localize("Europe/Amsterdam")
         tracking_data["datetime"] = [
             date
-            + dt.timedelta(milliseconds=int(x / self.game_to_sync.frame_rate * 1000))
+            + dt.timedelta(
+                milliseconds=int(x / self.game_to_sync.tracking_data.frame_rate * 1000)
+            )
             for x in tracking_data["frame"]
         ]
         tracking_data["ball_acceleration_sqrt"] = 5.0

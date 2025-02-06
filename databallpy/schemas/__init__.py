@@ -1,1 +1,2 @@
 from databallpy.schemas.event_data import EventDataSchema
+from databallpy.schemas.tracking_data import TrackingDataSchema
