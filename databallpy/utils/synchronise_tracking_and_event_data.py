@@ -16,6 +16,10 @@ from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
 
+FRAME_UNASSIGNED = 3
+EVENT_FRAME_MATCH = 2
+EVENT_UNASSIGNED = 4
+
 
 @logging_wrapper(__file__)
 def synchronise_tracking_and_event_data(
@@ -26,6 +30,7 @@ def synchronise_tracking_and_event_data(
     ],
     cost_functions: dict = {},
     n_batches: int | str = "smart",
+    optimize: bool = True,
     verbose: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Function that synchronises tracking and event data using Needleman-Wunsch
@@ -54,6 +59,9 @@ def synchronise_tracking_and_event_data(
             transition of the similarity matrix is always between two periods of
             active play. This method is optimised for events that are in active play,
             other events, such as yellow cards might not be perfectly synced.
+        optimize (bool, optional): Whether or not to optimize the algorithm. If
+                errors or warnings are raised, try if setting to False works. Defaults
+                to True.
         verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
 
@@ -119,7 +127,7 @@ def synchronise_tracking_and_event_data(
                 all_events,
                 cost_functions,
             )
-            event_frame_dict = _needleman_wunsch(sim_mat)
+            event_frame_dict = _needleman_wunsch(sim_mat, enable_optimization=optimize)
 
             # assign events to tracking data frames
             for event, frame in event_frame_dict.items():
@@ -202,7 +210,10 @@ def _create_sim_mat(
 
 @logging_wrapper(__file__)
 def _needleman_wunsch(
-    sim_mat: np.ndarray, gap_event: int = -10, gap_frame: int = 0
+    sim_mat,
+    enable_optimization=True,
+    gap_event=-10,
+    gap_frame=0.2,
 ) -> dict:
     """
     Function that calculates the optimal alignment between events and frames
@@ -214,77 +225,100 @@ def _needleman_wunsch(
         gap_event (int): penalty for leaving an event unassigned to a frame
             (not allowed), defaults to -10
         gap_frame (int): penalty for leaving a frame unassigned to a penalty
-            (very common), defaults to 0
+            (very common), defaults to 0.2
 
     Returns:
        event_frame_dict (dict): dictionary with events as keys and frames as values
     """
     n_frames, n_events = np.shape(sim_mat)
 
-    function_matrix = np.zeros((n_frames + 1, n_events + 1))
+    function_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.float32)
     function_matrix[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
     function_matrix[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
 
-    pointer_matrix = np.zeros((n_frames + 1, n_events + 1))
+    pointer_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.int16)
     pointer_matrix[:, 0] = 3
     pointer_matrix[0, :] = 4
 
-    t = np.zeros(3)
-    for i in range(n_frames):
-        for j in range(n_events):
-            t[0] = function_matrix[i, j] + sim_mat[i, j]
-            t[1] = function_matrix[i, j + 1] + gap_frame  # top + gap frame
-            t[2] = function_matrix[i + 1, j] + gap_event  # left + gap event
+    frames_high_sim_mat = np.where(sim_mat[:, 0] > 0.5)[0]
+    for event_index in range(n_events):
+        start_frame = (
+            0
+            if event_index == 0 or len(frames_high_sim_mat) == 0
+            else max(0, frames_high_sim_mat[0] - 1)
+        )
+        if event_index + 1 == n_events:
+            end_frame = n_frames
+        else:
+            frames_high_sim_mat = np.where(sim_mat[:, event_index + 1] > 0.5)[0]
+            end_frame = (
+                n_frames
+                if len(frames_high_sim_mat) == 0 or event_index >= n_events - 2
+                else min(n_frames, frames_high_sim_mat[-1] + 1)
+            )
+        start_frame, end_frame = (
+            (0, n_frames) if not enable_optimization else (start_frame, end_frame)
+        )
 
-            # manually calculate tmax instead of using np.max() since it is
-            # faster when using small arrays. On top of that, we can now fill in
-            # the pointer matrix at the same time.
-            if t[0] >= t[1] and t[0] >= t[2]:  # t[0] = tmax thus whe got a match
-                tmax = t[0]
-                pointer_matrix[i + 1, j + 1] += 2
-            elif (
-                t[1] >= t[0] and t[1] >= t[2]
-            ):  # t[1] = tmax thus we got a frame unassigned
-                tmax = t[1]
-                pointer_matrix[i + 1, j + 1] += 3
-            else:  # t[2] = tmax thus we got an event unassigned
-                tmax = t[2]
-                pointer_matrix[i + 1, j + 1] += 4
+        for frame_index in range(start_frame, end_frame):
+            match = (
+                function_matrix[frame_index, event_index]
+                + sim_mat[frame_index, event_index]
+            )
+            gap_f = (
+                function_matrix[frame_index, event_index + 1] + gap_frame
+            )  # top + gap frame
+            gap_e = (
+                function_matrix[frame_index + 1, event_index] + gap_event
+            )  # left + gap event
 
-            function_matrix[i + 1, j + 1] = tmax
+            # Determine the maximum value and set the pointer matrix accordingly
+            if gap_f >= match and gap_f >= gap_e:
+                function_matrix[frame_index + 1, event_index + 1] = gap_f
+                pointer_matrix[frame_index + 1, event_index + 1] = FRAME_UNASSIGNED
+            elif match >= gap_e:
+                function_matrix[frame_index + 1, event_index + 1] = match
+                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_FRAME_MATCH
+            else:
+                function_matrix[frame_index + 1, event_index + 1] = gap_e
+                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_UNASSIGNED
 
-    # Trace through an optimal alignment.
-    i = n_frames
-    j = n_events
-    frames = []
-    events = []
-    while i > 0 or j > 0:
-        if pointer_matrix[i, j] in [2, 5, 6, 9]:  # 2 was added, match
-            frames.append(i)
-            events.append(j)
-            i -= 1
-            j -= 1
-        elif pointer_matrix[i, j] in [3, 5, 7, 9]:  # 3 was added, frame unassigned
-            frames.append(i)
-            events.append(0)
-            i -= 1
-        elif pointer_matrix[i, j] in [4, 6, 7, 9]:  # 4 was added, event unassigned
+    # Solve
+    frame_index = n_frames
+    event_index = n_events
+    frames = np.zeros(n_frames, dtype=np.int32)
+    events = np.zeros(n_frames, dtype=np.int32)
+    count = 0
+    while frame_index > 0 or event_index > 0:
+        if (
+            pointer_matrix[frame_index, event_index] == FRAME_UNASSIGNED
+        ):  # frame unassigned
+            frames[count] = frame_index
+            frame_index -= 1
+        elif pointer_matrix[frame_index, event_index] == EVENT_FRAME_MATCH:  # match
+            frames[count] = frame_index
+            events[count] = event_index
+            frame_index -= 1
+            event_index -= 1
+        elif (
+            pointer_matrix[frame_index, event_index] == EVENT_UNASSIGNED
+        ):  # event unassigned
             raise ValueError(
                 "An event was left unassigned, check your gap penalty values"
             )
         else:
             raise ValueError(
                 f"The algorithm got stuck due to an unexpected "
-                f"value of P[{i}, {j}]: {pointer_matrix[i, j]}"
+                f"value of P[{frame_index}, {event_index}]: {pointer_matrix[frame_index, event_index]}"
             )
-
+        count += 1
     frames = frames[::-1]
     events = events[::-1]
 
-    idx_events = [idx for idx, i in enumerate(events) if i > 0]
+    idx_events = np.where(events > 0)[0]
     event_frame_dict = {}
-    for i in idx_events:
-        event_frame_dict[events[i] - 1] = frames[i] - 1
+    for frame_index in idx_events:
+        event_frame_dict[events[frame_index] - 1] = frames[frame_index] - 1
 
     return event_frame_dict
 
