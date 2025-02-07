@@ -1,6 +1,5 @@
 import inspect
 
-import numba
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -210,7 +209,6 @@ def _create_sim_mat(
 
 
 @logging_wrapper(__file__)
-@numba.njit(cache=True)
 def _needleman_wunsch(
     sim_mat,
     enable_optimization=True,
