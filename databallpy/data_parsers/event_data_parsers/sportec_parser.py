@@ -115,7 +115,7 @@ def load_sportec_open_event_data(
 
     Reference:
         Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
-        dataset of synchronized spatiotemporal and event data in elite soccer. 
+        dataset of synchronized spatiotemporal and event data in elite soccer.
 
     """
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
