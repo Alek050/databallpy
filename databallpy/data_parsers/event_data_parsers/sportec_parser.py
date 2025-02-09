@@ -112,6 +112,11 @@ def load_sportec_open_event_data(
     Returns:
         tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
             metadata, and the databallpy events dictionary.
+
+    Reference:
+        Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
+        dataset of synchronized spatiotemporal and event data in elite soccer.
+
     """
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
     save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", game_id)
