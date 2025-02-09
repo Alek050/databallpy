@@ -28,6 +28,8 @@ from tests.expected_outcomes import (
     SHOT_EVENTS_OPTA,
 )
 
+ED_OPTA = pd.DataFrame(ED_OPTA.copy())
+
 
 class TestOptaParser(unittest.TestCase):
     def setUp(self):

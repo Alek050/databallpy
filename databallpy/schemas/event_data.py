@@ -34,3 +34,24 @@ class EventDataSchema(pa.DataFrameModel):
     )
     to_player_name: Optional[pa.typing.Series[str]] = pa.Field(nullable=True)
     event_type_id: Optional[pa.typing.Series[int]] = pa.Field(ge=-1)
+
+
+class EventData(pd.DataFrame):
+    def __init__(self, *args, provider: str = "unspecified", **kwargs):
+        super().__init__(*args, **kwargs)
+        self._provider = provider
+
+    @property
+    def _constructor(self):
+        def wrapper(*args, **kwargs):
+            return EventData(*args, provider=self.provider, **kwargs)
+
+        return wrapper
+
+    @property
+    def provider(self):
+        return self._provider
+
+    @provider.setter
+    def provider(self, _):
+        raise AttributeError("Cannot set provider attribute of event data")

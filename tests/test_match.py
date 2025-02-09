@@ -31,7 +31,6 @@ class TestMatch(unittest.TestCase):
                 tracking_data=self.game.tracking_data,
                 tracking_data_provider="tracab",
                 event_data=self.game.event_data,
-                event_data_provider="opta",
                 pitch_dimensions=self.game.pitch_dimensions,
                 periods=self.game.periods,
                 frame_rate=self.game.frame_rate,

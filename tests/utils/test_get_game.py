@@ -15,6 +15,7 @@ from databallpy.data_parsers.tracking_data_parsers import (
     load_tracab_tracking_data,
 )
 from databallpy.game import Game
+from databallpy.schemas.event_data import EventData
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_game import (
     get_game,
@@ -74,7 +75,7 @@ class TestGetGame(unittest.TestCase):
             f7_loc=self.md_opta_loc, f24_loc=self.ed_opta_loc
         )
 
-        self.corrected_ed = self.ed_opta.copy()
+        self.corrected_ed = EventData(self.ed_opta.copy(), provider="opta")
         self.corrected_ed["start_x"] *= (
             100.0 / 106.0
         )  # pitch dimensions of td and ed metadata
@@ -166,7 +167,6 @@ class TestGetGame(unittest.TestCase):
             tracking_data=self.td_tracab,
             tracking_data_provider=self.td_provider,
             event_data=self.corrected_ed,
-            event_data_provider=self.ed_provider,
             pitch_dimensions=self.md_tracab.pitch_dimensions,
             periods=self.expected_periods_tracab_opta,
             frame_rate=self.md_tracab.frame_rate,
@@ -213,8 +213,7 @@ class TestGetGame(unittest.TestCase):
         self.expected_game_metrica = Game(
             tracking_data=self.td_metrica,
             tracking_data_provider="metrica",
-            event_data=self.ed_metrica,
-            event_data_provider="metrica",
+            event_data=EventData(self.ed_metrica, provider="metrica"),
             pitch_dimensions=self.md_metrica.pitch_dimensions,
             periods=self.md_metrica.periods_frames,
             frame_rate=self.md_metrica.frame_rate,
@@ -331,8 +330,7 @@ class TestGetGame(unittest.TestCase):
         self.expected_game_inmotio_instat = Game(
             tracking_data=self.td_inmotio,
             tracking_data_provider="inmotio",
-            event_data=self.ed_instat,
-            event_data_provider="instat",
+            event_data=EventData(self.ed_instat, provider="instat"),
             pitch_dimensions=self.md_inmotio.pitch_dimensions,
             periods=self.expected_periods_inmotio_instat,
             frame_rate=self.md_inmotio.frame_rate,
@@ -366,8 +364,7 @@ class TestGetGame(unittest.TestCase):
         self.expected_game_tracab = Game(
             tracking_data=TD_TRACAB,
             tracking_data_provider="tracab",
-            event_data=pd.DataFrame(),
-            event_data_provider=None,
+            event_data=EventData(),
             pitch_dimensions=MD_TRACAB.pitch_dimensions,
             periods=MD_TRACAB.periods_frames,
             frame_rate=MD_TRACAB.frame_rate,
@@ -463,7 +460,6 @@ class TestGetGame(unittest.TestCase):
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=ED_OPTA,
-            event_data_provider="opta",
             pitch_dimensions=MD_OPTA.pitch_dimensions,
             periods=MD_OPTA.periods_frames,
             frame_rate=MD_OPTA.frame_rate,
@@ -565,7 +561,6 @@ class TestGetGame(unittest.TestCase):
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=SPORTEC_EVENT_DATA.copy(),
-            event_data_provider="sportec",
             pitch_dimensions=SPORTEC_METADATA_ED.pitch_dimensions,
             periods=SPORTEC_METADATA_ED.periods_frames,
             frame_rate=SPORTEC_METADATA_ED.frame_rate,
@@ -599,7 +594,6 @@ class TestGetGame(unittest.TestCase):
             tracking_data=pd.DataFrame(),
             tracking_data_provider=None,
             event_data=ED_STATSBOMB,
-            event_data_provider="statsbomb",
             pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
             periods=MD_STATSBOMB.periods_frames,
             frame_rate=MD_STATSBOMB.frame_rate,
@@ -652,7 +646,6 @@ class TestGetGame(unittest.TestCase):
             tracking_data=TRACAB_SPORTEC_XML_TD.copy(),
             tracking_data_provider="sportec",
             event_data=SPORTEC_EVENT_DATA.copy(),
-            event_data_provider="sportec",
             pitch_dimensions=SPORTEC_METADATA_ED.pitch_dimensions,
             periods=pd.merge(
                 SPORTEC_METADATA_TD.periods_frames,

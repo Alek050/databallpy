@@ -26,7 +26,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.game import Game
-from databallpy.schemas import EventDataSchema
+from databallpy.schemas.event_data import EventData, EventDataSchema
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
@@ -230,8 +230,9 @@ def get_game(
     game = Game(
         tracking_data=tracking_data if uses_tracking_data else pd.DataFrame(),
         tracking_data_provider=tracking_data_provider if uses_tracking_data else None,
-        event_data=event_data if uses_event_data else pd.DataFrame(),
-        event_data_provider=event_data_provider if uses_event_data else None,
+        event_data=EventData(event_data, provider=event_data_provider)
+        if uses_event_data
+        else EventData({}, provider="unspecified"),
         pitch_dimensions=tracking_metadata.pitch_dimensions
         if uses_tracking_data
         else event_metadata.pitch_dimensions,
@@ -495,8 +496,7 @@ def get_open_game(
     game = Game(
         tracking_data=tracking_data,
         tracking_data_provider=provider,
-        event_data=event_data,
-        event_data_provider=provider,
+        event_data=EventData(event_data, provider=provider),
         pitch_dimensions=metadata.pitch_dimensions,
         periods=merged_periods,
         frame_rate=metadata.frame_rate,

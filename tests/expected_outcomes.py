@@ -5,6 +5,7 @@ import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
+from databallpy.schemas.event_data import EventData
 from databallpy.utils.constants import MISSING_INT
 
 TD_TRACAB = pd.DataFrame(
@@ -151,7 +152,7 @@ def opta_raw_to_scaled(val, new_dim, is_home):
     return new_val
 
 
-ED_OPTA = pd.DataFrame(
+ED_OPTA = EventData(
     {
         "event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
         "databallpy_event": [
@@ -292,7 +293,8 @@ ED_OPTA = pd.DataFrame(
             "attempt saved",
         ],
         "event_type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 16, 15],
-    }
+    },
+    provider="opta",
 )
 
 ED_OPTA["datetime"] = pd.to_datetime(ED_OPTA["datetime"]).dt.tz_localize(
@@ -620,7 +622,7 @@ TD_METRICA = pd.DataFrame(
     }
 )
 
-ED_METRICA = pd.DataFrame(
+ED_METRICA = EventData(
     {
         "event_id": [0, 1, 2, 3, 4, 5, 6, 7],
         "databallpy_event": [
@@ -705,7 +707,8 @@ ED_METRICA = pd.DataFrame(
             pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
             pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
         ],
-    }
+    },
+    provider="metrica",
 )
 ED_METRICA["is_successful"] = ED_METRICA["is_successful"].astype("boolean")
 
@@ -1131,7 +1134,7 @@ MD_INSTAT = Metadata(
     country="Netherlands",
 )
 
-ED_INSTAT = pd.DataFrame(
+ED_INSTAT = EventData(
     {
         "event_id": [6, 7, 8, 9],
         "databallpy_event": ["pass", "pass", None, None],
@@ -1160,7 +1163,8 @@ ED_INSTAT = pd.DataFrame(
         ],
         "event_type_id": [1012, 1011, 2010, 2011],
         "player_name": ["Player 2", "Player 1", "Player 11", None],
-    }
+    },
+    provider="instat",
 )
 ED_INSTAT["is_successful"] = ED_INSTAT["is_successful"].astype("boolean")
 
@@ -1277,7 +1281,7 @@ MD_SCISPORTS = Metadata(
     periods_changed_playing_direction=None,
 )
 
-ED_SCISPORTS = pd.DataFrame(
+ED_SCISPORTS = EventData(
     {
         "event_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
         "databallpy_event": [
@@ -1432,7 +1436,8 @@ ED_SCISPORTS = pd.DataFrame(
             "defensive_duel",
             "foul",
         ],
-    }
+    },
+    provider="scisports",
 )
 ED_SCISPORTS["is_successful"] = ED_SCISPORTS["is_successful"].astype("boolean")
 
@@ -1523,7 +1528,7 @@ SPORTEC_METADATA_ED.periods_frames["end_datetime_ed"] = pd.to_datetime(
 ).dt.tz_convert("Europe/Berlin")
 SPORTEC_METADATA_ED.frame_rate = MISSING_INT
 
-SPORTEC_EVENT_DATA = pd.DataFrame(
+SPORTEC_EVENT_DATA = EventData(
     {
         "event_id": [0, 1, 2, 3, 4, 5],
         "databallpy_event": ["pass", "shot", "pass", None, "dribble", None],
@@ -1560,7 +1565,8 @@ SPORTEC_EVENT_DATA = pd.DataFrame(
             "dribbledAround",
             "OtherBallAction",
         ],
-    }
+    },
+    provider="sportec",
 )
 SPORTEC_EVENT_DATA["is_successful"] = SPORTEC_EVENT_DATA["is_successful"].astype(
     "boolean"
@@ -1785,7 +1791,7 @@ MD_STATSBOMB = Metadata(
     country="Spain",
 )
 
-ED_STATSBOMB = pd.DataFrame(
+ED_STATSBOMB = EventData(
     {
         "event_id": [0, 1, 2, 3, 4],
         "databallpy_event": ["pass", None, "shot", "dribble", "pass"],
@@ -1827,7 +1833,8 @@ ED_STATSBOMB = pd.DataFrame(
             "Deportivo Alavés",
             "Deportivo Alavés",
         ],
-    }
+    },
+    provider="statsbomb",
 )
 ED_STATSBOMB["is_successful"] = ED_STATSBOMB["is_successful"].astype("boolean")
 

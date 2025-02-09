@@ -13,6 +13,7 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
+from databallpy.schemas.event_data import EventData
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.game_utils import (
@@ -72,8 +73,7 @@ class Game:
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game.
         tracking_data_provider (str): Provider of the tracking data.
-        event_data (pd.DataFrame): Event data of the game.
-        event_data_provider (str): Provider of the event data.
+        event_data (EventData[pd.DataFrame]): Event data of the game.
         pitch_dimensions (Tuple): The size of the pitch in meters in x and y direction.
         periods (pd.DataFrame): The start and end idicators of all periods.
         frame_rate (int): The frequency of the tracking data.
@@ -98,8 +98,7 @@ class Game:
 
     tracking_data: pd.DataFrame
     tracking_data_provider: str
-    event_data: pd.DataFrame
-    event_data_provider: str
+    event_data: EventData
     pitch_dimensions: list[float, float]
     periods: pd.DataFrame
     frame_rate: int
@@ -139,6 +138,16 @@ class Game:
 
     def __post_init__(self):
         check_inputs_game_object(self)
+        self._event_data_provider = self.event_data.provider
+
+    @property
+    def event_data_provider(self) -> str:
+        warnings.warn(
+            "`game.event_data_provider` is deprecated and will be removed in version 0.8.0. Please use `game.event_data.provider` instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._event_data_provider
 
     @property
     def tracking_timestamp_is_precise(self) -> bool:
@@ -814,9 +823,9 @@ def check_inputs_game_object(game: Game):
             raise ValueError("datetime column in tracking data should have a timezone")
 
     # event_data
-    if not isinstance(game.event_data, pd.DataFrame):
+    if not isinstance(game.event_data, EventData):
         raise TypeError(
-            f"event data should be a pandas df, not a {type(game.event_data)}"
+            f"event data should be a EventData class, not a {type(game.event_data)}"
         )
     if len(game.event_data) > 0:
         for col in [
@@ -842,11 +851,11 @@ def check_inputs_game_object(game: Game):
         if game.event_data["datetime"].dt.tz is None:
             raise ValueError("datetime column in event_data should have a timezone")
 
-        # event_data_provider
-        if not isinstance(game.event_data_provider, str):
+        # event_data.provider
+        if not isinstance(game.event_data.provider, str):
             raise TypeError(
                 "event data provider should be a string, not a "
-                f"{type(game.event_data_provider)}"
+                f"{type(game.event_data.provider)}"
             )
 
     # pitch_dimensions
