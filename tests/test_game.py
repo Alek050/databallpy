@@ -4,6 +4,7 @@ import unittest
 import pandas as pd
 
 from databallpy.game import Game
+from databallpy.schemas.event_data import EventData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.utils.warnings import DataBallPyWarning
@@ -28,7 +29,6 @@ class TestGame(unittest.TestCase):
         ed_opta_loc = os.path.join(base_path, "f24_test.xml")
         md_opta_loc = os.path.join(base_path, "f7_test.xml")
         self.td_provider = "tracab"
-        self.ed_provider = "opta"
 
         self.expected_game_tracab_opta = get_game(
             tracking_data_loc=td_tracab_loc,
@@ -105,7 +105,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data="tracking_data",
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -127,7 +126,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -171,7 +169,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -192,7 +189,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data="event_data",
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -211,14 +207,14 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=pd.DataFrame(
+                event_data=EventData(
                     {
                         "event_id": [1],
                         "player": ["player_1"],
                         "databallpy_event": ["pass"],
-                    }
+                    },
+                    provider="opta",
                 ),
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -237,7 +233,7 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=pd.DataFrame(
+                event_data=EventData(
                     {
                         "event_id": [1],
                         "databallpy_event": ["pass"],
@@ -248,9 +244,9 @@ class TestGame(unittest.TestCase):
                         "start_y": [1],
                         "player_name": ["player_1"],
                         "datetime": ["2020-01-01 00:00:00"],  # not datetime object
-                    }
+                    },
+                    provider="opta",
                 ),
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -269,7 +265,7 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=pd.DataFrame(
+                event_data=EventData(
                     {
                         "event_id": [1],
                         "databallpy_event": ["pass"],
@@ -282,9 +278,9 @@ class TestGame(unittest.TestCase):
                         "datetime": pd.to_datetime(
                             ["2020-01-01 00:00:00"]
                         ),  # no timezone assigned
-                    }
+                    },
+                    provider="opta",
                 ),
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -304,8 +300,22 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=["opta"],
+                event_data=EventData(
+                    {
+                        "event_id": [1],
+                        "databallpy_event": ["pass"],
+                        "period_id": [1],
+                        "team_id": [1],
+                        "player_id": [1],
+                        "start_x": [1],
+                        "start_y": [1],
+                        "player_name": ["player_1"],
+                        "datetime": pd.to_datetime(
+                            ["2020-01-01 00:00:00"],
+                        ).tz_localize("UTC"),
+                    },
+                    provider=["opta"],
+                ),
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -326,7 +336,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions={1: 22, 2: 11},
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -346,7 +355,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=[10.0, 11.0, 12.0],
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -366,7 +374,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=[10, 11.0],
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -386,7 +393,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=[10.0, 68.0],
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -406,7 +412,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=[105.0, 101.0],
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -427,7 +432,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=[1, 2, 3, 4, 5],
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -447,7 +451,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=pd.DataFrame({"times": [1, 2, 3, 4, 5]}),
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -467,7 +470,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=pd.DataFrame({"period_id": [0, 1, 2, 3, 4]}),
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -487,7 +489,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=pd.DataFrame({"period_idw": [1, 1, 2, 3, 4, 5]}),
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -511,7 +512,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -532,7 +532,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=123.0,
@@ -553,7 +552,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -574,7 +572,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -594,7 +591,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -615,7 +611,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -635,7 +630,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -656,7 +650,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -676,7 +669,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -700,7 +692,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -723,7 +714,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=td_changed,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -745,7 +735,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=td_changed,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -766,7 +755,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -786,7 +774,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -807,7 +794,6 @@ class TestGame(unittest.TestCase):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -895,6 +881,11 @@ class TestGame(unittest.TestCase):
             assert self.expected_game_tracab_opta.away_players_column_ids() == [
                 "away_17",
             ]
+
+    def test_game_event_data_provider_depricated(self):
+        game = self.expected_game_tracab_opta.copy()
+        with self.assertWarns(DeprecationWarning):
+            assert game.event_data_provider == game.event_data.provider
 
     def test_game_get_column_ids(self):
         game = self.expected_game_tracab_opta.copy()

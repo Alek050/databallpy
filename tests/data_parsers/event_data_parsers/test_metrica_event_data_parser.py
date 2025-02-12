@@ -19,6 +19,8 @@ from tests.expected_outcomes import (
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW
 
+ED_METRICA = pd.DataFrame(ED_METRICA.copy())
+
 
 class TestMetricaEventDataParser(unittest.TestCase):
     def setUp(self):

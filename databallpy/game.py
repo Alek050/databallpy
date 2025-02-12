@@ -14,6 +14,7 @@ from databallpy.events import (
     ShotEvent,
 )
 from databallpy.data_parsers.tracking_data_parsers.tracking_data import TrackingData
+from databallpy.schemas.event_data import EventData
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.game_utils import (
@@ -72,8 +73,7 @@ class Game:
 
     Args:
         tracking_data (TrackingData): Tracking data of the game.
-        event_data (pd.DataFrame): Event data of the game.
-        event_data_provider (str): Provider of the event data.
+        event_data (EventData[pd.DataFrame]): Event data of the game.
         pitch_dimensions (Tuple): The size of the pitch in meters in x and y direction.
         periods (pd.DataFrame): The start and end idicators of all periods.
         home_team_id (int): The id of the home team.
@@ -96,8 +96,7 @@ class Game:
     """
 
     tracking_data: TrackingData
-    event_data: pd.DataFrame
-    event_data_provider: str
+    event_data: EventData
     pitch_dimensions: list[float, float]
     periods: pd.DataFrame
     home_team_id: int
@@ -136,6 +135,16 @@ class Game:
 
     def __post_init__(self):
         check_inputs_game_object(self)
+        self._event_data_provider = self.event_data.provider
+
+    @property
+    def event_data_provider(self) -> str:
+        warnings.warn(
+            "`game.event_data_provider` is deprecated and will be removed in version 0.8.0. Please use `game.event_data.provider` instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._event_data_provider
 
     @property
     def tracking_timestamp_is_precise(self) -> bool:
@@ -578,6 +587,7 @@ class Game:
         n_batches: int | str = "smart",
         verbose: bool = True,
         offset: int = 1.0,
+        optimize: bool = True,
         cost_functions: dict = {},
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
@@ -597,6 +607,9 @@ class Game:
                 because this way the event is synced to the last frame the ball is close
                 to a player. Which often corresponds with the event (pass and shots).
                 Defaults to 1.0.
+            optimize (bool, optional): Whether or not to optimize the algorithm. If
+                errors or warnings are raised, try if setting to False works. Defaults
+                to True.
             cost_functions (dict, optional): Dictionary containing the cost functions
                 that are used to calculate the similarity between the tracking and event
                 data. The keys of the dictionary are the event types, the values are the
@@ -633,6 +646,7 @@ class Game:
             all_events=self.all_events,
             cost_functions=cost_functions,
             n_batches=n_batches,
+            optimize=optimize,
             verbose=verbose,
         )
         # update tracking and event data
@@ -738,9 +752,9 @@ def check_inputs_game_object(game: Game):
             )
 
     # event_data
-    if not isinstance(game.event_data, pd.DataFrame):
+    if not isinstance(game.event_data, EventData):
         raise TypeError(
-            f"event data should be a pandas df, not a {type(game.event_data)}"
+            f"event data should be a EventData class, not a {type(game.event_data)}"
         )
     if len(game.event_data) > 0:
         for col in [
@@ -766,11 +780,11 @@ def check_inputs_game_object(game: Game):
         if game.event_data["datetime"].dt.tz is None:
             raise ValueError("datetime column in event_data should have a timezone")
 
-        # event_data_provider
-        if not isinstance(game.event_data_provider, str):
+        # event_data.provider
+        if not isinstance(game.event_data.provider, str):
             raise TypeError(
                 "event data provider should be a string, not a "
-                f"{type(game.event_data_provider)}"
+                f"{type(game.event_data.provider)}"
             )
 
     # pitch_dimensions

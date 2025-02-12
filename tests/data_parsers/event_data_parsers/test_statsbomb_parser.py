@@ -22,6 +22,8 @@ from tests.expected_outcomes import (
     SHOT_EVENT_STATSBOMB,
 )
 
+ED_STATSBOMB = pd.DataFrame(ED_STATSBOMB.copy())
+
 
 class TestStatsbombParser(unittest.TestCase):
     def setUp(self):

@@ -107,6 +107,21 @@ game = get_open_game()
 >
 > If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 
+### Open Data
+A great project just released tracking and event data for open use. In total, 2 games of the 1st bundesliga and 5 of the 2nd bundesliga were open sourced [here](https://www.nature.com/articles/s41597-025-04505-y). The dataset was open sources via the CC-BY 4.0 licence, so please consider this when you make use of the data. The data is automatically downloaded and saved locally when you use the `get_open_game` function from DataBallPy. The match information can be imported from `databallpy.utils.constants.OPEN_GAME_IDS_DFL`:
+
+```python
+OPEN_GAME_IDS_DFL = {
+    "J03WMX": "1. FC Köln vs. FC Bayern München",
+    "J03WN1": "VfL Bochum 1848 vs. Bayer 04 Leverkusen",
+    "J03WPY": "Fortuna Düsseldorf vs. 1. FC Nürnberg",
+    "J03WOH": "Fortuna Düsseldorf vs. SSV Jahn Regensburg",
+    "J03WQQ": "Fortuna Düsseldorf vs. FC St. Pauli",
+    "J03WOY": "Fortuna Düsseldorf vs. F.C. Hansa Rostock",
+    "J03WR9": "Fortuna Düsseldorf vs. 1. FC Kaiserslautern",
+}
+```
+
 See [the documentation][docs-url] of the `Game` object and the [example usage][example-url] for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Game` object.
 
 ## Features

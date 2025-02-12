@@ -30,7 +30,6 @@ class TestMatch(unittest.TestCase):
             match = Match(
                 tracking_data=self.game.tracking_data,
                 event_data=self.game.event_data,
-                event_data_provider="opta",
                 pitch_dimensions=self.game.pitch_dimensions,
                 periods=self.game.periods,
                 home_team_id=self.game.home_team_id,

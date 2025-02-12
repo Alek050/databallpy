@@ -28,6 +28,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.game import Game
 from databallpy.schemas import EventDataSchema, TrackingDataSchema
+from databallpy.schemas.event_data import EventData, EventDataSchema
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
@@ -185,12 +186,6 @@ def get_game(
         )
         if not uses_event_data:
             databallpy_events = {}
-        tracking_data = TrackingData(
-            tracking_data,
-            provider=tracking_data_provider,
-            frame_rate=tracking_metadata.frame_rate,
-        )
-        TrackingDataSchema.validate(tracking_data)
         uses_tracking_data = True
 
     if not uses_event_data and not uses_tracking_data:
@@ -235,9 +230,16 @@ def get_game(
 
     LOGGER.info("Creating game object in get_game()")
     game = Game(
-        tracking_data=tracking_data if uses_tracking_data else TrackingData(),
-        event_data=event_data if uses_event_data else pd.DataFrame(),
-        event_data_provider=event_data_provider if uses_event_data else None,
+        tracking_data=TrackingData(
+            tracking_data,
+            provider=tracking_data_provider,
+            frame_rate=tracking_metadata.frame_rate,
+        )
+        if uses_tracking_data
+        else TrackingData(),
+        event_data=EventData(event_data, provider=event_data_provider)
+        if uses_event_data
+        else EventData({}, provider="unspecified"),
         pitch_dimensions=tracking_metadata.pitch_dimensions
         if uses_tracking_data
         else event_metadata.pitch_dimensions,
@@ -497,14 +499,11 @@ def get_open_game(
         axis=1,
     )
 
-    tracking_data = TrackingData(
-        tracking_data, provider=provider, frame_rate=metadata.frame_rate
-    )
-    TrackingDataSchema.validate(tracking_data)
     game = Game(
-        tracking_data=tracking_data,
-        event_data=event_data,
-        event_data_provider=provider,
+        tracking_data=TrackingData(
+            tracking_data, provider=provider, frame_rate=metadata.frame_rate
+        ),
+        event_data=EventData(event_data, provider=provider),
         pitch_dimensions=metadata.pitch_dimensions,
         periods=merged_periods,
         home_team_id=metadata.home_team_id,
