@@ -13,7 +13,7 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
-from databallpy.data_parsers.tracking_data_parsers.tracking_data import TrackingData
+from databallpy.schemas.tracking_data import TrackingData
 from databallpy.schemas.event_data import EventData
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
@@ -135,7 +135,27 @@ class Game:
 
     def __post_init__(self):
         check_inputs_game_object(self)
+        self._tracking_data_provider = self.tracking_data.provider
+        self._frame_rate = self.tracking_data.frame_rate
         self._event_data_provider = self.event_data.provider
+
+    @property
+    def tracking_data_provider(self) -> str:
+        warnings.warn(
+            "`game.tracking_data_provider` is deprecated and will be removed in version 0.8.0. Please use `game.tracking_data.provider` instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._tracking_data_provider
+
+    @property
+    def frame_rate(self) -> str:
+        warnings.warn(
+            "`game.frame_rate` is deprecated and will be removed in version 0.8.0. Please use `game.tracking_data.frame_rate` instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._frame_rate
 
     @property
     def event_data_provider(self) -> str:

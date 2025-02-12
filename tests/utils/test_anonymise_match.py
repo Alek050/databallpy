@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy import get_game
-from databallpy.data_parsers.tracking_data_parsers import TrackingData
+from databallpy.schemas.tracking_data import TrackingData
 from databallpy.utils.anonymise_game import (
     add_new_pseudonym,
     anonymise_datetime,

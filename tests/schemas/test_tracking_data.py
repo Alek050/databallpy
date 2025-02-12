@@ -6,7 +6,7 @@ import pandas as pd
 from databallpy.game import Game
 from databallpy.utils.warnings import DataBallPyWarning
 from databallpy.utils.get_game import get_game
-from databallpy.schemas.tracking_data import TrackingDataSchema
+from databallpy.schemas.tracking_data import TrackingDataSchema, TrackingData
 
 
 class TestTrackingDataSchema(unittest.TestCase):
@@ -29,6 +29,16 @@ class TestTrackingDataSchema(unittest.TestCase):
             event_data_provider="opta",
             check_quality=False,
         )
+
+    def test_tracking_data_provider_setter(self):
+        df = TrackingData()
+        with self.assertRaises(AttributeError):
+            df.provider = "new_provider"
+
+    def test_frame_rate_setter(self):
+        df = TrackingData()
+        with self.assertRaises(AttributeError):
+            df.frame_rate = "new_provider"
 
     def test_check_ball_status(self):
         td_changed = self.expected_game_tracab_opta.tracking_data.copy()

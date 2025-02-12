@@ -5,6 +5,7 @@ import pandas as pd
 
 from databallpy.game import Game
 from databallpy.schemas.event_data import EventData
+from databallpy.schemas.tracking_data import TrackingData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.utils.warnings import DataBallPyWarning
@@ -17,7 +18,6 @@ from tests.expected_outcomes import (
 )
 
 from pandera.errors import SchemaError
-from databallpy.data_parsers.tracking_data_parsers import TrackingData
 
 
 class TestGame(unittest.TestCase):
@@ -122,9 +122,10 @@ class TestGame(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
-            tracking_data.provider = 6
             Game(
-                tracking_data=tracking_data,
+                tracking_data=TrackingData(
+                    tracking_data, provider=6, frame_rate=tracking_data.frame_rate
+                ),
                 event_data=self.expected_game_tracab_opta.event_data,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
@@ -143,11 +144,11 @@ class TestGame(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
-            tracking_data.frame_rate = 6.4
             Game(
-                tracking_data=tracking_data,
+                tracking_data=TrackingData(
+                    tracking_data, provider=tracking_data.provider, frame_rate=6.4
+                ),
                 event_data=self.expected_game_tracab_opta.event_data,
-                event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -165,9 +166,10 @@ class TestGame(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
-            tracking_data.frame_rate = -5
             Game(
-                tracking_data=tracking_data,
+                tracking_data=TrackingData(
+                    tracking_data, provider=tracking_data.provider, frame_rate=-5
+                ),
                 event_data=self.expected_game_tracab_opta.event_data,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
@@ -882,6 +884,16 @@ class TestGame(unittest.TestCase):
                 "away_17",
             ]
 
+    def test_game_tracking_data_provider_depricated(self):
+        game = self.expected_game_tracab_opta.copy()
+        with self.assertWarns(DeprecationWarning):
+            assert game.tracking_data_provider == game.tracking_data.provider
+
+    def test_game_frame_rate_depricated(self):
+        game = self.expected_game_tracab_opta.copy()
+        with self.assertWarns(DeprecationWarning):
+            assert game.frame_rate == game.tracking_data.frame_rate
+
     def test_game_event_data_provider_depricated(self):
         game = self.expected_game_tracab_opta.copy()
         with self.assertWarns(DeprecationWarning):
@@ -889,7 +901,9 @@ class TestGame(unittest.TestCase):
 
     def test_game_get_column_ids(self):
         game = self.expected_game_tracab_opta.copy()
-        game.tracking_data.frame_rate = 1
+        game.tracking_data = TrackingData(
+            game.tracking_data, provider=game.tracking_data.provider, frame_rate=1
+        )
         game.home_players = pd.DataFrame(
             {
                 "id": [1, 2, 3, 4],

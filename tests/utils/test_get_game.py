@@ -10,12 +10,12 @@ from databallpy.data_parsers.event_data_parsers import (
     load_opta_event_data,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
-    TrackingData,
     load_inmotio_tracking_data,
     load_metrica_tracking_data,
     load_tracab_tracking_data,
 )
 from databallpy.game import Game
+from databallpy.schemas.tracking_data import TrackingData
 from databallpy.schemas.event_data import EventData
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_game import (

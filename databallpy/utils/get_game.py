@@ -15,7 +15,6 @@ from databallpy.data_parsers.event_data_parsers import (
     load_statsbomb_event_data,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
-    TrackingData,
     load_inmotio_tracking_data,
     load_metrica_open_tracking_data,
     load_metrica_tracking_data,
@@ -27,7 +26,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.game import Game
-from databallpy.schemas import EventDataSchema, TrackingDataSchema
+from databallpy.schemas.tracking_data import TrackingData, TrackingDataSchema
 from databallpy.schemas.event_data import EventData, EventDataSchema
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.constants import MISSING_INT

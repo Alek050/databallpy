@@ -10,7 +10,7 @@ from databallpy.features.pressure import (
 )
 from databallpy.utils.utils import MISSING_INT
 
-from databallpy.data_parsers.tracking_data_parsers.tracking_data import TrackingData
+from databallpy.schemas.tracking_data import TrackingData
 
 
 class TestTrackingData(unittest.TestCase):
