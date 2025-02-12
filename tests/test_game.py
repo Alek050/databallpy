@@ -16,6 +16,7 @@ from tests.expected_outcomes import (
 )
 
 from pandera.errors import SchemaError
+from databallpy.data_parsers.tracking_data_parsers import TrackingData
 
 
 class TestGame(unittest.TestCase):
@@ -103,6 +104,72 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(TypeError):
             Game(
                 tracking_data="tracking_data",
+                event_data=self.expected_game_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
+                periods=self.expected_game_tracab_opta.periods,
+                home_team_id=self.expected_game_tracab_opta.home_team_id,
+                home_formation=self.expected_game_tracab_opta.home_formation,
+                home_score=self.expected_game_tracab_opta.home_score,
+                home_team_name=self.expected_game_tracab_opta.home_team_name,
+                home_players=self.expected_game_tracab_opta.home_players,
+                away_team_id=self.expected_game_tracab_opta.away_team_id,
+                away_formation=self.expected_game_tracab_opta.away_formation,
+                away_score=self.expected_game_tracab_opta.away_score,
+                away_team_name=self.expected_game_tracab_opta.away_team_name,
+                away_players=self.expected_game_tracab_opta.away_players,
+                country=self.expected_game_tracab_opta.country,
+            )
+
+        with self.assertRaises(TypeError):
+            tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
+            tracking_data.provider = 6
+            Game(
+                tracking_data=tracking_data,
+                event_data=self.expected_game_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
+                periods=self.expected_game_tracab_opta.periods,
+                home_team_id=self.expected_game_tracab_opta.home_team_id,
+                home_formation=self.expected_game_tracab_opta.home_formation,
+                home_score=self.expected_game_tracab_opta.home_score,
+                home_team_name=self.expected_game_tracab_opta.home_team_name,
+                home_players=self.expected_game_tracab_opta.home_players,
+                away_team_id=self.expected_game_tracab_opta.away_team_id,
+                away_formation=self.expected_game_tracab_opta.away_formation,
+                away_score=self.expected_game_tracab_opta.away_score,
+                away_team_name=self.expected_game_tracab_opta.away_team_name,
+                away_players=self.expected_game_tracab_opta.away_players,
+                country=self.expected_game_tracab_opta.country,
+            )
+
+        with self.assertRaises(TypeError):
+            tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
+            tracking_data.frame_rate = 6.4
+            Game(
+                tracking_data=tracking_data,
+                event_data=self.expected_game_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
+                periods=self.expected_game_tracab_opta.periods,
+                home_team_id=self.expected_game_tracab_opta.home_team_id,
+                home_formation=self.expected_game_tracab_opta.home_formation,
+                home_score=self.expected_game_tracab_opta.home_score,
+                home_team_name=self.expected_game_tracab_opta.home_team_name,
+                home_players=self.expected_game_tracab_opta.home_players,
+                away_team_id=self.expected_game_tracab_opta.away_team_id,
+                away_formation=self.expected_game_tracab_opta.away_formation,
+                away_score=self.expected_game_tracab_opta.away_score,
+                away_team_name=self.expected_game_tracab_opta.away_team_name,
+                away_players=self.expected_game_tracab_opta.away_players,
+                country=self.expected_game_tracab_opta.country,
+            )
+
+        with self.assertRaises(ValueError):
+            tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
+            tracking_data.frame_rate = -5
+            Game(
+                tracking_data=tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
                 event_data_provider=self.ed_provider,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,

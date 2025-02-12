@@ -2,9 +2,13 @@ import pandas as pd
 
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
+from databallpy.utils.warnings import deprecated
 
 
 @logging_wrapper(__file__)
+@deprecated(
+    "The add_team_possession function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.add_team_possession() instead."
+)
 def add_team_possession(
     tracking_data: pd.DataFrame,
     event_data: pd.DataFrame,

@@ -29,6 +29,16 @@ from scipy.spatial import KDTree
 
 
 class TrackingData(pd.DataFrame):
+    """This is the tracking data class. It contains the tracking data for every
+    frame as well as the provider and frame_rate. Additionaly it contains some
+    basic functions to add columns to the tracking data or manipulate existing columns
+
+    Args:
+        tracking_data (pd.DataFrame): tracking data of the game
+        provider (str): provider of the tracking data
+        frame_rate (int): framerate of the tracking data
+    """
+
     def __init__(
         self, *args, provider: str = "", frame_rate: int = MISSING_INT, **kwargs
     ):
@@ -329,7 +339,7 @@ class TrackingData(pd.DataFrame):
         filter_type: str = "savitzky_golay",
         window_length: int = 7,
         polyorder: int = 2,
-    ):
+    ) -> None:
         """Function to filter tracking data in specified DataFrame columns.
 
         Args:
@@ -340,6 +350,9 @@ class TrackingData(pd.DataFrame):
             window_length (int, optional): Window length of the filter. Defaults to 7.
             polyorder (int, optional): Polyorder to use when the savitzky_golay filter
                 is selected. Defaults to 2.
+
+        Returns:
+            None
 
         """
         if isinstance(column_ids, str):
@@ -390,17 +403,19 @@ class TrackingData(pd.DataFrame):
         pressure of all opponents, which is a function of the angle and the distance to the
         player. This function calculates the pressure for a single player.
 
-        :param self
-        :param index: int, index of the frame for which to analyse pressure
-        :param column_id: str, column name of which player to analyse
-        :param pitch_size: list, length and width of the pitch.
-        :param d_front: numeric or str, distance in meters of the front of the pressure oval
-                        if "variable": d_front will be variable based on the location on
-                        the field from the article of Mat Herold et al (2022).
-        :param d_back: float, dinstance in meters of the back of the pressure oval
-        :param q: float, quotient of how fast pressure should increase/decrease as distance
-                to the player changes.
-        :returns: numpy array with pressure on player of the specified frame
+        Args:
+            self.
+            index: int, index of the frame for which to analyse pressure.
+            column_id: str, column name of which player to analyse.
+            pitch_size: list, length and width of the pitch.
+            d_front: numeric or str, distance in meters of the front of the pressure oval
+                     if "variable": d_front will be variable based on the location on
+                     the field from the article of Mat Herold et al (2022).
+            d_back: float, dinstance in meters of the back of the pressure oval.
+            q: float, quotient of how fast pressure should increase/decrease as distance.
+               to the player changes.
+        Returns:
+            np.array: pressure on player of the specified frame.
         """
         if index > len(self) or index < 0:
             raise ValueError(
@@ -607,7 +622,6 @@ class TrackingData(pd.DataFrame):
         Raises:
             ValueError: If the tracking and event data are not synchronised.
             ValueError: If the home_team_id is not in the event data.
-
 
         Args:
             self

@@ -599,7 +599,7 @@ class TestTrackingData(unittest.TestCase):
         tracking_data: TrackingData = self.td_pressure.copy()
         with self.assertRaises(ValueError):
             tracking_data.get_pressure_on_player(
-                index=100,
+                index=-100,
                 column_id="home_1",
                 pitch_size=[100.0, 50.0],
                 d_front=9.0,
