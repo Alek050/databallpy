@@ -15,7 +15,7 @@ def add_team_possession(
     home_team_id: int,
     inplace: bool = False,
 ) -> None | pd.DataFrame:
-    """Function to add a column 'ball_possession' to the tracking data, indicating
+    """Function to add a column 'team_possession' to the tracking data, indicating
     which team has possession of the ball at each frame, either 'home' or 'away'.
 
     Raises:
@@ -31,7 +31,7 @@ def add_team_possession(
             Defaults to False.
 
     Returns:
-        None | pd.DataFrame: The tracking data with the 'ball_possession' column added.
+        None | pd.DataFrame: The tracking data with the 'team_possession' column added.
     """
 
     if "event_id" not in tracking_data.columns:
@@ -52,7 +52,7 @@ def add_team_possession(
         ~pd.isnull(event_data["databallpy_event"]), "team_id"
     ].iloc[0]
     start_idx = 0
-    tracking_data["ball_possession"] = None
+    tracking_data["team_possession"] = None
     for event_id in [x for x in tracking_data.event_id if x != MISSING_INT]:
         event = event_data[event_data.event_id == event_id].iloc[0]
 
@@ -63,13 +63,13 @@ def add_team_possession(
         ):
             end_idx = tracking_data[tracking_data.event_id == event_id].index[0]
             team = "home" if current_team_id == home_team_id else "away"
-            tracking_data.loc[start_idx:end_idx, "ball_possession"] = team
+            tracking_data.loc[start_idx:end_idx, "team_possession"] = team
 
             current_team_id = event.team_id
             start_idx = end_idx
 
     last_team = "home" if current_team_id == home_team_id else "away"
-    tracking_data.loc[start_idx:, "ball_possession"] = last_team
+    tracking_data.loc[start_idx:, "team_possession"] = last_team
 
     if not inplace:
         return tracking_data

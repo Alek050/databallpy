@@ -26,10 +26,9 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.game import Game
-from databallpy.schemas.tracking_data import TrackingData, TrackingDataSchema
 from databallpy.schemas.event_data import EventData, EventDataSchema
+from databallpy.schemas.tracking_data import TrackingData, TrackingDataSchema
 from databallpy.utils.align_player_ids import align_player_ids
-from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.warnings import deprecated
 
@@ -185,6 +184,8 @@ def get_game(
         )
         if not uses_event_data:
             databallpy_events = {}
+
+        TrackingDataSchema.validate(tracking_data)
         uses_tracking_data = True
 
     if not uses_event_data and not uses_tracking_data:

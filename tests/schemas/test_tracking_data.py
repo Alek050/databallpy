@@ -1,12 +1,9 @@
 import os
 import unittest
 
-import pandas as pd
-
-from databallpy.game import Game
-from databallpy.utils.warnings import DataBallPyWarning
+from databallpy.schemas.tracking_data import TrackingData, TrackingDataSchema
 from databallpy.utils.get_game import get_game
-from databallpy.schemas.tracking_data import TrackingDataSchema, TrackingData
+from databallpy.utils.warnings import DataBallPyWarning
 
 
 class TestTrackingDataSchema(unittest.TestCase):

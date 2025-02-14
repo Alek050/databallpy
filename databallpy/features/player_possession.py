@@ -7,7 +7,7 @@ from databallpy.utils.warnings import deprecated
 
 
 @deprecated(
-    "The get_individual_player_possession function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.get_individual_player_possession() instead."
+    "The get_individual_player_possession function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.add_individual_player_possession() instead."
 )
 def get_individual_player_possession(
     tracking_data: pd.DataFrame,

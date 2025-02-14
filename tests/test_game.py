@@ -9,15 +9,12 @@ from databallpy.schemas.tracking_data import TrackingData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.utils.warnings import DataBallPyWarning
-from databallpy.schemas import TrackingDataSchema
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_OPTA_TRACAB,
     PASS_EVENTS_OPTA_TRACAB,
     SHOT_EVENTS_OPTA_TRACAB,
     TACKLE_EVENTS_OPTA_TRACAB,
 )
-
-from pandera.errors import SchemaError
 
 
 class TestGame(unittest.TestCase):
@@ -1205,10 +1202,6 @@ class TestGame(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             game.get_frames(999)
-
-        game.tracking_data.drop(columns=["ball_possession"], inplace=True)
-        with self.assertRaises(ValueError):
-            game.get_frames(1509993, playing_direction="possession_oriented")
 
     def test_get_event_frame(self):
         game = self.expected_game_tracab_opta.copy()

@@ -1,37 +1,39 @@
-import warnings
-import pandas as pd
-import pandera as pa
-import numpy as np
-import pandera.extensions as extensions
-from databallpy.utils.logging import create_logger, logging_wrapper
-from databallpy.utils.warnings import DataBallPyWarning
 import math
 import warnings
 
-from databallpy.utils.constants import MISSING_INT
+import numpy as np
+import pandas as pd
+import pandera as pa
+import pandera.extensions as extensions
+from scipy.spatial import KDTree
+
+from databallpy.features.covered_distance import (
+    _add_covered_distance_interval,
+    _parse_intervals,
+    _validate_inputs,
+)
 from databallpy.features.differentiate import _differentiate
+from databallpy.features.feature_utils import _check_column_ids
+from databallpy.features.filters import savgol_filter
+from databallpy.features.pitch_control import get_pitch_control_single_frame
 from databallpy.features.player_possession import (
+    get_ball_losses_and_updated_gain_idxs,
     get_distance_between_ball_and_players,
     get_initial_possessions,
     get_start_end_idxs,
     get_valid_gains,
-    get_ball_losses_and_updated_gain_idxs,
 )
-from databallpy.features.covered_distance import (
-    _validate_inputs,
-    _parse_intervals,
-    _add_covered_distance_interval,
-)
-from databallpy.features.filters import savgol_filter
-from databallpy.features.feature_utils import _check_column_ids
 from databallpy.features.pressure import (
     calculate_l,
     calculate_variable_dfront,
     calculate_z,
 )
-from databallpy.features.pitch_control import get_pitch_control_single_frame
-from scipy.spatial import KDTree
+from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.logging import create_logger, logging_wrapper
+from databallpy.utils.warnings import DataBallPyWarning
+from warnings import simplefilter
 
+simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 LOGGER = create_logger(__name__)
 logging_wrapper(__file__)
@@ -82,6 +84,28 @@ def check_ball_status(df):
     return True
 
 
+@extensions.register_check_method()
+def check_all_locations(df):
+    cols = [x[:-2] for x in df.columns if x.endswith("_x")]
+
+    message = None
+    for col_id in cols:
+        if f"{col_id}_y" not in df.columns:
+            message = f"Missing column {col_id}_y. Please check the column names."
+            break
+        if not df[f"{col_id}_x"].abs().max() < 65:
+            message = f"Column {col_id}_x has values outside the pitch dimensions."
+            break
+        if not df[f"{col_id}_y"].abs().max() < 45:
+            message = f"Column {col_id}_y has values outside the pitch dimensions."
+            break
+    if message is not None:
+        LOGGER.warning(message)
+        warnings.warn(message=message, category=DataBallPyWarning)
+
+    return True
+
+
 class TrackingDataSchema(pa.DataFrameModel):
     frame: pa.typing.Series[int] = pa.Field(unique=True)
     datetime: pa.typing.Series[pd.Timestamp] = pa.Field(
@@ -91,11 +115,12 @@ class TrackingDataSchema(pa.DataFrameModel):
     ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True)
     ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True)
     ball_status: pa.typing.Series[str] = pa.Field(isin=["alive", "dead"], nullable=True)
-    ball_possession: pa.typing.Series[str] = pa.Field(nullable=True)
+    team_possession: pa.typing.Series[str] = pa.Field(nullable=True)
 
     class Config:
         check_first_frame = ()
         check_ball_status = ()
+        check_all_locations = ()
 
 
 class TrackingData(pd.DataFrame):
@@ -119,6 +144,17 @@ class TrackingData(pd.DataFrame):
         super().__init__(*args, **kwargs)
         self._provider = provider
         self._frame_rate = frame_rate
+    
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['_provider'] = self._provider
+        state["_frame_rate"] = self._frame_rate
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._provider = state.get('_provider', 'unspecified')
+        self._frame_rate = state.get('_frame_rate', MISSING_INT)
 
     @property
     def _constructor(self):
@@ -266,7 +302,7 @@ class TrackingData(pd.DataFrame):
             inplace=True,
         )
 
-    def get_individual_player_possession(
+    def add_individual_player_possession(
         self,
         pz_radius: float = 1.5,
         bv_threshold: float = 5.0,
@@ -507,12 +543,10 @@ class TrackingData(pd.DataFrame):
         Returns:
             np.array: pressure on player of the specified frame.
         """
-        if index > len(self) or index < 0:
-            raise ValueError(
-                f"index should be greater than 0 and smaller the number of frames, which is {len(self)}. The value {index} doesn't satisfy these conditions."
-            )
+        if index not in self.index:
+            raise ValueError(f"index should be in game.tracking_data.index, not {index}")
 
-        td_frame = self.iloc[index, :]
+        td_frame = self.loc[index, :]
 
         if d_front == "variable":
             d_front = calculate_variable_dfront(
@@ -702,11 +736,9 @@ class TrackingData(pd.DataFrame):
         return all_distances, all_assigned_players
 
     def add_team_possession(
-        self,
-        event_data: pd.DataFrame,
-        home_team_id: int,
+        self, event_data: pd.DataFrame, home_team_id: int, allow_overwrite: bool = False
     ) -> None | pd.DataFrame:
-        """Function to add a column 'ball_possession' to the tracking data, indicating
+        """Function to add a column 'team_possession' to the tracking data, indicating
         which team has possession of the ball at each frame, either 'home' or 'away'.
 
         Raises:
@@ -717,10 +749,21 @@ class TrackingData(pd.DataFrame):
             self
             event_data (EventData): Event data for a game
             home_team_id (int): The ID of the home team.
+            allow_overwrite (bool, optional): If "team_possession" column has non null
+                values, allow_overwrite should be set to true before the function is
+                executed. Defaults to False.
 
         Returns:
             None
         """
+        if not pd.isnull(self["team_possession"]).all() and not allow_overwrite:
+            warnings.warn(
+                "The 'team_possession' column is not empty. If you want to overwrite "
+                "the column, set allow_overwrite=True.",
+                category=DataBallPyWarning,
+                stacklevel=2,
+            )
+            return
 
         if "event_id" not in self.columns:
             raise ValueError(
@@ -738,7 +781,7 @@ class TrackingData(pd.DataFrame):
             ~pd.isnull(event_data["databallpy_event"]), "team_id"
         ].iloc[0]
         start_idx = 0
-        self["ball_possession"] = None
+        self["team_possession"] = None
         for event_id in [x for x in self.event_id if x != MISSING_INT]:
             event = event_data[event_data.event_id == event_id].iloc[0]
 
@@ -749,10 +792,10 @@ class TrackingData(pd.DataFrame):
             ):
                 end_idx = self[self.event_id == event_id].index[0]
                 team = "home" if current_team_id == home_team_id else "away"
-                self.loc[start_idx:end_idx, "ball_possession"] = team
+                self.loc[start_idx:end_idx, "team_possession"] = team
 
                 current_team_id = event.team_id
                 start_idx = end_idx
 
         last_team = "home" if current_team_id == home_team_id else "away"
-        self.loc[start_idx:, "ball_possession"] = last_team
+        self.loc[start_idx:, "team_possession"] = last_team

@@ -13,8 +13,8 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
-from databallpy.schemas.tracking_data import TrackingData
 from databallpy.schemas.event_data import EventData
+from databallpy.schemas.tracking_data import TrackingData
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.game_utils import (
@@ -528,16 +528,6 @@ class Game:
         if playing_direction == "team_oriented":
             return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
         elif playing_direction == "possession_oriented":
-            if (
-                "ball_possession" not in self.tracking_data.columns
-                or pd.isna(self.tracking_data["ball_possession"]).all()
-            ):
-                raise ValueError(
-                    "No `ball_possession` column found in tracking data, can not get"
-                    " frames in possession coordinate system without this column. "
-                    "Please run the add_team_possession() function first."
-                )
-
             # current coordinate system: home from left to right, away right to left
             suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
             cols_to_swap = [
@@ -547,7 +537,7 @@ class Game:
                 self.tracking_data["frame"].isin(frames)
             ].copy()
             temp_td.loc[
-                self.tracking_data["ball_possession"] == "away", cols_to_swap
+                self.tracking_data["team_possession"] == "away", cols_to_swap
             ] *= -1
             return temp_td
 

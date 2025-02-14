@@ -15,8 +15,8 @@ from databallpy.data_parsers.tracking_data_parsers import (
     load_tracab_tracking_data,
 )
 from databallpy.game import Game
-from databallpy.schemas.tracking_data import TrackingData
 from databallpy.schemas.event_data import EventData
+from databallpy.schemas.tracking_data import TrackingData
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_game import (
     get_game,

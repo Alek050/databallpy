@@ -193,7 +193,7 @@ def _get_tracking_data_xml(
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
         "ball_status": [None] * size_lines,
-        "ball_possession": [None] * size_lines,
+        "team_possession": [None] * size_lines,
         "datetime": ["NaT"] * size_lines,
     }
 
@@ -234,7 +234,7 @@ def _get_tracking_data_xml(
                 data[f"{column_id}_status"][i] = (
                     "alive" if frame.get("BallStatus") == "1" else "dead"
                 )
-                data[f"{column_id}_possession"][i] = (
+                data["team_possession"][i] = (
                     "home" if int(frame.get("BallPossession")) == 1 else "away"
                 )
                 data["datetime"][i] = frame.get("T")
@@ -317,7 +317,7 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
         "ball_status": [None] * size_lines,
-        "ball_possession": [None] * size_lines,
+        "team_possession": [None] * size_lines,
     }
     team_ids = {0: "away", 1: "home"}
     home_away_map = {"H": "home", "A": "away"}

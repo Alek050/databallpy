@@ -1,16 +1,17 @@
+import math
 import unittest
+
 import numpy as np
 import pandas as pd
-import math
 
 from databallpy.features.pressure import (
-    calculate_variable_dfront,
     calculate_l,
+    calculate_variable_dfront,
     calculate_z,
 )
+from databallpy.schemas.tracking_data import TrackingData, check_all_locations
 from databallpy.utils.utils import MISSING_INT
-
-from databallpy.schemas.tracking_data import TrackingData
+from databallpy.utils.warnings import DataBallPyWarning
 
 
 class TestTrackingData(unittest.TestCase):
@@ -208,7 +209,7 @@ class TestTrackingData(unittest.TestCase):
         self.td_team_possession = TrackingData(
             {
                 "event_id": [MISSING_INT, 1, 6, MISSING_INT, 8, MISSING_INT],
-                "ball_possession": [None, None, None, None, None, None],
+                "team_possession": [None, None, None, None, None, None],
             },
             provider="test",
             frame_rate=1,
@@ -535,14 +536,14 @@ class TestTrackingData(unittest.TestCase):
         )
 
         assert "player_possession" not in tracking_data.columns
-        tracking_data.get_individual_player_possession()
+        tracking_data.add_individual_player_possession()
         assert "player_possession" in tracking_data.columns
         np.testing.assert_array_equal(
             tracking_data["player_possession"], expected_possession
         )
 
         with self.assertRaises(ValueError):
-            tracking_data.get_individual_player_possession(
+            tracking_data.add_individual_player_possession(
                 tracking_data.drop(columns=["ball_velocity"], inplace=True)
             )
 
@@ -571,6 +572,16 @@ class TestTrackingData(unittest.TestCase):
             q=1.75,
         )
         self.assertAlmostEqual(result, expected_pressure, places=4)
+
+        with self.assertRaises(ValueError):
+            tracking_data.get_pressure_on_player(
+                index=100,
+                column_id="home_1",
+                pitch_size=[100.0, 50.0],
+                d_front="variable",
+                d_back=3.0,
+                q=1.75,
+            )
 
     def test_get_pressure_on_player_variable_d_front(self):
         tracking_data = self.td_pressure.copy()
@@ -612,7 +623,7 @@ class TestTrackingData(unittest.TestCase):
 
         tracking_data.add_team_possession(self.event_data, 1)
         self.assertEqual(
-            tracking_data["ball_possession"].tolist(),
+            tracking_data["team_possession"].tolist(),
             ["home", "home", "home", "home", "away", "away"],
         )
         assert not tracking_data.equals(self.td_team_possession)
@@ -625,3 +636,37 @@ class TestTrackingData(unittest.TestCase):
         tracking_data.drop(columns=["event_id"], inplace=True)
         with self.assertRaises(ValueError):
             tracking_data.add_team_possession(self.event_data, 1)
+
+        with self.assertWarns(DataBallPyWarning):
+            tracking_data.loc[:, "team_possession"] = [
+                "home",
+                "home",
+                "home",
+                "home",
+                "away",
+                "away",
+            ]
+            tracking_data.add_team_possession(self.event_data, 1)
+
+    def test_check_all_locations(self):
+        td = pd.DataFrame(
+            {
+                "home_1_x": [1, 2, 3.0],
+                "home_1_y": [2, 3.0, 4],
+                "away_3_x": [3, 3, 3.0],
+                "away_3_y": [4, 5, 2.0],
+            }
+        )
+
+        with self.assertWarns(DataBallPyWarning):
+            check_all_locations(td.drop(columns=["away_3_y"]))
+
+        with self.assertWarns(DataBallPyWarning):
+            td_x = td.copy()
+            td_x.loc[0, "home_1_x"] = -70
+            check_all_locations(td_x)
+
+        with self.assertWarns(DataBallPyWarning):
+            td_y = td.copy()
+            td_y.loc[1, "away_3_y"] = 55
+            check_all_locations(td_y)

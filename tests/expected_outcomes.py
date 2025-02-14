@@ -27,7 +27,7 @@ TD_TRACAB = pd.DataFrame(
             None,
             "alive",
         ],
-        "ball_possession": [
+        "team_possession": [
             "away",
             "away",
             "away",
@@ -597,7 +597,7 @@ TD_METRICA = pd.DataFrame(
         "ball_y": [np.nan, 0, -20, np.nan, np.nan, 20],
         "ball_z": [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
         "ball_status": ["dead", "alive", "alive", None, "dead", "alive"],
-        "ball_possession": [None, None, None, None, None, None],
+        "team_possession": [None, None, None, None, None, None],
         "home_11_x": [0, 30, 20, np.nan, np.nan, np.nan],
         "home_11_y": [0, 0, -5, np.nan, np.nan, np.nan],
         "home_1_x": [-40, -30, -20, np.nan, -10, 0],
@@ -993,7 +993,7 @@ TD_INMOTIO = pd.DataFrame(
         "ball_y": [0.0, 0.0, 1.0, np.nan, 0.0, 0.0],
         "ball_z": [0.0, 0.0, 0.0, np.nan, 0.0, 0.0],
         "ball_status": ["dead", "alive", "alive", None, "alive", "alive"],
-        "ball_possession": [None, None, None, None, None, None],
+        "team_possession": [None, None, None, None, None, None],
         "home_1_x": [-46.9, -45.9, -44.9, np.nan, 39.0, 39.0],
         "home_1_y": [0.8, -0.2, -1.2, np.nan, 1.5, 2.5],
         "home_2_x": [-19.0, -20.0, -21.0, np.nan, 23.3, 23.3],
@@ -1706,7 +1706,7 @@ TRACAB_SPORTEC_XML_TD = pd.DataFrame(
         "ball_y": [-0.1, -0.3, 2.1, 1.0, 1.3, 2.5],
         "ball_z": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
         "ball_status": ["alive", "alive", "dead", "alive", "dead", "dead"],
-        "ball_possession": ["home", "away", "home", "away", "away", "home"],
+        "team_possession": ["home", "away", "home", "away", "away", "home"],
         "datetime": [
             "2022-11-11 17:31:12.360000+0000",
             "2022-11-11 17:31:13.360000+0000",
