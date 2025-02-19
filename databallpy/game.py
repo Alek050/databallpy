@@ -1,5 +1,5 @@
 import os
-import pickle
+import json
 import warnings
 from dataclasses import dataclass, field, fields
 from functools import wraps
@@ -7,18 +7,10 @@ from functools import wraps
 import numpy as np
 import pandas as pd
 
-from databallpy.events import (
-    DribbleEvent,
-    IndividualCloseToBallEvent,
-    PassEvent,
-    ShotEvent,
-)
-from databallpy.schemas.event_data import EventData
-from databallpy.schemas.tracking_data import TrackingData
+from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.game_utils import (
-    create_event_attributes_dataframe,
     player_column_id_to_full_name,
     player_id_to_column_id,
 )
@@ -87,10 +79,9 @@ class Game:
         away_score (int): Number of goals scored over the game by the away team.
         away_formation (str): Indication of the formation of the away team.
         country (str): The country where the game was played.
-        shot_events (dict): A dictionary with all instances of shot events.
-        dribble_events (dict): A dictionary with all instances of dribble events.
-        pass_events (dict): A dictionary with all instances of pass events.
-        other_events (dict): A dictionary with all instances of other supported events.
+        shot_events (pd.DataFrame): A df with all th shot events.
+        dribble_events (pd.DataFrame): A df with all the dribble events.
+        pass_events (pd.DataFrame): A df with all the pass events.
         allow_synchronise_tracking_and_event_data (bool): If True, the tracking and
         event data can be synchronised. If False, it can not. Default = False.
     """
@@ -110,17 +101,10 @@ class Game:
     away_score: int
     away_formation: str
     country: str
-    shot_events: dict[int | str, ShotEvent] = field(default_factory=dict)
-    dribble_events: dict[int | str, DribbleEvent] = field(default_factory=dict)
-    pass_events: dict[int | str, PassEvent] = field(default_factory=dict)
-    other_events: dict[int | str, IndividualCloseToBallEvent] = field(
-        default_factory=dict
-    )
+    shot_events: pd.DataFrame
+    dribble_events: pd.DataFrame
+    pass_events: pd.DataFrame
     allow_synchronise_tracking_and_event_data: bool = False
-    _shots_df: pd.DataFrame = None
-    _dribbles_df: pd.DataFrame = None
-    _passes_df: pd.DataFrame = None
-    _other_events_df: pd.DataFrame = None
     # to save the preprocessing status
     _is_synchronised: bool = False
     # to indicate if the timestamps are precise or just the proposed timestamps of the
@@ -216,27 +200,6 @@ class Game:
             ].iloc[0]
 
         return None
-
-    @property
-    def all_events(
-        self,
-    ) -> dict[
-        int | str, DribbleEvent | PassEvent | ShotEvent | IndividualCloseToBallEvent
-    ]:
-        """Function to get all events in the game
-
-        Returns:
-            dict[
-                int | str,
-                DribbleEvent | PassEvent | ShotEvent | IndividualCloseToBallEvent
-                ]: All events in the game
-        """
-        return {
-            **self.shot_events,
-            **self.dribble_events,
-            **self.pass_events,
-            **self.other_events,
-        }
 
     @property
     def name(self) -> str:
@@ -405,86 +368,9 @@ class Game:
         """
         return player_id_to_column_id(self.home_players, self.away_players, player_id)
 
-    @property
-    @requires_event_data
-    def shots_df(self) -> pd.DataFrame:
-        """Function to get all shots in the game
-
-        Returns:
-            pd.DataFrame: DataFrame with all information of the shots in the game
-        """
-
-        if self._shots_df is None:
-            LOGGER.info("Creating the game._shots_df dataframe in game.shots_df")
-
-            self._shots_df = create_event_attributes_dataframe(self.shot_events)
-
-            LOGGER.info("Successfully created game._shots_df dataframe in game.shots_df")
-        LOGGER.info("Returning the pre-loaded game._shots_df in game.shots_df")
-        return self._shots_df
-
-    @property
-    @requires_event_data
-    def dribbles_df(self) -> pd.DataFrame:
-        """Function to get all info of the dribbles in the game
-
-        Returns:
-            pd.DataFrame: DataFrame with all information of the dribbles in the game"""
-
-        if self._dribbles_df is None:
-            LOGGER.info("Creating the game._dribbles_df dataframe in game.dribbles_df")
-            self._dribbles_df = create_event_attributes_dataframe(self.dribble_events)
-
-            LOGGER.info(
-                "Successfully created game._dribbles_df dataframe in game.dribbles_df"
-            )
-        LOGGER.info("Returning the pre-loaded game._dribbles_df in game.dribbles_df")
-        return self._dribbles_df
-
-    @property
-    @requires_event_data
-    def passes_df(self) -> pd.DataFrame:
-        """Function to get all info of the passes in the game
-
-        Returns:
-            pd.DataFrame: DataFrame with all information of the passes in the game"""
-
-        if self._passes_df is None:
-            LOGGER.info("Creating the game._passes_df dataframe in game.passes_df")
-            self._passes_df = create_event_attributes_dataframe(self.pass_events)
-
-            LOGGER.info(
-                "Successfully created game._passes_df dataframe in game.passes_df"
-            )
-        LOGGER.info("Returning the pre-loaded game._passes_df in game.passes_df")
-        return self._passes_df
-
-    @property
-    @requires_event_data
-    def other_events_df(self) -> pd.DataFrame:
-        """Function to get all info of the other events in the game
-
-        Returns:
-            pd.DataFrame: DataFrame with all information of the other events in the
-                game
-        """
-
-        if self._other_events_df is None:
-            LOGGER.info(
-                "Creating the game.other_events_df dataframe in game.other_events_df"
-            )
-            other_events_df = create_event_attributes_dataframe(
-                self.other_events, add_name=True
-            )
-
-            LOGGER.info(
-                "Successfully created game.other_events_df dataframe in "
-                "game.other_events_df"
-            )
-        return other_events_df
 
     @requires_event_data
-    def get_event(self, event_id: int):
+    def get_event(self, event_id: int) -> pd.Series:
         """Function to get the event with the given event_id
 
         Args:
@@ -494,10 +380,17 @@ class Game:
             ValueError: if the event with the given event_id is not found in the game
 
         Returns:
-            Databallpy Event: The event with the given event_id
+            pd.Series: The event with the given event_id
         """
-        if event_id in self.all_events.keys():
-            return self.all_events[event_id]
+        
+        if event_id in self.pass_events["event_id"].values:
+            return self.pass_events[self.pass_events["event_id"]==event_id].iloc[0]
+        elif event_id in self.shot_events["event_id"].values:
+            return self.shot_events[self.shot_events["event_id"]==event_id].iloc[0]
+        elif event_id in self.dribble_events["event_id"].values:
+            return self.dribble_events[self.dribble_events["event_id"]==event_id].iloc[0]
+        elif event_id in self.event_data["event_id"].values:
+            return self.event_data[self.event_data["event_id"]==event_id].iloc[0]
         else:
             raise ValueError(f"Event with id {event_id} not found in the game.")
 
@@ -569,15 +462,15 @@ class Game:
                 "Tracking and event data are not synchronised yet. Please run the"
                 " synchronise_tracking_and_event_data() method first."
             )
-        event = self.get_event(event_id)
+        event_series = self.get_event(event_id)
         frame_id = self.tracking_data.loc[
-            self.tracking_data["event_id"] == event.event_id, "frame"
+            self.tracking_data["event_id"] == event_series.event_id, "frame"
         ].iloc[0]
         frame = self.get_frames(frame_id, playing_direction="team_oriented")
         if playing_direction == "team_oriented":
             return frame
         elif playing_direction == "possession_oriented":
-            if event.team_side == "away":
+            if sum(self.away_players["id"].values == event_series["player_id"]) > 0:
                 suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
                 cols_to_swap = [
                     col for col in self.tracking_data.columns if col.endswith(suffixes)
@@ -649,11 +542,11 @@ class Game:
         changed_event_data = align_event_data_datetime(
             self.event_data.copy(), self.tracking_data, offset=offset
         )
-
         tracking_info, event_info = synchronise_tracking_and_event_data(
             tracking_data=self.tracking_data,
             event_data=changed_event_data,
-            all_events=self.all_events,
+            home_players=self.home_players,
+            away_players=self.away_players,
             cost_functions=cost_functions,
             n_batches=n_batches,
             optimize=optimize,
@@ -716,28 +609,65 @@ class Game:
         return Game(**copied_kwargs)
 
     def save_game(
-        self, name: str = None, path: str = None, verbose: bool = True
+        self, name: str = None, path: str = None, verbose: bool = True, allow_overwrite: bool = False
     ) -> None:
-        """Function to save the current game object to a pickle file
+        """Function to save the current game object. The path name will create a
+        folder with different parquet and json files that stores all the information
+        of the match.
 
         Args:
-            name (str): name of the pickle file, if not provided or not a string,
-            the name will be the name of the game
-            path (str): path to the directory where the pickle file will be saved, if
-            not provided, the current working directory will be used
+            name (str): name of the folder where the match will be saved, 
+            if not provided or not a string the name will be the name of the game.
+            path (str): path to the directory where the folder will be saved. If
+            not provided, the current working directory will be used.
             verbose (bool): if True, saved name will be printed
+            allow_overwrite (bool): if True, the function will overwrite the
+            existing folder with the same name.
         """
         name = name if isinstance(name, str) else self.name
         path = path if path is not None else os.getcwd()
         name = name.replace(":", "_")
-        pickle_path = os.path.join(path, f"{name}.pickle")
-        assert os.path.exists(path), f"Path {path} does not exist"
-        with open(pickle_path, "wb") as f:
-            pickle.dump(self, f)
-        if verbose:
-            print(f"Game saved to {os.path.join(path, name)}.pickle")
-        LOGGER.info(f"Game saved to {os.path.join(path, name)}.pickle")
 
+        folder_path = os.path.join(path, name)
+        
+        if os.path.exists(folder_path) and not allow_overwrite:
+            raise ValueError(f"Folder {folder_path} already exists, set allow_overwrite to True to overwrite")
+        
+        os.makedirs(folder_path, exist_ok=True)
+        self.tracking_data.to_parquet(os.path.join(folder_path, "tracking_data.parquet"))
+        self.event_data.to_parquet(os.path.join(folder_path, "event_data.parquet"))
+        self.periods.to_parquet(os.path.join(folder_path, "periods.parquet"))
+        self.home_players.to_parquet(os.path.join(folder_path, "home_players.parquet"))
+        self.away_players.to_parquet(os.path.join(folder_path, "away_players.parquet"))
+        self.dribble_events.to_parquet(os.path.join(folder_path, "dribble_events.parquet"))
+        self.shot_events.to_parquet(os.path.join(folder_path, "shot_events.parquet"))
+        self.pass_events.to_parquet(os.path.join(folder_path, "pass_events.parquet"))
+
+        metadata_info = {
+            "event_data_provider": self.event_data.provider,
+            "tracking_data_provider": self.tracking_data.provider,
+            "tracking_data_frame_rate": self.tracking_data.frame_rate,
+            "pitch_dimensions": self.pitch_dimensions,
+            "home_team_id": self.home_team_id,
+            "home_team_name": self.home_team_name,
+            "home_score": self.home_score,
+            "home_formation": self.home_formation,
+            "away_team_id": self.away_team_id,
+            "away_team_name": self.away_team_name,
+            "away_score": self.away_score,
+            "away_formation": self.away_formation,
+            "country": self.country,
+            "allow_synchronise_tracking_and_event_data": self.allow_synchronise_tracking_and_event_data,
+            "_is_synchronised": self._is_synchronised,
+            "_tracking_timestamp_is_precise": self._tracking_timestamp_is_precise,
+            "_event_timestamp_is_precise": self._event_timestamp_is_precise,
+            "_periods_changed_playing_direction": self._periods_changed_playing_direction
+        }
+        with open(os.path.join(folder_path, "metadata.json"), "w") as f:
+            json.dump(metadata_info, f)
+        
+        if verbose: 
+            print(f"Game saved in {folder_path}")
 
 @logging_wrapper(__file__)
 def check_inputs_game_object(game: Game):
@@ -949,23 +879,15 @@ def check_inputs_game_object(game: Game):
 
         # check databallpy_events
         databallpy_events = [game.dribble_events, game.shot_events, game.pass_events]
-        for event_dict, event_name, event_type in zip(
+        for event_df, event_name in zip(
             databallpy_events,
             ["dribble", "shot", "pass"],
-            [DribbleEvent, ShotEvent, PassEvent],
         ):
-            if not isinstance(event_dict, dict):
+            if not isinstance(event_df, pd.DataFrame):
                 raise TypeError(
-                    f"{event_name}_events should be a dictionary, not a "
-                    f"{type(event_dict)}"
+                    f"{event_name}_events should be a dataframe, not a "
+                    f"{type(event_df)}"
                 )
-
-            for event in event_dict.values():
-                if not isinstance(event, event_type):
-                    raise TypeError(
-                        f"{event_name}_events should contain only {event_type} objects,"
-                        f" not {type(event)}"
-                    )
 
         # country
         if not isinstance(game.country, str):

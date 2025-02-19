@@ -1,5 +1,6 @@
 import math
 import warnings
+from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
@@ -31,7 +32,6 @@ from databallpy.features.pressure import (
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.warnings import DataBallPyWarning
-from warnings import simplefilter
 
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
@@ -144,17 +144,17 @@ class TrackingData(pd.DataFrame):
         super().__init__(*args, **kwargs)
         self._provider = provider
         self._frame_rate = frame_rate
-    
+
     def __getstate__(self):
         state = self.__dict__.copy()
-        state['_provider'] = self._provider
+        state["_provider"] = self._provider
         state["_frame_rate"] = self._frame_rate
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self._provider = state.get('_provider', 'unspecified')
-        self._frame_rate = state.get('_frame_rate', MISSING_INT)
+        self._provider = state.get("_provider", "unspecified")
+        self._frame_rate = state.get("_frame_rate", MISSING_INT)
 
     @property
     def _constructor(self):

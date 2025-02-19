@@ -4,16 +4,15 @@ import unittest
 import pandas as pd
 
 from databallpy.game import Game
-from databallpy.schemas.event_data import EventData
-from databallpy.schemas.tracking_data import TrackingData
+from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
-    DRIBBLE_EVENTS_OPTA_TRACAB,
-    PASS_EVENTS_OPTA_TRACAB,
-    SHOT_EVENTS_OPTA_TRACAB,
-    TACKLE_EVENTS_OPTA_TRACAB,
+    DRIBBLE_INSTANCES_OPTA_TRACAB,
+    PASS_INSTANCES_OPTA_TRACAB,
+    SHOT_INSTANCES_OPTA_TRACAB,
+    TACKLE_INSTANCES_OPTA_TRACAB,
 )
 
 
@@ -115,6 +114,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(TypeError):
@@ -137,6 +139,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(TypeError):
@@ -159,6 +164,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -181,6 +189,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # event data
@@ -201,6 +212,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events
             )
 
         with self.assertRaises(ValueError):
@@ -227,6 +241,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(TypeError):
@@ -259,6 +276,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -293,6 +313,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # event data provider
@@ -328,6 +351,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # pitch dimensions
@@ -348,6 +374,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -367,6 +396,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(TypeError):
@@ -386,6 +418,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -405,6 +440,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -424,6 +462,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # periods
@@ -444,6 +485,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -463,6 +507,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -482,6 +529,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -501,6 +551,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -524,6 +577,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # team id
@@ -544,6 +600,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # team name
@@ -564,6 +623,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=["teamone"],
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # team score
@@ -584,6 +646,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -603,6 +668,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # team formation
@@ -623,6 +691,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -642,6 +713,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # team players
@@ -662,6 +736,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -683,6 +760,9 @@ class TestGame(unittest.TestCase):
                     "shirt_num", axis=1
                 ),
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         wrong_pos = self.expected_game_tracab_opta.away_players.copy()
@@ -704,6 +784,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=wrong_pos,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # playing direction
@@ -726,6 +809,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(DataBallPyError):
@@ -747,6 +833,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         # country
@@ -767,6 +856,9 @@ class TestGame(unittest.TestCase):
                 away_team_name=self.expected_game_tracab_opta.away_team_name,
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=["Netherlands", "Germany"],
+                shot_events=self.expected_game_tracab_opta.shot_events,
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
         # shot_events
         with self.assertRaises(TypeError):
@@ -787,6 +879,8 @@ class TestGame(unittest.TestCase):
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
                 shot_events=["shot", "goal"],
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
         # shot_events
         with self.assertRaises(TypeError):
@@ -807,6 +901,8 @@ class TestGame(unittest.TestCase):
                 away_players=self.expected_game_tracab_opta.away_players,
                 country=self.expected_game_tracab_opta.country,
                 shot_events={"shot": "goal"},
+                pass_events=self.expected_game_tracab_opta.pass_events,
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
     def test_preprosessing_status(self):
@@ -973,7 +1069,7 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.expected_game_tracab_opta.player_id_to_column_id(4)
 
-    def test_game_shots_df_without_td_features(self):
+    def test_game_shots_events(self):
         shot_attribute_names = [
             "event_id",
             "period_id",
@@ -996,19 +1092,11 @@ class TestGame(unittest.TestCase):
             "y_target",
             "z_target",
             "first_touch",
-            "ball_goal_distance",
-            "ball_gk_distance",
-            "shot_angle",
-            "gk_optimal_loc_distance",
-            "pressure_on_ball",
-            "n_obstructive_players",
-            "n_obstructive_defenders",
-            "goal_gk_distance",
             "xg",
         ]
         expected_df = pd.DataFrame(
             {
-                attr: [getattr(shot, attr) for shot in SHOT_EVENTS_OPTA_TRACAB.values()]
+                attr: [getattr(shot, attr) for shot in SHOT_INSTANCES_OPTA_TRACAB.values()]
                 for attr in shot_attribute_names
             }
         )
@@ -1016,10 +1104,10 @@ class TestGame(unittest.TestCase):
         game = self.expected_game_tracab_opta.copy()
         # make sure it will not try to add tracking data features
         game.allow_synchronise_tracking_and_event_data = False
-        shots_df = self.expected_game_tracab_opta.shots_df
+        shots_df = self.expected_game_tracab_opta.shot_events
         pd.testing.assert_frame_equal(shots_df, expected_df)
 
-    def test_game_dribbles_df_without_td_features(self):
+    def test_game_dribble_events(self):
         dribble_attribute_names = [
             "event_id",
             "period_id",
@@ -1045,15 +1133,15 @@ class TestGame(unittest.TestCase):
             {
                 attr: [
                     getattr(dribble, attr)
-                    for dribble in DRIBBLE_EVENTS_OPTA_TRACAB.values()
+                    for dribble in DRIBBLE_INSTANCES_OPTA_TRACAB.values()
                 ]
                 for attr in dribble_attribute_names
             }
         )
-        dribbles_df = self.expected_game_tracab_opta.dribbles_df
+        dribbles_df = self.expected_game_tracab_opta.dribble_events
         pd.testing.assert_frame_equal(dribbles_df, expected_df)
 
-    def test_game_passes_df_without_td_features(self):
+    def test_game_passes_events(self):
         pass_attribute_names = [
             "event_id",
             "period_id",
@@ -1077,68 +1165,34 @@ class TestGame(unittest.TestCase):
             "end_y",
             "pass_type",
             "receiver_player_id",
-            "pass_length",
-            "forward_distance",
-            "passer_goal_distance",
-            "pass_end_loc_goal_distance",
-            "opponents_in_passing_lane",
-            "pressure_on_passer",
-            "pressure_on_receiver",
-            "pass_goal_angle",
         ]
         expected_df = pd.DataFrame(
             {
                 attr: [
-                    getattr(pass_, attr) for pass_ in PASS_EVENTS_OPTA_TRACAB.values()
+                    getattr(pass_, attr) for pass_ in PASS_INSTANCES_OPTA_TRACAB.values()
                 ]
                 for attr in pass_attribute_names
             }
         )
-        passes_df = self.expected_game_tracab_opta.passes_df
+        passes_df = self.expected_game_tracab_opta.pass_events
         pd.testing.assert_frame_equal(passes_df, expected_df)
-
-    def test_game_other_events_df(self):
-        other_event_attribute_names = [
-            "event_id",
-            "period_id",
-            "minutes",
-            "seconds",
-            "datetime",
-            "start_x",
-            "start_y",
-            "team_id",
-            "team_side",
-            "player_id",
-            "jersey",
-            "outcome",
-            "related_event_id",
-        ]
-        expected_df = pd.DataFrame(
-            {
-                attr: [
-                    getattr(other_event, attr)
-                    for other_event in TACKLE_EVENTS_OPTA_TRACAB.values()
-                ]
-                for attr in other_event_attribute_names
-            }
-        )
-        expected_df["name"] = "TackleEvent"
-        other_events_df = self.expected_game_tracab_opta.other_events_df
-        pd.testing.assert_frame_equal(other_events_df, expected_df)
 
     def test_game_get_event(self):
         game = self.expected_game_tracab_opta.copy()
         event = game.get_event(9)
-        assert event == game.shot_events[9]
+        pd.testing.assert_series_equal(event, game.shot_events[game.shot_events["event_id"]==9].iloc[0])
 
         event = game.get_event(4)
-        assert event == game.pass_events[4]
+        pd.testing.assert_series_equal(event, game.pass_events[game.pass_events["event_id"]==4].iloc[0])
 
         event = game.get_event(7)
-        assert event == game.dribble_events[7]
+        pd.testing.assert_series_equal(event, game.dribble_events[game.dribble_events["event_id"]==7].iloc[0])
+
+        event = game.get_event(1)
+        pd.testing.assert_series_equal(event, game.event_data[game.event_data["event_id"]==1].iloc[0])
 
         with self.assertRaises(ValueError):
-            game.get_event(1)
+            game.get_event(22222)
 
     def test_game_requires_event_data_wrapper(self):
         game = self.expected_game_opta.copy()
@@ -1151,34 +1205,32 @@ class TestGame(unittest.TestCase):
             game.synchronise_tracking_and_event_data()
 
     def test_save_game(self):
-        assert not os.path.exists(
+        assert not os.path.isdir(
             os.path.join(
-                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"
             )
         )
         game = self.game_to_sync.copy()
         game.allow_synchronise_tracking_and_event_data = True
         game.save_game(path=os.path.join("tests", "test_data"))
-        assert os.path.exists(
+        assert os.path.isdir(
             os.path.join(
-                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"
             )
         )
-        os.remove(
-            os.path.join(
-                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39.pickle"
-            )
-        )
+        files = [x for x in os.listdir(os.path.join("tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"))]
+        assert len(files) == 9
 
-    def test_all_events(self):
-        game = self.expected_game_opta.copy()
-        expected_events = {
-            **game.shot_events,
-            **game.pass_events,
-            **game.dribble_events,
-            **game.other_events,
-        }
-        assert game.all_events == expected_events
+        with self.assertRaises(ValueError):
+            game.save_game(path=os.path.join("tests", "test_data"))
+
+        for file in files:
+            os.remove(os.path.join("tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39", file))
+        os.rmdir(
+            os.path.join(
+                "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"
+            )
+        )
 
     def test_get_frames(self):
         game = self.expected_game_tracab_opta.copy()
@@ -1205,7 +1257,7 @@ class TestGame(unittest.TestCase):
 
     def test_get_event_frame(self):
         game = self.expected_game_tracab_opta.copy()
-        pass_event = game.get_event(list(game.pass_events.keys())[0])
+        pass_event = game.get_event(3)
         game.tracking_data.loc[0, "event_id"] = pass_event.event_id
 
         with self.assertRaises(DataBallPyError):
@@ -1227,7 +1279,7 @@ class TestGame(unittest.TestCase):
             res_possession, game.tracking_data.iloc[0:1]
         )  # event team side is home
 
-        pass_event.team_side = "away"
+        game.pass_events.loc[game.pass_events["event_id"]==pass_event["event_id"], "player_id"] = 450445 # away player id
         res_possession = game.get_event_frame(
             pass_event.event_id, playing_direction="possession_oriented"
         )

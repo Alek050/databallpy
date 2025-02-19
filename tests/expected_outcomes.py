@@ -5,10 +5,10 @@ import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
-from databallpy.schemas.event_data import EventData
+from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.constants import MISSING_INT
 
-TD_TRACAB = pd.DataFrame(
+TD_TRACAB = TrackingData(
     {
         "frame": [1509993, 1509994, 1509995, 1509996, 1509997],
         "ball_x": [1.50, 1.81, 2.13, np.nan, 2.76],
@@ -79,7 +79,9 @@ TD_TRACAB = pd.DataFrame(
             "45:00",
             "45:00",
         ],
-    }
+    },
+    frame_rate=25,
+    provider="tracab"
 )
 
 
@@ -302,7 +304,7 @@ ED_OPTA["datetime"] = pd.to_datetime(ED_OPTA["datetime"]).dt.tz_localize(
 )
 ED_OPTA["is_successful"] = ED_OPTA["is_successful"].astype("boolean")
 
-SHOT_EVENTS_OPTA = {
+SHOT_INSTANCES_OPTA = {
     9: ShotEvent(
         event_id=9,
         period_id=1,
@@ -385,15 +387,16 @@ SHOT_EVENTS_OPTA = {
     ),
 }
 
-SHOT_EVENTS_OPTA_TRACAB = {}
-for key, shot_event in SHOT_EVENTS_OPTA.items():
-    SHOT_EVENTS_OPTA_TRACAB[key] = shot_event.copy()
-    SHOT_EVENTS_OPTA_TRACAB[key].start_x = (
-        SHOT_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
-    )
-    SHOT_EVENTS_OPTA_TRACAB[key].start_y = SHOT_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
 
-DRIBBLE_EVENTS_OPTA = {
+SHOT_INSTANCES_OPTA_TRACAB = {}
+for key, shot_event in SHOT_INSTANCES_OPTA.items():
+    SHOT_INSTANCES_OPTA_TRACAB[key] = shot_event.copy()
+    SHOT_INSTANCES_OPTA_TRACAB[key].start_x = (
+        SHOT_INSTANCES_OPTA_TRACAB[key].start_x / 106 * 100
+    )
+    SHOT_INSTANCES_OPTA_TRACAB[key].start_y = SHOT_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
+
+DRIBBLE_INSTANCES_OPTA = {
     7: DribbleEvent(
         event_id=7,
         period_id=2,
@@ -420,17 +423,17 @@ DRIBBLE_EVENTS_OPTA = {
     )
 }
 
-DRIBBLE_EVENTS_OPTA_TRACAB = {}
-for key, dribble_event in DRIBBLE_EVENTS_OPTA.items():
-    DRIBBLE_EVENTS_OPTA_TRACAB[key] = dribble_event.copy()
-    DRIBBLE_EVENTS_OPTA_TRACAB[key].start_x = (
-        DRIBBLE_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
+DRIBBLE_INSTANCES_OPTA_TRACAB = {}
+for key, dribble_event in DRIBBLE_INSTANCES_OPTA.items():
+    DRIBBLE_INSTANCES_OPTA_TRACAB[key] = dribble_event.copy()
+    DRIBBLE_INSTANCES_OPTA_TRACAB[key].start_x = (
+        DRIBBLE_INSTANCES_OPTA_TRACAB[key].start_x / 106 * 100
     )
-    DRIBBLE_EVENTS_OPTA_TRACAB[key].start_y = (
-        DRIBBLE_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
+    DRIBBLE_INSTANCES_OPTA_TRACAB[key].start_y = (
+        DRIBBLE_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
     )
 
-TACKLE_EVENTS_OPTA = {
+TACKLE_INSTANCES_OPTA = {
     8: TackleEvent(
         event_id=8,
         period_id=2,
@@ -451,18 +454,18 @@ TACKLE_EVENTS_OPTA = {
         related_event_id=6,
     )
 }
-TACKLE_EVENTS_OPTA_TRACAB = {}
-for key, tackle_event in TACKLE_EVENTS_OPTA.items():
-    TACKLE_EVENTS_OPTA_TRACAB[key] = tackle_event.copy()
-    TACKLE_EVENTS_OPTA_TRACAB[key].start_x = (
-        TACKLE_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
+TACKLE_INSTANCES_OPTA_TRACAB = {}
+for key, tackle_event in TACKLE_INSTANCES_OPTA.items():
+    TACKLE_INSTANCES_OPTA_TRACAB[key] = tackle_event.copy()
+    TACKLE_INSTANCES_OPTA_TRACAB[key].start_x = (
+        TACKLE_INSTANCES_OPTA_TRACAB[key].start_x / 106 * 100
     )
-    TACKLE_EVENTS_OPTA_TRACAB[key].start_y = (
-        TACKLE_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
+    TACKLE_INSTANCES_OPTA_TRACAB[key].start_y = (
+        TACKLE_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
     )
 
 
-PASS_EVENTS_OPTA = {
+PASS_INSTANCES_OPTA = {
     3: PassEvent(
         event_id=3,
         period_id=1,
@@ -518,15 +521,15 @@ PASS_EVENTS_OPTA = {
     ),
 }
 
-PASS_EVENTS_OPTA_TRACAB = {}
-for key, pass_event in PASS_EVENTS_OPTA.items():
-    PASS_EVENTS_OPTA_TRACAB[key] = pass_event.copy()
-    PASS_EVENTS_OPTA_TRACAB[key].start_x = (
-        PASS_EVENTS_OPTA_TRACAB[key].start_x / 106 * 100
+PASS_INSTANCES_OPTA_TRACAB = {}
+for key, pass_event in PASS_INSTANCES_OPTA.items():
+    PASS_INSTANCES_OPTA_TRACAB[key] = pass_event.copy()
+    PASS_INSTANCES_OPTA_TRACAB[key].start_x = (
+        PASS_INSTANCES_OPTA_TRACAB[key].start_x / 106 * 100
     )
-    PASS_EVENTS_OPTA_TRACAB[key].start_y = PASS_EVENTS_OPTA_TRACAB[key].start_y / 68 * 50
-    PASS_EVENTS_OPTA_TRACAB[key].end_x = PASS_EVENTS_OPTA_TRACAB[key].end_x / 106 * 100
-    PASS_EVENTS_OPTA_TRACAB[key].end_y = PASS_EVENTS_OPTA_TRACAB[key].end_y / 68 * 50
+    PASS_INSTANCES_OPTA_TRACAB[key].start_y = PASS_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
+    PASS_INSTANCES_OPTA_TRACAB[key].end_x = PASS_INSTANCES_OPTA_TRACAB[key].end_x / 106 * 100
+    PASS_INSTANCES_OPTA_TRACAB[key].end_y = PASS_INSTANCES_OPTA_TRACAB[key].end_y / 68 * 50
 
 MD_OPTA = Metadata(
     game_id=1908,
@@ -712,7 +715,7 @@ ED_METRICA = EventData(
 )
 ED_METRICA["is_successful"] = ED_METRICA["is_successful"].astype("boolean")
 
-SHOT_EVENTS_METRICA = {
+SHOT_INSTANCES_METRICA = {
     3: ShotEvent(
         event_id=3,
         period_id=2,
@@ -781,7 +784,7 @@ SHOT_EVENTS_METRICA = {
     ),
 }
 
-DRIBBLE_EVENTS_METRICA = {
+DRIBBLE_INSTANCES_METRICA = {
     2: DribbleEvent(
         event_id=2,
         period_id=2,
@@ -806,7 +809,7 @@ DRIBBLE_EVENTS_METRICA = {
     )
 }
 
-PASS_EVENTS_METRICA = {
+PASS_INSTANCES_METRICA = {
     1: PassEvent(
         event_id=1,
         period_id=1,
@@ -833,7 +836,7 @@ PASS_EVENTS_METRICA = {
     )
 }
 
-TACKLE_EVENTS_METRICA = {
+TACKLE_INSTANCES_METRICA = {
     6: TackleEvent(
         event_id=6,
         period_id=2,

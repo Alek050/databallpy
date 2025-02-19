@@ -1,5 +1,5 @@
 import os
-import pickle
+import json
 
 import pandas as pd
 
@@ -26,10 +26,10 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.game import Game
-from databallpy.schemas.event_data import EventData, EventDataSchema
-from databallpy.schemas.tracking_data import TrackingData, TrackingDataSchema
+from databallpy.schemas import EventData, EventDataSchema, TrackingData, TrackingDataSchema
 from databallpy.utils.align_player_ids import align_player_ids
 from databallpy.utils.logging import create_logger, logging_wrapper
+from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.warnings import deprecated
 
 LOGGER = create_logger(__name__)
@@ -228,6 +228,11 @@ def get_game(
     if uses_tracking_data:
         changed_periods = tracking_metadata.periods_changed_playing_direction
 
+    shot_events = create_event_attributes_dataframe(databallpy_events["shot_events"]) if "shot_events" in databallpy_events.keys() else pd.DataFrame()
+    pass_events = create_event_attributes_dataframe(databallpy_events["pass_events"]) if "pass_events" in databallpy_events.keys() else pd.DataFrame()
+    dribble_events = create_event_attributes_dataframe(databallpy_events["dribble_events"]) if "dribble_events" in databallpy_events.keys() else pd.DataFrame()
+
+
     LOGGER.info("Creating game object in get_game()")
     game = Game(
         tracking_data=TrackingData(
@@ -278,18 +283,9 @@ def get_game(
         else tracking_metadata.away_players,
         country=event_metadata.country if uses_event_data else tracking_metadata.country,
         allow_synchronise_tracking_and_event_data=allow_synchronise,
-        shot_events=databallpy_events["shot_events"]
-        if "shot_events" in databallpy_events.keys()
-        else {},
-        dribble_events=databallpy_events["dribble_events"]
-        if "dribble_events" in databallpy_events.keys()
-        else {},
-        pass_events=databallpy_events["pass_events"]
-        if "pass_events" in databallpy_events.keys()
-        else {},
-        other_events=databallpy_events["other_events"]
-        if "other_events" in databallpy_events.keys()
-        else {},
+        shot_events=shot_events,
+        dribble_events=dribble_events,
+        pass_events=pass_events,
         _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
         if uses_event_data
         else False,
@@ -309,34 +305,55 @@ def get_saved_game(name: str, path: str = os.getcwd()) -> Game:
     """Function to load a saved game object
 
     Args:
-        name (str): the name with the to be loaded game, should be a pickle file
-        path (str, optional): path of directory where game is saved. Defaults
+        name (str): the name with the to be loaded game, should be a folder.
+        The folder should contain:
+            - tracking_data.parquet
+            - event_data.parquet
+            - periods.parquet
+            - pass_events.parquet
+            - shot_events.parquet
+            - dribble_events.parquet
+            - away_players.parquet
+            - home_players.parquet
+            - metadata.json
+       path (str, optional): path of directory where game is saved. Defaults
         to current working directory.
 
     Returns:
         Game: All information about the game
     """
 
-    loc = (
-        os.path.join(path, name + ".pickle")
-        if not name[-7:] == ".pickle"
-        else os.path.join(path, name)
+    full_path = os.path.join(path, name)
+    if not os.path.isdir(full_path):
+        raise ValueError(f"Directory {full_path} does not exist")
+    
+    with open(os.path.join(full_path, "metadata.json"), "rb") as f:
+        metadata = json.load(f)
+    
+    return Game(
+        tracking_data=TrackingData(pd.read_parquet(os.path.join(full_path, "tracking_data.parquet")), provider=metadata["tracking_data_provider"]),
+        event_data=EventData(pd.read_parquet(os.path.join(full_path, "event_data.parquet")), provider=metadata["event_data_provider"]),
+        pitch_dimensions=metadata["pitch_dimensions"],
+        periods=pd.read_parquet(os.path.join(full_path, "periods.parquet")),
+        home_team_id=metadata["home_team_id"],
+        home_formation=metadata["home_formation"],
+        home_score=metadata["home_score"],
+        home_team_name=metadata["home_team_name"],
+        home_players=pd.read_parquet(os.path.join(full_path, "home_players.parquet")),
+        away_team_id=metadata["away_team_id"],
+        away_formation=metadata["away_formation"],
+        away_score=metadata["away_score"],
+        away_team_name=metadata["away_team_name"],
+        away_players=pd.read_parquet(os.path.join(full_path, "away_players.parquet")),
+        country=metadata["country"],
+        allow_synchronise_tracking_and_event_data=metadata["allow_synchronise_tracking_and_event_data"],
+        shot_events=pd.read_parquet(os.path.join(full_path, "shot_events.parquet")),
+        dribble_events=pd.read_parquet(os.path.join(full_path, "dribble_events.parquet")),
+        pass_events=pd.read_parquet(os.path.join(full_path, "pass_events.parquet")),
+        _tracking_timestamp_is_precise=metadata["_tracking_timestamp_is_precise"],
+        _event_timestamp_is_precise=metadata["_event_timestamp_is_precise"],
+        _periods_changed_playing_direction=metadata["_periods_changed_playing_direction"],
     )
-    if not os.path.exists(loc):
-        raise FileNotFoundError(
-            f"Could not find {loc}. Set the `path` variable"
-            " to specify the right directory of the saved game."
-        )
-    with open(loc, "rb") as f:
-        game = pickle.load(f)
-
-    if not isinstance(game, Game):
-        raise TypeError(
-            f"Expected a databallpy.game.Game object, but loaded a {type(game)}."
-            " Insert the location of a game object to load a game."
-        )
-    return game
-
 
 @logging_wrapper(__file__)
 def load_tracking_data(
@@ -499,6 +516,11 @@ def get_open_game(
         axis=1,
     )
 
+    shot_events = create_event_attributes_dataframe(databallpy_events["shot_events"]) if "shot_events" in databallpy_events.keys() else pd.DataFrame()
+    pass_events = create_event_attributes_dataframe(databallpy_events["pass_events"]) if "pass_events" in databallpy_events.keys() else pd.DataFrame()
+    dribble_events = create_event_attributes_dataframe(databallpy_events["dribble_events"]) if "dribble_events" in databallpy_events.keys() else pd.DataFrame()
+
+
     game = Game(
         tracking_data=TrackingData(
             tracking_data, provider=provider, frame_rate=metadata.frame_rate
@@ -518,18 +540,9 @@ def get_open_game(
         away_players=metadata.away_players,
         country=ed_metadata.country,
         allow_synchronise_tracking_and_event_data=True,
-        shot_events=databallpy_events["shot_events"]
-        if "shot_events" in databallpy_events.keys()
-        else {},
-        dribble_events=databallpy_events["dribble_events"]
-        if "dribble_events" in databallpy_events.keys()
-        else {},
-        pass_events=databallpy_events["pass_events"]
-        if "pass_events" in databallpy_events.keys()
-        else {},
-        other_events=databallpy_events["other_events"]
-        if "other_events" in databallpy_events.keys()
-        else {},
+        shot_events=shot_events,
+        dribble_events=dribble_events,
+        pass_events=pass_events,
         _tracking_timestamp_is_precise=True,
         _event_timestamp_is_precise=True,
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),

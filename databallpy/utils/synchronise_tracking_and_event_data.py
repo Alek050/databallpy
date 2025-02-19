@@ -4,12 +4,6 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from databallpy.events import (
-    DribbleEvent,
-    IndividualCloseToBallEvent,
-    PassEvent,
-    ShotEvent,
-)
 from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
@@ -25,9 +19,8 @@ EVENT_UNASSIGNED = 4
 def synchronise_tracking_and_event_data(
     tracking_data: pd.DataFrame,
     event_data: pd.DataFrame,
-    all_events: dict[
-        str, IndividualCloseToBallEvent | DribbleEvent | PassEvent | ShotEvent
-    ],
+    home_players:pd.DataFrame,
+    away_players:pd.DataFrame,
     cost_functions: dict = {},
     n_batches: int | str = "smart",
     optimize: bool = True,
@@ -42,7 +35,8 @@ def synchronise_tracking_and_event_data(
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
         event_data (pd.DataFrame): Event data of the game
-        all_events (dict): Dictionary containing all the events of the game
+        home_players (pd.DataFrame): Information about the home players
+        away_players (pd.DataFrame): Information about the away_players
         cost_functions (dict, optional): Dictionary containing the cost functions that
             are used to calculate the similarity between the tracking and event data.
             The keys of the dictionary are the event types, the values are the cost
@@ -124,7 +118,8 @@ def synchronise_tracking_and_event_data(
             sim_mat = _create_sim_mat(
                 tracking_batch,
                 event_batch,
-                all_events,
+                home_players, 
+                away_players,
                 cost_functions,
             )
             event_frame_dict = _needleman_wunsch(sim_mat, enable_optimization=optimize)
@@ -154,9 +149,8 @@ def synchronise_tracking_and_event_data(
 def _create_sim_mat(
     tracking_batch: pd.DataFrame,
     event_batch: pd.DataFrame,
-    all_events: dict[
-        str, IndividualCloseToBallEvent | DribbleEvent | PassEvent | ShotEvent
-    ],
+    home_players: pd.DataFrame,
+    away_players:pd.DataFrame,
     cost_functions: dict = {},
 ) -> np.ndarray:
     """Function that creates similarity matrix between every frame and event in batch
@@ -164,7 +158,8 @@ def _create_sim_mat(
     Args:
         tracking_batch (pd.DataFrame): batch of tracking data
         event_batch (pd.DataFrame): batch of event data
-        all_events (dict): dictionary containing all the events of the game
+        home_players (pd.DataFrame): Information about the home players
+        away_players (pd.DataFrame): Information about the away_players
         cost_functions (dict, optional): dictionary containing the cost functions that
 
     Returns:
@@ -178,7 +173,6 @@ def _create_sim_mat(
 
     for row in event_batch.itertuples():
         i = row.Index
-        event = all_events[row.event_id]
 
         if row.databallpy_event == "pass":
             cost_function = cost_functions.get("pass", base_pass_cost_function)
@@ -188,6 +182,12 @@ def _create_sim_mat(
             cost_function = cost_functions.get(
                 row.databallpy_event, base_general_cost_ball_event
             )
+        
+        for side, players_df in zip(["home", "away"], [home_players, away_players]):
+            if row.player_id in players_df["id"].values:
+                team_side = side
+                jersey = players_df.loc[players_df["id"] == row.player_id, "shirt_num"].iloc[0]
+                break
 
         kwargs = {}
         sig = inspect.signature(cost_function)
@@ -196,7 +196,7 @@ def _create_sim_mat(
         if "ball_event_distance" in sig.parameters:
             kwargs["ball_event_distance"] = ball_event_diff[:, i]
 
-        cost = cost_function(tracking_data=tracking_batch, event=event, **kwargs)
+        cost = cost_function(tracking_data=tracking_batch, event=row, team_side=team_side, jersey=jersey, **kwargs)
 
         _validate_cost(cost, len(tracking_batch))
 
@@ -601,7 +601,7 @@ def align_event_data_datetime(
 
 def get_time_difference_cost(
     tracking_data: pd.DataFrame,
-    event: ShotEvent | DribbleEvent | PassEvent,
+    event: pd.Series,
     time_diff: np.ndarray[float] | None = None,
     **kwargs: dict,
 ) -> np.ndarray[float]:
@@ -616,7 +616,7 @@ def get_time_difference_cost(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
+        event (pd.Series): Event that needs to be synced
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime
         **kwargs: Keyword arguments that can be passed to the sigmoid function
@@ -637,7 +637,7 @@ def get_time_difference_cost(
 
 def get_distance_ball_event_cost(
     tracking_data: pd.DataFrame,
-    event: ShotEvent | DribbleEvent | PassEvent,
+    event: pd.Series,
     ball_event_distance: np.ndarray[float] | None = None,
     **kwargs: dict,
 ) -> np.ndarray[float]:
@@ -651,7 +651,7 @@ def get_distance_ball_event_cost(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
+        event (pd.Series): Event that needs to be synced
         ball_event_distance (np.ndarray[float], optional): Array containing the distance
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
@@ -663,7 +663,7 @@ def get_distance_ball_event_cost(
     if ball_event_distance is None:
         ball_event_distance = np.hypot(
             tracking_data["ball_x"].values - event.start_x,
-            tracking_data["ball_y"].values - event.start_y,
+            tracking_data["ball_y"].values - event.start_y
         )
 
     if len(kwargs) > 0:
@@ -673,7 +673,8 @@ def get_distance_ball_event_cost(
 
 def get_distance_ball_player_cost(
     tracking_data: pd.DataFrame,
-    event: ShotEvent | DribbleEvent | PassEvent,
+    team_side: str,
+    jersey:int,
     **kwargs: dict,
 ) -> np.ndarray[float]:
     """Function that calculates the cost of the difference between the ball and the
@@ -686,7 +687,8 @@ def get_distance_ball_player_cost(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
+        team_side (str): Either home or away, the side of the player performing the event
+        jersey (int): The shirt number of the player performing the event
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
     Returns:
@@ -694,11 +696,12 @@ def get_distance_ball_player_cost(
         and the player in the tracking data
     """
     _validate_sigmoid_kwargs(kwargs)
+    col_id = f"{team_side}_{jersey}"
     distance = np.hypot(
         tracking_data["ball_x"].values
-        - tracking_data[f"{event.team_side}_{event.jersey}" + "_x"].values,
+        - tracking_data[f"{col_id}" + "_x"].values,
         tracking_data["ball_y"].values
-        - tracking_data[f"{event.team_side}_{event.jersey}" + "_y"].values,
+        - tracking_data[f"{col_id}" + "_y"].values,
     )
 
     if len(kwargs) > 0:
@@ -707,7 +710,7 @@ def get_distance_ball_player_cost(
 
 
 def get_ball_acceleration_cost(
-    tracking_data: pd.DataFrame, _: any, **kwargs: dict
+    tracking_data: pd.DataFrame, **kwargs: dict
 ) -> np.ndarray[float]:
     """Function that calculates the cost of the ball acceleration in the tracking data.
     The cost is calculated using a sigmoid function. The sigmoid function is used to
@@ -721,8 +724,6 @@ def get_ball_acceleration_cost(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        _ (any): Event that needs to be synced. This argument is not used in this
-            function
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
     Returns:
@@ -737,7 +738,8 @@ def get_ball_acceleration_cost(
 
 def get_player_ball_distance_increase_cost(
     tracking_data: pd.DataFrame,
-    event: ShotEvent | DribbleEvent | PassEvent,
+    team_side:str,
+    jersey:str,
     **kwargs: dict,
 ) -> np.ndarray[float]:
     """Function that calculates the cost of the increase in distance between the player
@@ -751,7 +753,8 @@ def get_player_ball_distance_increase_cost(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (ShotEvent | DribbleEvent | PassEvent): Event that needs to be synced
+        team_side (str): Either home or away, the side of the player performing the event
+        jersey (int): The shirt number of the player performing the event
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
     Returns:
@@ -759,11 +762,12 @@ def get_player_ball_distance_increase_cost(
         the player and the ball
     """
     _validate_sigmoid_kwargs(kwargs)
+    col_id = f"{team_side}_{jersey}"
     player_ball_diff = np.hypot(
         tracking_data["ball_x"].values
-        - tracking_data[f"{event.team_side}_{event.jersey}" + "_x"].values,
+        - tracking_data[f"{col_id}" + "_x"].values,
         tracking_data["ball_y"].values
-        - tracking_data[f"{event.team_side}_{event.jersey}" + "_y"].values,
+        - tracking_data[f"{col_id}" + "_y"].values,
     )
     if len(kwargs) > 0:
         return sigmoid(np.gradient(player_ball_diff), **kwargs)
@@ -772,7 +776,8 @@ def get_player_ball_distance_increase_cost(
 
 def get_ball_goal_angle_cost(
     tracking_data: pd.DataFrame,
-    event: ShotEvent,
+    team_side:str,
+    pitch_length:float,
     **kwargs: dict,
 ) -> np.ndarray[float]:
     """Function that calculates the cost of the angle between the ball moving direction
@@ -785,7 +790,8 @@ def get_ball_goal_angle_cost(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (ShotEvent): Event that needs to be synced
+        team_side (str): Either home or away, the side of the player performing the event
+        pitch_length (float): The length of the pitch in meters
         **kwargs: Keyword arguments that can be passed to the sigmoid function
 
     Returns:
@@ -797,8 +803,8 @@ def get_ball_goal_angle_cost(
         x in tracking_data.columns
         for x in ["goal_angle_home_team", "goal_angle_away_team"]
     ):
-        goal_loc = np.array([event.pitch_size[0] / 2, 0])
-        if event.team_side == "away":
+        goal_loc = np.array([pitch_length / 2, 0])
+        if team_side == "away":
             goal_loc[0] = -goal_loc[0]
 
         ball_moving_vectors = (
@@ -819,7 +825,7 @@ def get_ball_goal_angle_cost(
     else:
         goal_angle = (
             tracking_data["goal_angle_home_team"].values
-            if event.team_side == "home"
+            if team_side == "home"
             else tracking_data["goal_angle_away_team"].values
         )
 
@@ -847,7 +853,9 @@ def combine_cost_functions(costs: list) -> np.ndarray[float]:
 
 def base_pass_cost_function(
     tracking_data: pd.DataFrame,
-    event: PassEvent,
+    event: pd.Series,
+    team_side: str,
+    jersey: int,
     time_diff: np.ndarray | None = None,
     ball_event_distance: np.ndarray | None = None,
 ) -> np.ndarray[float]:
@@ -861,7 +869,9 @@ def base_pass_cost_function(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (PassEvent): Pass event that needs to be synced
+        event (pd.Series): Pass event that needs to be synced
+        team_side (str): Either home or away, the side of the player performing the event
+        jersey (int): The shirt number of the player performing the event
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime
         ball_event_distance (np.ndarray[float], optional): Array containing the
@@ -876,9 +886,9 @@ def base_pass_cost_function(
     distance_ball_event_cost = get_distance_ball_event_cost(
         tracking_data, event, ball_event_distance=ball_event_distance
     )
-    distance_ball_player_cost = get_distance_ball_player_cost(tracking_data, event)
-    ball_acceleration_cost = get_ball_acceleration_cost(tracking_data, event)
-    player_ball_diff_cost = get_player_ball_distance_increase_cost(tracking_data, event)
+    distance_ball_player_cost = get_distance_ball_player_cost(tracking_data, team_side, jersey)
+    ball_acceleration_cost = get_ball_acceleration_cost(tracking_data)
+    player_ball_diff_cost = get_player_ball_distance_increase_cost(tracking_data, team_side, jersey)
 
     return combine_cost_functions(
         [
@@ -893,7 +903,10 @@ def base_pass_cost_function(
 
 def base_shot_cost_function(
     tracking_data: pd.DataFrame,
-    event: ShotEvent,
+    event: pd.Series,
+    team_side: str,
+    jersey:int,
+    pitch_length: float = 105.,
     time_diff: np.ndarray | None = None,
     ball_event_distance: np.ndarray | None = None,
 ) -> np.ndarray[float]:
@@ -908,7 +921,9 @@ def base_shot_cost_function(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (ShotEvent): Shot event that needs to be synced
+        event (pd.Series): Shot event that needs to be synced
+        team_side (str): Either home or away, the side of the player performing the event
+        jersey (int): The shirt number of the player performing the event
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime
         ball_event_distance (np.ndarray[float], optional): Array containing the distance
@@ -923,10 +938,10 @@ def base_shot_cost_function(
     distance_ball_event_cost = get_distance_ball_event_cost(
         tracking_data, event, ball_event_distance=ball_event_distance
     )
-    distance_ball_player_cost = get_distance_ball_player_cost(tracking_data, event)
-    ball_acceleration_cost = get_ball_acceleration_cost(tracking_data, event)
-    player_ball_diff_cost = get_player_ball_distance_increase_cost(tracking_data, event)
-    goal_angle_cost = get_ball_goal_angle_cost(tracking_data, event)
+    distance_ball_player_cost = get_distance_ball_player_cost(tracking_data, team_side, jersey)
+    ball_acceleration_cost = get_ball_acceleration_cost(tracking_data)
+    player_ball_diff_cost = get_player_ball_distance_increase_cost(tracking_data, team_side, jersey)
+    goal_angle_cost = get_ball_goal_angle_cost(tracking_data, team_side, pitch_length)
 
     return combine_cost_functions(
         [
@@ -942,7 +957,9 @@ def base_shot_cost_function(
 
 def base_general_cost_ball_event(
     tracking_data: pd.DataFrame,
-    event: ShotEvent | DribbleEvent | PassEvent,
+    event: pd.Series,
+    team_side: str,
+    jersey:int,
     time_diff: np.ndarray | None = None,
     ball_event_distance: np.ndarray | None = None,
 ) -> np.ndarray[float]:
@@ -954,7 +971,9 @@ def base_general_cost_ball_event(
 
     Args:
         tracking_data (pd.DataFrame): Tracking data of the game
-        event (ShotEvent, DribbleEvent, PassEvent): Event that needs to be synced
+        event (pd.Series): Event that needs to be synced
+        team_side (str): Either home or away, the side of the player performing the event
+        jersey (int): The shirt number of the player performing the event
         time_diff (np.ndarray[float], optional): Array containing the time difference
             between the tracking and event data datetime
         ball_event_distance (np.ndarray[float], optional): Array containing the distance
@@ -969,7 +988,7 @@ def base_general_cost_ball_event(
     distance_ball_event_cost = get_distance_ball_event_cost(
         tracking_data, event, ball_event_distance=ball_event_distance
     )
-    distance_ball_player_cost = get_distance_ball_player_cost(tracking_data, event)
+    distance_ball_player_cost = get_distance_ball_player_cost(tracking_data, team_side, jersey)
 
     return combine_cost_functions(
         [time_diff_cost, distance_ball_event_cost, distance_ball_player_cost]

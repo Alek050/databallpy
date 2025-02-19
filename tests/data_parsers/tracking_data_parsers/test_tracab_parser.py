@@ -33,13 +33,13 @@ class TestTracabParser(unittest.TestCase):
             self.tracking_data_dat_loc, self.metadata_json_loc, verbose=False
         )
         assert metadata == MD_TRACAB
-        pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
+        pd.testing.assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
 
         tracking_data, metadata = load_tracab_tracking_data(
             self.tracking_data_dat_loc, self.metadata_xml_loc, verbose=False
         )
         assert metadata == MD_TRACAB
-        pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
+        pd.testing.assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
 
     def test_load_tracab_tracking_data_errors(self):
         with self.assertRaises(ValueError):
@@ -116,7 +116,7 @@ class TestTracabParser(unittest.TestCase):
 
     def test_get_tracking_data_txt(self):
         tracking_data = _get_tracking_data_txt(self.tracking_data_dat_loc, verbose=False)
-        expected_td = TD_TRACAB.drop(["gametime_td", "period_id", "datetime"], axis=1)
+        expected_td = pd.DataFrame(TD_TRACAB.drop(["gametime_td", "period_id", "datetime"], axis=1))
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.requests.get")

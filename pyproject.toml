@@ -39,6 +39,7 @@ scipy = "^1.11"
 pandas = "^2.1"
 chardet = "^5.2.0"
 pandera = "^0.22.1"
+pyarrow = "^19.0.0"
 
 [tool.poetry.group.developing]
 optional = true

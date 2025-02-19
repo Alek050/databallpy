@@ -69,6 +69,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             ]
         )
         self.game_to_sync.event_data.loc[8, "databallpy_event"] = "shot"
+        self.event_3_team_side = "home"
+        self.event_3_jersey = 2
 
     def test_synchronise_tracking_and_event_data_normal_condition(self):
         expected_event_data = self.game_to_sync.event_data.copy()
@@ -199,7 +201,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             game = self.game_to_sync.copy()
             game.tracking_data.drop(columns=game.tracking_data.columns, inplace=True)
             synchronise_tracking_and_event_data(
-                game.tracking_data, game.event_data, game.all_events, verbose=False
+                game.tracking_data, game.event_data, game.home_players, game.away_players, verbose=False
             )
 
     def test_synchronise_tracking_and_event_data_non_aligned_timestamps(self):
@@ -398,7 +400,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            all_events=self.game_to_sync.all_events,
+            home_players=self.game_to_sync.home_players,
+            away_players=self.game_to_sync.away_players,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
@@ -429,7 +432,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         res = _create_sim_mat(
             tracking_batch=tracking_data,
             event_batch=event_data,
-            all_events=self.game_to_sync.all_events,
+            home_players=self.game_to_sync.home_players,
+            away_players=self.game_to_sync.away_players,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05, atol=1e-05)
 
@@ -460,7 +464,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             res = _create_sim_mat(
                 tracking_batch=tracking_data,
                 event_batch=event_data,
-                all_events=self.game_to_sync.all_events,
+                home_players=self.game_to_sync.home_players,
+                away_players=self.game_to_sync.away_players,
             )
             np.testing.assert_allclose(expected_res, res, rtol=1e-05)
 
@@ -629,54 +634,48 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
     def test_get_distance_ball_player_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
         event = self.game_to_sync.get_event(3)
-        event.jersey = 2
-        event.team_side = "home"
         ball_player_distance = np.sqrt(
             (tracking_data["ball_x"] - tracking_data["home_2_x"]) ** 2
             + (tracking_data["ball_y"] - tracking_data["home_2_y"]) ** 2
         )
 
-        res = get_distance_ball_player_cost(tracking_data, event)
+        res = get_distance_ball_player_cost(tracking_data, self.event_3_team_side, self.event_3_jersey)
         expected_res = sigmoid(ball_player_distance, d=5, e=2.5)
 
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
-        res2 = get_distance_ball_player_cost(tracking_data, event, d=2, e=3)
+        res2 = get_distance_ball_player_cost(tracking_data, self.event_3_team_side, self.event_3_jersey, d=2, e=3)
         expected_res2 = sigmoid(ball_player_distance + 2, d=2, e=3)
 
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
 
     def test_get_ball_acceleration_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(3)
         ball_acceleration = tracking_data["ball_acceleration"]
 
-        res = get_ball_acceleration_cost(tracking_data, event)
+        res = get_ball_acceleration_cost(tracking_data)
         expected_res = sigmoid(-ball_acceleration, d=0.2, e=-25.0)
 
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
-        res2 = get_ball_acceleration_cost(tracking_data, event, d=2, e=3)
+        res2 = get_ball_acceleration_cost(tracking_data, d=2, e=3)
         expected_res2 = sigmoid(ball_acceleration, d=2, e=3)
 
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
 
     def test_get_player_ball_distance_increase_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()
-        event = self.game_to_sync.get_event(3)
-        event.jersey = 2
-        event.team_side = "home"
         player_ball_diff = np.sqrt(
             (tracking_data["home_2_x"] - tracking_data["ball_x"]) ** 2
             + (tracking_data["home_2_y"] - tracking_data["ball_y"]) ** 2
         )
 
-        res = get_player_ball_distance_increase_cost(tracking_data, event)
+        res = get_player_ball_distance_increase_cost(tracking_data, self.event_3_team_side, self.event_3_jersey)
         expected_res = sigmoid(np.gradient(player_ball_diff), d=-8.0)
 
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
 
-        res2 = get_player_ball_distance_increase_cost(tracking_data, event, d=2)
+        res2 = get_player_ball_distance_increase_cost(tracking_data, self.event_3_team_side, self.event_3_jersey, d=2)
         expected_res2 = sigmoid(np.gradient(player_ball_diff), d=2)
 
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
@@ -688,11 +687,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                 "ball_y": [-15, -10, -5],
             }
         )
-        event = self.game_to_sync.get_event(3)
-        event.jersey = 2
-        event.team_side = "away"
-
-        goal_loc = [-event.pitch_size[0] / 2, 0]
+        goal_loc = [-self.game_to_sync.pitch_dimensions[0] / 2, 0]
 
         ball_moving_vectors = np.array(
             [
@@ -714,7 +709,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         )
 
         goal_angle = np.concatenate((goal_angle, [goal_angle[-1]]))
-        res = get_ball_goal_angle_cost(tracking_data, event)
+        res = get_ball_goal_angle_cost(tracking_data, "away", self.game_to_sync.pitch_dimensions[0])
         expected_res = sigmoid(goal_angle, d=6, e=0.2 * np.pi)
 
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
@@ -722,7 +717,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data["goal_angle_home_team"] = goal_angle
         tracking_data["goal_angle_away_team"] = goal_angle + np.pi
 
-        res2 = get_ball_goal_angle_cost(tracking_data, event, d=2, e=3)
+        res2 = get_ball_goal_angle_cost(tracking_data, "away", self.game_to_sync.pitch_dimensions[0], d=2, e=3)
         expected_res2 = sigmoid(goal_angle + np.pi, d=2, e=3)
 
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
@@ -731,12 +726,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data = self.game_to_sync.tracking_data.copy()
         event = self.game_to_sync.get_event(3)
 
-        res = base_general_cost_ball_event(tracking_data, event)
+        res = base_general_cost_ball_event(tracking_data, event, self.event_3_team_side, self.event_3_jersey)
+        
         expected_res = combine_cost_functions(
             [
                 get_time_difference_cost(tracking_data, event),
                 get_distance_ball_event_cost(tracking_data, event),
-                get_distance_ball_player_cost(tracking_data, event),
+                get_distance_ball_player_cost(tracking_data, self.event_3_team_side, self.event_3_jersey),
             ]
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
@@ -745,15 +741,15 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data = self.game_to_sync.tracking_data.copy()
         event = self.game_to_sync.get_event(3)
 
-        res = base_pass_cost_function(tracking_data, event)
+        res = base_pass_cost_function(tracking_data, event, self.event_3_team_side, self.event_3_jersey)
 
         expected_res = combine_cost_functions(
             [
                 get_time_difference_cost(tracking_data, event),
                 get_distance_ball_event_cost(tracking_data, event),
-                get_distance_ball_player_cost(tracking_data, event),
-                get_ball_acceleration_cost(tracking_data, event),
-                get_player_ball_distance_increase_cost(tracking_data, event),
+                get_distance_ball_player_cost(tracking_data, self.event_3_team_side, self.event_3_jersey),
+                get_ball_acceleration_cost(tracking_data),
+                get_player_ball_distance_increase_cost(tracking_data, self.event_3_team_side, self.event_3_jersey),
             ]
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
@@ -762,16 +758,16 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         tracking_data = self.game_to_sync.tracking_data.copy()
         event = self.game_to_sync.get_event(3)
 
-        res = base_shot_cost_function(tracking_data, event)
+        res = base_shot_cost_function(tracking_data, event, self.event_3_team_side, self.event_3_jersey)
 
         expected_res = combine_cost_functions(
             [
                 get_time_difference_cost(tracking_data, event),
                 get_distance_ball_event_cost(tracking_data, event),
-                get_distance_ball_player_cost(tracking_data, event),
-                get_ball_acceleration_cost(tracking_data, event),
-                get_player_ball_distance_increase_cost(tracking_data, event),
-                get_ball_goal_angle_cost(tracking_data, event),
+                get_distance_ball_player_cost(tracking_data, self.event_3_team_side, self.event_3_jersey),
+                get_ball_acceleration_cost(tracking_data),
+                get_player_ball_distance_increase_cost(tracking_data, self.event_3_team_side, self.event_3_jersey),
+                get_ball_goal_angle_cost(tracking_data, self.event_3_team_side, 105),
             ]
         )
 

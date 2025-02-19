@@ -197,42 +197,6 @@ class TestShotEvent(unittest.TestCase):
                     **current_kwargs,
                 )
 
-        int_like_kwargs = {
-            "n_obstructive_players": 1,
-            "n_obstructive_defenders": 1,
-        }
-        invalid_values = [1.0, "1", [1], {1}, {"val": 1}]
-        for key in int_like_kwargs.keys():
-            current_kwargs = int_like_kwargs.copy()
-            for value in invalid_values:
-                current_kwargs[key] = value
-                with self.assertRaises(TypeError):
-                    ShotEvent(
-                        event_id=2512690515,
-                        period_id=1,
-                        minutes=9,
-                        seconds=17,
-                        datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
-                        start_x=50.0,
-                        start_y=20.0,
-                        team_id=123,
-                        team_side="home",
-                        pitch_size=(106, 68),
-                        player_id=45849,
-                        jersey=10,
-                        outcome=False,
-                        related_event_id=123,
-                        _xt=0.1,
-                        body_part="head",
-                        possession_type="free_kick",
-                        set_piece="no_set_piece",
-                        z_target=15.0,
-                        y_target=3.5,
-                        outcome_str="own_goal",
-                        first_touch=False,
-                        **current_kwargs,
-                    )
-
     def test_shot_event_df_attributes(self):
         assert self.shot_event.df_attributes == [
             "event_id",
@@ -256,14 +220,6 @@ class TestShotEvent(unittest.TestCase):
             "y_target",
             "z_target",
             "first_touch",
-            "ball_goal_distance",
-            "ball_gk_distance",
-            "shot_angle",
-            "gk_optimal_loc_distance",
-            "pressure_on_ball",
-            "n_obstructive_players",
-            "n_obstructive_defenders",
-            "goal_gk_distance",
             "xg",
         ]
 
@@ -279,39 +235,6 @@ class TestShotEvent(unittest.TestCase):
         assert self.shot_event != shot_event_changed_shot_attr
 
         assert self.shot_event != 1
-
-    def test_shot_event_add_tracking_data_features(self):
-        shot_event = self.shot_event.copy()
-        shot_event.add_tracking_data_features(
-            tracking_data_frame=self.tracking_data_frame,
-            column_id="home_1",
-            gk_column_id="away_1",
-        )
-        ball_left_post_vec = [53, 7.32 / 2]
-        ball_right_post_vec = [53, -7.32 / 2]
-
-        self.assertAlmostEqual(shot_event.ball_goal_distance, np.sqrt(53**2), places=4)
-        self.assertAlmostEqual(
-            shot_event.ball_gk_distance, np.sqrt(10**2 + 10**2), places=4
-        )
-        self.assertAlmostEqual(
-            shot_event.shot_angle,
-            get_smallest_angle(
-                ball_left_post_vec, ball_right_post_vec, angle_format="degree"
-            ),
-            places=4,
-        )
-
-        self.assertAlmostEqual(
-            shot_event.gk_optimal_loc_distance,
-            10.0,
-            places=4,
-        )
-        self.assertEqual(shot_event.n_obstructive_players, 1)
-        self.assertEqual(shot_event.n_obstructive_defenders, 1)
-        self.assertAlmostEqual(
-            shot_event.goal_gk_distance, np.sqrt(43**2 + 10**2), places=4
-        )
 
     def test_get_xg_valid(self):
         shot_event = self.shot_event.copy()

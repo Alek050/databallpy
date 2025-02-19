@@ -46,7 +46,6 @@ class TestMatch(unittest.TestCase):
                 shot_events=self.game.shot_events,
                 pass_events=self.game.pass_events,
                 dribble_events=self.game.dribble_events,
-                other_events=self.game.other_events,
                 allow_synchronise_tracking_and_event_data=self.game.allow_synchronise_tracking_and_event_data,
                 _tracking_timestamp_is_precise=self.game._tracking_timestamp_is_precise,
                 _event_timestamp_is_precise=self.game._event_timestamp_is_precise,

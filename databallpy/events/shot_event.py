@@ -50,25 +50,10 @@ class ShotEvent(IndividualOnBallEvent):
         z_target (float, optional): z location of the goal. Defaults to np.nan.
         first_touch (bool, optional): whether the shot is taken with the first touch.
             Defaults to False.
-        ball_goal_distance (float, optional): distance between the ball and the goal in
-            meters.
-        ball_gk_distance (float, optional): distance between the ball and the goalkeeper
-            in meters.
-        shot_angle (float, optional): angle between the shooting line and the goal in
-            radian. At 0*pi radians, the ball is positined directly in front of the
-            goal.
-        gk_optimal_loc_distance (float, optional): Shortest distance between the gk and
-            the line between the ball and the goal. The optimal location of the gk is
-            when the gk is directly on the line between the ball and middle of the goal.
-        pressure_on_ball (float, optional): pressure on the player who takes the shot.
-            See Adrienko et al (2016), or the source code, for more information.
-        n_obstructive_players (int, optional): number of obstructive players (both
-            teammates as opponents) within the triangle from the ball and the two posts
-            of the goal.
-        n_obstructive_defenders (int, optional): number of obstructive opponents within
-            the triangle from the ball and the two posts of the goal.
-        goal_gk_distance (float, optional): distance between the goal and the
-            goalkeeper in meters.
+        ball_goal_distance (float, optional): distance between the ball and the goal.
+            Defaults to np.nan.
+        shot_angle (float, optional): angle of the shot. Defaults to np.nan.
+        
 
     Properties:
         xt (float): expected threat of the event. This is calculated using a model
@@ -94,16 +79,8 @@ class ShotEvent(IndividualOnBallEvent):
     y_target: float = np.nan
     z_target: float = np.nan
     first_touch: bool = False
-
-    # tracking data variables
-    ball_goal_distance: float = np.nan
-    ball_gk_distance: float = np.nan
-    shot_angle: float = np.nan
-    gk_optimal_loc_distance: float = np.nan
-    pressure_on_ball: float = np.nan
-    n_obstructive_players: int = MISSING_INT
-    n_obstructive_defenders: int = MISSING_INT
-    goal_gk_distance: float = np.nan
+    ball_goal_distance = np.nan
+    shot_angle = np.nan
     xg: float = np.nan
 
     def __post_init__(self):
@@ -124,14 +101,6 @@ class ShotEvent(IndividualOnBallEvent):
             "y_target",
             "z_target",
             "first_touch",
-            "ball_goal_distance",
-            "ball_gk_distance",
-            "shot_angle",
-            "gk_optimal_loc_distance",
-            "pressure_on_ball",
-            "n_obstructive_players",
-            "n_obstructive_defenders",
-            "goal_gk_distance",
             "xg",
         ]
 
@@ -184,93 +153,6 @@ class ShotEvent(IndividualOnBallEvent):
         self.shot_angle = get_smallest_angle(
             ball_left_post_vector, ball_right_post_vector, angle_format="degree"
         )
-
-    def add_tracking_data_features(
-        self,
-        tracking_data_frame: pd.Series,
-        column_id: str,
-        gk_column_id: str,
-    ):
-        """Add tracking data features to the shot event. This function calculates the
-        distance between the ball and the goal, the distance between the ball and the
-        goalkeeper, the angle between the ball and the goal, the distance between the
-        gk and the optimal position of the gk, the pressure on the ball, the
-        number of obstructive players, and the number of obstructive defenders.
-
-
-        Args:
-            tracking_data_frame (pd.Series): tracking data frame of the event
-            team_side (str): side of the team that takes the shot, either
-                "home" or "away"
-            pitch_dimensions (list): dimensions of the pitch
-            column_id (str): column id of the player who takes the shot
-            gk_column_id (str): column id of the goalkeeper
-        """
-        # define positions
-        goal_xy = (
-            [self.pitch_size[0] / 2.0, 0]
-            if self.team_side == "home"
-            else [-self.pitch_size[0] / 2.0, 0]
-        )
-        left_post_xy = (
-            [self.pitch_size[0] / 2.0, (7.32 / 2)]
-            if self.team_side == "home"
-            else [-self.pitch_size[0] / 2.0, -(7.32 / 2)]
-        )
-        right_post_xy = (
-            [self.pitch_size[0] / 2.0, -(7.32 / 2)]
-            if self.team_side == "home"
-            else [-self.pitch_size[0] / 2.0, (7.32 / 2)]
-        )
-        ball_xy = tracking_data_frame[["ball_x", "ball_y"]].values
-        gk_xy = tracking_data_frame[[f"{gk_column_id}_x", f"{gk_column_id}_y"]].values
-
-        # calculate obstructive players
-        triangle = Delaunay([right_post_xy, left_post_xy, ball_xy])
-        players_column_ids = [
-            x[:-2]
-            for x in tracking_data_frame.index
-            if ("_x" in x and "ball" not in x and x != f"{column_id}_x")
-        ]
-        x_vals = tracking_data_frame[[f"{x}_x" for x in players_column_ids]].values
-        y_vals = tracking_data_frame[[f"{x}_y" for x in players_column_ids]].values
-        players_xy = np.array([x_vals, y_vals]).T
-        n_obstructive_players = (triangle.find_simplex(players_xy) >= 0).sum()
-
-        opponent_column_ids = [x for x in players_column_ids if self.team_side not in x]
-        x_vals = tracking_data_frame[[f"{x}_x" for x in opponent_column_ids]].values
-        y_vals = tracking_data_frame[[f"{x}_y" for x in opponent_column_ids]].values
-        opponent_xy = np.array([x_vals, y_vals]).T
-        n_obstructive_defenders = (triangle.find_simplex(opponent_xy) >= 0).sum()
-
-        # add variables
-        goal_xyz = np.append(goal_xy, 0)
-        ball_xyz = np.append(ball_xy, 0)
-        gk_xyz = np.append(gk_xy, 0)
-
-        # add variables
-        self._update_ball_goal_distance(ball_xy)
-        self.ball_gk_distance = math.dist(ball_xy, gk_xy)
-        self._update_shot_angle(ball_xy)
-        self.gk_optimal_loc_distance = float(
-            np.linalg.norm(np.cross(goal_xyz - ball_xyz, ball_xyz - gk_xyz))
-            / np.linalg.norm(goal_xyz - ball_xyz)
-        )
-        self.pressure_on_ball = float(
-            get_pressure_on_player(
-                tracking_data_frame,
-                column_id,
-                pitch_size=self.pitch_size,
-                d_front="variable",
-                d_back=3.0,
-                q=1.75,
-            )
-        )
-        self.n_obstructive_players = int(n_obstructive_players)
-        self.n_obstructive_defenders = int(n_obstructive_defenders)
-        self.goal_gk_distance = float(np.linalg.norm(goal_xy - gk_xy))
-
-        self.xg = float(self.get_xg())
 
     def get_xg(self):
         """Get expected goals of the shot event. This function calculates the xG of
@@ -347,27 +229,12 @@ class ShotEvent(IndividualOnBallEvent):
         for name, td_var in zip(
             [
                 "ball_goal_distance",
-                "ball_gk_distance",
                 "shot_angle",
-                "gk_optimal_loc_distance",
-                "pressure_on_ball",
-                "goal_gk_distance",
             ],
             [
                 self.ball_goal_distance,
-                self.ball_gk_distance,
                 self.shot_angle,
-                self.gk_optimal_loc_distance,
-                self.pressure_on_ball,
-                self.goal_gk_distance,
             ],
         ):
             if not isinstance(td_var, (float, np.floating)):
                 raise TypeError(f"{name} should be float, got {type(td_var)}")
-
-        for name, td_var in zip(
-            ["n_obstructive_players", "n_obstructive_defenders"],
-            [self.n_obstructive_players, self.n_obstructive_defenders],
-        ):
-            if not isinstance(td_var, (int, np.integer)):
-                raise TypeError(f"{name} should be int, got {type(td_var)}")
