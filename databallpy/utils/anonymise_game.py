@@ -249,24 +249,20 @@ def anonymise_players(game: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFram
             game.event_data["to_player_id"] = game.event_data["to_player_id"].map(
                 player_id_map
             )
+        game.pass_events["player_name"] = game.pass_events["player_name"].map(
+            player_name_map
+        )
+        game.pass_events["player_id"] = game.pass_events["player_id"].map(player_id_map)
+        game.dribble_events["player_name"] = game.dribble_events["player_name"].map(
+            player_name_map
+        )
+        game.dribble_events["player_id"] = game.dribble_events["player_id"].map(player_id_map)
+        game.shot_events["player_name"] = game.shot_events["player_name"].map(
+            player_name_map
+        )
+        game.shot_events["player_id"] = game.shot_events["player_id"].map(player_id_map)
 
-        # update databallpy events
-        for event in game.all_events.values():
-            event.player_id = player_id_map[event.player_id]
 
-            if event.team_side == "home":
-                event.jersey = home_players_jersey_map[event.jersey]
-            else:
-                event.jersey = away_players_jersey_map[event.jersey]
-
-        if game._passes_df is not None:
-            game.passes_df["player_id"] = game.passes_df["player_id"].map(player_id_map)
-        if game._shots_df is not None:
-            game.shots_df["player_id"] = game.shots_df["player_id"].map(player_id_map)
-        if game._dribbles_df is not None:
-            game.dribbles_df["player_id"] = game.dribbles_df["player_id"].map(
-                player_id_map
-            )
 
     return game, keys
 
@@ -376,20 +372,10 @@ def anonymise_teams(game: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFrame]
     game.away_team_name = team_name_map[game.away_team_name]
 
     if len(game.event_data) > 0:
-        for event in (
-            list(game.shot_events.values())
-            + list(game.pass_events.values())
-            + list(game.dribble_events.values())
-        ):
-            event.team_id = team_id_map[event.team_id]
-
         game.event_data["team_id"] = game.event_data["team_id"].map(team_id_map)
-        if game._passes_df is not None:
-            game.passes_df["team_id"] = game.passes_df["team_id"].map(team_id_map)
-        if game._shots_df is not None:
-            game.shots_df["team_id"] = game.shots_df["team_id"].map(team_id_map)
-        if game._dribbles_df is not None:
-            game.dribbles_df["team_id"] = game.dribbles_df["team_id"].map(team_id_map)
+        game.pass_events["team_id"] = game.pass_events["team_id"].map(team_id_map)
+        game.shot_events["team_id"] = game.shot_events["team_id"].map(team_id_map)
+        game.dribble_events["team_id"] = game.dribble_events["team_id"].map(team_id_map)
 
     return game, keys
 
@@ -477,25 +463,17 @@ def anonymise_datetime(
                 .fillna(MISSING_INT)
                 .astype(int)
             )
+        
+        game.pass_events["datetime"] = (
+            game.pass_events["datetime"].dt.tz_convert("UTC") - dt_delta
+        )
+        game.shot_events["datetime"] = (
+            game.shot_events["datetime"].dt.tz_convert("UTC") - dt_delta
+        )
+        game.dribble_events["datetime"] = (
+            game.dribble_events["datetime"].dt.tz_convert("UTC") - dt_delta
+        )
 
-        for event in (
-            list(game.shot_events.values())
-            + list(game.pass_events.values())
-            + list(game.dribble_events.values())
-        ):
-            event.datetime = event.datetime.tz_convert("UTC") - dt_delta
-
-        if game._passes_df is not None:
-            game.passes_df["datetime"] = (
-                game.passes_df["datetime"].dt.tz_convert("UTC") - dt_delta
-            )
-        if game._shots_df is not None:
-            game.shots_df["datetime"] = (
-                game.shots_df["datetime"].dt.tz_convert("UTC") - dt_delta
-            )
-        if game._dribbles_df is not None:
-            game.dribbles_df["datetime"] = (
-                game.dribbles_df["datetime"].dt.tz_convert("UTC") - dt_delta
-            )
+        
 
     return game
