@@ -174,6 +174,14 @@ class TrackingData(pd.DataFrame):
         raise AttributeError("Cannot set provider attribute of tracking data")
 
     @property
+    def game(self):
+        return self._provider
+
+    @game.setter
+    def game(self, _):
+        raise AttributeError("Cannot set game attribute of tracking data")
+
+    @property
     def frame_rate(self):
         return self._frame_rate
 
@@ -784,11 +792,10 @@ class TrackingData(pd.DataFrame):
         self["team_possession"] = None
         for event_id in [x for x in self.event_id if x != MISSING_INT]:
             event = event_data[event_data.event_id == event_id].iloc[0]
-
             if (
                 event["databallpy_event"] in on_ball_events
                 and event.team_id != current_team_id
-                and event.outcome == 1
+                and event.is_successful == 1
             ):
                 end_idx = self[self.event_id == event_id].index[0]
                 team = "home" if current_team_id == home_team_id else "away"

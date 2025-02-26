@@ -178,6 +178,16 @@ class TestUtils(unittest.TestCase):
         )
         self.assertFalse(_values_are_equal_(pd.to_datetime("NaT"), "NaT"))
 
+        # known classes
+        class Game:
+            def __init__(self, value):
+                self.value = value
+
+            def __eq__(self, other):
+                return self.value == other.value
+
+        self.assertTrue(_values_are_equal_(Game(1), Game(1)))
+
         # NotImplementedError
         class CustomType:
             def __init__(self, value):
@@ -222,6 +232,19 @@ class TestUtils(unittest.TestCase):
         copied = _copy_value_(original)
         pd.testing.assert_frame_equal(copied, original)
         self.assertIsNot(copied, original)
+
+        # known classes
+        class Game:
+            def __init__(self, value):
+                self.value = value
+
+            def copy(self):
+                return Game(self.value)
+
+            def __eq__(self, other):
+                return self.value == other.value
+
+        self.assertEqual(_copy_value_(Game(1)), Game(1))
 
         class CustomType:
             def __init__(self, value):

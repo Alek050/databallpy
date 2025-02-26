@@ -4,9 +4,10 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.game_utils import create_event_attributes_dataframe
 
 TD_TRACAB = TrackingData(
     {
@@ -81,7 +82,7 @@ TD_TRACAB = TrackingData(
         ],
     },
     frame_rate=25,
-    provider="tracab"
+    provider="tracab",
 )
 
 
@@ -386,6 +387,7 @@ SHOT_INSTANCES_OPTA = {
         first_touch=False,
     ),
 }
+SHOT_EVENTS_OPTA = create_event_attributes_dataframe(SHOT_INSTANCES_OPTA)
 
 
 SHOT_INSTANCES_OPTA_TRACAB = {}
@@ -394,7 +396,10 @@ for key, shot_event in SHOT_INSTANCES_OPTA.items():
     SHOT_INSTANCES_OPTA_TRACAB[key].start_x = (
         SHOT_INSTANCES_OPTA_TRACAB[key].start_x / 106 * 100
     )
-    SHOT_INSTANCES_OPTA_TRACAB[key].start_y = SHOT_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
+    SHOT_INSTANCES_OPTA_TRACAB[key].start_y = (
+        SHOT_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
+    )
+SHOT_EVENTS_OPTA_TRACAB = create_event_attributes_dataframe(SHOT_INSTANCES_OPTA_TRACAB)
 
 DRIBBLE_INSTANCES_OPTA = {
     7: DribbleEvent(
@@ -422,6 +427,7 @@ DRIBBLE_INSTANCES_OPTA = {
         with_opponent=True,
     )
 }
+DRIBBLE_EVENTS_OPTA = create_event_attributes_dataframe(DRIBBLE_INSTANCES_OPTA)
 
 DRIBBLE_INSTANCES_OPTA_TRACAB = {}
 for key, dribble_event in DRIBBLE_INSTANCES_OPTA.items():
@@ -432,38 +438,9 @@ for key, dribble_event in DRIBBLE_INSTANCES_OPTA.items():
     DRIBBLE_INSTANCES_OPTA_TRACAB[key].start_y = (
         DRIBBLE_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
     )
-
-TACKLE_INSTANCES_OPTA = {
-    8: TackleEvent(
-        event_id=8,
-        period_id=2,
-        minutes=31,
-        seconds=10,
-        datetime=pd.to_datetime("2023-01-22T12:18:43.120").tz_localize(
-            "Europe/Amsterdam"
-        ),
-        start_x=(34.3 / 100 * 106 - 53)
-        * -1,  # standard opta pitch dimensions = [106, 68]
-        start_y=(76.8 / 100 * 68 - 34) * -1,
-        pitch_size=[106.0, 68.0],
-        team_side="away",
-        team_id=194,
-        player_id=184934,
-        jersey=1,
-        outcome=True,
-        related_event_id=6,
-    )
-}
-TACKLE_INSTANCES_OPTA_TRACAB = {}
-for key, tackle_event in TACKLE_INSTANCES_OPTA.items():
-    TACKLE_INSTANCES_OPTA_TRACAB[key] = tackle_event.copy()
-    TACKLE_INSTANCES_OPTA_TRACAB[key].start_x = (
-        TACKLE_INSTANCES_OPTA_TRACAB[key].start_x / 106 * 100
-    )
-    TACKLE_INSTANCES_OPTA_TRACAB[key].start_y = (
-        TACKLE_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
-    )
-
+DRIBBLE_EVENTS_OPTA_TRACAB = create_event_attributes_dataframe(
+    DRIBBLE_INSTANCES_OPTA_TRACAB
+)
 
 PASS_INSTANCES_OPTA = {
     3: PassEvent(
@@ -520,6 +497,7 @@ PASS_INSTANCES_OPTA = {
         pass_type="long_ball",
     ),
 }
+PASS_EVENTS_OPTA = create_event_attributes_dataframe(PASS_INSTANCES_OPTA)
 
 PASS_INSTANCES_OPTA_TRACAB = {}
 for key, pass_event in PASS_INSTANCES_OPTA.items():
@@ -527,9 +505,17 @@ for key, pass_event in PASS_INSTANCES_OPTA.items():
     PASS_INSTANCES_OPTA_TRACAB[key].start_x = (
         PASS_INSTANCES_OPTA_TRACAB[key].start_x / 106 * 100
     )
-    PASS_INSTANCES_OPTA_TRACAB[key].start_y = PASS_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
-    PASS_INSTANCES_OPTA_TRACAB[key].end_x = PASS_INSTANCES_OPTA_TRACAB[key].end_x / 106 * 100
-    PASS_INSTANCES_OPTA_TRACAB[key].end_y = PASS_INSTANCES_OPTA_TRACAB[key].end_y / 68 * 50
+    PASS_INSTANCES_OPTA_TRACAB[key].start_y = (
+        PASS_INSTANCES_OPTA_TRACAB[key].start_y / 68 * 50
+    )
+    PASS_INSTANCES_OPTA_TRACAB[key].end_x = (
+        PASS_INSTANCES_OPTA_TRACAB[key].end_x / 106 * 100
+    )
+    PASS_INSTANCES_OPTA_TRACAB[key].end_y = (
+        PASS_INSTANCES_OPTA_TRACAB[key].end_y / 68 * 50
+    )
+
+PASS_EVENTS_OPTA_TRACAB = create_event_attributes_dataframe(PASS_INSTANCES_OPTA_TRACAB)
 
 MD_OPTA = Metadata(
     game_id=1908,
@@ -783,6 +769,7 @@ SHOT_INSTANCES_METRICA = {
         first_touch=False,
     ),
 }
+SHOT_EVENTS_METRICA = create_event_attributes_dataframe(SHOT_INSTANCES_METRICA)
 
 DRIBBLE_INSTANCES_METRICA = {
     2: DribbleEvent(
@@ -808,6 +795,7 @@ DRIBBLE_INSTANCES_METRICA = {
         with_opponent=False,
     )
 }
+DRIBBLE_EVENTS_METRICA = create_event_attributes_dataframe(DRIBBLE_INSTANCES_METRICA)
 
 PASS_INSTANCES_METRICA = {
     1: PassEvent(
@@ -835,26 +823,7 @@ PASS_INSTANCES_METRICA = {
         pass_type="unspecified",
     )
 }
-
-TACKLE_INSTANCES_METRICA = {
-    6: TackleEvent(
-        event_id=6,
-        period_id=2,
-        minutes=1,
-        seconds=20.0,
-        datetime=pd.to_datetime("2019-02-21T03:30:11.500", utc=True),
-        start_x=-20.0,
-        start_y=-20.0,
-        team_id="FIFATMA",
-        team_side="home",
-        pitch_size=[100.0, 50.0],
-        player_id=3568,
-        jersey=1,
-        outcome=False,
-        related_event_id=MISSING_INT,
-    )
-}
-
+PASS_EVENTS_METRICA = create_event_attributes_dataframe(PASS_INSTANCES_METRICA)
 
 MD_METRICA_TD = Metadata(
     game_id=9999,
@@ -1643,7 +1612,7 @@ SPORTEC_DATABALLPY_EVENTS = {
             event_id=2,
             period_id=2,
             minutes=45,
-            seconds=0,
+            seconds=0.0,
             datetime=pd.to_datetime("2022-11-11T19:31:09.000+01:00").tz_convert(
                 "Europe/Berlin"
             ),
@@ -1699,8 +1668,17 @@ SPORTEC_DATABALLPY_EVENTS = {
             with_opponent=True,
         )
     },
-    "other_events": {},
 }
+SPORTEC_SHOT_EVENTS = create_event_attributes_dataframe(
+    SPORTEC_DATABALLPY_EVENTS["shot_events"]
+)
+SPORTEC_PASS_EVENTS = create_event_attributes_dataframe(
+    SPORTEC_DATABALLPY_EVENTS["pass_events"]
+)
+SPORTEC_DRIBBLE_EVENTS = create_event_attributes_dataframe(
+    SPORTEC_DATABALLPY_EVENTS["dribble_events"]
+)
+
 
 TRACAB_SPORTEC_XML_TD = pd.DataFrame(
     {
@@ -1841,12 +1819,12 @@ ED_STATSBOMB = EventData(
 )
 ED_STATSBOMB["is_successful"] = ED_STATSBOMB["is_successful"].astype("boolean")
 
-SHOT_EVENT_STATSBOMB = {
+SHOT_INSTANCES_STATSBOMB = {
     2: ShotEvent(
         event_id=2,
         period_id=1,
         minutes=5,
-        seconds=39,
+        seconds=39.0,
         datetime=pd.to_datetime("2018-08-18 22:20:39+0000", utc=True),
         start_x=47.1625,
         start_y=11.560,
@@ -1864,13 +1842,15 @@ SHOT_EVENT_STATSBOMB = {
         outcome_str="miss_off_target",
     )
 }
+SHOT_EVENTS_STATSBOMB = create_event_attributes_dataframe(SHOT_INSTANCES_STATSBOMB)
 
-PASS_EVENT_STATSBOMB = {
+
+PASS_INSTANCES_STATSBOMB = {
     0: PassEvent(
         event_id=0,
         period_id=1,
         minutes=0,
-        seconds=11,
+        seconds=11.0,
         datetime=pd.to_datetime("2018-08-18 22:15:11+0000", utc=True),
         start_x=-30.0125,
         start_y=32.64,
@@ -1895,7 +1875,7 @@ PASS_EVENT_STATSBOMB = {
         event_id=4,
         period_id=1,
         minutes=0,
-        seconds=11,
+        seconds=11.0,
         datetime=pd.to_datetime("2018-08-18 22:15:11+0000", utc=True),
         start_x=30.0125,
         start_y=-32.64,
@@ -1917,13 +1897,14 @@ PASS_EVENT_STATSBOMB = {
         receiver_player_id=5246,
     ),
 }
+PASS_EVENTS_STATSBOMB = create_event_attributes_dataframe(PASS_INSTANCES_STATSBOMB)
 
-DRIBBLE_EVENT_STATSBOMB = {
+DRIBBLE_INSTANCES_STATSBOMB = {
     3: DribbleEvent(
         event_id=3,
         period_id=1,
         minutes=7,
-        seconds=7,
+        seconds=7.0,
         datetime=pd.to_datetime("2018-08-18 22:22:07+0000", utc=True),
         start_x=-27.4750,
         start_y=-13.515,
@@ -1942,3 +1923,4 @@ DRIBBLE_EVENT_STATSBOMB = {
         with_opponent=None,
     )
 }
+DRIBBLE_EVENTS_STATSBOMB = create_event_attributes_dataframe(DRIBBLE_INSTANCES_STATSBOMB)

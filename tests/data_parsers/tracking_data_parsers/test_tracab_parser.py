@@ -116,7 +116,9 @@ class TestTracabParser(unittest.TestCase):
 
     def test_get_tracking_data_txt(self):
         tracking_data = _get_tracking_data_txt(self.tracking_data_dat_loc, verbose=False)
-        expected_td = pd.DataFrame(TD_TRACAB.drop(["gametime_td", "period_id", "datetime"], axis=1))
+        expected_td = pd.DataFrame(
+            TD_TRACAB.drop(["gametime_td", "period_id", "datetime"], axis=1)
+        )
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.requests.get")

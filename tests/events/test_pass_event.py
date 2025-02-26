@@ -1,11 +1,9 @@
 import random
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from databallpy.events.pass_event import PassEvent
-from databallpy.features.pressure import get_pressure_on_player
 from databallpy.utils.constants import MISSING_INT
 
 
@@ -120,6 +118,32 @@ class TestPassEvent(unittest.TestCase):
                 _xt=0.02,
                 outcome_str=1,
                 end_x=1.0,
+                end_y=1.0,
+                pass_type="pull_back",
+            )
+        # end x end y
+        with self.assertRaises(TypeError):
+            PassEvent(
+                event_id=1,
+                period_id=1,
+                minutes=1,
+                seconds=1,
+                datetime=pd.to_datetime("2021-01-01 00:00:00", utc=True),
+                start_x=1.0,
+                start_y=1.0,
+                team_id=1,
+                team_side="home",
+                pitch_size=[105.0, 68.0],
+                player_id=1,
+                jersey=10,
+                outcome=True,
+                related_event_id=MISSING_INT,
+                body_part="unspecified",
+                possession_type="counter_attack",
+                set_piece="no_set_piece",
+                _xt=0.02,
+                outcome_str="successful",
+                end_x=1,
                 end_y=1.0,
                 pass_type="pull_back",
             )
@@ -242,4 +266,3 @@ class TestPassEvent(unittest.TestCase):
             "pass_type",
             "receiver_player_id",
         ]
-

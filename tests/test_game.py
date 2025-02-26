@@ -12,7 +12,6 @@ from tests.expected_outcomes import (
     DRIBBLE_INSTANCES_OPTA_TRACAB,
     PASS_INSTANCES_OPTA_TRACAB,
     SHOT_INSTANCES_OPTA_TRACAB,
-    TACKLE_INSTANCES_OPTA_TRACAB,
 )
 
 
@@ -214,7 +213,7 @@ class TestGame(unittest.TestCase):
                 country=self.expected_game_tracab_opta.country,
                 shot_events=self.expected_game_tracab_opta.shot_events,
                 pass_events=self.expected_game_tracab_opta.pass_events,
-                dribble_events=self.expected_game_tracab_opta.dribble_events
+                dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
         with self.assertRaises(ValueError):
@@ -1096,7 +1095,9 @@ class TestGame(unittest.TestCase):
         ]
         expected_df = pd.DataFrame(
             {
-                attr: [getattr(shot, attr) for shot in SHOT_INSTANCES_OPTA_TRACAB.values()]
+                attr: [
+                    getattr(shot, attr) for shot in SHOT_INSTANCES_OPTA_TRACAB.values()
+                ]
                 for attr in shot_attribute_names
             }
         )
@@ -1180,16 +1181,24 @@ class TestGame(unittest.TestCase):
     def test_game_get_event(self):
         game = self.expected_game_tracab_opta.copy()
         event = game.get_event(9)
-        pd.testing.assert_series_equal(event, game.shot_events[game.shot_events["event_id"]==9].iloc[0])
+        pd.testing.assert_series_equal(
+            event, game.shot_events[game.shot_events["event_id"] == 9].iloc[0]
+        )
 
         event = game.get_event(4)
-        pd.testing.assert_series_equal(event, game.pass_events[game.pass_events["event_id"]==4].iloc[0])
+        pd.testing.assert_series_equal(
+            event, game.pass_events[game.pass_events["event_id"] == 4].iloc[0]
+        )
 
         event = game.get_event(7)
-        pd.testing.assert_series_equal(event, game.dribble_events[game.dribble_events["event_id"]==7].iloc[0])
+        pd.testing.assert_series_equal(
+            event, game.dribble_events[game.dribble_events["event_id"] == 7].iloc[0]
+        )
 
         event = game.get_event(1)
-        pd.testing.assert_series_equal(event, game.event_data[game.event_data["event_id"]==1].iloc[0])
+        pd.testing.assert_series_equal(
+            event, game.event_data[game.event_data["event_id"] == 1].iloc[0]
+        )
 
         with self.assertRaises(ValueError):
             game.get_event(22222)
@@ -1218,14 +1227,28 @@ class TestGame(unittest.TestCase):
                 "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"
             )
         )
-        files = [x for x in os.listdir(os.path.join("tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"))]
+        files = [
+            x
+            for x in os.listdir(
+                os.path.join(
+                    "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"
+                )
+            )
+        ]
         assert len(files) == 9
 
         with self.assertRaises(ValueError):
             game.save_game(path=os.path.join("tests", "test_data"))
 
         for file in files:
-            os.remove(os.path.join("tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39", file))
+            os.remove(
+                os.path.join(
+                    "tests",
+                    "test_data",
+                    "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39",
+                    file,
+                )
+            )
         os.rmdir(
             os.path.join(
                 "tests", "test_data", "TeamOne 3 - 1 TeamTwo 2023-01-22 16_46_39"
@@ -1279,7 +1302,9 @@ class TestGame(unittest.TestCase):
             res_possession, game.tracking_data.iloc[0:1]
         )  # event team side is home
 
-        game.pass_events.loc[game.pass_events["event_id"]==pass_event["event_id"], "player_id"] = 450445 # away player id
+        game.pass_events.loc[
+            game.pass_events["event_id"] == pass_event["event_id"], "player_id"
+        ] = 450445  # away player id
         res_possession = game.get_event_frame(
             pass_event.event_id, playing_direction="possession_oriented"
         )

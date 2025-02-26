@@ -249,20 +249,23 @@ def anonymise_players(game: Game, keys: pd.DataFrame) -> tuple[Game, pd.DataFram
             game.event_data["to_player_id"] = game.event_data["to_player_id"].map(
                 player_id_map
             )
-        game.pass_events["player_name"] = game.pass_events["player_name"].map(
-            player_name_map
-        )
+        if "player_name" in game.pass_events.columns:
+            game.pass_events["player_name"] = game.pass_events["player_name"].map(
+                player_name_map
+            )
         game.pass_events["player_id"] = game.pass_events["player_id"].map(player_id_map)
-        game.dribble_events["player_name"] = game.dribble_events["player_name"].map(
-            player_name_map
+        if "player_name" in game.dribble_events.columns:
+            game.dribble_events["player_name"] = game.dribble_events["player_name"].map(
+                player_name_map
+            )
+        game.dribble_events["player_id"] = game.dribble_events["player_id"].map(
+            player_id_map
         )
-        game.dribble_events["player_id"] = game.dribble_events["player_id"].map(player_id_map)
-        game.shot_events["player_name"] = game.shot_events["player_name"].map(
-            player_name_map
-        )
+        if "player_name" in game.shot_events.columns:
+            game.shot_events["player_name"] = game.shot_events["player_name"].map(
+                player_name_map
+            )
         game.shot_events["player_id"] = game.shot_events["player_id"].map(player_id_map)
-
-
 
     return game, keys
 
@@ -463,7 +466,7 @@ def anonymise_datetime(
                 .fillna(MISSING_INT)
                 .astype(int)
             )
-        
+
         game.pass_events["datetime"] = (
             game.pass_events["datetime"].dt.tz_convert("UTC") - dt_delta
         )
@@ -473,7 +476,5 @@ def anonymise_datetime(
         game.dribble_events["datetime"] = (
             game.dribble_events["datetime"].dt.tz_convert("UTC") - dt_delta
         )
-
-        
 
     return game

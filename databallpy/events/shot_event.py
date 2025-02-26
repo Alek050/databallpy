@@ -5,13 +5,11 @@ from dataclasses import dataclass, fields
 
 import numpy as np
 import pandas as pd
-from scipy.spatial import Delaunay
 
 from databallpy.events.base_event import IndividualOnBallEvent
 from databallpy.features.angle import get_smallest_angle
-from databallpy.features.pressure import get_pressure_on_player
 from databallpy.models.utils import scale_and_predict_logreg
-from databallpy.utils.constants import DATABALLPY_SHOT_OUTCOMES, MISSING_INT
+from databallpy.utils.constants import DATABALLPY_SHOT_OUTCOMES
 from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
 
@@ -53,7 +51,7 @@ class ShotEvent(IndividualOnBallEvent):
         ball_goal_distance (float, optional): distance between the ball and the goal.
             Defaults to np.nan.
         shot_angle (float, optional): angle of the shot. Defaults to np.nan.
-        
+
 
     Properties:
         xt (float): expected threat of the event. This is calculated using a model
@@ -79,8 +77,8 @@ class ShotEvent(IndividualOnBallEvent):
     y_target: float = np.nan
     z_target: float = np.nan
     first_touch: bool = False
-    ball_goal_distance = np.nan
-    shot_angle = np.nan
+    ball_goal_distance: float = np.nan
+    shot_angle: float = np.nan
     xg: float = np.nan
 
     def __post_init__(self):

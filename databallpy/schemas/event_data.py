@@ -41,6 +41,15 @@ class EventData(pd.DataFrame):
         super().__init__(*args, **kwargs)
         self._provider = provider
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_provider"] = self._provider
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._provider = state.get("_provider", "unspecified")
+
     @property
     def _constructor(self):
         def wrapper(*args, **kwargs):

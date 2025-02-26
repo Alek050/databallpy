@@ -1,4 +1,5 @@
 import datetime as dt
+import os
 import unittest
 from unittest.mock import Mock, patch
 
@@ -26,10 +27,10 @@ from databallpy.utils.get_game import (
     get_saved_match,
 )
 from tests.expected_outcomes import (
-    DRIBBLE_EVENT_STATSBOMB,
-    DRIBBLE_INSTANCES_METRICA,
-    DRIBBLE_INSTANCES_OPTA,
-    DRIBBLE_INSTANCES_OPTA_TRACAB,
+    DRIBBLE_EVENTS_METRICA,
+    DRIBBLE_EVENTS_OPTA,
+    DRIBBLE_EVENTS_OPTA_TRACAB,
+    DRIBBLE_EVENTS_STATSBOMB,
     ED_OPTA,
     ED_SCISPORTS,
     ED_STATSBOMB,
@@ -37,21 +38,21 @@ from tests.expected_outcomes import (
     MD_SCISPORTS,
     MD_STATSBOMB,
     MD_TRACAB,
-    PASS_EVENT_STATSBOMB,
-    PASS_INSTANCES_METRICA,
-    PASS_INSTANCES_OPTA,
-    PASS_INSTANCES_OPTA_TRACAB,
-    SHOT_EVENT_STATSBOMB,
-    SHOT_INSTANCES_METRICA,
-    SHOT_INSTANCES_OPTA,
-    SHOT_INSTANCES_OPTA_TRACAB,
+    PASS_EVENTS_METRICA,
+    PASS_EVENTS_OPTA,
+    PASS_EVENTS_OPTA_TRACAB,
+    PASS_EVENTS_STATSBOMB,
+    SHOT_EVENTS_METRICA,
+    SHOT_EVENTS_OPTA,
+    SHOT_EVENTS_OPTA_TRACAB,
+    SHOT_EVENTS_STATSBOMB,
     SPORTEC_DATABALLPY_EVENTS,
+    SPORTEC_DRIBBLE_EVENTS,
     SPORTEC_EVENT_DATA,
     SPORTEC_METADATA_ED,
     SPORTEC_METADATA_TD,
-    TACKLE_INSTANCES_METRICA,
-    TACKLE_INSTANCES_OPTA,
-    TACKLE_INSTANCES_OPTA_TRACAB,
+    SPORTEC_PASS_EVENTS,
+    SPORTEC_SHOT_EVENTS,
     TD_TRACAB,
     TRACAB_SPORTEC_XML_TD,
 )
@@ -184,10 +185,9 @@ class TestGetGame(unittest.TestCase):
             away_team_name=self.md_opta.away_team_name,
             away_players=self.expected_away_players_tracab_opta,
             country=self.md_opta.country,
-            shot_events=SHOT_INSTANCES_OPTA_TRACAB.copy(),
-            dribble_events=DRIBBLE_INSTANCES_OPTA_TRACAB.copy(),
-            pass_events=PASS_INSTANCES_OPTA_TRACAB.copy(),
-            other_events=TACKLE_INSTANCES_OPTA_TRACAB.copy(),
+            shot_events=SHOT_EVENTS_OPTA_TRACAB.copy(),
+            dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB.copy(),
+            pass_events=PASS_EVENTS_OPTA_TRACAB.copy(),
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
@@ -234,10 +234,9 @@ class TestGetGame(unittest.TestCase):
             away_team_name=self.md_metrica.away_team_name,
             away_players=self.md_metrica.away_players,
             country=self.md_metrica.country,
-            pass_events=PASS_INSTANCES_METRICA,
-            shot_events=SHOT_INSTANCES_METRICA,
-            dribble_events=DRIBBLE_INSTANCES_METRICA,
-            other_events=TACKLE_INSTANCES_METRICA,
+            pass_events=PASS_EVENTS_METRICA,
+            shot_events=SHOT_EVENTS_METRICA,
+            dribble_events=DRIBBLE_EVENTS_METRICA,
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
@@ -352,6 +351,9 @@ class TestGetGame(unittest.TestCase):
             away_score=self.md_instat.away_score,
             away_team_name=self.md_instat.away_team_name,
             away_players=self.expected_away_players_inmotio_instat,
+            shot_events=pd.DataFrame(),
+            pass_events=pd.DataFrame(),
+            dribble_events=pd.DataFrame(),
             country=self.md_instat.country,
             _tracking_timestamp_is_precise=False,
             _periods_changed_playing_direction=[],
@@ -391,6 +393,9 @@ class TestGetGame(unittest.TestCase):
             away_team_name=MD_TRACAB.away_team_name,
             away_players=MD_TRACAB.away_players,
             country=MD_TRACAB.country,
+            pass_events=pd.DataFrame(),
+            shot_events=pd.DataFrame(),
+            dribble_events=pd.DataFrame(),
             _tracking_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
         )
@@ -484,10 +489,9 @@ class TestGetGame(unittest.TestCase):
             away_team_name=MD_OPTA.away_team_name,
             away_players=MD_OPTA.away_players,
             country=MD_OPTA.country,
-            shot_events=SHOT_INSTANCES_OPTA,
-            dribble_events=DRIBBLE_INSTANCES_OPTA,
-            pass_events=PASS_INSTANCES_OPTA,
-            other_events=TACKLE_INSTANCES_OPTA,
+            shot_events=SHOT_EVENTS_OPTA,
+            dribble_events=DRIBBLE_EVENTS_OPTA,
+            pass_events=PASS_EVENTS_OPTA,
             _event_timestamp_is_precise=True,
         )
 
@@ -585,9 +589,9 @@ class TestGetGame(unittest.TestCase):
             country=SPORTEC_METADATA_ED.country,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=None,
-            pass_events=SPORTEC_DATABALLPY_EVENTS["pass_events"],
-            shot_events=SPORTEC_DATABALLPY_EVENTS["shot_events"],
-            dribble_events=SPORTEC_DATABALLPY_EVENTS["dribble_events"],
+            pass_events=SPORTEC_PASS_EVENTS,
+            shot_events=SPORTEC_SHOT_EVENTS,
+            dribble_events=SPORTEC_DRIBBLE_EVENTS,
         )
         res = get_game(
             event_data_loc=self.sportec_event_loc,
@@ -616,9 +620,9 @@ class TestGetGame(unittest.TestCase):
             country=MD_STATSBOMB.country,
             _tracking_timestamp_is_precise=False,
             _periods_changed_playing_direction=None,
-            shot_events=SHOT_EVENT_STATSBOMB,
-            pass_events=PASS_EVENT_STATSBOMB,
-            dribble_events=DRIBBLE_EVENT_STATSBOMB,
+            shot_events=SHOT_EVENTS_STATSBOMB,
+            pass_events=PASS_EVENTS_STATSBOMB,
+            dribble_events=DRIBBLE_EVENTS_STATSBOMB,
         )
 
         res = get_game(
@@ -680,9 +684,9 @@ class TestGetGame(unittest.TestCase):
             _event_timestamp_is_precise=True,
             _tracking_timestamp_is_precise=True,
             _periods_changed_playing_direction=[1],
-            pass_events=SPORTEC_DATABALLPY_EVENTS["pass_events"],
-            shot_events=SPORTEC_DATABALLPY_EVENTS["shot_events"],
-            dribble_events=SPORTEC_DATABALLPY_EVENTS["dribble_events"],
+            pass_events=SPORTEC_PASS_EVENTS,
+            shot_events=SPORTEC_SHOT_EVENTS,
+            dribble_events=SPORTEC_DRIBBLE_EVENTS,
             allow_synchronise_tracking_and_event_data=True,
         )
 
@@ -714,7 +718,9 @@ class TestGetGame(unittest.TestCase):
 
     def test_get_saved_game(self):
         expected_game = self.expected_game_metrica
-        expected_game.save_game(name="test_game", path="tests/test_data")
+        expected_game.save_game(
+            name="test_game", path="tests/test_data", allow_overwrite=True
+        )
         saved_game = get_saved_game(name="test_game", path="tests/test_data")
         assert expected_game == saved_game
         assert saved_game != self.expected_game_tracab_opta
@@ -722,12 +728,13 @@ class TestGetGame(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             saved_match = get_saved_match(name="test_game", path="tests/test_data")
         assert saved_game == saved_match
+        for file in os.listdir(os.path.join("tests", "test_data", "test_game")):
+            os.remove(os.path.join("tests", "test_data", "test_game", file))
+        os.rmdir(os.path.join("tests", "test_data", "test_game"))
 
     def test_get_saved_game_errors(self):
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(ValueError):
             get_saved_game(name="test_game2", path="tests/test_data")
-        with self.assertRaises(TypeError):
-            get_saved_game(name="not_a_game_but_a_list.pickle", path="tests/test_data")
 
     def test_get_game_scisports(self):
         res_game = get_game(

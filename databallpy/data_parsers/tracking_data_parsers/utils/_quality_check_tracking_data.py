@@ -259,9 +259,6 @@ def _check_player_velocity(
     n_players_to_many_invalid_frames = sum(
         [True for x in percentages_valid_frames if x < 0.995]
     )
-    n_players_sequence_to_long = sum(
-        [True for x in max_sequences_invalid_frames if x > 1 * framerate]
-    )
 
     if n_players_to_many_invalid_frames > 0:
         warnings.warn(
@@ -269,14 +266,6 @@ def _check_player_velocity(
                 f"For {n_players_to_many_invalid_frames} players, the "
                 "velocity is unrealistic (speed > 12 m/s) for more than 0.5% of "
                 "playing time"
-            )
-        )
-
-    if n_players_sequence_to_long > 0:
-        warnings.warn(
-            DataBallPyWarning(
-                f"For {n_players_sequence_to_long} players, there is a gap "
-                "in the tracking data of at least 1 second."
             )
         )
 

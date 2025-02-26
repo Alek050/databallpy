@@ -16,3 +16,12 @@ class TestEventData(unittest.TestCase):
         df = EventData()
         with self.assertRaises(AttributeError):
             df.provider = "new_provider"
+
+    def test_state(self):
+        state = EventData().__getstate__()
+        state["_provider"] = "other_provider"
+        new_ed = EventData()
+        self.assertEqual(new_ed.provider, "unspecified")
+
+        new_ed.__setstate__(state)
+        self.assertEqual(new_ed.provider, "other_provider")

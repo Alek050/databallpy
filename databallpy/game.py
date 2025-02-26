@@ -1,7 +1,7 @@
-import os
 import json
+import os
 import warnings
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, fields
 from functools import wraps
 
 import numpy as np
@@ -113,12 +113,14 @@ class Game:
     _tracking_timestamp_is_precise: bool = False
     _event_timestamp_is_precise: bool = False
     _periods_changed_playing_direction: list[int] = None
+    _check_inputs_: bool = True
 
     def __repr__(self):
         return "databallpy.game.Game object: " + self.name
 
     def __post_init__(self):
-        check_inputs_game_object(self)
+        if self._check_inputs_:
+            check_inputs_game_object(self)
         self._tracking_data_provider = self.tracking_data.provider
         self._frame_rate = self.tracking_data.frame_rate
         self._event_data_provider = self.event_data.provider
@@ -368,7 +370,6 @@ class Game:
         """
         return player_id_to_column_id(self.home_players, self.away_players, player_id)
 
-
     @requires_event_data
     def get_event(self, event_id: int) -> pd.Series:
         """Function to get the event with the given event_id
@@ -382,15 +383,17 @@ class Game:
         Returns:
             pd.Series: The event with the given event_id
         """
-        
+
         if event_id in self.pass_events["event_id"].values:
-            return self.pass_events[self.pass_events["event_id"]==event_id].iloc[0]
+            return self.pass_events[self.pass_events["event_id"] == event_id].iloc[0]
         elif event_id in self.shot_events["event_id"].values:
-            return self.shot_events[self.shot_events["event_id"]==event_id].iloc[0]
+            return self.shot_events[self.shot_events["event_id"] == event_id].iloc[0]
         elif event_id in self.dribble_events["event_id"].values:
-            return self.dribble_events[self.dribble_events["event_id"]==event_id].iloc[0]
+            return self.dribble_events[self.dribble_events["event_id"] == event_id].iloc[
+                0
+            ]
         elif event_id in self.event_data["event_id"].values:
-            return self.event_data[self.event_data["event_id"]==event_id].iloc[0]
+            return self.event_data[self.event_data["event_id"] == event_id].iloc[0]
         else:
             raise ValueError(f"Event with id {event_id} not found in the game.")
 
@@ -590,6 +593,8 @@ class Game:
         if not isinstance(other, Game):
             return False
         for current_field in fields(self):
+            if current_field.name == "_check_inputs_":
+                continue
             if not _values_are_equal_(
                 getattr(self, current_field.name), getattr(other, current_field.name)
             ):
@@ -609,14 +614,18 @@ class Game:
         return Game(**copied_kwargs)
 
     def save_game(
-        self, name: str = None, path: str = None, verbose: bool = True, allow_overwrite: bool = False
+        self,
+        name: str = None,
+        path: str = None,
+        verbose: bool = True,
+        allow_overwrite: bool = False,
     ) -> None:
         """Function to save the current game object. The path name will create a
         folder with different parquet and json files that stores all the information
         of the match.
 
         Args:
-            name (str): name of the folder where the match will be saved, 
+            name (str): name of the folder where the match will be saved,
             if not provided or not a string the name will be the name of the game.
             path (str): path to the directory where the folder will be saved. If
             not provided, the current working directory will be used.
@@ -629,17 +638,21 @@ class Game:
         name = name.replace(":", "_")
 
         folder_path = os.path.join(path, name)
-        
+
         if os.path.exists(folder_path) and not allow_overwrite:
-            raise ValueError(f"Folder {folder_path} already exists, set allow_overwrite to True to overwrite")
-        
+            raise ValueError(
+                f"Folder {folder_path} already exists, set allow_overwrite to True to overwrite"
+            )
+
         os.makedirs(folder_path, exist_ok=True)
         self.tracking_data.to_parquet(os.path.join(folder_path, "tracking_data.parquet"))
         self.event_data.to_parquet(os.path.join(folder_path, "event_data.parquet"))
         self.periods.to_parquet(os.path.join(folder_path, "periods.parquet"))
         self.home_players.to_parquet(os.path.join(folder_path, "home_players.parquet"))
         self.away_players.to_parquet(os.path.join(folder_path, "away_players.parquet"))
-        self.dribble_events.to_parquet(os.path.join(folder_path, "dribble_events.parquet"))
+        self.dribble_events.to_parquet(
+            os.path.join(folder_path, "dribble_events.parquet")
+        )
         self.shot_events.to_parquet(os.path.join(folder_path, "shot_events.parquet"))
         self.pass_events.to_parquet(os.path.join(folder_path, "pass_events.parquet"))
 
@@ -661,13 +674,14 @@ class Game:
             "_is_synchronised": self._is_synchronised,
             "_tracking_timestamp_is_precise": self._tracking_timestamp_is_precise,
             "_event_timestamp_is_precise": self._event_timestamp_is_precise,
-            "_periods_changed_playing_direction": self._periods_changed_playing_direction
+            "_periods_changed_playing_direction": self._periods_changed_playing_direction,
         }
         with open(os.path.join(folder_path, "metadata.json"), "w") as f:
             json.dump(metadata_info, f)
-        
-        if verbose: 
+
+        if verbose:
             print(f"Game saved in {folder_path}")
+
 
 @logging_wrapper(__file__)
 def check_inputs_game_object(game: Game):

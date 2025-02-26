@@ -15,7 +15,6 @@ from tests.expected_outcomes import (
     MD_METRICA_ED,
     PASS_INSTANCES_METRICA,
     SHOT_INSTANCES_METRICA,
-    TACKLE_INSTANCES_METRICA,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW
 
@@ -66,7 +65,6 @@ class TestMetricaEventDataParser(unittest.TestCase):
         assert dbpe["shot_events"] == SHOT_INSTANCES_METRICA
         assert dbpe["pass_events"] == PASS_INSTANCES_METRICA
         assert dbpe["dribble_events"] == DRIBBLE_INSTANCES_METRICA
-        assert dbpe["other_events"] == TACKLE_INSTANCES_METRICA
 
     def test_get_databallpy_events(self):
         players = pd.concat(

@@ -1,12 +1,8 @@
 from dataclasses import dataclass, fields
 
 import numpy as np
-import pandas as pd
-from scipy.spatial import Delaunay
 
 from databallpy.events.base_event import IndividualOnBallEvent
-from databallpy.features.angle import get_smallest_angle
-from databallpy.features.pressure import get_pressure_on_player
 from databallpy.utils.constants import (
     DATABALLPY_PASS_OUTCOMES,
     DATABALLPY_PASS_TYPES,

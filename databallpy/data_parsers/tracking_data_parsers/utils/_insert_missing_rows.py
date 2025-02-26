@@ -50,9 +50,6 @@ def valid_nan_type(dtype):
         return np.nan
     elif "int" in str(dtype):
         return MISSING_INT
-    elif "object" in str(dtype):
-        return None
     elif "datetime" in str(dtype):
         return pd.to_datetime("NaT")
-    else:
-        return None
+    return None

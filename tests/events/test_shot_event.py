@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from databallpy.events import ShotEvent
-from databallpy.features.angle import get_smallest_angle
 
 
 class TestShotEvent(unittest.TestCase):
@@ -162,12 +161,33 @@ class TestShotEvent(unittest.TestCase):
             "y_target": 3.5,
             "z_target": 15.0,
             "ball_goal_distance": 18.0,
-            "ball_gk_distance": 10.0,
             "shot_angle": 20.0,
-            "gk_optimal_loc_distance": 10.0,
-            "pressure_on_ball": 1.0,
-            "goal_gk_distance": 10.0,
         }
+        # assert runs without errors
+        ShotEvent(
+            event_id=2512690515,
+            period_id=1,
+            minutes=9,
+            seconds=17,
+            datetime=pd.to_datetime("2023-01-22T11:18:44.120", utc=True),
+            start_x=50.0,
+            start_y=20.0,
+            team_id=123,
+            team_side="home",
+            pitch_size=(106, 68),
+            player_id=45849,
+            jersey=10,
+            outcome=False,
+            related_event_id=123,
+            _xt=0.1,
+            body_part="head",
+            possession_type="free_kick",
+            set_piece="no_set_piece",
+            outcome_str="own_goal",
+            first_touch=False,
+            **float_like_kwargs,
+        )
+
         invalid_values = [1, "1", [1], {1}, {"val": 1}]
         for key in float_like_kwargs.keys():
             current_kwargs = float_like_kwargs.copy()
