@@ -643,14 +643,18 @@ class TestGetGame(unittest.TestCase):
 
     @patch("databallpy.utils.get_game.load_sportec_open_event_data")
     @patch("databallpy.utils.get_game.load_sportec_open_tracking_data")
-    def test_get_open_game_sportec(self, mock_tracking_data, mock_event_data):
+    @patch("databallpy.utils.get_game.os.remove")
+    def test_get_open_game_sportec(
+        self, mock_os_remove, mock_tracking_data, mock_event_data
+    ):
         mock_tracking_data.return_value = (TRACAB_SPORTEC_XML_TD, SPORTEC_METADATA_TD)
         mock_event_data.return_value = (
             SPORTEC_EVENT_DATA,
             SPORTEC_METADATA_ED,
             SPORTEC_DATABALLPY_EVENTS,
         )
-        game = get_open_game()
+        mock_os_remove.return_value = "removed"
+        game = get_open_game(use_cache=False)
 
         td = TrackingData(
             TRACAB_SPORTEC_XML_TD,
@@ -691,6 +695,7 @@ class TestGetGame(unittest.TestCase):
         )
 
         self.assertEqual(game, expected_game_sportec)
+        self.assertEqual(mock_os_remove.call_count, 2)
 
         with self.assertWarns(DeprecationWarning):
             match = get_open_match()
@@ -706,7 +711,7 @@ class TestGetGame(unittest.TestCase):
         ],
     )
     def test_get_open_game(self, _):
-        game = get_open_game(provider="metrica")
+        game = get_open_game(provider="metrica", use_cache=False)
         pd.testing.assert_frame_equal(game.periods, self.expected_game_metrica.periods)
         expected_game = self.expected_game_metrica.copy()
         expected_game._periods_changed_playing_direction = []
@@ -740,6 +745,7 @@ class TestGetGame(unittest.TestCase):
         res_game = get_game(
             event_data_loc="tests/test_data/scisports_test.json",
             event_data_provider="scisports",
+            _check_game_class_=False,
         )
         pd.testing.assert_frame_equal(res_game.event_data, ED_SCISPORTS)
         pd.testing.assert_frame_equal(res_game.periods, MD_SCISPORTS.periods_frames)

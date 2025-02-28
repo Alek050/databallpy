@@ -2,6 +2,7 @@ import os
 import unittest
 
 import pandas as pd
+import pandera as pa
 
 from databallpy.game import Game
 from databallpy.schemas import EventData, TrackingData
@@ -216,89 +217,13 @@ class TestGame(unittest.TestCase):
                 dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(pa.errors.SchemaError):
+            # check evnet data schema
+            wrong_event_data = self.expected_game_tracab_opta.event_data.copy()
+            wrong_event_data.loc[0, "event_id"] = [1]
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=EventData(
-                    {
-                        "event_id": [1],
-                        "player": ["player_1"],
-                        "databallpy_event": ["pass"],
-                    },
-                    provider="opta",
-                ),
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-                shot_events=self.expected_game_tracab_opta.shot_events,
-                pass_events=self.expected_game_tracab_opta.pass_events,
-                dribble_events=self.expected_game_tracab_opta.dribble_events,
-            )
-
-        with self.assertRaises(TypeError):
-            Game(
-                tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=EventData(
-                    {
-                        "event_id": [1],
-                        "databallpy_event": ["pass"],
-                        "period_id": [1],
-                        "team_id": [1],
-                        "player_id": [1],
-                        "start_x": [1],
-                        "start_y": [1],
-                        "player_name": ["player_1"],
-                        "datetime": ["2020-01-01 00:00:00"],  # not datetime object
-                    },
-                    provider="opta",
-                ),
-                pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
-                periods=self.expected_game_tracab_opta.periods,
-                home_team_id=self.expected_game_tracab_opta.home_team_id,
-                home_formation=self.expected_game_tracab_opta.home_formation,
-                home_score=self.expected_game_tracab_opta.home_score,
-                home_team_name=self.expected_game_tracab_opta.home_team_name,
-                home_players=self.expected_game_tracab_opta.home_players,
-                away_team_id=self.expected_game_tracab_opta.away_team_id,
-                away_formation=self.expected_game_tracab_opta.away_formation,
-                away_score=self.expected_game_tracab_opta.away_score,
-                away_team_name=self.expected_game_tracab_opta.away_team_name,
-                away_players=self.expected_game_tracab_opta.away_players,
-                country=self.expected_game_tracab_opta.country,
-                shot_events=self.expected_game_tracab_opta.shot_events,
-                pass_events=self.expected_game_tracab_opta.pass_events,
-                dribble_events=self.expected_game_tracab_opta.dribble_events,
-            )
-
-        with self.assertRaises(ValueError):
-            Game(
-                tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=EventData(
-                    {
-                        "event_id": [1],
-                        "databallpy_event": ["pass"],
-                        "period_id": [1],
-                        "team_id": [1],
-                        "player_id": [1],
-                        "start_x": [1],
-                        "start_y": [1],
-                        "player_name": ["player_1"],
-                        "datetime": pd.to_datetime(
-                            ["2020-01-01 00:00:00"]
-                        ),  # no timezone assigned
-                    },
-                    provider="opta",
-                ),
+                event_data=wrong_event_data,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -319,24 +244,31 @@ class TestGame(unittest.TestCase):
 
         # event data provider
         with self.assertRaises(TypeError):
+            ed = EventData(
+                {
+                    "event_id": [1],
+                    "databallpy_event": ["pass"],
+                    "period_id": [1],
+                    "minutes": [1],
+                    "seconds": [3.4],
+                    "team_id": [1],
+                    "player_id": [1],
+                    "start_x": [1],
+                    "start_y": [1],
+                    "is_successful": [True],
+                    "player_name": ["player_1"],
+                    "original_event": ["kick off"],
+                    "original_event_id": [1],
+                    "datetime": pd.to_datetime(
+                        ["2020-01-01 00:00:00"],
+                    ).tz_localize("Europe/Amsterdam"),
+                },
+                provider={"provider": "opta"},
+            )
+            ed["is_successful"] = ed["is_successful"].astype(pd.BooleanDtype)
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
-                event_data=EventData(
-                    {
-                        "event_id": [1],
-                        "databallpy_event": ["pass"],
-                        "period_id": [1],
-                        "team_id": [1],
-                        "player_id": [1],
-                        "start_x": [1],
-                        "start_y": [1],
-                        "player_name": ["player_1"],
-                        "datetime": pd.to_datetime(
-                            ["2020-01-01 00:00:00"],
-                        ).tz_localize("UTC"),
-                    },
-                    provider=["opta"],
-                ),
+                event_data=ed,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
                 periods=self.expected_game_tracab_opta.periods,
                 home_team_id=self.expected_game_tracab_opta.home_team_id,
@@ -740,7 +672,7 @@ class TestGame(unittest.TestCase):
                 dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(pa.errors.SchemaError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,
@@ -766,7 +698,7 @@ class TestGame(unittest.TestCase):
 
         wrong_pos = self.expected_game_tracab_opta.away_players.copy()
         wrong_pos["position"] = "unknown_position"
-        with self.assertRaises(ValueError):
+        with self.assertRaises(pa.errors.SchemaError):
             Game(
                 tracking_data=self.expected_game_tracab_opta.tracking_data,
                 event_data=self.expected_game_tracab_opta.event_data,

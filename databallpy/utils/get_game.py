@@ -53,6 +53,7 @@ def get_game(
     tracking_data_provider: str = None,
     event_data_provider: str = None,
     check_quality: bool = True,
+    _check_game_class_: bool = True,
     verbose: bool = True,
 ) -> Game:
     """
@@ -249,6 +250,13 @@ def get_game(
         else pd.DataFrame()
     )
 
+    if uses_event_data:
+        home_players = event_metadata.home_players
+        away_players = event_metadata.away_players
+    else:
+        home_players = tracking_metadata.home_players
+        away_players = tracking_metadata.away_players
+
     LOGGER.info("Creating game object in get_game()")
     game = Game(
         tracking_data=TrackingData(
@@ -260,7 +268,7 @@ def get_game(
         else TrackingData(),
         event_data=EventData(event_data, provider=event_data_provider)
         if uses_event_data
-        else EventData({}, provider="unspecified"),
+        else EventData(),
         pitch_dimensions=tracking_metadata.pitch_dimensions
         if uses_tracking_data
         else event_metadata.pitch_dimensions,
@@ -279,9 +287,7 @@ def get_game(
         home_team_name=event_metadata.home_team_name
         if uses_event_data
         else tracking_metadata.home_team_name,
-        home_players=event_metadata.home_players
-        if uses_event_data
-        else tracking_metadata.home_players,
+        home_players=home_players,
         away_team_id=event_metadata.away_team_id
         if uses_event_data
         else tracking_metadata.away_team_id,
@@ -294,9 +300,7 @@ def get_game(
         away_team_name=event_metadata.away_team_name
         if uses_event_data
         else tracking_metadata.away_team_name,
-        away_players=event_metadata.away_players
-        if uses_event_data
-        else tracking_metadata.away_players,
+        away_players=away_players,
         country=event_metadata.country if uses_event_data else tracking_metadata.country,
         allow_synchronise_tracking_and_event_data=allow_synchronise,
         shot_events=shot_events,
@@ -311,6 +315,7 @@ def get_game(
         if uses_tracking_data
         else False,
         _periods_changed_playing_direction=changed_periods,
+        _check_inputs_=_check_game_class_,
     )
     LOGGER.info(f"Succesfully created game object: {game.name}")
     return game
@@ -505,6 +510,7 @@ def get_open_game(
     provider: str = "sportec",
     game_id: str = "J03WMX",
     verbose: bool = True,
+    use_cache: bool = True,
 ) -> Game:
     """Function to load a game object from an open datasource
 
@@ -513,6 +519,7 @@ def get_open_game(
         game_id (str, optional): The Game id of the open game. Defaults to 'J03WMX',
         verbose (bool, optional): Whether or not to print info about progress
         in the terminal, Defaults to True.
+        use_cache (bool, optional): Use cached version of match if available.
 
     Returns:
         Game: All information about the game
@@ -524,10 +531,17 @@ def get_open_game(
         )
 
     if provider == "metrica":
+        save_path = os.path.join("datasets", "metrica")
+        if use_cache and os.path.exists(save_path):
+            return get_saved_game(save_path)
         tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
         event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
     elif provider in ["dfl", "tracab", "sportec"]:
+        save_path = os.path.join("datasets", "IDSSE", game_id)
+        if use_cache and os.path.exists(save_path):
+            return get_saved_game(save_path)
+
         tracking_data, metadata = load_sportec_open_tracking_data(
             game_id=game_id,
             verbose=verbose,
@@ -535,6 +549,8 @@ def get_open_game(
         event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(
             game_id=game_id
         )
+        os.remove(os.path.join("datasets", "IDSSE", game_id, "tracking_data_temp.xml"))
+        os.remove(os.path.join("datasets", "IDSSE", game_id, "metadata_temp.xml"))
 
     periods_cols = ed_metadata.periods_frames.columns.difference(
         metadata.periods_frames.columns
@@ -590,6 +606,8 @@ def get_open_game(
         _event_timestamp_is_precise=True,
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
+
+    game.save_game(save_path, verbose=False, allow_overwrite=True)
     return game
 
 

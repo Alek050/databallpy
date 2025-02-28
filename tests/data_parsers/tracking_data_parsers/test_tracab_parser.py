@@ -131,14 +131,12 @@ class TestTracabParser(unittest.TestCase):
         "databallpy.data_parsers.tracking_data_parsers.tracab_parser.open",
         new_callable=mock_open,
     )
-    @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.os.rename")
     @patch(
         "databallpy.data_parsers.tracking_data_parsers.tracab_parser.load_tracab_tracking_data"
     )
     def test_load_sportec_open_tracking_data(
         self,
         mock_load_tracab_tracking_data,
-        mock_rename,
         mock_open,
         mock_exists,
         mock_makedirs,
@@ -158,15 +156,14 @@ class TestTracabParser(unittest.TestCase):
             iter_content=lambda chunk_size: [b"mock content"],
         )
         mock_load_tracab_tracking_data.return_value = (pd.DataFrame(), "mock_metadata")
-        mock_rename.return_value = "triggered"
 
         game_id = "J03WMX"
         verbose = True
         expected_metadata_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", game_id, "metadata.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "metadata_temp.xml"
         )
         expected_tracking_data_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data_temp.xml"
         )
 
         # Call the function
@@ -185,7 +182,6 @@ class TestTracabParser(unittest.TestCase):
             ),
             "wb",
         )
-        self.assertEqual(mock_rename.call_count, 1)
         mock_load_tracab_tracking_data.assert_called_once_with(
             expected_tracking_data_path, expected_metadata_path, verbose=verbose
         )
@@ -221,6 +217,8 @@ class TestTracabParser(unittest.TestCase):
                 "shirt_num": [4, 3],
                 "start_frame": [1212, 1218],
                 "end_frame": [2323, 2327],
+                "starter": [True, False],
+                "position": ["unspecified", "unspecified"]
             }
         )
         df_players = _get_players_metadata_v1(input_players_info)

@@ -105,43 +105,37 @@ def load_sportec_open_tracking_data(
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
     save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", game_id)
     os.makedirs(save_path, exist_ok=True)
-    if not os.path.exists(os.path.join(save_path, "metadata.xml")):
-        metadata = requests.get(metadata_url)
-        with open(os.path.join(save_path, "metadata.xml"), "wb") as f:
-            f.write(metadata.content)
 
-    if not os.path.exists(os.path.join(save_path, "tracking_data.xml")):
-        if verbose:
-            print("Downloading open tracking data...", end="\r")
-        session = requests.Session()
-        response = session.get(
-            _get_sportec_open_data_url(game_id, "tracking_data"), stream=True
-        )
-        total_size = int(response.headers.get("content-length", 0))
+    metadata = requests.get(metadata_url)
+    with open(os.path.join(save_path, "metadata_temp.xml"), "wb") as f:
+        f.write(metadata.content)
 
-        with open(os.path.join(save_path, "tracking_data_temp.xml"), "wb") as file, tqdm(
-            desc="Downloading",
-            total=total_size,
-            unit="B",
-            unit_scale=True,
-            unit_divisor=1024,
-            disable=not verbose,
-        ) as bar:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    file.write(chunk)
-                    bar.update(len(chunk))
+    if verbose:
+        print("Downloading open tracking data...", end="\r")
+    session = requests.Session()
+    response = session.get(
+        _get_sportec_open_data_url(game_id, "tracking_data"), stream=True
+    )
+    total_size = int(response.headers.get("content-length", 0))
 
-        # rename temp to non temp:
-        os.rename(
-            os.path.join(save_path, "tracking_data_temp.xml"),
-            os.path.join(save_path, "tracking_data.xml"),
-        )
-        print("Done!", end="\r")
+    with open(os.path.join(save_path, "tracking_data_temp.xml"), "wb") as file, tqdm(
+        desc="Downloading",
+        total=total_size,
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        disable=not verbose,
+    ) as bar:
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk:
+                file.write(chunk)
+                bar.update(len(chunk))
+
+    print("Done!", end="\r")
 
     return load_tracab_tracking_data(
-        os.path.join(save_path, "tracking_data.xml"),
-        os.path.join(save_path, "metadata.xml"),
+        os.path.join(save_path, "tracking_data_temp.xml"),
+        os.path.join(save_path, "metadata_temp.xml"),
         verbose=verbose,
     )
 
@@ -633,5 +627,7 @@ def _get_players_metadata_v1(players_info: list[dict[str, int | float]]) -> pd.D
         player_dict["start_frame"].append(int(player["StartFrameCount"]))
         player_dict["end_frame"].append(int(player["EndFrameCount"]))
     df = pd.DataFrame(player_dict)
+    df["starter"] = df["start_frame"] == df["start_frame"].value_counts().index[0]
+    df["position"] = "unspecified"
 
     return df

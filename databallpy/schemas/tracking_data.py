@@ -174,14 +174,6 @@ class TrackingData(pd.DataFrame):
         raise AttributeError("Cannot set provider attribute of tracking data")
 
     @property
-    def game(self):
-        return self._provider
-
-    @game.setter
-    def game(self, _):
-        raise AttributeError("Cannot set game attribute of tracking data")
-
-    @property
     def frame_rate(self):
         return self._frame_rate
 

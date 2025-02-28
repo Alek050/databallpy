@@ -128,6 +128,8 @@ MD_TRACAB = Metadata(
             "shirt_num": [1, 2],
             "start_frame": [1509993, 1509993],
             "end_frame": [1509997, 1509995],
+            "starter": [True, True],
+            "position": ["unspecified", "unspecified"]
         }
     ),
     away_team_id=194,
@@ -141,6 +143,8 @@ MD_TRACAB = Metadata(
             "shirt_num": [1, 2],
             "start_frame": [1509993, 1509993],
             "end_frame": [1509997, 1509995],
+            "starter": [True, True],
+            "position": ["unspecified", "unspecified"]
         }
     ),
     country="",

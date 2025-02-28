@@ -7,7 +7,13 @@ from functools import wraps
 import numpy as np
 import pandas as pd
 
-from databallpy.schemas import EventData, TrackingData
+from databallpy.schemas import (
+    EventData,
+    EventDataSchema,
+    TrackingData,
+    TrackingDataSchema,
+    PlayersSchema
+)
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.game_utils import (
@@ -698,6 +704,7 @@ def check_inputs_game_object(game: Game):
         )
 
     if len(game.tracking_data) > 0:
+        TrackingDataSchema.validate(game.tracking_data)
         # tracking data provider
         if not isinstance(game.tracking_data.provider, str):
             raise TypeError(
@@ -711,35 +718,7 @@ def check_inputs_game_object(game: Game):
             f"event data should be a EventData class, not a {type(game.event_data)}"
         )
     if len(game.event_data) > 0:
-        for col in [
-            "event_id",
-            "databallpy_event",
-            "period_id",
-            "team_id",
-            "player_id",
-            "start_x",
-            "start_y",
-            "datetime",
-            "player_name",
-        ]:
-            if col not in game.event_data.columns.to_list():
-                raise ValueError(f"{col} not in event data columns, this is manditory!")
-
-        if not pd.api.types.is_datetime64_any_dtype(game.event_data["datetime"]):
-            raise TypeError(
-                "datetime column in event_data should be a datetime dtype, not a "
-                f"{type(game.event_data['datetime'])}"
-            )
-
-        if game.event_data["datetime"].dt.tz is None:
-            raise ValueError("datetime column in event_data should have a timezone")
-
-        # event_data.provider
-        if not isinstance(game.event_data.provider, str):
-            raise TypeError(
-                "event data provider should be a string, not a "
-                f"{type(game.event_data.provider)}"
-            )
+        EventDataSchema.validate(game.event_data)
 
     # pitch_dimensions
     if not isinstance(game.pitch_dimensions, (list, tuple)):
@@ -843,66 +822,70 @@ def check_inputs_game_object(game: Game):
                 )
 
     # team players
-    for team, players in zip(["home", "away"], [game.home_players, game.away_players]):
-        if not isinstance(players, pd.DataFrame):
+    for players_df in [game.home_players, game.away_players]:
+        if not isinstance(players_df, pd.DataFrame):
+            raise TypeError(f"home and away players should be a pd df, not {type(players_df)}")
+        PlayersSchema.validate(players_df)
+    # for team, players in zip(["home", "away"], [game.home_players, game.away_players]):
+        # if not isinstance(players, pd.DataFrame):
+        #     raise TypeError(
+        #         f"{team} team players should be a pandas dataframe, not a "
+        #         f"{type(players)}"
+        #     )
+        # for col in ["id", "full_name", "shirt_num"]:
+        #     if col not in players.columns:
+        #         raise ValueError(
+        #             f"{team} team players should contain at least the column "
+        #             f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
+        #         )
+        # if (
+        #     "position" in players.columns
+        #     and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
+        # ):
+        #     raise ValueError(
+        #         f"{team} team players should have a position that is in "
+        #         f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
+        #     )
+
+    # check for direction of play
+    for _, period_row in game.periods.iterrows():
+        if "start_frame" not in period_row.index:
+            continue
+        frame = period_row["start_frame"]
+        if len(game.tracking_data[game.tracking_data["frame"] == frame].index) == 0:
+            continue
+        idx = game.tracking_data[game.tracking_data["frame"] == frame].index[0]
+        period = period_row["period_id"]
+        home_x = [x + "_x" for x in game.home_players_column_ids()]
+        away_x = [x + "_x" for x in game.away_players_column_ids()]
+        if game.tracking_data.loc[idx, home_x].mean() > 0:
+            centroid_x = game.tracking_data.loc[idx, home_x].mean()
+            raise DataBallPyError(
+                "The home team should be represented as playing from left to "
+                f"right the whole game. At the start of period {period} the x "
+                f"centroid of the home team is {centroid_x}."
+            )
+
+        if game.tracking_data.loc[idx, away_x].mean() < 0:
+            centroid_x = game.tracking_data.loc[idx, away_x].mean()
+            raise DataBallPyError(
+                "The away team should be represented as playingfrom right to "
+                f"left the whole game. At the start  of period {period} the x "
+                f"centroid ofthe away team is {centroid_x}."
+            )
+
+    # check databallpy_events
+    databallpy_events = [game.dribble_events, game.shot_events, game.pass_events]
+    for event_df, event_name in zip(
+        databallpy_events,
+        ["dribble", "shot", "pass"],
+    ):
+        if not isinstance(event_df, pd.DataFrame):
             raise TypeError(
-                f"{team} team players should be a pandas dataframe, not a "
-                f"{type(players)}"
-            )
-        for col in ["id", "full_name", "shirt_num"]:
-            if col not in players.columns:
-                raise ValueError(
-                    f"{team} team players should contain at least the column "
-                    f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
-                )
-        if (
-            "position" in players.columns
-            and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
-        ):
-            raise ValueError(
-                f"{team} team players should have a position that is in "
-                f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
+                f"{event_name}_events should be a dataframe, not a "
+                f"{type(event_df)}"
             )
 
-        # check for direction of play
-        for _, period_row in game.periods.iterrows():
-            if "start_frame" not in period_row.index:
-                continue
-            frame = period_row["start_frame"]
-            if len(game.tracking_data[game.tracking_data["frame"] == frame].index) == 0:
-                continue
-            idx = game.tracking_data[game.tracking_data["frame"] == frame].index[0]
-            period = period_row["period_id"]
-            home_x = [x + "_x" for x in game.home_players_column_ids()]
-            away_x = [x + "_x" for x in game.away_players_column_ids()]
-            if game.tracking_data.loc[idx, home_x].mean() > 0:
-                centroid_x = game.tracking_data.loc[idx, home_x].mean()
-                raise DataBallPyError(
-                    "The home team should be represented as playing from left to "
-                    f"right the whole game. At the start of period {period} the x "
-                    f"centroid of the home team is {centroid_x}."
-                )
-
-            if game.tracking_data.loc[idx, away_x].mean() < 0:
-                centroid_x = game.tracking_data.loc[idx, away_x].mean()
-                raise DataBallPyError(
-                    "The away team should be represented as playingfrom right to "
-                    f"left the whole game. At the start  of period {period} the x "
-                    f"centroid ofthe away team is {centroid_x}."
-                )
-
-        # check databallpy_events
-        databallpy_events = [game.dribble_events, game.shot_events, game.pass_events]
-        for event_df, event_name in zip(
-            databallpy_events,
-            ["dribble", "shot", "pass"],
-        ):
-            if not isinstance(event_df, pd.DataFrame):
-                raise TypeError(
-                    f"{event_name}_events should be a dataframe, not a "
-                    f"{type(event_df)}"
-                )
-
-        # country
-        if not isinstance(game.country, str):
-            raise TypeError(f"country should be a string, not a {type(game.country)}")
+    # country
+    if not isinstance(game.country, str):
+        raise TypeError(f"country should be a string, not a {type(game.country)}")
