@@ -66,10 +66,6 @@ jupyter-book = "^1.0.0"
 [tool.poetry.group.profiler.dependencies]
 line-profiler = "^4.1.2"
 
-
-[tool.poetry.group.dev.dependencies]
-scikit-learn = "^1.4.1.post1"
-
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
 branch = "main"                             # branch to make releases of

@@ -350,6 +350,7 @@ def get_saved_game(name: str, path: str = os.getcwd()) -> Game:
         tracking_data=TrackingData(
             pd.read_parquet(os.path.join(full_path, "tracking_data.parquet")),
             provider=metadata["tracking_data_provider"],
+            frame_rate=metadata["tracking_data_frame_rate"],
         ),
         event_data=EventData(
             pd.read_parquet(os.path.join(full_path, "event_data.parquet")),
@@ -508,8 +509,8 @@ def get_open_game(
     """Function to load a game object from an open datasource
 
     Args:
-        provider (str, optional): What provider to get the open data from.
-        Defaults to "dfl". Options are ["metrica", "dfl", "sportec", "tracab"]
+        provider (str, optional): What provider to get the open data from. Defaults to "dfl". Options are ["metrica", "dfl", "sportec", "tracab"]
+        game_id (str, optional): The Game id of the open game. Defaults to 'J03WMX',
         verbose (bool, optional): Whether or not to print info about progress
         in the terminal, Defaults to True.
 
