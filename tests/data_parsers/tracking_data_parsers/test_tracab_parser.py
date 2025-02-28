@@ -218,7 +218,7 @@ class TestTracabParser(unittest.TestCase):
                 "start_frame": [1212, 1218],
                 "end_frame": [2323, 2327],
                 "starter": [True, False],
-                "position": ["unspecified", "unspecified"]
+                "position": ["unspecified", "unspecified"],
             }
         )
         df_players = _get_players_metadata_v1(input_players_info)

@@ -150,7 +150,7 @@ class TestGetGame(unittest.TestCase):
                 "end_frame": [1509997, 1509995],
                 "formation_place": [4, 0],
                 "position": ["goalkeeper", "midfielder"],
-                "starter": [True, False],
+                "starter": [True, True],
             }
         )
 
@@ -163,7 +163,7 @@ class TestGetGame(unittest.TestCase):
                 "end_frame": [1509997, 1509995],
                 "formation_place": [8, 0],
                 "position": ["midfielder", "goalkeeper"],
-                "starter": [True, False],
+                "starter": [True, True],
             }
         )
 
@@ -263,7 +263,6 @@ class TestGetGame(unittest.TestCase):
                 "id": [1, 2],
                 "full_name": ["Player 1", "Player 2"],
                 "shirt_num": [1, 2],
-                "player_type": ["Goalkeeper", "Field player"],
                 "start_frame": [2, 2],
                 "end_frame": [6, 6],
                 "position": ["goalkeeper", "defender"],
@@ -276,11 +275,10 @@ class TestGetGame(unittest.TestCase):
                 "id": [3, 4],
                 "full_name": ["Player 11", "Player 12"],
                 "shirt_num": [1, 2],
-                "player_type": ["Goalkeeper", "Field player"],
                 "start_frame": [2, 2],
                 "end_frame": [6, 6],
-                "position": ["goalkeeper", ""],
-                "starter": [True, False],
+                "position": ["goalkeeper", "unspecified"],
+                "starter": [True, True],
             }
         )
 
@@ -335,7 +333,6 @@ class TestGetGame(unittest.TestCase):
                 ],
             }
         )
-
         self.expected_game_inmotio_instat = Game(
             tracking_data=self.td_inmotio,
             event_data=EventData(self.ed_instat, provider="instat"),

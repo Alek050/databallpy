@@ -8,7 +8,6 @@ from databallpy.game import Game
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
-from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_INSTANCES_OPTA_TRACAB,
     PASS_INSTANCES_OPTA_TRACAB,
@@ -971,11 +970,6 @@ class TestGame(unittest.TestCase):
             game.get_column_ids(positions=["striker"])
         with self.assertRaises(TypeError):
             game.get_column_ids(min_minutes_played="fifteen")
-
-        with self.assertWarns(DataBallPyWarning):
-            game.away_players.drop(columns=["position"], inplace=True)
-            away = game.get_column_ids(team="away", positions=["defender"])
-            self.assertSetEqual(set(away), {"away_55", "away_66", "away_77"})
 
     def test_game_player_column_id_to_full_name(self):
         res_name_home = self.expected_game_tracab_opta.player_column_id_to_full_name(

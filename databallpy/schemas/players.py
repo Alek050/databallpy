@@ -1,4 +1,5 @@
 from typing import Optional
+
 import pandera as pa
 
 from databallpy.utils.constants import DATABALLPY_POSITIONS

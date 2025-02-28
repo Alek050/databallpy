@@ -129,7 +129,7 @@ MD_TRACAB = Metadata(
             "start_frame": [1509993, 1509993],
             "end_frame": [1509997, 1509995],
             "starter": [True, True],
-            "position": ["unspecified", "unspecified"]
+            "position": ["unspecified", "unspecified"],
         }
     ),
     away_team_id=194,
@@ -144,7 +144,7 @@ MD_TRACAB = Metadata(
             "start_frame": [1509993, 1509993],
             "end_frame": [1509997, 1509995],
             "starter": [True, True],
-            "position": ["unspecified", "unspecified"]
+            "position": ["unspecified", "unspecified"],
         }
     ),
     country="",
@@ -1033,9 +1033,10 @@ MD_INMOTIO = Metadata(
             "id": [1, 2],
             "full_name": ["Player 1", "Player 2"],
             "shirt_num": [1, 2],
-            "player_type": ["Goalkeeper", "Field player"],
             "start_frame": [2, 2],
             "end_frame": [6, 6],
+            "starter": [True, True],
+            "position": ["goalkeeper", "unspecified"],
         }
     ),
     home_formation="",
@@ -1047,9 +1048,10 @@ MD_INMOTIO = Metadata(
             "id": [3, 4],
             "full_name": ["Player 11", "Player 12"],
             "shirt_num": [1, 2],
-            "player_type": ["Goalkeeper", "Field player"],
             "start_frame": [2, 2],
             "end_frame": [6, 6],
+            "starter": [True, True],
+            "position": ["goalkeeper", "unspecified"],
         }
     ),
     away_formation="",
@@ -1100,7 +1102,7 @@ MD_INSTAT = Metadata(
         {
             "id": [3, 4],
             "full_name": ["Player 11", "Player 12"],
-            "position": ["goalkeeper", ""],
+            "position": ["goalkeeper", "unspecified"],
             "starter": [True, False],
             "shirt_num": [1, 3],
         }
@@ -1445,7 +1447,7 @@ SPORTEC_METADATA_TD = Metadata(
             "id": ["A-1", "A-3", "A-5"],
             "full_name": ["Adam Bodzek", "Rouwen Hennings", "Raphael Wolf"],
             "shirt_num": [13, 28, 1],
-            "position": ["", "forward", ""],
+            "position": ["unspecified", "forward", "unspecified"],
             "start_frame": [MISSING_INT] * 3,
             "end_frame": [MISSING_INT] * 3,
             "starter": [False, True, False],

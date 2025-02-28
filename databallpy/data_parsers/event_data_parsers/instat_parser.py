@@ -223,7 +223,7 @@ def _parse_instat_position(position: str) -> str:
     for pos in DATABALLPY_POSITIONS:
         if pos in position.lower():
             return pos
-    return ""
+    return "unspecified"
 
 
 logging_wrapper(__file__)

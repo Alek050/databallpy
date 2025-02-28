@@ -750,6 +750,8 @@ def merge_player_info(
     away_players = tracking_metadata.away_players.merge(
         event_metadata.away_players[player_cols], on="id"
     )
+    away_players["position"] = event_metadata.away_players["position"]
+    home_players["position"] = event_metadata.home_players["position"]
     return home_players, away_players
 
 

@@ -10,9 +10,9 @@ import pandas as pd
 from databallpy.schemas import (
     EventData,
     EventDataSchema,
+    PlayersSchema,
     TrackingData,
     TrackingDataSchema,
-    PlayersSchema
 )
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
@@ -30,7 +30,6 @@ from databallpy.utils.utils import (
     _copy_value_,
     _values_are_equal_,
 )
-from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__file__)
 
@@ -229,7 +228,7 @@ class Game:
     def get_column_ids(
         self,
         team: str | None = None,
-        positions: list[str] = ["goalkeeper", "defender", "midfielder", "forward"],
+        positions: list[str] = DATABALLPY_POSITIONS,
         min_minutes_played: float | int = 0.1,
     ) -> list[str]:
         """Function to get the column ids that are used in the tracking data. With this
@@ -276,14 +275,7 @@ class Game:
             )
 
         if len(positions) > 0:
-            if "position" not in players.columns:
-                warnings.warn(
-                    "No position information found in players, can not filter on "
-                    "positions. Returning all positions.",
-                    DataBallPyWarning,
-                )
-            else:
-                players = players[players["position"].isin(positions)]
+            players = players[players["position"].isin(positions)]
 
         if not (players["start_frame"] == MISSING_INT).all():
             players = players[
@@ -292,7 +284,6 @@ class Game:
                 / 60
                 >= min_minutes_played
             ]
-
         return [
             f"home_{int(row.shirt_num)}"
             if row.id in self.home_players["id"].to_list()
@@ -824,28 +815,30 @@ def check_inputs_game_object(game: Game):
     # team players
     for players_df in [game.home_players, game.away_players]:
         if not isinstance(players_df, pd.DataFrame):
-            raise TypeError(f"home and away players should be a pd df, not {type(players_df)}")
+            raise TypeError(
+                f"home and away players should be a pd df, not {type(players_df)}"
+            )
         PlayersSchema.validate(players_df)
     # for team, players in zip(["home", "away"], [game.home_players, game.away_players]):
-        # if not isinstance(players, pd.DataFrame):
-        #     raise TypeError(
-        #         f"{team} team players should be a pandas dataframe, not a "
-        #         f"{type(players)}"
-        #     )
-        # for col in ["id", "full_name", "shirt_num"]:
-        #     if col not in players.columns:
-        #         raise ValueError(
-        #             f"{team} team players should contain at least the column "
-        #             f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
-        #         )
-        # if (
-        #     "position" in players.columns
-        #     and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
-        # ):
-        #     raise ValueError(
-        #         f"{team} team players should have a position that is in "
-        #         f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
-        #     )
+    # if not isinstance(players, pd.DataFrame):
+    #     raise TypeError(
+    #         f"{team} team players should be a pandas dataframe, not a "
+    #         f"{type(players)}"
+    #     )
+    # for col in ["id", "full_name", "shirt_num"]:
+    #     if col not in players.columns:
+    #         raise ValueError(
+    #             f"{team} team players should contain at least the column "
+    #             f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
+    #         )
+    # if (
+    #     "position" in players.columns
+    #     and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
+    # ):
+    #     raise ValueError(
+    #         f"{team} team players should have a position that is in "
+    #         f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
+    #     )
 
     # check for direction of play
     for _, period_row in game.periods.iterrows():
@@ -882,8 +875,7 @@ def check_inputs_game_object(game: Game):
     ):
         if not isinstance(event_df, pd.DataFrame):
             raise TypeError(
-                f"{event_name}_events should be a dataframe, not a "
-                f"{type(event_df)}"
+                f"{event_name}_events should be a dataframe, not a " f"{type(event_df)}"
             )
 
     # country

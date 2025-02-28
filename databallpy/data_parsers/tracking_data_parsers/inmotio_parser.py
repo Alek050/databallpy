@@ -314,5 +314,10 @@ def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
         player_dict["start_frame"].append(int(values[1]))
         player_dict["end_frame"].append(int(values[2]))
     df = pd.DataFrame(player_dict)
+    df["starter"] = df["player_type"] != "Substitute"
+    df["position"] = np.where(
+        df["player_type"] == "Goalkeeper", "goalkeeper", "unspecified"
+    )
+    df.drop(columns=["player_type"], inplace=True)
 
     return df
