@@ -52,8 +52,8 @@ class EventData(pd.DataFrame):
 
     @property
     def _constructor(self):
-        def wrapper(*args, **kwargs):
-            return EventData(*args, provider=self.provider, **kwargs)
+        def wrapper(*args, provider=self.provider, **kwargs):
+            return EventData(*args, provider=provider, **kwargs)
 
         return wrapper
 
