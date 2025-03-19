@@ -221,8 +221,8 @@ def _get_tracking_data_xml(
 
         is_second_half = elem.get("GameSection") == "secondHalf"
         for i, frame in enumerate(frames):
-            if is_second_half:  # we are parsing second half
-                i += n_frames_first_half
+            if is_second_half:
+                i = n_frames_first_half + int(frame.get("N")) - 100_000
             data[f"{column_id}_x"][i] = float(frame.get("X"))
             data[f"{column_id}_y"][i] = float(frame.get("Y"))
             if frame.get("Z") is not None:  # ball
@@ -248,7 +248,6 @@ def _get_tracking_data_xml(
     frames_df["end_datetime_td"] = (
         frames_df["end_datetime_td"].dt.tz_localize("UTC").dt.tz_convert("Europe/Berlin")
     )
-
     return df, frames_df, frame_rate
 
 
