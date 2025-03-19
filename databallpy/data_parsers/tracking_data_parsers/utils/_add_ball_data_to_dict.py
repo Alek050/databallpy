@@ -24,7 +24,7 @@ def _add_ball_data_to_dict(
     data["ball_x"][idx] = _to_float(ball_x)
     data["ball_y"][idx] = _to_float(ball_y)
     data["ball_z"][idx] = _to_float(ball_z)
-    data["ball_possession"][idx] = possession
+    data["team_possession"][idx] = possession
     data["ball_status"][idx] = status
 
     return data

@@ -213,6 +213,7 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 - [rdghe](https://github.com/rdghe/)
 - [swopper050](https://github.com/Swopper050)
 - [maritsloots](https://github.com/maritsloots)
+- [jan-swiatek](https://github.com/jan-swiatek)
 
 ## License
 

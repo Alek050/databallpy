@@ -52,15 +52,12 @@ def player_id_to_column_id(
 
 def create_event_attributes_dataframe(
     events: dict[str | int, ShotEvent | PassEvent | DribbleEvent | TackleEvent],
-    add_name: bool = False,
 ) -> pd.DataFrame:
     """Function to create a DataFrame from a dictionary of events
 
     Args:
         events (dict[str | int, ShotEvent | PassEvent | DribbleEvent]):
             The dictionary of events
-        add_name (bool, optional): Whether to add the name of the event to the
-            DataFrame.
 
     Returns:
         pd.DataFrame: DataFrame with the attributes of the events
@@ -71,6 +68,4 @@ def create_event_attributes_dataframe(
     res_dict = {
         attr: [getattr(event, attr) for event in events.values()] for attr in attributes
     }
-    if add_name:
-        res_dict["name"] = [type(event).__name__ for event in events.values()]
     return pd.DataFrame(res_dict)

@@ -22,7 +22,7 @@ class TestInstatParser(unittest.TestCase):
         event_data, metadata, _ = load_instat_event_data(
             self.instat_event_data_loc, self.instat_metadata_loc
         )
-        pd.testing.assert_frame_equal(event_data, ED_INSTAT)
+        pd.testing.assert_frame_equal(event_data, pd.DataFrame(ED_INSTAT))
         assert metadata == expected_metadata
 
     def test_load_instat_event_data_errors(self):
@@ -77,7 +77,7 @@ class TestInstatParser(unittest.TestCase):
         event_data, pitch_dimensions = _load_event_data(
             self.instat_event_data_loc, MD_INSTAT
         )
-        expected_event_data = ED_INSTAT
+        expected_event_data = pd.DataFrame(ED_INSTAT)
 
         pd.testing.assert_frame_equal(event_data, expected_event_data)
         assert pitch_dimensions == [100.0, 50.0]

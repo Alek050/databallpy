@@ -642,7 +642,7 @@ def _get_close_to_ball_event_info(
         "event_id": id,
         "period_id": event["period"],
         "minutes": event["minute"],
-        "seconds": event["second"],
+        "seconds": float(event["second"]),
         "datetime": pd.to_datetime(
             periods["start_datetime_ed"][event["period"] - 1]
             + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")

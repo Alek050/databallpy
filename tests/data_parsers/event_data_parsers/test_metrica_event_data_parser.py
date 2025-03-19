@@ -10,14 +10,15 @@ from databallpy.data_parsers.event_data_parsers.metrica_event_data_parser import
     load_metrica_open_event_data,
 )
 from tests.expected_outcomes import (
-    DRIBBLE_EVENTS_METRICA,
+    DRIBBLE_INSTANCES_METRICA,
     ED_METRICA,
     MD_METRICA_ED,
-    PASS_EVENTS_METRICA,
-    SHOT_EVENTS_METRICA,
-    TACKLE_EVENTS_METRICA,
+    PASS_INSTANCES_METRICA,
+    SHOT_INSTANCES_METRICA,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW
+
+ED_METRICA = pd.DataFrame(ED_METRICA.copy())
 
 
 class TestMetricaEventDataParser(unittest.TestCase):
@@ -29,9 +30,9 @@ class TestMetricaEventDataParser(unittest.TestCase):
         ed, md, dbpe = load_metrica_event_data(self.ed_loc, self.md_loc)
         assert md == MD_METRICA_ED
         pd.testing.assert_frame_equal(ed, ED_METRICA)
-        assert dbpe["shot_events"] == SHOT_EVENTS_METRICA
-        assert dbpe["pass_events"] == PASS_EVENTS_METRICA
-        assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
+        assert dbpe["shot_events"] == SHOT_INSTANCES_METRICA
+        assert dbpe["pass_events"] == PASS_INSTANCES_METRICA
+        assert dbpe["dribble_events"] == DRIBBLE_INSTANCES_METRICA
 
         with self.assertRaises(TypeError):
             load_metrica_event_data(22, self.md_loc)
@@ -61,10 +62,9 @@ class TestMetricaEventDataParser(unittest.TestCase):
         ed, md, dbpe = load_metrica_open_event_data()
         assert md == MD_METRICA_ED
         pd.testing.assert_frame_equal(ed, ED_METRICA)
-        assert dbpe["shot_events"] == SHOT_EVENTS_METRICA
-        assert dbpe["pass_events"] == PASS_EVENTS_METRICA
-        assert dbpe["dribble_events"] == DRIBBLE_EVENTS_METRICA
-        assert dbpe["other_events"] == TACKLE_EVENTS_METRICA
+        assert dbpe["shot_events"] == SHOT_INSTANCES_METRICA
+        assert dbpe["pass_events"] == PASS_INSTANCES_METRICA
+        assert dbpe["dribble_events"] == DRIBBLE_INSTANCES_METRICA
 
     def test_get_databallpy_events(self):
         players = pd.concat(

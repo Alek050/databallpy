@@ -198,7 +198,9 @@ def _get_sportec_event_data(
             event.find_next().name, "no_set_piece"
         )
 
-        kwargs["datetime"] = pd.to_datetime(event["EventTime"])
+        kwargs["datetime"] = pd.to_datetime(event["EventTime"]).tz_convert(
+            "Europe/Berlin"
+        )
         dt_idx = int(kwargs["datetime"] >= period_start_times[1])
         kwargs["period_id"] = dt_idx + 1
         time_diff_s = (
@@ -242,9 +244,9 @@ def _get_sportec_event_data(
         result_dict = update_results_dict(result_dict, idx, **kwargs)
 
     event_data = pd.DataFrame(result_dict)
-    event_data["datetime"] = pd.to_datetime(event_data["datetime"]).dt.tz_convert(
-        "Europe/Berlin"
-    )
+    # event_data["datetime"] = pd.to_datetime(event_data["datetime"]).dt.tz_convert(
+    #     "Europe/Berlin"
+    # )
     event_data = event_data.sort_values("datetime").reset_index(drop=True)
 
     all_players = pd.concat([metadata.home_players, metadata.away_players])[

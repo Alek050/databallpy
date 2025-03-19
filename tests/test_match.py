@@ -29,12 +29,9 @@ class TestMatch(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             match = Match(
                 tracking_data=self.game.tracking_data,
-                tracking_data_provider="tracab",
                 event_data=self.game.event_data,
-                event_data_provider="opta",
                 pitch_dimensions=self.game.pitch_dimensions,
                 periods=self.game.periods,
-                frame_rate=self.game.frame_rate,
                 home_team_id=self.game.home_team_id,
                 home_formation=self.game.home_formation,
                 home_score=self.game.home_score,
@@ -49,7 +46,6 @@ class TestMatch(unittest.TestCase):
                 shot_events=self.game.shot_events,
                 pass_events=self.game.pass_events,
                 dribble_events=self.game.dribble_events,
-                other_events=self.game.other_events,
                 allow_synchronise_tracking_and_event_data=self.game.allow_synchronise_tracking_and_event_data,
                 _tracking_timestamp_is_precise=self.game._tracking_timestamp_is_precise,
                 _event_timestamp_is_precise=self.game._event_timestamp_is_precise,

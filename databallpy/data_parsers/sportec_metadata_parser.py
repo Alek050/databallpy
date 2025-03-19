@@ -62,7 +62,7 @@ def _get_sportec_open_data_url(game_id: str, data_type: str) -> str:
 
 
 DFB_POSITIONS = {
-    "Sub": "",
+    "Sub": "unspecified",
     "TW": "goalkeeper",
     "RV": "defender",  # right back
     "IVR": "defender",  # right center back

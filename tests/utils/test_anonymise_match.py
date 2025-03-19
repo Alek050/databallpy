@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy import get_game
+from databallpy.schemas import TrackingData
 from databallpy.utils.anonymise_game import (
     add_new_pseudonym,
     anonymise_datetime,
@@ -49,6 +50,7 @@ class TestAnonymiseGame(unittest.TestCase):
         tracking_data["home_1_y"] = [0, 0, 0, 0, 0]
         tracking_data["away_2_x"] = [10, 10, 10, 10, 10]
         tracking_data["away_2_y"] = [10, 10, 12, 120, 12]
+        tracking_data = TrackingData(tracking_data)
         self.game.tracking_data = tracking_data.copy()
 
     @patch("databallpy.utils.anonymise_game.anonymise_players")
@@ -195,14 +197,16 @@ class TestAnonymiseGame(unittest.TestCase):
         input_game = self.game.copy()
         input_game.event_data["to_player_id"] = [np.nan] * 11 + [45849]
         input_game.event_data["to_player_name"] = [np.nan] * 11 + ["Jan Boskamp"]
-        input_game._passes_df = pd.DataFrame({"player_id": [45849]})
-        input_game._dribbles_df = pd.DataFrame({"player_id": [45849]})
-        input_game._shots_df = pd.DataFrame({"player_id": [45849]})
-        for event in input_game.all_events.values():
-            if event.team_side == "home" and event.jersey == 2:
-                event.jersey = 34
-            elif event.team_side == "away" and event.jersey == 1:
-                event.jersey = 17
+        input_game.pass_events = pd.DataFrame(
+            {"player_id": [45849], "player_name": ["Jan Boskamp"]}
+        )
+        input_game.dribble_events = pd.DataFrame(
+            {"player_id": [45849], "player_name": ["Jan Boskamp"]}
+        )
+        input_game.shot_events = pd.DataFrame(
+            {"player_id": [45849], "player_name": ["Jan Boskamp"]}
+        )
+
         res_game, res_keys = anonymise_players(input_game, input_keys)
 
         # test the update of the keys df
@@ -226,25 +230,14 @@ class TestAnonymiseGame(unittest.TestCase):
         assert res_game.event_data.loc[11, "to_player_id"] == "P-0f693aca"
         assert res_game.event_data.loc[11, "to_player_name"] == "home_2"
 
-        # test changes in the game databallpy events
-        for event in (
-            list(res_game.shot_events.values())
-            + list(res_game.dribble_events.values())
-            + list(res_game.pass_events.values())
-        ):
-            assert event.player_id[:2] == "P-"
-
         # test changes in _events df
-        assert res_game._passes_df.loc[0, "player_id"] == "P-0f693aca"
-        assert res_game._dribbles_df.loc[0, "player_id"] == "P-0f693aca"
-        assert res_game._shots_df.loc[0, "player_id"] == "P-0f693aca"
+        assert res_game.pass_events.loc[0, "player_id"] == "P-0f693aca"
+        assert res_game.dribble_events.loc[0, "player_name"] == "home_2"
+        assert res_game.shot_events.loc[0, "player_id"] == "P-0f693aca"
 
         # test changes in tracking data column names
         for col in ["home_34_x", "away_17_y"]:
             assert col not in res_game.tracking_data.columns
-
-        for event in res_game.all_events.values():
-            assert event.jersey <= 2
 
     def test_rename_tracking_data_columns(self):
         jersey_map = {34: 1, 1: 2}
@@ -284,10 +277,10 @@ class TestAnonymiseGame(unittest.TestCase):
 
     def test_anonymise_teams(self):
         input_game = self.game.copy()
-        input_game._passes_df = pd.DataFrame({"team_id": [3]})
-        input_game._dribbles_df = pd.DataFrame({"team_id": [194]})
-        input_game._shots_df = pd.DataFrame({"team_id": [194]})
-        res_game, res_keys = anonymise_teams(input_game, self.keys.copy())
+        input_game.pass_events = pd.DataFrame({"team_id": [3]})
+        input_game.dribble_events = pd.DataFrame({"team_id": [194]})
+        input_game.shot_events = pd.DataFrame({"team_id": [194]})
+        res_game, res_keys = anonymise_teams(input_game.copy(), self.keys.copy())
 
         for val in [
             res_game.home_team_id,
@@ -300,16 +293,9 @@ class TestAnonymiseGame(unittest.TestCase):
         assert res_game.home_team_id == res_game.home_team_name
         assert res_game.away_team_id == res_game.away_team_name
 
-        for event in (
-            list(res_game.shot_events.values())
-            + list(res_game.pass_events.values())
-            + list(res_game.dribble_events.values())
-        ):
-            event.team_id in [res_game.home_team_id, res_game.away_team_id]
-
-        assert res_game.passes_df.loc[0, "team_id"] == res_game.home_team_id
-        assert res_game.dribbles_df.loc[0, "team_id"] == res_game.away_team_id
-        assert res_game.shots_df.loc[0, "team_id"] == res_game.away_team_id
+        assert res_game.pass_events.loc[0, "team_id"] == res_game.home_team_id
+        assert res_game.dribble_events.loc[0, "team_id"] == res_game.away_team_id
+        assert res_game.shot_events.loc[0, "team_id"] == res_game.away_team_id
 
         assert len(res_keys) == 5
 
@@ -328,17 +314,12 @@ class TestAnonymiseGame(unittest.TestCase):
         )
         input_game.periods["start_datetime_ed"] += ed_dt_diff
         input_game.periods["end_datetime_ed"] += ed_dt_diff
-        for event in (
-            list(input_game.shot_events.values())
-            + list(input_game.pass_events.values())
-            + list(input_game.dribble_events.values())
-        ):
-            event.datetime = input_game.event_data["datetime"].iloc[0]
-
-        dt_event = input_game.event_data["datetime"].iloc[0]
-        input_game._passes_df = pd.DataFrame({"datetime": [dt_event]})
-        input_game._dribbles_df = pd.DataFrame({"datetime": [dt_event]})
-        input_game._shots_df = pd.DataFrame({"datetime": [dt_event]})
+        for df in [
+            input_game.pass_events,
+            input_game.dribble_events,
+            input_game.shot_events,
+        ]:
+            df.loc[:, "datetime"] = input_game.event_data["datetime"].iloc[0]
 
         base_time = pd.to_datetime("2020-10-10 12:00:00.000", utc=True)
         res_game = anonymise_datetime(input_game.copy(), base_time=base_time)
@@ -378,27 +359,15 @@ class TestAnonymiseGame(unittest.TestCase):
             0
         ] == base_time + pd.to_timedelta(5, unit="seconds")
 
-        for event in (
-            list(res_game.shot_events.values())
-            + list(res_game.pass_events.values())
-            + list(res_game.dribble_events.values())
-        ):
-            assert event.datetime == base_time + pd.to_timedelta(5, unit="seconds")
-
-        assert res_game.dribbles_df["datetime"].iloc[0] == base_time + pd.to_timedelta(
-            5, unit="seconds"
-        )
-        assert res_game.shots_df["datetime"].iloc[0] == base_time + pd.to_timedelta(
-            5, unit="seconds"
-        )
-        assert res_game.passes_df["datetime"].iloc[0] == base_time + pd.to_timedelta(
-            5, unit="seconds"
-        )
+        for df in [res_game.pass_events, res_game.dribble_events, res_game.shot_events]:
+            assert (
+                df["datetime"] == base_time + pd.to_timedelta(5, unit="seconds")
+            ).all()
 
     def test_anonymise_datetime_no_tracking_data(self):
         input_game = self.game.copy()
         input_game._is_synchronised = False
-        input_game.tracking_data = pd.DataFrame()
+        input_game.tracking_data = TrackingData()
         input_game.periods.drop(
             columns=[
                 "start_frame",
@@ -417,22 +386,12 @@ class TestAnonymiseGame(unittest.TestCase):
 
         base_time = pd.to_datetime("2020-10-11 12:00:00.000", utc=True)
         ed_dt = input_game.event_data["datetime"].iloc[0]
-        for event in (
-            list(input_game.shot_events.values())
-            + list(input_game.pass_events.values())
-            + list(input_game.dribble_events.values())
-        ):
-            event.datetime = ed_dt + pd.Timedelta(15, unit="seconds")
-
-        input_game._passes_df = pd.DataFrame(
-            {"datetime": [ed_dt + pd.Timedelta(15, unit="seconds")]}
-        )
-        input_game._dribbles_df = pd.DataFrame(
-            {"datetime": [ed_dt + pd.Timedelta(15, unit="seconds")]}
-        )
-        input_game._shots_df = pd.DataFrame(
-            {"datetime": [ed_dt + pd.Timedelta(15, unit="seconds")]}
-        )
+        for df in [
+            input_game.pass_events,
+            input_game.dribble_events,
+            input_game.shot_events,
+        ]:
+            df.loc[:, "datetime"] = ed_dt + pd.Timedelta(15, unit="seconds")
 
         res_game = anonymise_datetime(input_game.copy(), base_time=base_time)
 
@@ -448,19 +407,5 @@ class TestAnonymiseGame(unittest.TestCase):
             15, unit="seconds"
         )
 
-        for event in (
-            list(res_game.shot_events.values())
-            + list(res_game.pass_events.values())
-            + list(res_game.dribble_events.values())
-        ):
-            assert event.datetime == base_time + pd.to_timedelta(15, unit="seconds")
-
-        assert res_game.dribbles_df["datetime"].iloc[0] == base_time + pd.to_timedelta(
-            15, unit="seconds"
-        )
-        assert res_game.shots_df["datetime"].iloc[0] == base_time + pd.to_timedelta(
-            15, unit="seconds"
-        )
-        assert res_game.passes_df["datetime"].iloc[0] == base_time + pd.to_timedelta(
-            15, unit="seconds"
-        )
+        for df in [res_game.pass_events, res_game.dribble_events, res_game.shot_events]:
+            assert df.loc[0, "datetime"] == base_time + pd.Timedelta(15, unit="seconds")

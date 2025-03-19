@@ -21,12 +21,14 @@ from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
-    DRIBBLE_EVENTS_OPTA,
+    DRIBBLE_INSTANCES_OPTA,
     ED_OPTA,
     MD_OPTA,
-    PASS_EVENTS_OPTA,
-    SHOT_EVENTS_OPTA,
+    PASS_INSTANCES_OPTA,
+    SHOT_INSTANCES_OPTA,
 )
+
+ED_OPTA = pd.DataFrame(ED_OPTA.copy())
 
 
 class TestOptaParser(unittest.TestCase):
@@ -46,10 +48,10 @@ class TestOptaParser(unittest.TestCase):
         pd.testing.assert_frame_equal(event_data, ED_OPTA)
         assert metadata == MD_OPTA
 
-        # SHOT_EVENTS_OPTA is scaled to a pitch of [106, 68],
+        # SHOT_INSTANCES_OPTA is scaled to a pitch of [106, 68],
         # while here [100, 50] is expected.
         expected_shot_events_opta = {}
-        for shot_id, shot_event in SHOT_EVENTS_OPTA.items():
+        for shot_id, shot_event in SHOT_INSTANCES_OPTA.items():
             expected_shot_events_opta[shot_id] = shot_event.copy()
             expected_shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 100
             expected_shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 50
@@ -180,18 +182,18 @@ class TestOptaParser(unittest.TestCase):
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():
-            assert key in SHOT_EVENTS_OPTA.keys()
-            assert event == SHOT_EVENTS_OPTA[key]
+            assert key in SHOT_INSTANCES_OPTA.keys()
+            assert event == SHOT_INSTANCES_OPTA[key]
 
         assert "dribble_events" in dbp_events.keys()
         for key, event in dbp_events["dribble_events"].items():
-            assert key in DRIBBLE_EVENTS_OPTA.keys()
-            assert event == DRIBBLE_EVENTS_OPTA[key]
+            assert key in DRIBBLE_INSTANCES_OPTA.keys()
+            assert event == DRIBBLE_INSTANCES_OPTA[key]
 
         assert "pass_events" in dbp_events.keys()
         for key, event in dbp_events["pass_events"].items():
-            assert key in PASS_EVENTS_OPTA.keys()
-            assert event == PASS_EVENTS_OPTA[key]
+            assert key in PASS_INSTANCES_OPTA.keys()
+            assert event == PASS_INSTANCES_OPTA[key]
 
     def test_make_shot_event_instance(self):
         event_xml = """
@@ -360,9 +362,9 @@ class TestOptaParser(unittest.TestCase):
         self.assertAlmostEqual(y, 34.0)
 
     def test_update_pass_outcome_no_related_event_id(self):
-        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+        shot_events = copy.deepcopy(SHOT_INSTANCES_OPTA)
 
-        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
+        pass_events = copy.deepcopy(PASS_INSTANCES_OPTA)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
@@ -375,9 +377,9 @@ class TestOptaParser(unittest.TestCase):
             assert event == pass_events[key]
 
     def test_update_pass_outcome_pass_not_found(self):
-        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+        shot_events = copy.deepcopy(SHOT_INSTANCES_OPTA)
 
-        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
+        pass_events = copy.deepcopy(PASS_INSTANCES_OPTA)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
@@ -391,9 +393,9 @@ class TestOptaParser(unittest.TestCase):
             assert event == pass_events[key]
 
     def test_update_pass_outcome_multiple_options(self):
-        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+        shot_events = copy.deepcopy(SHOT_INSTANCES_OPTA)
 
-        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
+        pass_events = copy.deepcopy(PASS_INSTANCES_OPTA)
         pass_events[4].outcome_str = "successful"
         expected_passes = copy.deepcopy(pass_events)
         event_data = ED_OPTA.copy()

@@ -3,8 +3,12 @@ import pandas as pd
 
 from databallpy.features import get_smallest_angle
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.warnings import deprecated
 
 
+@deprecated(
+    "The get_individual_player_possession function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.add_individual_player_possession() instead."
+)
 def get_individual_player_possession(
     tracking_data: pd.DataFrame,
     pz_radius: float = 1.5,

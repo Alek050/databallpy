@@ -154,7 +154,7 @@ class TestVisualize(unittest.TestCase):
             inplace=True,
         )
         game.tracking_data["databallpy_event"] = "pass"
-        game.tracking_data["event_id"] = game.passes_df["event_id"].iloc[0]
+        game.tracking_data["event_id"] = game.pass_events["event_id"].iloc[0]
         game._is_synchronised = True
 
         fig, ax = plot_tracking_data(
@@ -241,7 +241,7 @@ class TestVisualize(unittest.TestCase):
         game.tracking_data["databallpy_event"] = None
         game.tracking_data["event_id"] = None
         game.tracking_data.loc[2, "databallpy_event"] = "pass"
-        game.tracking_data.loc[2, "event_id"] = game.passes_df["event_id"].iloc[0]
+        game.tracking_data.loc[2, "event_id"] = game.pass_events["event_id"].iloc[0]
         game._is_synchronised = True
 
         heatmap = np.zeros((3, 10, 10))
