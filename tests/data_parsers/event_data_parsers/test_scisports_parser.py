@@ -179,7 +179,7 @@ class TestSciSportsParser(unittest.TestCase):
             minutes=MISSING_INT,
             seconds=MISSING_INT,
             datetime=pd.to_datetime("NaT"),
-            start_x=42.5,
+            start_x=-42.5,
             start_y=0.0,
             team_id=200,
             team_side="away",
@@ -197,7 +197,7 @@ class TestSciSportsParser(unittest.TestCase):
             z_target=np.nan,
         )
         players = pd.DataFrame({"id": [201], "shirt_num": [22]})
-        result = _get_shot_event(event, 14, players=players)
+        result = _get_shot_event(event, 14, players=players, multiplier=-1)
         self.assertEqual(result, expected_shot)
 
     def test_get_pass_event(self):
@@ -271,7 +271,7 @@ class TestSciSportsParser(unittest.TestCase):
             receiver_player_id=MISSING_INT,
         )
         players = pd.DataFrame({"id": [102], "shirt_num": [22]})
-        result = _get_pass_event(event, 13, players=players)
+        result = _get_pass_event(event, 13, players=players, multiplier=1)
         self.assertEqual(result, expected_pass)
 
     def test_get_dribble_event(self):
@@ -342,7 +342,7 @@ class TestSciSportsParser(unittest.TestCase):
             with_opponent=False,
         )
         players = pd.DataFrame({"id": [102], "shirt_num": [32]})
-        result = _get_dribble_event(event, 12, players)
+        result = _get_dribble_event(event, 12, players, 1)
         self.assertEqual(result, expected_dribble)
 
     def test_get_tackle_event(self):
@@ -408,7 +408,7 @@ class TestSciSportsParser(unittest.TestCase):
         )
 
         players = pd.DataFrame({"id": [1], "shirt_num": [1]})
-        result = _get_tackle_event(event, 380, players)
+        result = _get_tackle_event(event, 380, players, 1)
 
         self.assertEqual(result, expected_tackle_event)
 
@@ -417,7 +417,7 @@ class TestSciSportsParser(unittest.TestCase):
             "playerId": 1,
             "playerName": "Alek050",
             "groupId": 1,
-            "groupName": "HOME",
+            "groupName": "AWAY",
             "teamId": 2,
             "teamName": "ASV Arkel",
             "receiverId": -1,
@@ -463,10 +463,10 @@ class TestSciSportsParser(unittest.TestCase):
             minutes=MISSING_INT,
             seconds=MISSING_INT,
             datetime=pd.to_datetime("NaT"),
-            start_x=-6.3,
-            start_y=14.28,
+            start_x=6.3,
+            start_y=-14.28,
             team_id=2,
-            team_side="home",
+            team_side="away",
             pitch_size=(106.0, 68.0),
             player_id=1,
             jersey=1,
@@ -474,5 +474,5 @@ class TestSciSportsParser(unittest.TestCase):
             related_event_id=MISSING_INT,
         )
 
-        result = _get_tackle_event(event, 439, players)
+        result = _get_tackle_event(event, 439, players, -1)
         self.assertEqual(result, expected_tackle_event)

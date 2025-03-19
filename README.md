@@ -38,6 +38,7 @@
 [![Documentation Status][docs-image]][docs-url]
 [![CI/CD Status][cicd-image]][cicd-url]
 [![Codecov][codecov-image]][codecov-url]
+[![PyPI Downloads](https://static.pepy.tech/badge/databallpy)](https://pepy.tech/projects/databallpy)
 
 # DataBallPy
 
