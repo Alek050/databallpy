@@ -798,3 +798,32 @@ class TrackingData(pd.DataFrame):
 
         last_team = "home" if current_team_id == home_team_id else "away"
         self.loc[start_idx:, "team_possession"] = last_team
+
+    def to_long_format(self) -> pd.DataFrame:
+        """Function that moves from the base format, with a row for every frame,
+        to a long format, with a row for every frame/column_id combination
+
+        The ball/team information will be added to every row
+
+        returns: pd.DataFrame
+        """
+        player_cols = [x for x in self.columns if "home_" in x or "away_" in x]
+        non_player_cols = [x for x in self.columns if x not in player_cols]
+
+        # create long format
+        df = self[["frame"] + player_cols]
+        df_long = pd.melt(
+            df, id_vars=["frame"], var_name="column_id", value_name="value"
+        )
+        df_long[["column_id", "index"]] = df_long["column_id"].str.rsplit(
+            "_", n=1, expand=True
+        )
+        df_long = df_long.pivot_table(
+            index=["frame", "column_id"], columns="index", values="value"
+        ).reset_index()
+        df_long.columns.name = None
+
+        # add additional metadata
+        df_long = df_long.merge(self[non_player_cols], on="frame", how="left")
+
+        return pd.DataFrame(df_long)

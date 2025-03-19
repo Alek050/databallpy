@@ -1,5 +1,3 @@
-import unittest
-
 from databallpy import __version__
 
 
