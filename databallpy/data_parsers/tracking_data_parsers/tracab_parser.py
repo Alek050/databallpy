@@ -221,7 +221,7 @@ def _get_tracking_data_xml(
 
         is_second_half = elem.get("GameSection") == "secondHalf"
         for i, frame in enumerate(frames):
-            if is_second_half: 
+            if is_second_half:
                 i = n_frames_first_half + int(frame.get("N")) - 100_000
             data[f"{column_id}_x"][i] = float(frame.get("X"))
             data[f"{column_id}_y"][i] = float(frame.get("Y"))
