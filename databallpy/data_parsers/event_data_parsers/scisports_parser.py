@@ -294,6 +294,8 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         event_data["player_name"].append(event["playerName"])
         event_data["team_name"].append(event["teamName"])
 
+        multiplier = [-1, 1][int(event["groupName"].lower() == "home")]
+
         if event["baseTypeName"] in databallpy_event_mapping:
             databallpy_event = databallpy_event_mapping[event["baseTypeName"]]
             if databallpy_event == "tackle":
@@ -305,13 +307,15 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
             event_data["databallpy_event"].append(databallpy_event)
             event_data["outcome"].append(event["resultId"] == 1)
             if databallpy_event == "shot" and not event["playerId"] == -1:
-                shot_events[id] = _get_shot_event(event, id, all_players)
+                shot_events[id] = _get_shot_event(event, id, all_players, multiplier)
             elif databallpy_event == "pass" and not event["playerId"] == -1:
-                pass_events[id] = _get_pass_event(event, id, all_players)
+                pass_events[id] = _get_pass_event(event, id, all_players, multiplier)
             elif databallpy_event == "dribble" and not event["playerId"] == -1:
-                dribble_events[id] = _get_dribble_event(event, id, all_players)
+                dribble_events[id] = _get_dribble_event(
+                    event, id, all_players, multiplier
+                )
             elif databallpy_event == "tackle" and not event["playerId"] == -1:
-                other_events[id] = _get_tackle_event(event, id, all_players)
+                other_events[id] = _get_tackle_event(event, id, all_players, multiplier)
         else:
             event_data["databallpy_event"].append(None)
             event_data["outcome"].append(MISSING_INT)
@@ -341,12 +345,6 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         event.seconds = row["seconds"].iloc[0]
         event.datetime = row["datetime"].iloc[0]
         event.pitch_size = metadata.pitch_dimensions
-        if event.team_side == "away":
-            event.start_x *= -1
-            event.start_y *= -1
-            if isinstance(event, PassEvent):
-                event.end_x *= -1
-                event.end_y *= -1
 
     return event_data, {
         "shot_events": shot_events,
@@ -356,13 +354,16 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     }
 
 
-def _get_shot_event(event: dict, id: int, players: pd.DataFrame) -> ShotEvent:
+def _get_shot_event(
+    event: dict, id: int, players: pd.DataFrame, multiplier: int
+) -> ShotEvent:
     """This function retrieves the shot event of a specific match.
 
     Args:
         event (dict): the shot event.
         id (int): the id of the event.
         players (pd.DataFrame): the players of the match.
+        multiplier (int): the multiplier for the coordinates.
 
     Returns:
         ShotEvent: the shot event of the match.
@@ -380,8 +381,8 @@ def _get_shot_event(event: dict, id: int, players: pd.DataFrame) -> ShotEvent:
         minutes=MISSING_INT,
         seconds=MISSING_INT,
         datetime=pd.to_datetime("NaT"),
-        start_x=event["startPosXM"],
-        start_y=event["startPosYM"],
+        start_x=event["startPosXM"] * multiplier,
+        start_y=event["startPosYM"] * multiplier,
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
         pitch_size=(106.0, 68.0),
@@ -399,14 +400,16 @@ def _get_shot_event(event: dict, id: int, players: pd.DataFrame) -> ShotEvent:
     )
 
 
-def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
+def _get_pass_event(
+    event: dict, id: int, players: pd.DataFrame, multiplier: int
+) -> PassEvent:
     """This function retrieves the pass event of a specific match.
 
     Args:
         event (dict): the pass event.
         id (int): the id of the event.
         players (pd.DataFrame): the players of the match.
-
+        multiplier (int): the multiplier for the coordinates.
     Returns:
         PassEvent: the pass event of the match.
     """
@@ -448,8 +451,8 @@ def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
         minutes=MISSING_INT,
         seconds=MISSING_INT,
         datetime=pd.to_datetime("NaT"),
-        start_x=event["startPosXM"],
-        start_y=event["startPosYM"],
+        start_x=event["startPosXM"] * multiplier,
+        start_y=event["startPosYM"] * multiplier,
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
         pitch_size=(106.0, 68.0),
@@ -464,8 +467,8 @@ def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
         outcome_str=event["resultName"].lower()
         if event["subTypeName"] != "OFFSIDE_PASS"
         else "offside",
-        end_x=event["endPosXM"],
-        end_y=event["endPosYM"],
+        end_x=event["endPosXM"] * multiplier,
+        end_y=event["endPosYM"] * multiplier,
         pass_type=pass_type_mapping[event["subTypeName"]],
         receiver_player_id=event["receiverId"]
         if event["receiverTeamId"] == event["teamId"]
@@ -473,13 +476,16 @@ def _get_pass_event(event: dict, id: int, players: pd.DataFrame) -> PassEvent:
     )
 
 
-def _get_tackle_event(event: dict, id: int, players: pd.DataFrame) -> TackleEvent:
+def _get_tackle_event(
+    event: dict, id: int, players: pd.DataFrame, multiplier: int
+) -> TackleEvent:
     """This function retrieves the tackle event of a specific match.
 
     Args:
         event (dict): the pass event.
         id (int): the id of the event.
         players (pd.DataFrame): the players of the match.
+        multiplier (int): the multiplier for the coordinates.
 
     Returns:
         TackleEvent: the tackle event of the match.
@@ -490,8 +496,8 @@ def _get_tackle_event(event: dict, id: int, players: pd.DataFrame) -> TackleEven
         minutes=MISSING_INT,
         seconds=MISSING_INT,
         datetime=pd.to_datetime("NaT"),
-        start_x=event["startPosXM"],
-        start_y=event["startPosYM"],
+        start_x=event["startPosXM"] * multiplier,
+        start_y=event["startPosYM"] * multiplier,
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
         pitch_size=(106.0, 68.0),
@@ -502,13 +508,16 @@ def _get_tackle_event(event: dict, id: int, players: pd.DataFrame) -> TackleEven
     )
 
 
-def _get_dribble_event(event: dict, id: int, players: pd.DataFrame) -> DribbleEvent:
+def _get_dribble_event(
+    event: dict, id: int, players: pd.DataFrame, multiplier: int
+) -> DribbleEvent:
     """This function retrieves the dribble event of a specific match.
 
     Args:
         event (dict): the dribble event.
         id (int): the id of the event.
         players (pd.DataFrame): the players of the match.
+        multiplier (int): the multiplier for the coordinates
 
     Returns:
         DribbleEvent: the dribble event of the match.
@@ -519,8 +528,8 @@ def _get_dribble_event(event: dict, id: int, players: pd.DataFrame) -> DribbleEv
         minutes=MISSING_INT,
         seconds=MISSING_INT,
         datetime=pd.to_datetime("NaT"),
-        start_x=event["startPosXM"],
-        start_y=event["startPosYM"],
+        start_x=event["startPosXM"] * multiplier,
+        start_y=event["startPosYM"] * multiplier,
         team_id=event["teamId"],
         team_side=event["groupName"].lower(),
         pitch_size=(106.0, 68.0),

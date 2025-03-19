@@ -450,6 +450,50 @@ class TestMatch(unittest.TestCase):
                 country=self.expected_match_tracab_opta.country,
             )
 
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data,
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=[10.0, 68.0],
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+            )
+
+        with self.assertRaises(ValueError):
+            Match(
+                tracking_data=self.expected_match_tracab_opta.tracking_data,
+                tracking_data_provider=self.td_provider,
+                event_data=self.expected_match_tracab_opta.event_data,
+                event_data_provider=self.ed_provider,
+                pitch_dimensions=[105.0, 101.0],
+                periods=self.expected_match_tracab_opta.periods,
+                frame_rate=self.expected_match_tracab_opta.frame_rate,
+                home_team_id=self.expected_match_tracab_opta.home_team_id,
+                home_formation=self.expected_match_tracab_opta.home_formation,
+                home_score=self.expected_match_tracab_opta.home_score,
+                home_team_name=self.expected_match_tracab_opta.home_team_name,
+                home_players=self.expected_match_tracab_opta.home_players,
+                away_team_id=self.expected_match_tracab_opta.away_team_id,
+                away_formation=self.expected_match_tracab_opta.away_formation,
+                away_score=self.expected_match_tracab_opta.away_score,
+                away_team_name=self.expected_match_tracab_opta.away_team_name,
+                away_players=self.expected_match_tracab_opta.away_players,
+                country=self.expected_match_tracab_opta.country,
+            )
+
         # periods
         with self.assertRaises(TypeError):
             Match(

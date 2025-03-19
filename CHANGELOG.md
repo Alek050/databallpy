@@ -108,3 +108,9 @@
 - Made last batch from smart batches in synchronisation last longer to include all events
 - Fixed bug in parsing tracab xml data
 - Fixed bug in combining players info from tracking and event metadata
+
+## V0.5.4 (19/03/2025)
+
+- Support for Python 3.13
+- Added event id of StatsBomb in event data (by [jan-swiatek](https://github.com/jan-swiatek))
+- Fixed bug in sportec tracking data parser.
