@@ -807,23 +807,35 @@ class TrackingData(pd.DataFrame):
 
         returns: pd.DataFrame
         """
-        player_cols = [x for x in self.columns if "home_" in x or "away_" in x]
-        non_player_cols = [x for x in self.columns if x not in player_cols]
+        df_players = []
+        player_cols = [
+            x[:-2]
+            for x in self.columns
+            if (x.startswith("home_") or x.startswith("away_")) and x.endswith("_x")
+        ]
+        for player in ["ball"] + player_cols:
+            if player == "ball":
+                value_cols = [
+                    x.split("_")[1]
+                    for x in self.columns
+                    if player + "_" in x and "status" not in x
+                ]
+            else:
+                value_cols = [x.split("_")[2] for x in self.columns if player + "_" in x]
+            df_player = self[["frame"] + [player + "_" + x for x in value_cols]].copy()
+            df_player.rename(
+                columns={player + "_" + x: x for x in value_cols}, inplace=True
+            )
+            df_player.insert(1, "column_id", player)
 
-        # create long format
-        df = self[["frame"] + player_cols]
-        df_long = pd.melt(
-            df, id_vars=["frame"], var_name="column_id", value_name="value"
-        )
-        df_long[["column_id", "index"]] = df_long["column_id"].str.rsplit(
-            "_", n=1, expand=True
-        )
-        df_long = df_long.pivot_table(
-            index=["frame", "column_id"], columns="index", values="value"
-        ).reset_index()
-        df_long.columns.name = None
+            df_players.append(df_player)
 
-        # add additional metadata
-        df_long = df_long.merge(self[non_player_cols], on="frame", how="left")
+        df_long = pd.concat(df_players, axis=0).reset_index(drop=True)
 
-        return pd.DataFrame(df_long)
+        used_cols = [
+            player + "_" + value
+            for player in player_cols + ["ball"]
+            for value in df_long.columns[2:]
+        ]
+        unused_cols = [col for col in self.columns if col not in used_cols]
+        return pd.DataFrame(df_long.merge(self[unused_cols], on="frame"))
