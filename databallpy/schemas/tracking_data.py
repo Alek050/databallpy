@@ -798,3 +798,44 @@ class TrackingData(pd.DataFrame):
 
         last_team = "home" if current_team_id == home_team_id else "away"
         self.loc[start_idx:, "team_possession"] = last_team
+
+    def to_long_format(self) -> pd.DataFrame:
+        """Function that moves from the base format, with a row for every frame,
+        to a long format, with a row for every frame/column_id combination
+
+        The ball/team information will be added to every row
+
+        returns: pd.DataFrame
+        """
+        df_players = []
+        player_cols = [
+            x[:-2]
+            for x in self.columns
+            if (x.startswith("home_") or x.startswith("away_")) and x.endswith("_x")
+        ]
+        for player in ["ball"] + player_cols:
+            if player == "ball":
+                value_cols = [
+                    x.split("_")[1]
+                    for x in self.columns
+                    if player + "_" in x and "status" not in x
+                ]
+            else:
+                value_cols = [x.split("_")[2] for x in self.columns if player + "_" in x]
+            df_player = self[["frame"] + [player + "_" + x for x in value_cols]].copy()
+            df_player.rename(
+                columns={player + "_" + x: x for x in value_cols}, inplace=True
+            )
+            df_player.insert(1, "column_id", player)
+
+            df_players.append(df_player)
+
+        df_long = pd.concat(df_players, axis=0).reset_index(drop=True)
+
+        used_cols = [
+            player + "_" + value
+            for player in player_cols + ["ball"]
+            for value in df_long.columns[2:]
+        ]
+        unused_cols = [col for col in self.columns if col not in used_cols]
+        return pd.DataFrame(df_long.merge(self[unused_cols], on="frame"))

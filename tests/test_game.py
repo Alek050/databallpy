@@ -945,8 +945,6 @@ class TestGame(unittest.TestCase):
                 "position": ["defender", "defender", "midfielder", "goalkeeper"],
             }
         )
-
-        res_all = game.get_column_ids()
         expected_all = {
             "home_11",
             "home_22",
@@ -956,6 +954,9 @@ class TestGame(unittest.TestCase):
             "away_66",
             "away_77",
         }
+        for col_id in expected_all:
+            game.tracking_data[f"{col_id}_x"] = 1
+        res_all = game.get_column_ids()
         self.assertSetEqual(set(res_all), expected_all)
 
         home = game.get_column_ids(team="home", min_minutes_played=2)

@@ -284,11 +284,14 @@ class Game:
                 / 60
                 >= min_minutes_played
             ]
-        return [
+        col_ids = [
             f"home_{int(row.shirt_num)}"
             if row.id in self.home_players["id"].to_list()
             else f"away_{int(row.shirt_num)}"
             for row in players.itertuples(index=False)
+        ]
+        return [
+            col_id for col_id in col_ids if f"{col_id}_x" in self.tracking_data.columns
         ]
 
     @requires_tracking_data

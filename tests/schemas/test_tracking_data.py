@@ -730,3 +730,29 @@ class TestTrackingData(unittest.TestCase):
             td_y = td.copy()
             td_y.loc[1, "away_3_y"] = 55
             check_all_locations(td_y)
+
+    def test_to_long_format(self):
+        td_wide = self.td_pitch_control.copy()
+        td_wide["frame"] = [1, 2]
+        td_wide["info_col"] = "info"
+
+        expected = pd.DataFrame(
+            {
+                "frame": [1, 2] * 5,
+                "column_id": [
+                    i
+                    for i in ["ball", "home_1", "away_1", "home_2", "home_3"]
+                    for _ in range(2)
+                ],
+                "x": [5.0, 22, 1.0, 1.0, 3.0, 4.0, 23, 19, -23, 21],
+                "y": [6.0, 22, 2.0, 2.0, 4.0, 3.0, 42.0, 12.0, -42, 1],
+                "vx": [np.nan, np.nan, 0.5, 0.5, 0.5, 6, np.nan, 12, 11, -6.5],
+                "vy": [np.nan, np.nan, 0.5, 2, 0.5, 5.0, np.nan, -8, 2.0, 2.22],
+                "info_col": ["info"] * 10,
+            }
+        )
+
+        res_long = td_wide.to_long_format()
+
+        pd.testing.assert_frame_equal(res_long, expected)
+        assert not isinstance(res_long, TrackingData)
