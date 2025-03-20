@@ -822,26 +822,6 @@ def check_inputs_game_object(game: Game):
                 f"home and away players should be a pd df, not {type(players_df)}"
             )
         PlayersSchema.validate(players_df)
-    # for team, players in zip(["home", "away"], [game.home_players, game.away_players]):
-    # if not isinstance(players, pd.DataFrame):
-    #     raise TypeError(
-    #         f"{team} team players should be a pandas dataframe, not a "
-    #         f"{type(players)}"
-    #     )
-    # for col in ["id", "full_name", "shirt_num"]:
-    #     if col not in players.columns:
-    #         raise ValueError(
-    #             f"{team} team players should contain at least the column "
-    #             f"['id', 'full_name', 'shirt_num', 'position'], {col} is missing."
-    #         )
-    # if (
-    #     "position" in players.columns
-    #     and not players["position"].isin(DATABALLPY_POSITIONS + [""]).all()
-    # ):
-    #     raise ValueError(
-    #         f"{team} team players should have a position that is in "
-    #         f"{DATABALLPY_POSITIONS}, not {players['position'].unique()}"
-    #     )
 
     # check for direction of play
     for _, period_row in game.periods.iterrows():
