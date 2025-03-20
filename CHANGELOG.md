@@ -1,51 +1,77 @@
 # Changelog
 
-## v0.0.1 (24/01/2023)
+## Version 0.6
 
-- First release of `databallpy`!
+### V0.6.0
 
-## v0.1.0 (10/02/2023)
+This version changelog needs some extra information. Although the functionality is largely the same as it was in version 5, there are 2 big design changes that influence how the package can be used:
+1. Since `match` is an internal Python command, we refactored all places where `match` was mentioned to `game`. For example, you now import `get_game` from `databallpy` instead of `get_match`.
+2. We made the feature calculations object oriented instead of function oriented. Importing and using functions like `add_velocity` from `databallpy.features` are now deprecated. Instead, you are encouraged to use the methods in the `Game` or `TrackingData` classes. For instance, you can now call `game.tracking_data.add_velocity` directly on you tracking data.
 
-- First version of `databallpy` with utilities! You can now read in data from tracab and opta and create short videos of the tracking data!
+- Made (almost) all features object oriented instead of function oriented. See our [docs and api documentation](https://databallpy.readthedocs.io/en/latest/api_docs/game_api.html) for more information.
+- Refactored all functions and methods with `match` in it to `game`.
+- Added functionality to export tracking data to long format (https://databallpy.readthedocs.io/en/latest/getting_started/loading_in_a_game_page.html#long-or-wide)
 
-## v0.1.1 (10/02/2023)
+#### Breaking changes
 
-- Hot fix to make documentation visible.
+## Version 0.5
 
-## v0.2.0 (10/03/2023)
+### V0.5.4 (19/03/2025)
 
-- Added parser for Metrica, including an open dataset
-- Added functionality to synchronize tracking and event data
-- Added functionality to plot events
-- Fixed bug, now both tracking and event data are normalized in direction
-- Fixed unexpected behaviour, all date related objects are now datetime objects
+- Support for Python 3.13
+- Added event id of StatsBomb in event data (by [jan-swiatek](https://github.com/jan-swiatek))
+- Fixed bug in sportec tracking data parser.
 
-## V0.3.0 (02/06/2023)
+### V0.5.3 (10/12/2024)
 
-- Added way to save Match objects, and to load saved Match objects
-- Fixed bug in opta event data, own goals are now parsed as seperate event type
-- Added parser for Inmotio tracking data
-- Added parser for Instat event data
-- Added quality checks for the data, raises warning if quality is not good enough
+- Added StatsBomb event data as provider (by [DaanGro](https://github.com/DaanGro))
+- Added json parser for tracab metadata (by [jan-swiatek](https://github.com/jan-swiatek))
+- Made last batch from smart batches in synchronisation last longer to include all events
+- Fixed bug in parsing tracab xml data
+- Fixed bug in combining players info from tracking and event metadata
 
-## V0.4.0 (21/09/2023)
+### V0.5.2 (15/11/2024)
 
-- Added databallpy_events to get a unified type of event data
-- Added individual player possessions (Adrienko et al., 2016)
-- Added pressure feature (Herrold et al., 2022)
-- Added differentiate features with filters
-- Optimized loading in tracab tracking data
-- In quality checks, fixed some minor bugs.
+- Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
+- Added parser for DFL/Sportec Solutions event data
+- Added parser for Tracab xml format, used by DFL and Sportec solutions
+- Added integration for open data from DFL (open sourced by Bassek et al.)
 
-## V0.4.1 (10/10/2023)
+#### Breaking changes
+- From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
+- `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
 
-- Fixed bugs with reading in tracab data in special cases
-- Fixed bus with reading in opta data in special cases
-- Added tracking data passes features
-- Added tracking data shot features
-- optimized performance of processing data
+### V0.5.1 (10/10/2024)
 
-## V0.4.2 (27/10/2023)
+- Added support for numpy 2.x
+- Fixed bug in calculating covered distances when no accelerations are present
+- Fixed bug in rare cases where _filter_data does not work as expected and returns errors
+- Fixed bug in match.add_tracking_data_features_to_shots, did not update properly after last release
+
+### V0.5.0 (30/07/2024)
+
+- Added event data parser for SciSports
+- Added expected threat model from Karun Singh to on ball events
+- Add function to add which team has ball possession based on the synchronised event data.
+- Solved encoding bug for Windows
+- Added function to obtain acceleration
+- Improved standardization and performance of synchronisation
+- Made save match clip more robust
+- Added function to calculate covered distances in different velocity and acceleration zones
+- Updated the documentation
+
+## Version 0.4
+
+### V0.4.3 (15/1/2024)
+
+- Added simple expected goals (xG) model
+- Added anonimisation function
+- Added pitch control model
+- Fixed minor bugs
+- Added logging possibilities
+- Refactor of file structure and folder naming
+
+### V0.4.2 (27/10/2023)
 
 - fixed bug in get_valid_gains (player possessions)
 - Changed 'period' to 'period_id' in all tracking and event dataframes
@@ -60,57 +86,53 @@
 - Added extra tests for the code
 - Added extra metadata to the Match object on which periods the player positions were normalized
 
-## V0.4.3 (15/1/2024)
+### V0.4.1 (10/10/2023)
 
-- Added simple expected goals (xG) model
-- Added anonimisation function
-- Added pitch control model
-- Fixed minor bugs
-- Added logging possibilities
-- Refactor of file structure and folder naming
+- Fixed bugs with reading in tracab data in special cases
+- Fixed bus with reading in opta data in special cases
+- Added tracking data passes features
+- Added tracking data shot features
+- optimized performance of processing data
 
-## V0.5.0 (30/07/2024)
+### V0.4.0 (21/09/2023)
 
-- Added event data parser for SciSports
-- Added expected threat model from Karun Singh to on ball events
-- Add function to add which team has ball possession based on the synchronised event data.
-- Solved encoding bug for Windows
-- Added function to obtain acceleration
-- Improved standardization and performance of synchronisation
-- Made save match clip more robust
-- Added function to calculate covered distances in different velocity and acceleration zones
-- Updated the documentation
+- Added databallpy_events to get a unified type of event data
+- Added individual player possessions (Adrienko et al., 2016)
+- Added pressure feature (Herrold et al., 2022)
+- Added differentiate features with filters
+- Optimized loading in tracab tracking data
+- In quality checks, fixed some minor bugs.
 
-## V0.5.1 (10/10/2024)
+## Version 0.3
 
-- Added support for numpy 2.x
-- Fixed bug in calculating covered distances when no accelerations are present
-- Fixed bug in rare cases where _filter_data does not work as expected and returns errors
-- Fixed bug in match.add_tracking_data_features_to_shots, did not update properly after last release
+### V0.3.0 (02/06/2023)
 
+- Added way to save Match objects, and to load saved Match objects
+- Fixed bug in opta event data, own goals are now parsed as seperate event type
+- Added parser for Inmotio tracking data
+- Added parser for Instat event data
+- Added quality checks for the data, raises warning if quality is not good enough
 
-## V0.5.2 (15/11/2024)
+## Version 0.2
 
-- Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
-- Added parser for DFL/Sportec Solutions event data
-- Added parser for Tracab xml format, used by DFL and Sportec solutions
-- Added integration for open data from DFL (open sourced by Bassek et al.)
+### v0.2.0 (10/03/2023)
 
-### Breaking changes
-- From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
-- `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
+- Added parser for Metrica, including an open dataset
+- Added functionality to synchronize tracking and event data
+- Added functionality to plot events
+- Fixed bug, now both tracking and event data are normalized in direction
+- Fixed unexpected behaviour, all date related objects are now datetime objects
 
+## Version 0.1
 
-## V0.5.3 (10/12/2024)
+### v0.1.1 (10/02/2023)
 
-- Added StatsBomb event data as provider (by [DaanGro](https://github.com/DaanGro))
-- Added json parser for tracab metadata (by [jan-swiatek](https://github.com/jan-swiatek))
-- Made last batch from smart batches in synchronisation last longer to include all events
-- Fixed bug in parsing tracab xml data
-- Fixed bug in combining players info from tracking and event metadata
+- Hot fix to make documentation visible.
 
-## V0.5.4 (19/03/2025)
+### v0.1.0 (10/02/2023)
 
-- Support for Python 3.13
-- Added event id of StatsBomb in event data (by [jan-swiatek](https://github.com/jan-swiatek))
-- Fixed bug in sportec tracking data parser.
+- First version of `databallpy` with utilities! You can now read in data from tracab and opta and create short videos of the tracking data!
+
+### v0.0.1 (24/01/2023)
+
+- First release of `databallpy`!
