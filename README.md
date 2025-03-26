@@ -50,16 +50,18 @@ This package is developed to create a standardized way to analyse soccer games u
 
 Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. If you are interested in some of the features we implemented, see our [official documentation][docs-url].
 
-## V0.5.2 (15/11/2024)
+## Changelog 0.6.0
 
-- Added `game.get_column_ids` with filters for team, player positions and minimal minutes played filters.
-- Added parser for DFL/Sportec Solutions event data
-- Added parser for Tracab xml format, used by DFL and Sportec solutions
-- Added integration for open data from DFL (open sourced by Bassek et al.)
+- Moved from function to an object oriented framework for all user-features and computations of game/match (special thanks to [DaanGro](https://github.com/DaanGro))
+- Renamed the all classes and functions with `match` to `game` (to move away from the internal python `match` statement)
+- Removed the function to save game/match objects to pickle, but created a more save way using parquet and json files
+- Added functionality to export tracking data to long format.
 
-### Breaking changes
-- From now on, `game.home_players_column_ids()` and `game.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `game.get_column_ids()` in future version.
-- `get_open_game()` will now, by default, load in game `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed game from Metrica. To load in the metrica game, please parse `provider="metrica"` in the key word arguments.
+#### Breaking changes
+We sincerely appologize for all the changes you have to make, but we feel this will make the package more robust and easier to use for future projects. Just to be clear, **all the functionality that was in 0.5.4, is still in 0.6.0**. However we made to changes that impacts users.
+1) We renamed all functions with `match` in it to `game.` (e.g. `get_match` was changed to `get_game`). This was chosen since `match` is an internal python command, and we do not want to imply to overwrite that (by using something like `match = get_match()`). A deprecation warning is raised when you try to call it from the current version onwards, we strongly encourage to take this warning serious as we do plan to remove it shorlty.
+2) If you used any of the features in databallpy (`get_velocity`, `get_approximate_voronoi`, `get_covered_distance`, etc.), you need to refactor your code. All functionality is still available in the package, but likely as a method on the `game.tracking_data` class, for instance: `game.tracking_data.add_velocity(...)`. Please view our documentation of version 0.6.0 to see how you can refactor your code (spoiler: you will need to use less arguments and less lines of code!)
+3) Saved games/matches are only usable in the version in which you saved them up and untill version 0.5.4. For example, if you saved your match in version 0.5.2, you can only load it while using version 0.5.2. From version 0.6.0, you will be able to load your game using the `get_saved_game` as long as your version is greater or equal to 0.6.0.
 
 ## Installation
 
