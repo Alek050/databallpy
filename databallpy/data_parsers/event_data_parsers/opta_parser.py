@@ -185,11 +185,11 @@ def load_opta_event_data(
 ) -> tuple[
     pd.DataFrame, Metadata, dict[str, dict[str, dict[str, IndividualCloseToBallEvent]]]
 ]:
-    """This function retrieves the metadata and event data of a specific match. The x
+    """This function retrieves the metadata and event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         f7_loc (str): location of the f7.xml file.
@@ -197,7 +197,7 @@ def load_opta_event_data(
         pitch_dimensions (list, optional): the length and width of the pitch in meters
 
     Returns:
-        Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the game, the metadata,
         and the databallpy_events.
     """
     if not isinstance(f7_loc, str):
@@ -246,7 +246,7 @@ def load_opta_event_data(
             event_data["player_id"]
         )
 
-        event_data["player_name"] = None
+        event_data.insert(6, "player_name", None)
         event_data.loc[home_mask, "player_name"] = event_data.loc[
             home_mask, "player_id"
         ].map(home_players)
@@ -286,7 +286,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         pitch_dimensions (list): the length and width of the pitch in meters
 
     Returns:
-        MetaData: all metadata information of the current match
+        MetaData: all metadata information of the current game
     """
     with open(f7_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -295,15 +295,15 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     soup = BeautifulSoup(lines, "xml")
 
     if len(soup.find_all("SoccerDocument")) > 1:
-        # Multiple matches found in f7.xml file
+        # Multiple games found in f7.xml file
         # Eliminate the rest of the `SoccerDocument` elements
-        for match in soup.find_all("SoccerDocument")[1:]:
-            match.decompose()
+        for game in soup.find_all("SoccerDocument")[1:]:
+            game.decompose()
 
-    # Obtain match id
-    match_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
+    # Obtain game id
+    game_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
     country = soup.find("Country").text
-    # Obtain match start and end of period datetime
+    # Obtain game start and end of period datetime
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [],
@@ -323,7 +323,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
             start_date = pd.to_datetime(soup.find("Date").text)
             warnings.warn(
                 message="Using estimated date for event data since specific information"
-                " is not provided in the f7 metadata. Estimated start of match"
+                " is not provided in the f7 metadata. Estimated start of game"
                 f" = {start_date}",
                 category=DataBallPyWarning,
             )
@@ -395,7 +395,7 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         teams_player_info[team_info["side"]] = player_info
 
     metadata = Metadata(
-        match_id=match_id,
+        game_id=game_id,
         pitch_dimensions=pitch_dimensions,
         periods_frames=periods,
         frame_rate=MISSING_INT,
@@ -471,12 +471,12 @@ def _load_event_data(
     players: pd.DataFrame,
     pitch_dimensions: list = [106.0, 68.0],
 ) -> tuple[pd.DataFrame, dict[str, dict[str | int, IndividualCloseToBallEvent]]]:
-    """Function to load the f27 .xml, the events of the match.
+    """Function to load the f27 .xml, the events of the game.
     Note: this function does ignore most qualifiers for now.
 
     Args:
         f24_loc (str): location of the f24.xml file
-        country (str): country of the match
+        country (str): country of the game
         away_team_id (int): id of the away team
         players (pd.DataFrame): dataframe with player information.
         pitch_dimensions (list, optional): dimensions of the pitch.
@@ -484,7 +484,7 @@ def _load_event_data(
 
 
     Returns:
-        pd.DataFrame: all events of the match in a pd dataframe
+        pd.DataFrame: all events of the game in a pd dataframe
         dict: dict with "shot_events", "dribble_events", "pass_events", "other_events"
              as key and a dict with the BaseIndividualCloseToBallEvent instances
     """
@@ -502,27 +502,29 @@ def _load_event_data(
 
     result_dict = {
         "event_id": [],
-        "type_id": [],
         "databallpy_event": [],
         "period_id": [],
         "minutes": [],
         "seconds": [],
         "player_id": [],
         "team_id": [],
-        "outcome": [],
+        "is_successful": [],
         "start_x": [],
         "start_y": [],
         "datetime": [],
-        "opta_event": [],
-        "opta_id": [],
+        "original_event_id": [],
+        "original_annotation_id": [],
+        "original_event": [],
+        "event_type_id": [],
     }
 
     events = soup.find_all("Event")
-    for event in events:
-        result_dict["event_id"].append(int(event.attrs["id"]))
-        result_dict["opta_id"].append(int(event.attrs["event_id"]))
+    for i_event, event in enumerate(events):
+        result_dict["event_id"].append(i_event)
+        result_dict["original_annotation_id"].append(int(event.attrs["id"]))
+        result_dict["original_event_id"].append(int(event.attrs["event_id"]))
         event_type_id = int(event.attrs["type_id"])
-        result_dict["type_id"].append(event_type_id)
+        result_dict["event_type_id"].append(event_type_id)
 
         if event_type_id in EVENT_TYPE_IDS.keys():
             event_name = EVENT_TYPE_IDS[event_type_id].lower()
@@ -538,10 +540,10 @@ def _load_event_data(
         else:
             event_name = "unknown event"
 
-        result_dict["opta_event"].append(event_name)
+        result_dict["original_event"].append(event_name)
         result_dict["period_id"].append(int(event.attrs["period_id"]))
         result_dict["minutes"].append(int(event.attrs["min"]))
-        result_dict["seconds"].append(int(event.attrs["sec"]))
+        result_dict["seconds"].append(float(event.attrs["sec"]))
 
         if "player_id" in event.attrs.keys():
             result_dict["player_id"].append(int(event.attrs["player_id"]))
@@ -550,9 +552,9 @@ def _load_event_data(
 
         result_dict["team_id"].append(int(event.attrs["team_id"]))
         if event_name in ["pass", "take on", "tackle"]:
-            result_dict["outcome"].append(int(event.attrs["outcome"]))
+            result_dict["is_successful"].append(int(event.attrs["outcome"]))
         else:
-            result_dict["outcome"].append(MISSING_INT)
+            result_dict["is_successful"].append(None)
         result_dict["start_x"].append(float(event.attrs["x"]))
         result_dict["start_y"].append(float(event.attrs["y"]))
 
@@ -562,8 +564,12 @@ def _load_event_data(
         # get extra information for databallpy events
 
         if event_name in ["pass", "offside pass"]:
-            pass_events[int(event.attrs["id"])] = _make_pass_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
+            pass_events[i_event] = _make_pass_instance(
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
         if event_name in [
@@ -574,31 +580,51 @@ def _load_event_data(
             "goal",
             "own goal",
         ]:
-            shot_events[int(event.attrs["id"])] = _make_shot_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
+            shot_events[i_event] = _make_shot_event_instance(
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
         if event_name == "take on":
-            dribble_events[int(event.attrs["id"])] = _make_dribble_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
+            dribble_events[i_event] = _make_dribble_event_instance(
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
         if event_name == "tackle":
-            other_events[int(event.attrs["id"])] = _make_tackle_event_instance(
-                event, away_team_id, pitch_dimensions=pitch_dimensions, players=players
+            other_events[i_event] = _make_tackle_event_instance(
+                event,
+                away_team_id,
+                pitch_dimensions=pitch_dimensions,
+                players=players,
+                id=i_event,
             )
 
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
     event_data["databallpy_event"] = (
-        event_data["opta_event"].map(OPTA_TO_DATABALLPY_MAP).replace([np.nan], [None])
+        event_data["original_event"]
+        .map(OPTA_TO_DATABALLPY_MAP)
+        .replace([np.nan], [None])
     )
     event_data.loc[
-        event_data["opta_event"].isin(["miss", "post", "attempt saved"]), "outcome"
+        event_data["original_event"].isin(["miss", "post", "attempt saved"]),
+        "is_successful",
     ] = 0
-    event_data.loc[event_data["opta_event"].isin(["goal", "own goal"]), "outcome"] = 1
+    event_data.loc[
+        event_data["original_event"].isin(["goal", "own goal"]), "is_successful"
+    ] = 1
     event_data["datetime"] = convert_datetime(event_data["datetime"], country)
-
+    event_data["is_successful"] = (
+        event_data["is_successful"].astype("Int64").astype("boolean")
+    )
+    event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
     # reassign the outcome of passes that result in a shot that is scored to 'assist'
     pass_events = _update_pass_outcome(event_data, shot_events, pass_events)
 
@@ -614,6 +640,7 @@ def _make_pass_instance(
     event: bs4.element.Tag,
     away_team_id: int,
     players: pd.DataFrame,
+    id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
 ) -> PassEvent:
     """Function to create a pass class based on the qualifiers of the event
@@ -622,6 +649,7 @@ def _make_pass_instance(
         event (bs4.element.Tag): pass event from the f24.xml
         away_team_id (int): id of the away team
         players (pd.DataFrame, optional): dataframe with player information.
+        id (int): The event id of the pass
         pitch_dimensions (list, optional): size of the pitch in x and y direction.
             Defaults to [106.0, 68.0].
 
@@ -631,7 +659,7 @@ def _make_pass_instance(
     """
     on_ball_info = _get_on_ball_event_info(event)
     on_ball_info.update(
-        _get_close_to_ball_event_info(event, pitch_dimensions, away_team_id, players)
+        _get_close_to_ball_event_info(event, pitch_dimensions, away_team_id, players, id)
     )
 
     outcome_str = "successful" if int(event.attrs["outcome"]) else "unsuccessful"
@@ -697,6 +725,7 @@ def _make_shot_event_instance(
     event: bs4.element.Tag,
     away_team_id: int,
     players: pd.DataFrame,
+    id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
 ):
     """Function to create a shot class based on the qualifiers of the event
@@ -705,6 +734,7 @@ def _make_shot_event_instance(
         event (bs4.element.Tag): shot event from the f24.xml
         away_team_id (int): id of the away team
         players (pd.DataFrame): dataframe with player information.
+        id (int): The event id of the shot
         pitch_dimensions (list, optional): size of the pitch in x and y direction.
         Defaults to [106.0, 68.0].
 
@@ -748,7 +778,7 @@ def _make_shot_event_instance(
 
     on_ball_info = _get_on_ball_event_info(event)
     on_ball_info.update(
-        _get_close_to_ball_event_info(event, pitch_dimensions, away_team_id, players)
+        _get_close_to_ball_event_info(event, pitch_dimensions, away_team_id, players, id)
     )
     on_ball_info.pop("outcome")
 
@@ -767,6 +797,7 @@ def _make_tackle_event_instance(
     event: bs4.element.Tag,
     away_team_id: int,
     players: pd.DataFrame,
+    id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
 ) -> TackleEvent:
     """Function to create a tackle class based on the qualifiers of the event
@@ -775,6 +806,7 @@ def _make_tackle_event_instance(
         event (bs4.element.Tag): tackle event from the f24.xml
         away_team_id (int): id of the away team
         players (pd.DataFrame): dataframe with player information.
+        id (int): The event id of the shot
         pitch_dimensions (list[float, float], optional): The dimensions of the pitch in
             x and y direction. Defaults to [106.0, 68.0].
 
@@ -782,7 +814,7 @@ def _make_tackle_event_instance(
         TackleEvent: instance of the TackleEvent class
     """
     close_to_ball_info = _get_close_to_ball_event_info(
-        event, pitch_dimensions, away_team_id, players
+        event, pitch_dimensions, away_team_id, players, id
     )
     return TackleEvent(**close_to_ball_info)
 
@@ -791,6 +823,7 @@ def _make_dribble_event_instance(
     event: bs4.element.Tag,
     away_team_id: int,
     players: pd.DataFrame,
+    id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
 ) -> DribbleEvent:
     """Function to create a dribble class based on the qualifiers of the event
@@ -799,6 +832,7 @@ def _make_dribble_event_instance(
         event (bs4.element.Tag): dribble event from the f24.xml
         away_team_id (int): id of the away team
         players (pd.DataFrame): dataframe with player information.
+        id (int): The event id of the shot
         pitch_dimensions (list, optional): pitch dimensions in x and y direction.
             Defaults to [106.0, 68.0].
 
@@ -807,7 +841,7 @@ def _make_dribble_event_instance(
     """
 
     close_to_ball_info = _get_close_to_ball_event_info(
-        event, pitch_dimensions, away_team_id, players
+        event, pitch_dimensions, away_team_id, players, id
     )
 
     qualifiers = event.find_all("Q")
@@ -876,6 +910,7 @@ def _get_close_to_ball_event_info(
     pitch_dimensions: list | tuple,
     away_team_id: int | str,
     players: pd.DataFrame,
+    id: int,
 ) -> dict:
     """Function to get the base event data from the event based on
     the CloseToBallEvent class.
@@ -886,6 +921,7 @@ def _get_close_to_ball_event_info(
             Defaults to [106.0, 68.0].
         away_team_id (int): id of the away team
         players (pd.DataFrame): dataframe with player information.
+        id (int): the identifier of the event
 
 
     Returns:
@@ -917,7 +953,7 @@ def _get_close_to_ball_event_info(
         "start_x": x_start,
         "start_y": y_start,
         "related_event_id": related_event_id,
-        "event_id": int(event.attrs["id"]),
+        "event_id": id,
         "period_id": int(event.attrs["period_id"]),
         "minutes": int(event.attrs["min"]),
         "seconds": int(event.attrs["sec"]),
@@ -988,23 +1024,25 @@ def _update_pass_outcome(
     outcome of passes that result in a goal.
 
     Args:
-        event_data (pd.DataFrame): all event data of the match
+        event_data (pd.DataFrame): all event data of the game
         shot_events (dict): list of ShotEvent instances
         pass_events (dict): list of PassEvent instances
 
     Returns:
         dict: updated list of PassEvent instances
     """
-    event_ids = event_data[event_data["opta_event"] == "goal"].event_id.to_list()
-    for goal_event_ids in event_ids:
-        shot_event = shot_events[goal_event_ids]
+    goal_event_ids = event_data.loc[
+        event_data["original_event"] == "goal", "event_id"
+    ].to_list()
+    for goal_event_id in goal_event_ids:
+        shot_event = shot_events[goal_event_id]
         related_event_id = shot_event.related_event_id
 
         if related_event_id is None or related_event_id == MISSING_INT:
             continue
 
         related_pass = event_data[
-            (event_data["opta_id"] == related_event_id)
+            (event_data["original_event_id"] == related_event_id)
             & (event_data["databallpy_event"] == "pass")
         ]
 

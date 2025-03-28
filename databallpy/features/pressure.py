@@ -5,9 +5,13 @@ import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
 from databallpy.utils.logging import logging_wrapper
+from databallpy.utils.warnings import deprecated
 
 
 @logging_wrapper(__file__)
+@deprecated(
+    "The get_pressure_on_player function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.get_pressure_on_player() instead."
+)
 def get_pressure_on_player(
     td_frame: pd.Series,
     column_id: str,

@@ -9,7 +9,7 @@ parts:
   - caption: Getting Started
     chapters:
       - file: getting_started/installation_page
-      - file: getting_started/loading_in_a_match_page
+      - file: getting_started/loading_in_a_game_page
       - file: getting_started/preprocessing_options
       - file: getting_started/visualizations_page
       - file: getting_started/synchronisation_page
@@ -27,10 +27,8 @@ parts:
         title: Space Occupation
   - caption: API Documentation
     chapters:
-      - file: api_docs/match_api
-      - file: api_docs/preprocessing_api
+      - file: api_docs/game_api
       - file: api_docs/visualize_api
-      - file: api_docs/features_api
   - caption: Contributing
     chapters:
       - file: contributing/quick_overview

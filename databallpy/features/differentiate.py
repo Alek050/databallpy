@@ -5,9 +5,13 @@ import pandas as pd
 
 from databallpy.features.filters import _filter_data
 from databallpy.utils.logging import logging_wrapper
+from databallpy.utils.warnings import deprecated
 
 
 @logging_wrapper(__file__)
+@deprecated(
+    "The add_acceleration function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.add_acceleration() instead."
+)
 def add_acceleration(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],
@@ -82,6 +86,9 @@ def add_acceleration(
 
 
 @logging_wrapper(__file__)
+@deprecated(
+    "The add_velocity function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.add_velocity() instead."
+)
 def add_velocity(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],

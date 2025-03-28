@@ -10,7 +10,7 @@ import pandas as pd
 from matplotlib.colors import Colormap
 from tqdm import tqdm
 
-from databallpy.match import Match
+from databallpy.game import Game
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import logging_wrapper
 
@@ -244,9 +244,9 @@ def plot_soccer_pitch(
 
 @logging_wrapper(__file__)
 def plot_events(
-    match: Match,
+    game: Game,
     events: list[str] = [],
-    outcome: int = None,
+    outcome: bool | None = None,
     player_ids: list[str] = [],
     team_id: int | str | None = None,
     fig: plt.figure = None,
@@ -258,11 +258,11 @@ def plot_events(
     """Function to plot the locations of specific events
 
     Args:
-        match (Match): All information about a match
+        game (Game): All information about a game
         events (list, optional): Filter of events you want to plot, if empty,
             all events are plotted. Defaults to [].
-        outcome (int, optional): Filter if the event should have a succesfull
-            outcome (1) or not (0), if None, all outcomes are included.
+        outcome (bool, optional): Filter if the event should have a succesfull
+            outcome (True) or not (False), if None, all outcomes are included.
             Defaults to None.
         player_ids (list, optional): Filter for what players to include, if empty,
             all players are included. Defaults to [].
@@ -271,7 +271,7 @@ def plot_events(
         fig (plt.figure, optional): Figure to plot the events on. Defaults to None.
         ax (plt.axes, optional): Axes to plot the events on. Defaults to None.
         color_by_col (str, optional): If specified, colors of scatter is specified by
-            this colom in match.event_data. Defaults to None.
+            this colom in game.event_data. Defaults to None.
         team_colors (list, optional): Colors by which the teams should be represented.
             Defaults to ["orange", "red"].
         title (str, optional): Title of the plot. Defaults to None.
@@ -281,7 +281,7 @@ def plot_events(
         on it.
     """
 
-    event_data = match.event_data
+    event_data = game.event_data
     mask = pd.Series(True, index=event_data.index)
     if not isinstance(events, (list, np.ndarray)):
         message = f"'events' should be a list, not a {type(events)}"
@@ -297,10 +297,12 @@ def plot_events(
             )
         mask = (mask) & (event_data["databallpy_event"].isin(events))
     if outcome is not None:
-        if outcome not in [0, 1]:
-            raise ValueError(f"'outcome' should be either 0 or 1, not {outcome}")
+        if outcome not in [False, True]:
+            raise ValueError(
+                f"'is_successful' should be either True or False, not {outcome}"
+            )
 
-        mask = (mask) & (event_data["outcome"] == outcome)
+        mask = (mask) & (event_data["is_successful"] == outcome)
     if len(player_ids) > 0:
         for wrong_id in [
             x for x in player_ids if x not in event_data["player_id"].unique()
@@ -311,7 +313,7 @@ def plot_events(
             )
         mask = (mask) & (event_data["player_id"].isin(player_ids))
     if team_id:
-        if team_id not in [match.home_team_id, match.away_team_id]:
+        if team_id not in [game.home_team_id, game.away_team_id]:
             raise ValueError(
                 f"'{team_id}' is not the id of either teams, can not plot events."
             )
@@ -320,28 +322,28 @@ def plot_events(
     event_data = event_data.loc[mask]
     if len(event_data) == 0:
         print(
-            "No events could be found that match your" "requirements, please try again."
+            "No events could be found that game your" "requirements, please try again."
         )
         return None, None
 
     if fig is None and ax is None:
-        fig, ax = plot_soccer_pitch(field_dimen=match.pitch_dimensions)
+        fig, ax = plot_soccer_pitch(field_dimen=game.pitch_dimensions)
     if title:
         ax.set_title(title)
 
-    # Set match name
+    # Set game name
     ax.text(
-        match.pitch_dimensions[0] / -2.0 + 2,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.home_team_name,
+        game.pitch_dimensions[0] / -2.0 + 2,
+        game.pitch_dimensions[1] / 2.0 + 1.0,
+        game.home_team_name,
         fontsize=14,
         c=team_colors[0],
         zorder=2.5,
     )
     ax.text(
-        match.pitch_dimensions[0] / 2.0 - 15,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.away_team_name,
+        game.pitch_dimensions[0] / 2.0 - 15,
+        game.pitch_dimensions[1] / 2.0 + 1.0,
+        game.away_team_name,
         fontsize=14,
         c=team_colors[1],
         zorder=2.5,
@@ -349,14 +351,14 @@ def plot_events(
 
     # Check if color_by_col is specified and is a valid column name
     if color_by_col:
-        assert color_by_col in match.event_data.columns
+        assert color_by_col in game.event_data.columns
 
         # Color events by team if the specified column is "team_id"
         if color_by_col == "team_id":
             for id, c, team_name in zip(
-                [match.home_team_id, match.away_team_id],
+                [game.home_team_id, game.away_team_id],
                 team_colors,
-                [match.home_team_name, match.away_team_name],
+                [game.home_team_name, game.away_team_name],
             ):
                 temp_events = event_data[event_data[color_by_col] == id]
                 ax.scatter(
@@ -392,7 +394,7 @@ def plot_events(
 
 @logging_wrapper(__file__)
 def plot_tracking_data(
-    match: Match,
+    game: Game,
     idx: int,
     team_colors: list[str] = ["green", "red"],
     *,
@@ -407,10 +409,10 @@ def plot_tracking_data(
     overlay_cmap: Colormap | str = "viridis",
 ) -> tuple[plt.figure, plt.axes]:
     """Function to plot the tracking data of a specific index in the
-    match.tracking_data.
+    game.tracking_data.
 
     Args:
-        match (Match): Match with tracking data and other info of the match.
+        game (Game): Game with tracking data and other info of the game.
         idx (int): Index of the tracking data you want to plot.
         team_colors (list[str], optional): The color of the teams.
             Defaults to ["green", "red"].
@@ -433,20 +435,20 @@ def plot_tracking_data(
         tuple[plt.figure, plt.axes]: The figure and axes with the tracking data
     """
 
-    td = match.tracking_data.loc[[idx]]
+    td = game.tracking_data.loc[[idx]]
     td_ht = td[
         np.array(
-            [[x + "_x", x + "_y"] for x in match.get_column_ids(team="home")]
+            [[x + "_x", x + "_y"] for x in game.get_column_ids(team="home")]
         ).reshape(1, -1)[0]
     ]
     td_at = td[
         np.array(
-            [[x + "_x", x + "_y"] for x in match.get_column_ids(team="away")]
+            [[x + "_x", x + "_y"] for x in game.get_column_ids(team="away")]
         ).reshape(1, -1)[0]
     ]
 
     _pre_check_plot_td_inputs(
-        match=match,
+        game=game,
         td=td,
         events=events,
         variable_of_interest=variable_of_interest,
@@ -457,52 +459,52 @@ def plot_tracking_data(
     )
 
     if fig is None and ax is None:
-        fig, ax = plot_soccer_pitch(field_dimen=match.pitch_dimensions)
+        fig, ax = plot_soccer_pitch(field_dimen=game.pitch_dimensions)
     if title:
         ax.set_title(title)
 
-    # Set match name
+    # Set game name
     ax.text(
-        match.pitch_dimensions[0] / -2.0 + 2,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.home_team_name,
+        game.pitch_dimensions[0] / -2.0 + 2,
+        game.pitch_dimensions[1] / 2.0 + 1.0,
+        game.home_team_name,
         fontsize=14,
         c=team_colors[0],
         zorder=2.5,
     )
     ax.text(
-        match.pitch_dimensions[0] / 2.0 - 15,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.away_team_name,
+        game.pitch_dimensions[0] / 2.0 - 15,
+        game.pitch_dimensions[1] / 2.0 + 1.0,
+        game.away_team_name,
         fontsize=14,
         c=team_colors[1],
         zorder=2.5,
     )
 
     if heatmap_overlay is not None:
-        _, ax = _plot_heatmap_overlay(ax, heatmap_overlay, match, overlay_cmap, [])
+        _, ax = _plot_heatmap_overlay(ax, heatmap_overlay, game, overlay_cmap, [])
 
     if add_velocities:
-        _, ax = _plot_velocities(ax, td, idx, match, [])
+        _, ax = _plot_velocities(ax, td, idx, game, [])
 
-    _, ax = _plot_single_frame(ax, td_ht, td_at, idx, team_colors, [], td, match)
+    _, ax = _plot_single_frame(ax, td_ht, td_at, idx, team_colors, [], td, game)
 
     if variable_of_interest is not None:
-        _, ax = _plot_variable_of_interest(ax, variable_of_interest, [], match)
+        _, ax = _plot_variable_of_interest(ax, variable_of_interest, [], game)
 
     if add_player_possession:
-        column_id = match.tracking_data.loc[idx, "player_possession"]
-        _, ax = _plot_player_possession(ax, column_id, idx, match, [])
+        column_id = game.tracking_data.loc[idx, "player_possession"]
+        _, ax = _plot_player_possession(ax, column_id, idx, game, [])
 
     if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
-        _, ax = _plot_events(ax, td, idx, match, [])
+        _, ax = _plot_events(ax, td, idx, game, [])
     return fig, ax
 
 
 @logging_wrapper(__file__)
 @requires_ffmpeg
 def save_tracking_video(
-    match: Match,
+    game: Game,
     start_idx: int,
     end_idx: int,
     save_folder: str,
@@ -517,15 +519,15 @@ def save_tracking_video(
     overlay_cmap: Colormap | str = "viridis",
     verbose: bool = True,
 ):
-    """Function to save a subset of a match clip of the tracking data.
+    """Function to save a subset of a game clip of the tracking data.
 
     Note that making animation is build with FFMPEG. You need to have
     FFMPEG installed on you device before being able to use this function.
 
     Args:
-        match (Match): Match with tracking data and ohter info of the match.
-        start_idx (int): Start index of what to save of the match.tracking_data df.
-        end_idx (int): End index of what to save of the match.tracking_data df.
+        game (Game): Game with tracking data and ohter info of the game.
+        start_idx (int): Start index of what to save of the game.tracking_data df.
+        end_idx (int): End index of what to save of the game.tracking_data df.
         save_folder (str): Location where to save the clip.
         title (str, optional): Title of the clip. Defaults to "test_clip".
         team_colors (list, optional): Colors of the home and away team. Defaults to
@@ -537,7 +539,7 @@ def save_tracking_video(
             None.
         add_player_possession (bool, optional): Whether to add a mark around which
             player has possession over the ball. Defaults to False. If True, the
-            column 'player_possession' should be in the match.tracking_data.
+            column 'player_possession' should be in the game.tracking_data.
         add_velocities (bool, optional): Whether or not to add the velocities to the
             clip, will add arrows to show the velocity. Defaults to False.
         heatmap_overlay (np.ndarray, optional): A heatmap to overlay on the pitch.
@@ -547,20 +549,20 @@ def save_tracking_video(
         verbose (bool, optional): Whether or not to print info in the terminal on the
             progress
     """
-    td = match.tracking_data.loc[start_idx:end_idx]
+    td = game.tracking_data.loc[start_idx:end_idx]
     td_ht = td[
         np.array(
-            [[x + "_x", x + "_y"] for x in match.get_column_ids(team="home")]
+            [[x + "_x", x + "_y"] for x in game.get_column_ids(team="home")]
         ).reshape(1, -1)[0]
     ]
     td_at = td[
         np.array(
-            [[x + "_x", x + "_y"] for x in match.get_column_ids(team="away")]
+            [[x + "_x", x + "_y"] for x in game.get_column_ids(team="away")]
         ).reshape(1, -1)[0]
     ]
 
     _pre_check_plot_td_inputs(
-        match=match,
+        game=game,
         td=td,
         events=events,
         variable_of_interest=variable_of_interest,
@@ -571,7 +573,7 @@ def save_tracking_video(
     )
 
     writer = animation.FFMpegWriter(
-        fps=match.frame_rate,
+        fps=game.tracking_data.frame_rate,
         metadata={
             "title": title,
             "artist": "Matplotlib",
@@ -582,29 +584,27 @@ def save_tracking_video(
 
     pitch_color = "white" if heatmap_overlay is not None else "mediumseagreen"
     fig, ax = plot_soccer_pitch(
-        field_dimen=match.pitch_dimensions, pitch_color=pitch_color
+        field_dimen=game.pitch_dimensions, pitch_color=pitch_color
     )
 
-    # Set match name, non variable over time
+    # Set game name, non variable over time
     ax.text(
-        match.pitch_dimensions[0] / -2.0 + 2,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.home_team_name,
+        game.pitch_dimensions[0] / -2.0 + 2,
+        game.pitch_dimensions[1] / 2.0 + 1.0,
+        game.home_team_name,
         fontsize=14,
         color=team_colors[0],
     )
     ax.text(
-        match.pitch_dimensions[0] / 2.0 - 15,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        match.away_team_name,
+        game.pitch_dimensions[0] / 2.0 - 15,
+        game.pitch_dimensions[1] / 2.0 + 1.0,
+        game.away_team_name,
         fontsize=14,
         color=team_colors[1],
     )
 
     indexes = (
-        td.index
-        if not verbose
-        else tqdm(td.index, desc="Making match clip", leave=False)
+        td.index if not verbose else tqdm(td.index, desc="Making game clip", leave=False)
     )
     # Generate movie with variable info
     with writer.saving(fig, video_loc, dpi=300):
@@ -615,18 +615,18 @@ def save_tracking_video(
                 variable_fig_objs, ax = _plot_heatmap_overlay(
                     ax,
                     heatmap_overlay[idx_loc],
-                    match,
+                    game,
                     overlay_cmap,
                     variable_fig_objs,
                 )
 
             if add_velocities:
                 variable_fig_objs, ax = _plot_velocities(
-                    ax, td, idx, match, variable_fig_objs
+                    ax, td, idx, game, variable_fig_objs
                 )
 
             variable_fig_objs, ax = _plot_single_frame(
-                ax, td_ht, td_at, idx, team_colors, variable_fig_objs, td, match
+                ax, td_ht, td_at, idx, team_colors, variable_fig_objs, td, game
             )
 
             if variable_of_interest is not None:
@@ -636,22 +636,22 @@ def save_tracking_video(
                     else variable_of_interest[idx_loc]
                 )
                 variable_fig_objs, ax = _plot_variable_of_interest(
-                    ax, value, variable_fig_objs, match
+                    ax, value, variable_fig_objs, game
                 )
 
             if add_player_possession:
-                column_id = match.tracking_data.loc[idx, "player_possession"]
+                column_id = game.tracking_data.loc[idx, "player_possession"]
                 variable_fig_objs, ax = _plot_player_possession(
-                    ax, column_id, idx, match, variable_fig_objs
+                    ax, column_id, idx, game, variable_fig_objs
                 )
 
             if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
                 variable_fig_objs, ax = _plot_events(
-                    ax, td, idx, match, variable_fig_objs
+                    ax, td, idx, game, variable_fig_objs
                 )
 
                 # 'pause' the clip for 1 second on this event
-                [writer.grab_frame() for _ in range(match.frame_rate)]
+                [writer.grab_frame() for _ in range(game.tracking_data.frame_rate)]
 
             # Save current frame
             writer.grab_frame()
@@ -666,7 +666,7 @@ def save_tracking_video(
 
 @logging_wrapper(__file__)
 def _pre_check_plot_td_inputs(
-    match: Match,
+    game: Game,
     td: pd.DataFrame,
     events: list[str],
     variable_of_interest: str | None,
@@ -675,9 +675,9 @@ def _pre_check_plot_td_inputs(
     heatmap_overlay: np.ndarray | None,
     cmap: Colormap | str | None,
 ):
-    """Function to check if the inputs for the save_match_clip function are correct."""
-    if not isinstance(match, Match):
-        raise DataBallPyError("match should be an instance of databallpy.Match")
+    """Function to check if the inputs for the save_game_clip function are correct."""
+    if not isinstance(game, Game):
+        raise DataBallPyError("game should be an instance of databallpy.Game")
 
     if variable_of_interest is not None:
         if isinstance(variable_of_interest, pd.Series):
@@ -693,21 +693,21 @@ def _pre_check_plot_td_inputs(
                     "the start_idx:end_idx."
                 )
     if add_player_possession:
-        if "player_possession" not in match.tracking_data.columns:
+        if "player_possession" not in game.tracking_data.columns:
             raise DataBallPyError(
-                "Column 'player_possession' not found in " "match.tracking_data.columns"
+                "Column 'player_possession' not found in " "game.tracking_data.columns"
             )
 
     if len(events) > 0:
-        if not match.is_synchronised:
-            raise DataBallPyError("Match needs to be synchronised to add events.")
+        if not game.is_synchronised:
+            raise DataBallPyError("Game needs to be synchronised to add events.")
 
     if add_velocities:
-        for player in match.get_column_ids() + ["ball"]:
+        for player in game.get_column_ids() + ["ball"]:
             if player + "_vx" not in td.columns or player + "_vy" not in td.columns:
                 raise DataBallPyError(
                     f"Player vx and/or vy of {player} not found in "
-                    "match.tracking_data.columns. Please run "
+                    "game.tracking_data.columns. Please run "
                     "databallpy.features.differentiat.add_velocity() first."
                 )
 
@@ -742,7 +742,7 @@ def _pre_check_plot_td_inputs(
 def _plot_heatmap_overlay(
     ax: plt.axes,
     heatmap_overlay: np.ndarray,
-    match: Match,
+    game: Game,
     cmap: Colormap,
     variable_fig_objs: list,
 ) -> tuple[plt.figure, plt.axes]:
@@ -750,10 +750,10 @@ def _plot_heatmap_overlay(
     fig_obj = ax.imshow(
         heatmap_overlay,
         extent=[
-            -match.pitch_dimensions[0] / 2.0,
-            match.pitch_dimensions[0] / 2.0,
-            -match.pitch_dimensions[1] / 2.0,
-            match.pitch_dimensions[1] / 2.0,
+            -game.pitch_dimensions[0] / 2.0,
+            game.pitch_dimensions[0] / 2.0,
+            -game.pitch_dimensions[1] / 2.0,
+            game.pitch_dimensions[1] / 2.0,
         ],
         origin="lower",
         cmap=cmap,
@@ -767,11 +767,11 @@ def _plot_heatmap_overlay(
 
 
 def _plot_velocities(
-    ax: plt.axes, td: pd.DataFrame, idx: int, match: Match, variable_fig_objs: list
+    ax: plt.axes, td: pd.DataFrame, idx: int, game: Game, variable_fig_objs: list
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the velocities of the current frame."""
     # Player velocities
-    for col_id in match.get_column_ids():
+    for col_id in game.get_column_ids():
         if pd.isnull(td.loc[idx, [col_id + "_vx", col_id + "_x"]]).any():
             continue
 
@@ -807,7 +807,7 @@ def _plot_single_frame(
     team_colors: list[str],
     variable_fig_objs: list,
     td: pd.DataFrame,
-    match: Match,
+    game: Game,
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the single frame of the current frame."""
     # Scatter plot the teams
@@ -847,8 +847,8 @@ def _plot_single_frame(
     # Add time info
     fig_obj = ax.text(
         -20.5,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
-        td.loc[idx, "matchtime_td"],
+        game.pitch_dimensions[1] / 2.0 + 1.0,
+        td.loc[idx, "gametime_td"],
         c="k",
         fontsize=14,
     )
@@ -861,12 +861,12 @@ def _plot_variable_of_interest(
     ax: plt.axes,
     value: any,
     variable_fig_objs: list,
-    match: Match,
+    game: Game,
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the variable of interest of the current frame."""
     fig_obj = ax.text(
         -7,
-        match.pitch_dimensions[1] / 2.0 + 1.0,
+        game.pitch_dimensions[1] / 2.0 + 1.0,
         str(value),
         fontsize=14,
     )
@@ -876,16 +876,16 @@ def _plot_variable_of_interest(
 
 
 def _plot_player_possession(
-    ax: plt.axes, column_id: str, idx: int, match: Match, variable_fig_objs: list
+    ax: plt.axes, column_id: str, idx: int, game: Game, variable_fig_objs: list
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the player possession of the current frame."""
-    if pd.isnull(column_id) or pd.isnull(match.tracking_data.loc[idx, f"{column_id}_x"]):
+    if pd.isnull(column_id) or pd.isnull(game.tracking_data.loc[idx, f"{column_id}_x"]):
         return variable_fig_objs, ax
 
     circle = plt.Circle(
         (
-            match.tracking_data.loc[idx, f"{column_id}_x"],
-            match.tracking_data.loc[idx, f"{column_id}_y"],
+            game.tracking_data.loc[idx, f"{column_id}_x"],
+            game.tracking_data.loc[idx, f"{column_id}_y"],
         ),
         radius=1,
         color="gold",
@@ -898,13 +898,11 @@ def _plot_player_possession(
 
 
 def _plot_events(
-    ax: plt.axes, td: pd.DataFrame, idx: int, match: Match, variable_fig_objs: list
+    ax: plt.axes, td: pd.DataFrame, idx: int, game: Game, variable_fig_objs: list
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the events of the current frame."""
     event = (
-        match.event_data[match.event_data["event_id"] == td.loc[idx, "event_id"]]
-        .iloc[0]
-        .T
+        game.event_data[game.event_data["event_id"] == td.loc[idx, "event_id"]].iloc[0].T
     )
     player_name = event["player_name"]
     event_name = event["databallpy_event"]
@@ -912,7 +910,7 @@ def _plot_events(
     # Add event text
     fig_obj = ax.text(
         5,
-        match.pitch_dimensions[1] / 2.0 + 1,
+        game.pitch_dimensions[1] / 2.0 + 1,
         f"{player_name}: {event_name}",
         fontsize=14,
     )

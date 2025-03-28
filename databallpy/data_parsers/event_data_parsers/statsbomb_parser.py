@@ -52,22 +52,22 @@ def load_statsbomb_event_data(
     lineup_loc: str,
     pitch_dimensions: tuple = (105.0, 68.0),
 ) -> tuple[pd.DataFrame, Metadata, dict]:
-    """This function retrieves the metadata and event data of a specific match. The x
+    """This function retrieves the metadata and event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         events_loc (str): location of the event.json file.
-        match_loc (str): location of the match.json file.
+        match_loc (str): location of the game.json file.
         lineup_loc (str): location of the lineup.json file.
         pitch_dimensions (tuple, optional): the length and width of the pitch. Input
             should be in yards (as this is statsbomb standard (120, 80)) and is
             recalculated to meters in this function. Defaults to (105.0, 68.0)
 
     Returns:
-        Tuple[pd.DataFrame, Metadata, dict]: the event data of the match, the metadata,
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the gameh, the metadata,
         and the databallpy_events.
     """
     LOGGER.info(f"Loading Statsbomb event data: events_loc: {events_loc}")
@@ -131,7 +131,7 @@ def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> 
         pitch_dimensions (tuple): the length and width of the pitch in meters
 
     Returns:
-        MetaData: all metadata information of the current match
+        MetaData: all metadata information of the current game
     """
     with open(match_loc, "r", encoding="utf-8") as f:
         match_json = json.load(f)[0]
@@ -147,21 +147,21 @@ def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> 
     home_players = _get_player_info(lineup_json[home_index]["lineup"])
     away_players = _get_player_info(lineup_json[away_index]["lineup"])
 
-    match_start = pd.to_datetime(
+    game_start = pd.to_datetime(
         match_json["match_date"] + " " + match_json["kick_off"], utc=True
     )
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [
-            match_start,
-            match_start + pd.to_timedelta(60, unit="minutes"),
+            game_start,
+            game_start + pd.to_timedelta(60, unit="minutes"),
             pd.NaT,
             pd.NaT,
             pd.NaT,
         ],
         "end_datetime_ed": [
-            match_start + pd.to_timedelta(45, unit="minutes"),
-            match_start + pd.to_timedelta(105, unit="minutes"),
+            game_start + pd.to_timedelta(45, unit="minutes"),
+            game_start + pd.to_timedelta(105, unit="minutes"),
             pd.NaT,
             pd.NaT,
             pd.NaT,
@@ -169,7 +169,7 @@ def _load_metadata(match_loc: str, lineup_loc: str, pitch_dimensions: tuple) -> 
     }
 
     metadata = Metadata(
-        match_id=match_json["match_id"],
+        game_id=match_json["match_id"],
         pitch_dimensions=pitch_dimensions,
         periods_frames=pd.DataFrame(periods),
         frame_rate=MISSING_INT,
@@ -235,19 +235,19 @@ def _get_player_info(players_data: list) -> pd.DataFrame:
 def _load_event_data(
     events_loc: str, metadata: Metadata, pitch_dimensions: tuple
 ) -> tuple[pd.DataFrame, dict, Metadata]:
-    """This function retrieves the event data of a specific match. The x
+    """This function retrieves the event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         events_loc (str): location of the events.json file
-        metadata (Metadata): metadata of the match
+        metadata (Metadata): metadata of the game
         pitch_dimensions (tuple): the length and with of the pitch in meters.
 
     Returns:
-        Tuple[pd.DataFrame, dict, Metadata]: the event data of the match, the
+        Tuple[pd.DataFrame, dict, Metadata]: the event data of the game, the
             databallpy_events, and the updated metadata
     """
     with open(events_loc, "r", encoding="utf-8") as f:
@@ -281,18 +281,18 @@ def _load_event_data(
         "databallpy_event": [None] * n,
         "period_id": [MISSING_INT] * n,
         "minutes": [MISSING_INT] * n,
-        "seconds": [MISSING_INT] * n,
+        "seconds": [np.nan] * n,
         "player_id": [MISSING_INT] * n,
+        "player_name": [None] * n,
         "team_id": [MISSING_INT] * n,
-        "outcome": [None] * n,
+        "is_successful": [None] * n,
         "start_x": [np.nan] * n,
         "start_y": [np.nan] * n,
         "datetime": [pd.NaT] * n,
-        "statsbomb_event": [""] * n,
-        "statsbomb_event_id": [None] * n,
-        "player_name": [""] * n,
-        "team_name": [""] * n,
-        "statsbomb_outcome": [""] * n,
+        "original_event": [None] * n,
+        "original_event_id": [None] * n,
+        "original_outcome": [None] * n,
+        "team_name": [None] * n,
     }
 
     databallpy_mapping = {
@@ -310,10 +310,10 @@ def _load_event_data(
 
     for id, event in enumerate(np.array(events_json)[event_mask]):
         event_data["event_id"][id] = id
-        event_data["statsbomb_event_id"][id] = event["id"]
+        event_data["original_event_id"][id] = event["id"]
         event_data["period_id"][id] = event.get("period", MISSING_INT)
         event_data["minutes"][id] = event.get("minute", MISSING_INT)
-        event_data["seconds"][id] = event.get("second", np.nan)
+        event_data["seconds"][id] = float(event.get("second", np.nan))
         event_data["player_id"][id] = (
             event["player"]["id"] if "player" in event.keys() else MISSING_INT
         )
@@ -331,9 +331,7 @@ def _load_event_data(
             metadata.periods_frames["start_datetime_ed"][event["period"] - 1]
             + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")
         )
-        event_data["statsbomb_event"][id] = (
-            event["type"]["name"].lower().replace("*", "")
-        )
+        event_data["original_event"][id] = event["type"]["name"].lower().replace("*", "")
         event_data["player_name"][id] = (
             event["player"]["name"] if "player" in event.keys() else None
         )
@@ -363,7 +361,7 @@ def _load_event_data(
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
                 )
-                event_data["outcome"][id] = (
+                event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Goal"
                 )
 
@@ -377,7 +375,7 @@ def _load_event_data(
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
                 )
-                event_data["outcome"][id] = (
+                event_data["is_successful"][id] = (
                     event[event_type_object].get("outcome") is None
                 )
             elif databallpy_event == "dribble":
@@ -390,17 +388,18 @@ def _load_event_data(
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
                 )
-                event_data["outcome"][id] = (
+                event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Complete"
                 )
 
         if event_type_object in event.keys():
             if "outcome" in event[event_type_object]:
-                event_data["statsbomb_outcome"][id] = event[event_type_object][
-                    "outcome"
-                ]["name"]
+                event_data["original_outcome"][id] = event[event_type_object]["outcome"][
+                    "name"
+                ]
 
     event_data = pd.DataFrame(event_data)
+    event_data["is_successful"] = event_data["is_successful"].astype("boolean")
 
     event_data.loc[event_data["team_id"] == metadata.away_team_id, ["start_x"]] *= -1
     event_data.loc[event_data["team_id"] == metadata.home_team_id, ["start_y"]] *= -1
@@ -441,7 +440,7 @@ def _get_shot_event(
     x_multiplier: float,
     y_multiplier: float,
 ) -> ShotEvent:
-    """This function retrieves the shot event of a specific match.
+    """This function retrieves the shot event of a specific game.
 
     Args:
         event (dict): the shot event.
@@ -494,7 +493,7 @@ def _get_pass_event(
     x_multiplier: float,
     y_multiplier: float,
 ) -> PassEvent:
-    """This function retrieves the pass event of a specific match.
+    """This function retrieves the pass event of a specific game.
 
     Args:
         event (dict): the shot event.
@@ -643,7 +642,7 @@ def _get_close_to_ball_event_info(
         "event_id": id,
         "period_id": event["period"],
         "minutes": event["minute"],
-        "seconds": event["second"],
+        "seconds": float(event["second"]),
         "datetime": pd.to_datetime(
             periods["start_datetime_ed"][event["period"] - 1]
             + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")

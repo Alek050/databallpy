@@ -33,13 +33,13 @@ class TestTracabParser(unittest.TestCase):
             self.tracking_data_dat_loc, self.metadata_json_loc, verbose=False
         )
         assert metadata == MD_TRACAB
-        pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
+        pd.testing.assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
 
         tracking_data, metadata = load_tracab_tracking_data(
             self.tracking_data_dat_loc, self.metadata_xml_loc, verbose=False
         )
         assert metadata == MD_TRACAB
-        pd.testing.assert_frame_equal(tracking_data, TD_TRACAB)
+        pd.testing.assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
 
     def test_load_tracab_tracking_data_errors(self):
         with self.assertRaises(ValueError):
@@ -116,7 +116,9 @@ class TestTracabParser(unittest.TestCase):
 
     def test_get_tracking_data_txt(self):
         tracking_data = _get_tracking_data_txt(self.tracking_data_dat_loc, verbose=False)
-        expected_td = TD_TRACAB.drop(["matchtime_td", "period_id", "datetime"], axis=1)
+        expected_td = pd.DataFrame(
+            TD_TRACAB.drop(["gametime_td", "period_id", "datetime"], axis=1)
+        )
         pd.testing.assert_frame_equal(tracking_data, expected_td)
 
     @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.requests.get")
@@ -129,14 +131,12 @@ class TestTracabParser(unittest.TestCase):
         "databallpy.data_parsers.tracking_data_parsers.tracab_parser.open",
         new_callable=mock_open,
     )
-    @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.os.rename")
     @patch(
         "databallpy.data_parsers.tracking_data_parsers.tracab_parser.load_tracab_tracking_data"
     )
     def test_load_sportec_open_tracking_data(
         self,
         mock_load_tracab_tracking_data,
-        mock_rename,
         mock_open,
         mock_exists,
         mock_makedirs,
@@ -156,34 +156,32 @@ class TestTracabParser(unittest.TestCase):
             iter_content=lambda chunk_size: [b"mock content"],
         )
         mock_load_tracab_tracking_data.return_value = (pd.DataFrame(), "mock_metadata")
-        mock_rename.return_value = "triggered"
 
-        match_id = "J03WMX"
+        game_id = "J03WMX"
         verbose = True
         expected_metadata_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", match_id, "metadata.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "metadata_temp.xml"
         )
         expected_tracking_data_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", match_id, "tracking_data.xml"
+            os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data_temp.xml"
         )
 
         # Call the function
-        result = load_sportec_open_tracking_data(match_id, verbose)
+        result = load_sportec_open_tracking_data(game_id, verbose)
 
         # Verify the function calls
         mock_makedirs.assert_called_once_with(
-            os.path.join(os.getcwd(), "datasets", "IDSSE", match_id), exist_ok=True
+            os.path.join(os.getcwd(), "datasets", "IDSSE", game_id), exist_ok=True
         )
         self.assertEqual(mock_requests_get.call_count, 1)
         self.assertEqual(mock_session.return_value.get.call_count, 1)
         mock_open.assert_any_call(expected_metadata_path, "wb")
         mock_open.assert_any_call(
             os.path.join(
-                os.getcwd(), "datasets", "IDSSE", match_id, "tracking_data_temp.xml"
+                os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data_temp.xml"
             ),
             "wb",
         )
-        self.assertEqual(mock_rename.call_count, 1)
         mock_load_tracab_tracking_data.assert_called_once_with(
             expected_tracking_data_path, expected_metadata_path, verbose=verbose
         )
@@ -219,6 +217,8 @@ class TestTracabParser(unittest.TestCase):
                 "shirt_num": [4, 3],
                 "start_frame": [1212, 1218],
                 "end_frame": [2323, 2327],
+                "starter": [True, False],
+                "position": ["unspecified", "unspecified"],
             }
         )
         df_players = _get_players_metadata_v1(input_players_info)

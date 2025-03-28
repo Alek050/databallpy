@@ -71,7 +71,7 @@ def _check_missing_player_data(
         bool: wheter to allow syncronise tracking and event data.
     """
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
-        tracking_data["matchtime_td"] != "Break"
+        tracking_data["gametime_td"] != "Break"
     )
     home_players = [
         x for x in tracking_data.columns if "home" in x and ("_x" in x or "_y" in x)
@@ -101,7 +101,7 @@ def _check_missing_player_data(
                     " when the ball status is alive. Syncronising tracking and event"
                     " data is disabled due to bad quality of the tracking data."
                     "\nIf you still wish to syncronise the data, please set "
-                    "allow_syncronise_tracking_and_event_data to True in your match "
+                    "allow_syncronise_tracking_and_event_data to True in your game "
                     "object."
                 )
             )
@@ -123,7 +123,7 @@ def _check_missing_ball_data(tracking_data: pd.DataFrame, framerate: int) -> Non
 
     """
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
-        tracking_data["matchtime_td"] != "Break"
+        tracking_data["gametime_td"] != "Break"
     )
     valid_frames = ~np.isnan(
         tracking_data.loc[mask_ball_alive, ["ball_x", "ball_y"]]
@@ -173,7 +173,7 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
         )
     velocity_ball = tracking_data["ball_velocity"]
     mask_ball_alive = (tracking_data["ball_status"] == "alive") & (
-        tracking_data["matchtime_td"] != "Break"
+        tracking_data["gametime_td"] != "Break"
     )
     valid_frames = velocity_ball[mask_ball_alive][1:] < 50
 
@@ -259,9 +259,6 @@ def _check_player_velocity(
     n_players_to_many_invalid_frames = sum(
         [True for x in percentages_valid_frames if x < 0.995]
     )
-    n_players_sequence_to_long = sum(
-        [True for x in max_sequences_invalid_frames if x > 1 * framerate]
-    )
 
     if n_players_to_many_invalid_frames > 0:
         warnings.warn(
@@ -269,14 +266,6 @@ def _check_player_velocity(
                 f"For {n_players_to_many_invalid_frames} players, the "
                 "velocity is unrealistic (speed > 12 m/s) for more than 0.5% of "
                 "playing time"
-            )
-        )
-
-    if n_players_sequence_to_long > 0:
-        warnings.warn(
-            DataBallPyWarning(
-                f"For {n_players_sequence_to_long} players, there is a gap "
-                "in the tracking data of at least 1 second."
             )
         )
 
@@ -289,7 +278,7 @@ def _max_sequence_invalid_frames(
 ) -> int:
     """Function that gives the max sequence length of invalid frames.
     Based on include_start_finish,the function ignores the first and last
-    sequence of invalid values (when a player doesn't start or ends the match)
+    sequence of invalid values (when a player doesn't start or ends the game)
 
     Args:
         valid_frames (pd.Series): series where valid frames are True

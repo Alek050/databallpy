@@ -11,7 +11,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_datetime,
     _add_periods_to_tracking_data,
     _add_player_tracking_data_to_dict,
-    _get_matchtime,
+    _get_gametime,
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
@@ -37,7 +37,7 @@ def load_inmotio_tracking_data(
         TypeError: if tracking_data_loc is not a string
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: tracking and metadata of the match
+        Tuple[pd.DataFrame, Metadata]: tracking and metadata of the game
     """
     if not isinstance(tracking_data_loc, str):
         raise TypeError(
@@ -69,7 +69,7 @@ def load_inmotio_tracking_data(
     tracking_data["period_id"] = _add_periods_to_tracking_data(
         tracking_data["frame"], metadata.periods_frames
     )
-    tracking_data["matchtime_td"] = _get_matchtime(
+    tracking_data["gametime_td"] = _get_gametime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
     return tracking_data, metadata
@@ -93,7 +93,7 @@ def _get_tracking_data(
         terminal. Defaults to True.
 
     Returns:
-        pd.DataFrame: tracking data of the match in a pd dataframe
+        pd.DataFrame: tracking data of the game in a pd dataframe
     """
     if verbose:
         print(f"Reading in {tracking_data_loc}", end="")
@@ -110,7 +110,7 @@ def _get_tracking_data(
         "ball_y": [np.nan] * size_lines,
         "ball_z": [np.nan] * size_lines,
         "ball_status": [None] * size_lines,
-        "ball_possession": [None] * size_lines,
+        "team_possession": [None] * size_lines,
     }
 
     if verbose:
@@ -157,7 +157,7 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
 
     Args:
         metadata_loc (str): location of the metadata
-        metadata (Metadata): the Metadata of the match
+        metadata (Metadata): the Metadata of the game
 
     Returns:
         list: List with the order of which players are referred to
@@ -191,13 +191,13 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
 
 @logging_wrapper(__file__)
 def _get_metadata(metadata_loc: str) -> Metadata:
-    """Function to get the metadata of the match
+    """Function to get the metadata of the game
 
     Args:
         metadata_loc (str): Location of the metadata .xml file
 
     Returns:
-        Metadata: all information of the match
+        Metadata: all information of the game
     """
     with open(metadata_loc, "rb") as file:
         encoding = chardet.detect(file.read())["encoding"]
@@ -267,7 +267,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     )
 
     metadata = Metadata(
-        match_id=int(soup.Session.attrs["id"]),
+        game_id=int(soup.Session.attrs["id"]),
         pitch_dimensions=[
             float(soup.MatchParameters.FieldSize.Length.text),
             float(soup.MatchParameters.FieldSize.Width.text),
@@ -314,5 +314,10 @@ def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
         player_dict["start_frame"].append(int(values[1]))
         player_dict["end_frame"].append(int(values[2]))
     df = pd.DataFrame(player_dict)
+    df["starter"] = df["player_type"] != "Substitute"
+    df["position"] = np.where(
+        df["player_type"] == "Goalkeeper", "goalkeeper", "unspecified"
+    )
+    df.drop(columns=["player_type"], inplace=True)
 
     return df

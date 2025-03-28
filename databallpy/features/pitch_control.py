@@ -4,8 +4,12 @@ from scipy.spatial import KDTree
 from scipy.stats import multivariate_normal
 
 from databallpy.utils.utils import sigmoid
+from databallpy.utils.warnings import deprecated
 
 
+@deprecated(
+    "The get_approximate_voronoi function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.get_approximate_voronoi() instead."
+)
 def get_approximate_voronoi(
     tracking_data: pd.Series | pd.DataFrame,
     pitch_dimensions: list[float, float],
@@ -77,6 +81,9 @@ def get_approximate_voronoi(
     return all_distances, all_assigned_players
 
 
+@deprecated(
+    "The get_pitch_control function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.get_pitch_control() instead."
+)
 def get_pitch_control(
     tracking_data: pd.DataFrame,
     pitch_dimensions: list[float, float],
