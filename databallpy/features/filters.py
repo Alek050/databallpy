@@ -5,6 +5,7 @@ import pandas as pd
 from scipy.signal import savgol_filter
 
 from databallpy.features.feature_utils import _check_column_ids
+from databallpy.utils.warnings import deprecated
 
 
 def _filter_data(
@@ -71,6 +72,9 @@ def _filter_data(
             return array
 
 
+@deprecated(
+    "The filter_tracking_data function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.filter_tracking_data() instead."
+)
 def filter_tracking_data(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],

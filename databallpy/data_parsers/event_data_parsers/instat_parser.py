@@ -11,26 +11,26 @@ from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import utc_to_local_datetime
 
 INSTAT_DATABALLPY_MAP = {
-    "Attacking pass accurate": ["pass", 1],
-    "Attacking pass inaccurate": ["pass", 0],
-    "Unsuccessful dribbling": ["dribble", 0],
-    "Successful dribbling": ["dribble", 1],
-    "Dribbling": ["dribble", MISSING_INT],
-    "Inaccurate key pass": ["pass", 0],
-    "Crosses inaccurate": ["pass", 1],
-    "Blocked shot": ["shot", 0],
-    "Shots blocked": ["shot", 0],
-    "Wide shot": ["shot", 0],
-    "Accurate crossing from set piece with a shot": ["pass", 1],
-    "Shot on target": ["shot", 0],
-    "Crosses accurate": ["pass", 1],
-    "Pass into offside": ["pass", 0],
-    "Accurate key pass": ["pass", 1],
-    "Shot blocked by field player": ["shot", 0],
-    "Inaccurate set-piece cross": ["pass", 0],
-    "Accurate crossing from set piece": ["pass", 1],
-    "Key assist": ["pass", 1],
-    "Goal": ["shot", 1],
+    "Attacking pass accurate": ["pass", True],
+    "Attacking pass inaccurate": ["pass", False],
+    "Unsuccessful dribbling": ["dribble", False],
+    "Successful dribbling": ["dribble", True],
+    "Dribbling": ["dribble", None],
+    "Inaccurate key pass": ["pass", False],
+    "Crosses inaccurate": ["pass", True],
+    "Blocked shot": ["shot", False],
+    "Shots blocked": ["shot", False],
+    "Wide shot": ["shot", False],
+    "Accurate crossing from set piece with a shot": ["pass", True],
+    "Shot on target": ["shot", False],
+    "Crosses accurate": ["pass", True],
+    "Pass into offside": ["pass", False],
+    "Accurate key pass": ["pass", True],
+    "Shot blocked by field player": ["shot", False],
+    "Inaccurate set-piece cross": ["pass", False],
+    "Accurate crossing from set piece": ["pass", True],
+    "Key assist": ["pass", True],
+    "Goal": ["shot", True],
     "Accurate crossing from set piece with a goal": ["pass", 1],
 }
 
@@ -40,18 +40,18 @@ logging_wrapper(__file__)
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> tuple[pd.DataFrame, Metadata]:
-    """This function retrieves the metadata and event data of a specific match. The x
+    """This function retrieves the metadata and event data of a specific game. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
-    match, and the away team is represented as playing from right to left.
+    game, and the away team is represented as playing from right to left.
 
     Args:
         event_data_loc (str): location of the event_data.json file
         event_data_metadata_loc (str): location of the metadata.json file
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: the event data of the match and the  metadata
+        Tuple[pd.DataFrame, Metadata]: the event data of the game and the  metadata
     """
     if not isinstance(event_data_loc, str):
         raise TypeError(
@@ -84,15 +84,15 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
         metdata_loc (str): location of the metadata.json file
 
     Returns:
-        pd.DataFrame: metadata of the match
+        pd.DataFrame: metadata of the game
     """
     with open(metadata_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
     with open(metadata_loc, "r", encoding=encoding) as f:
         data = f.read()
     metadata_json = json.loads(data)
-    match_info = metadata_json["data"]["match_info"][0]
-    country = match_info["tournament_name"].split(".")[0]
+    game_info = metadata_json["data"]["match_info"][0]
+    country = game_info["tournament_name"].split(".")[0]
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [pd.to_datetime("NaT", utc=True)] * 5,
@@ -101,7 +101,7 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
 
     # No idea why the instat times need to be subtracted by 3 hours to get to utc time
     periods["start_datetime_ed"][0] = pd.to_datetime(
-        match_info["match_date"], utc=True
+        game_info["match_date"], utc=True
     ) - dt.timedelta(hours=3)
     periods["end_datetime_ed"][0] = periods["start_datetime_ed"][0] + dt.timedelta(
         minutes=45
@@ -124,19 +124,19 @@ def _load_metadata(metadata_loc: str) -> pd.DataFrame:
     )
 
     metadata = Metadata(
-        match_id=int(match_info["id"]),
+        game_id=int(game_info["id"]),
         pitch_dimensions=[np.nan, np.nan],
         periods_frames=pd.DataFrame(periods),
         frame_rate=np.nan,
-        home_team_id=int(match_info["team1_id"]),
-        home_team_name=str(match_info["team1_name"]),
+        home_team_id=int(game_info["team1_id"]),
+        home_team_name=str(game_info["team1_name"]),
         home_players=pd.DataFrame(columns=["id", "full_name", "shirt_num"]),
-        home_score=int(match_info["score"].split(":")[0]),
+        home_score=int(game_info["score"].split(":")[0]),
         home_formation="",
-        away_team_id=int(match_info["team2_id"]),
-        away_team_name=str(match_info["team2_name"]),
+        away_team_id=int(game_info["team2_id"]),
+        away_team_name=str(game_info["team2_name"]),
         away_players=pd.DataFrame(columns=["id", "full_name", "shirt_num"]),
-        away_score=int(match_info["score"].split(":")[1]),
+        away_score=int(game_info["score"].split(":")[1]),
         away_formation="",
         country=country,
     )
@@ -153,7 +153,7 @@ def _update_metadata(metadata: Metadata, event_data_loc: str) -> pd.DataFrame:
         event_data_loc (str): location of the event_data.json file
 
     Returns:
-        pd.DataFrame: updated metadata of the match
+        pd.DataFrame: updated metadata of the game
     """
     with open(event_data_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -223,23 +223,23 @@ def _parse_instat_position(position: str) -> str:
     for pos in DATABALLPY_POSITIONS:
         if pos in position.lower():
             return pos
-    return ""
+    return "unspecified"
 
 
 logging_wrapper(__file__)
 
 
 def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
-    """Function to load the event_data.json file, the events of the match.
+    """Function to load the event_data.json file, the events of the game.
     Note: this function does ignore qualifiers for now
 
 
     Args:
         event_data_loc (str): location of the event_data.json file
-        metadata(Metadata): metadata of the match
+        metadata(Metadata): metadata of the game
 
     Returns:
-        pd.DataFrame: event data of the match
+        pd.DataFrame: event data of the game
     """
     with open(event_data_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -250,20 +250,21 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
 
     result_dict = {
         "event_id": [],
-        "type_id": [],
         "databallpy_event": [],
         "period_id": [],
         "minutes": [],
         "seconds": [],
         "player_id": [],
         "team_id": [],
-        "outcome": [],
+        "is_successful": [],
         "start_x": [],
         "start_y": [],
         "end_x": [],
         "end_y": [],
         "datetime": [],
-        "instat_event": [],
+        "original_event_id": [],
+        "original_event": [],
+        "event_type_id": [],
     }
 
     start_time_period = {
@@ -278,11 +279,12 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
         + dt.timedelta(minutes=150),
     }
 
-    for event in events:
+    for i_event, event in enumerate(events):
         if not event["action_id"].startswith(("16", "15")):
-            result_dict["event_id"].append(int(event["id"]))
-            result_dict["type_id"].append(int(event["action_id"]))
-            result_dict["instat_event"].append(str(event["action_name"]))
+            result_dict["event_id"].append(i_event)
+            result_dict["original_event_id"].append(int(event["id"]))
+            result_dict["event_type_id"].append(int(event["action_id"]))
+            result_dict["original_event"].append(str(event["action_name"]))
             result_dict["period_id"].append(int(event["half"]))
             result_dict["minutes"].append(float(event["second"]) // 60)
             result_dict["seconds"].append(float(event["second"]) % 60)
@@ -316,20 +318,22 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
                 + dt.timedelta(milliseconds=float(event["second"]) * 1000)
             )
 
-    result_dict["outcome"] = [MISSING_INT] * len(result_dict["event_id"])
-    result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
+    result_dict["is_successful"] = [None] * len(result_dict["original_event_id"])
+    result_dict["databallpy_event"] = [None] * len(result_dict["original_event_id"])
 
     event_data = pd.DataFrame(result_dict)
-    event_data["databallpy_event"] = event_data["instat_event"].apply(
-        lambda x: INSTAT_DATABALLPY_MAP.get(x, [None, MISSING_INT])[0]
+    event_data["databallpy_event"] = event_data["original_event"].apply(
+        lambda x: INSTAT_DATABALLPY_MAP.get(x, [None])[0]
     )
-    event_data["outcome"] = event_data["instat_event"].apply(
-        lambda x: INSTAT_DATABALLPY_MAP.get(x, [None, MISSING_INT])[1]
+    event_data["is_successful"] = (
+        event_data["original_event"]
+        .apply(lambda x: INSTAT_DATABALLPY_MAP.get(x, [None, None])[1])
+        .astype("boolean")
     )
 
-    start_events = ["pass", "shot"]
+    potential_kick_off_events = ["pass", "shot"]
     x_start, y_start = (
-        event_data[event_data["databallpy_event"].isin(start_events)]
+        event_data[event_data["databallpy_event"].isin(potential_kick_off_events)]
         .reset_index()
         .loc[0, ["start_x", "start_y"]]
     )
@@ -352,5 +356,6 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     )
     away_mask = event_data["team_id"] == metadata.away_team_id
     event_data.loc[away_mask, ["start_x", "start_y", "end_x", "end_y"]] *= -1
+    event_data["minutes"] = event_data["minutes"].round().astype(int)
 
     return event_data, pitch_dimensions

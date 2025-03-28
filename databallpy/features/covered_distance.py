@@ -1,9 +1,13 @@
 import pandas as pd
 
 from databallpy.utils.logging import logging_wrapper
+from databallpy.utils.warnings import deprecated
 
 
 @logging_wrapper(__file__)
+@deprecated(
+    "The get_covered_distance function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.get_covered_distance() instead."
+)
 def get_covered_distance(
     tracking_data: pd.DataFrame,
     column_ids: list[str],

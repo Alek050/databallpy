@@ -10,11 +10,11 @@ def _add_periods_to_tracking_data(
     """Function to add periods
 
     Args:
-        tracking_data (pd.DataFrame): _description_
-        periods_frames (pd.DataFrame): _description_
+        tracking_data (pd.DataFrame): The tracking data
+        periods_frames (pd.DataFrame): The periods frames
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: The tracking data with periods
     """
     period_conditions = [
         (timestamps <= periods_frames.loc[0, "end_frame"]),

@@ -23,7 +23,7 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
                 "ball_y",
                 "ball_z",
                 "ball_status",
-                "ball_possession",
+                "team_possession",
                 "home_11_x",
                 "home_11_y",
                 "home_1_x",
@@ -34,7 +34,7 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
                 "away_35_y",
                 "datetime",
                 "period_id",
-                "matchtime_td",
+                "gametime_td",
             ]
         )
         pd.testing.assert_frame_equal(res, TD_METRICA)

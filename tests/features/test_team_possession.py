@@ -11,7 +11,7 @@ class TestAddTeamPossession(unittest.TestCase):
         self.tracking_data = pd.DataFrame(
             {
                 "event_id": [MISSING_INT, 1, 6, MISSING_INT, 8, MISSING_INT],
-                "ball_possession": [None, None, None, None, None, None],
+                "team_possession": [None, None, None, None, None, None],
             }
         )
         self.event_data = pd.DataFrame(
@@ -32,7 +32,7 @@ class TestAddTeamPossession(unittest.TestCase):
 
         add_team_possession(td, self.event_data, 1, inplace=True)
         self.assertEqual(
-            td["ball_possession"].tolist(),
+            td["team_possession"].tolist(),
             ["home", "home", "home", "home", "away", "away"],
         )
         assert not td.equals(self.tracking_data)

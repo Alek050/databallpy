@@ -143,7 +143,6 @@ dmypy.json
 
 # testing files
 docs/create_anonimised_game.py
-docs/create_anonimised_match.py
 test.py
 data/
 .vscode/

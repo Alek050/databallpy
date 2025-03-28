@@ -15,12 +15,14 @@ from databallpy.data_parsers.event_data_parsers.statsbomb_parser import (
 )
 from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import (
-    DRIBBLE_EVENT_STATSBOMB,
+    DRIBBLE_INSTANCES_STATSBOMB,
     ED_STATSBOMB,
     MD_STATSBOMB,
-    PASS_EVENT_STATSBOMB,
-    SHOT_EVENT_STATSBOMB,
+    PASS_INSTANCES_STATSBOMB,
+    SHOT_INSTANCES_STATSBOMB,
 )
+
+ED_STATSBOMB = pd.DataFrame(ED_STATSBOMB.copy())
 
 
 class TestStatsbombParser(unittest.TestCase):
@@ -96,18 +98,18 @@ class TestStatsbombParser(unittest.TestCase):
 
         assert "shot_events" in outcome_dbp_events.keys()
         for key, event in outcome_dbp_events["shot_events"].items():
-            assert key in SHOT_EVENT_STATSBOMB.keys()
-            assert event == SHOT_EVENT_STATSBOMB[key]
+            assert key in SHOT_INSTANCES_STATSBOMB.keys()
+            assert event == SHOT_INSTANCES_STATSBOMB[key]
 
         assert "pass_events" in outcome_dbp_events.keys()
         for key, event in outcome_dbp_events["pass_events"].items():
-            assert key in PASS_EVENT_STATSBOMB.keys()
-            assert event == PASS_EVENT_STATSBOMB[key]
+            assert key in PASS_INSTANCES_STATSBOMB.keys()
+            assert event == PASS_INSTANCES_STATSBOMB[key]
 
         assert "dribble_events" in outcome_dbp_events.keys()
         for key, event in outcome_dbp_events["dribble_events"].items():
-            assert key in DRIBBLE_EVENT_STATSBOMB.keys()
-            assert event == DRIBBLE_EVENT_STATSBOMB[key]
+            assert key in DRIBBLE_INSTANCES_STATSBOMB.keys()
+            assert event == DRIBBLE_INSTANCES_STATSBOMB[key]
 
         pd.testing.assert_frame_equal(
             outcome_event_data, expected_outcome_event_data, rtol=1e-3
@@ -129,18 +131,18 @@ class TestStatsbombParser(unittest.TestCase):
 
         assert "shot_events" in outcome_dbp_events.keys()
         for key, event in outcome_dbp_events["shot_events"].items():
-            assert key in SHOT_EVENT_STATSBOMB.keys()
-            assert event == SHOT_EVENT_STATSBOMB[key]
+            assert key in SHOT_INSTANCES_STATSBOMB.keys()
+            assert event == SHOT_INSTANCES_STATSBOMB[key]
 
         assert "pass_events" in outcome_dbp_events.keys()
         for key, event in outcome_dbp_events["pass_events"].items():
-            assert key in PASS_EVENT_STATSBOMB.keys()
-            assert event == PASS_EVENT_STATSBOMB[key]
+            assert key in PASS_INSTANCES_STATSBOMB.keys()
+            assert event == PASS_INSTANCES_STATSBOMB[key]
 
         assert "dribble_events" in outcome_dbp_events.keys()
         for key, event in outcome_dbp_events["dribble_events"].items():
-            assert key in DRIBBLE_EVENT_STATSBOMB.keys()
-            assert event == DRIBBLE_EVENT_STATSBOMB[key]
+            assert key in DRIBBLE_INSTANCES_STATSBOMB.keys()
+            assert event == DRIBBLE_INSTANCES_STATSBOMB[key]
 
         pd.testing.assert_frame_equal(
             expected_outcome_event_data, outcome_event_data, rtol=1e-3
@@ -178,7 +180,7 @@ class TestStatsbombParser(unittest.TestCase):
         assert expected_outcome == outcome
 
     def test_get_shot_event(self):
-        expected_outcome = SHOT_EVENT_STATSBOMB[2].copy()
+        expected_outcome = SHOT_INSTANCES_STATSBOMB[2].copy()
         expected_outcome.start_y *= -1
         expected_outcome.jersey = MISSING_INT
         with open(self.event_loc, "r", encoding="utf-8") as f:
@@ -196,7 +198,7 @@ class TestStatsbombParser(unittest.TestCase):
         assert expected_outcome == res
 
     def test_get_pass_event(self):
-        expected_outcome = PASS_EVENT_STATSBOMB[0].copy()
+        expected_outcome = PASS_INSTANCES_STATSBOMB[0].copy()
         expected_outcome.start_y *= -1
         expected_outcome.end_y *= -1
         expected_outcome.jersey = MISSING_INT
@@ -215,7 +217,7 @@ class TestStatsbombParser(unittest.TestCase):
         assert expected_outcome == res
 
     def test_get_dribble_event(self):
-        expected_outcome = DRIBBLE_EVENT_STATSBOMB[3].copy()
+        expected_outcome = DRIBBLE_INSTANCES_STATSBOMB[3].copy()
         expected_outcome.start_x *= -1
         expected_outcome.jersey = MISSING_INT
         with open(self.event_loc, "r", encoding="utf-8") as f:

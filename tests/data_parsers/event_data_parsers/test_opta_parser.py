@@ -21,12 +21,14 @@ from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
-    DRIBBLE_EVENTS_OPTA,
+    DRIBBLE_INSTANCES_OPTA,
     ED_OPTA,
     MD_OPTA,
-    PASS_EVENTS_OPTA,
-    SHOT_EVENTS_OPTA,
+    PASS_INSTANCES_OPTA,
+    SHOT_INSTANCES_OPTA,
 )
+
+ED_OPTA = pd.DataFrame(ED_OPTA.copy())
 
 
 class TestOptaParser(unittest.TestCase):
@@ -36,7 +38,7 @@ class TestOptaParser(unittest.TestCase):
         self.f7_loc_no_timestamps_and_date = (
             "tests/test_data/f7_test_no_timestamps_and_date.xml"
         )
-        self.f7_loc_multiple_matches = "tests/test_data/f7_test_multiple_matches.xml"
+        self.f7_loc_multiple_games = "tests/test_data/f7_test_multiple_games.xml"
         self.f24_loc = "tests/test_data/f24_test.xml"
 
     def test_load_opta_event_data(self):
@@ -46,10 +48,10 @@ class TestOptaParser(unittest.TestCase):
         pd.testing.assert_frame_equal(event_data, ED_OPTA)
         assert metadata == MD_OPTA
 
-        # SHOT_EVENTS_OPTA is scaled to a pitch of [106, 68],
+        # SHOT_INSTANCES_OPTA is scaled to a pitch of [106, 68],
         # while here [100, 50] is expected.
         expected_shot_events_opta = {}
-        for shot_id, shot_event in SHOT_EVENTS_OPTA.items():
+        for shot_id, shot_event in SHOT_INSTANCES_OPTA.items():
             expected_shot_events_opta[shot_id] = shot_event.copy()
             expected_shot_events_opta[shot_id].start_x = shot_event.start_x / 106.0 * 100
             expected_shot_events_opta[shot_id].start_y = shot_event.start_y / 68.0 * 50
@@ -99,9 +101,9 @@ class TestOptaParser(unittest.TestCase):
         metadata = _load_metadata(self.f7_loc, [100.0, 50.0])
         assert metadata == MD_OPTA
 
-    def test_load_metadata_multiple_matches(self):
-        metadata = _load_metadata(self.f7_loc_multiple_matches, [100.0, 50.0])
-        # the second match metadata is dropped
+    def test_load_metadata_multiple_games(self):
+        metadata = _load_metadata(self.f7_loc_multiple_games, [100.0, 50.0])
+        # the second game metadata is dropped
         assert metadata == MD_OPTA
 
     def test_load_metadata_no_timestamps_and_date(self):
@@ -180,18 +182,18 @@ class TestOptaParser(unittest.TestCase):
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():
-            assert key in SHOT_EVENTS_OPTA.keys()
-            assert event == SHOT_EVENTS_OPTA[key]
+            assert key in SHOT_INSTANCES_OPTA.keys()
+            assert event == SHOT_INSTANCES_OPTA[key]
 
         assert "dribble_events" in dbp_events.keys()
         for key, event in dbp_events["dribble_events"].items():
-            assert key in DRIBBLE_EVENTS_OPTA.keys()
-            assert event == DRIBBLE_EVENTS_OPTA[key]
+            assert key in DRIBBLE_INSTANCES_OPTA.keys()
+            assert event == DRIBBLE_INSTANCES_OPTA[key]
 
         assert "pass_events" in dbp_events.keys()
         for key, event in dbp_events["pass_events"].items():
-            assert key in PASS_EVENTS_OPTA.keys()
-            assert event == PASS_EVENTS_OPTA[key]
+            assert key in PASS_INSTANCES_OPTA.keys()
+            assert event == PASS_INSTANCES_OPTA[key]
 
     def test_make_shot_event_instance(self):
         event_xml = """
@@ -213,7 +215,7 @@ class TestOptaParser(unittest.TestCase):
         event = BeautifulSoup(event_xml, "xml").find("Event")
 
         expected_output = ShotEvent(
-            event_id=2529877443,
+            event_id=22,
             period_id=1,
             minutes=0,
             seconds=31,
@@ -244,7 +246,7 @@ class TestOptaParser(unittest.TestCase):
                 "shirt_num": [3],
             }
         )
-        actual_output = _make_shot_event_instance(event, 111, players=players)
+        actual_output = _make_shot_event_instance(event, 111, players=players, id=22)
         self.assertEqual(actual_output, expected_output)
 
     def test_make_dribble_event_instance(self):
@@ -270,11 +272,11 @@ class TestOptaParser(unittest.TestCase):
             }
         )
         dribble_event = _make_dribble_event_instance(
-            event, away_team_id=325, players=players
+            event, away_team_id=325, players=players, id=12
         )
 
         expected_dribble_event = DribbleEvent(
-            event_id=2529877443,
+            event_id=12,
             period_id=1,
             minutes=0,
             seconds=31,
@@ -311,10 +313,10 @@ class TestOptaParser(unittest.TestCase):
         players = players = pd.DataFrame(
             {"id": [1], "full_name": ["Player 1"], "team_id": [1], "shirt_num": [4]}
         )
-        pass_event = _make_pass_instance(event, away_team_id=1, players=players)
+        pass_event = _make_pass_instance(event, away_team_id=1, players=players, id=13)
 
         expected_pass_event = PassEvent(
-            event_id=1,
+            event_id=13,
             period_id=1,
             minutes=0,
             seconds=0,
@@ -360,9 +362,9 @@ class TestOptaParser(unittest.TestCase):
         self.assertAlmostEqual(y, 34.0)
 
     def test_update_pass_outcome_no_related_event_id(self):
-        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+        shot_events = copy.deepcopy(SHOT_INSTANCES_OPTA)
 
-        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
+        pass_events = copy.deepcopy(PASS_INSTANCES_OPTA)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
@@ -375,9 +377,9 @@ class TestOptaParser(unittest.TestCase):
             assert event == pass_events[key]
 
     def test_update_pass_outcome_pass_not_found(self):
-        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+        shot_events = copy.deepcopy(SHOT_INSTANCES_OPTA)
 
-        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
+        pass_events = copy.deepcopy(PASS_INSTANCES_OPTA)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
@@ -391,23 +393,27 @@ class TestOptaParser(unittest.TestCase):
             assert event == pass_events[key]
 
     def test_update_pass_outcome_multiple_options(self):
-        shot_events = copy.deepcopy(SHOT_EVENTS_OPTA)
+        shot_events = copy.deepcopy(SHOT_INSTANCES_OPTA)
 
-        pass_events = copy.deepcopy(PASS_EVENTS_OPTA)
+        pass_events = copy.deepcopy(PASS_INSTANCES_OPTA)
+        pass_events[4].outcome_str = "successful"
+        expected_passes = copy.deepcopy(pass_events)
         event_data = ED_OPTA.copy()
 
         for event in shot_events.values():
             if event.outcome_str == "goal":
                 event.related_event_id = 120
 
-        event_data.loc[event_data["databallpy_event"] == "pass", "opta_id"] = 120
+        event_data.loc[event_data["databallpy_event"] == "pass", "original_event_id"] = (
+            120
+        )
 
         # the pass event with event_id 120 has two options
-        assert len(event_data.loc[event_data["opta_id"] == 120]) == 2
+        assert len(event_data.loc[event_data["original_event_id"] == 120]) == 2
 
         res_passes = _update_pass_outcome(event_data, shot_events, pass_events)
-        expected_passes = pass_events.copy()
-        expected_passes[2499594243].outcome = "assist"
+
+        expected_passes[4].outcome_str = "assist"
         for key, event in res_passes.items():
             assert key in expected_passes.keys()
             assert event == expected_passes[key]

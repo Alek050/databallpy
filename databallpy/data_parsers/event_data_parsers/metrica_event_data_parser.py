@@ -113,7 +113,7 @@ def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
     """Function to load the open event data of metrica
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: event data and metadata of the match
+        Tuple[pd.DataFrame, Metadata]: event data and metadata of the game
     """
     metadata_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_metadata.xml"
@@ -150,7 +150,6 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
 
     result_dict = {
         "event_id": [],
-        "type_id": [],
         "databallpy_event": [],
         "period_id": [],
         "minutes": [],
@@ -158,15 +157,17 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
         "player_id": [],
         "player_name": [],
         "team_id": [],
-        "outcome": [],
+        "is_successful": [],
         "start_x": [],
         "start_y": [],
         "to_player_id": [],
         "to_player_name": [],
         "end_x": [],
         "end_y": [],
+        "original_event_id": [],
+        "original_event": [],
+        "event_type_id": [],
         "td_frame": [],
-        "metrica_event": [],
     }
 
     check_outcome_last_event = False
@@ -174,14 +175,15 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
     in_possession_events = ["pass", "carry", "recovery", "shot"]
     out_of_possession_events = ["fault received", "ball out", "ball lost"]
 
-    for event in events_dict["data"]:
-        result_dict["event_id"].append(event["index"])
-        result_dict["type_id"].append(event["type"]["id"])
+    for i_event, event in enumerate(events_dict["data"]):
+        result_dict["event_id"].append(i_event)
+        result_dict["original_event_id"].append(event["index"])
+        result_dict["event_type_id"].append(event["type"]["id"])
         event_name = event["type"]["name"].lower()
         if event_name == "challenge":
             if _is_in_subtypes(event["subtypes"], "TACKLE"):
                 event_name = "tackle"
-        result_dict["metrica_event"].append(event_name)
+        result_dict["original_event"].append(event_name)
         result_dict["period_id"].append(event["period"])
         result_dict["minutes"].append(_to_int((event["start"]["time"] // 60)))
         result_dict["seconds"].append(_to_float(event["start"]["time"] % 60))
@@ -197,9 +199,9 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
                 event_name in in_possession_events
                 and result_dict["team_id"][-1] != event["team"]["id"]
             ):
-                result_dict["outcome"][-1] = 0
+                result_dict["is_successful"][-1] = False
             else:
-                result_dict["outcome"][-1] = 1
+                result_dict["is_successful"][-1] = True
             check_outcome_last_event = False
 
         # set outcome for shot events
@@ -207,12 +209,12 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
             if _is_in_subtypes(event["subtypes"], "GOAL") or _is_in_subtypes(
                 event["subtypes"], "WON"
             ):
-                outcome = 1
+                outcome = True
             else:
-                outcome = 0
-            result_dict["outcome"].append(outcome)
+                outcome = False
+            result_dict["is_successful"].append(outcome)
         else:
-            result_dict["outcome"].append(MISSING_INT)
+            result_dict["is_successful"].append(None)
 
         # Check if outcome needs to be set based on next event
         if event_name in ["pass", "carry"]:
@@ -234,8 +236,9 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     events = pd.DataFrame(result_dict)
     events["databallpy_event"] = (
-        events["metrica_event"].map(metrica_databallpy_map).replace([np.nan], [None])
+        events["original_event"].map(metrica_databallpy_map).replace([np.nan], [None])
     )
+    events["is_successful"] = events["is_successful"].astype("boolean")
     return events
 
 
@@ -387,13 +390,13 @@ def _get_shot_event(
         pitch_size=pitch_dimensions,
         player_id=row.player_id,
         jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.outcome),
+        outcome=bool(row.is_successful),
         related_event_id=MISSING_INT,
         body_part="unspecified",
         possession_type="unspecified",
         set_piece="unspecified",
         _xt=np.nan,
-        outcome_str=["miss", "goal"][row.outcome],
+        outcome_str=["miss", "goal"][row.is_successful],
     )
 
 
@@ -428,14 +431,14 @@ def _get_pass_event(
         pitch_size=pitch_dimensions,
         player_id=row.player_id,
         jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.outcome),
+        outcome=bool(row.is_successful),
         related_event_id=MISSING_INT,
         body_part="unspecified",
         possession_type="unspecified",
         set_piece="unspecified",
         _xt=np.nan,
-        outcome_str=["unsuccessful", "successful"][row.outcome]
-        if not pd.isnull(row.outcome)
+        outcome_str=["unsuccessful", "successful"][row.is_successful]
+        if not pd.isnull(row.is_successful)
         else "not_specified",
         end_x=row.end_x,
         end_y=row.end_y,
@@ -474,7 +477,7 @@ def _get_dribble_event(
         pitch_size=pitch_dimensions,
         player_id=row.player_id,
         jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.outcome),
+        outcome=bool(row.is_successful),
         related_event_id=MISSING_INT,
         body_part="unspecified",
         possession_type="unspecified",
@@ -516,6 +519,6 @@ def _get_tackle_event(
         pitch_size=pitch_dimensions,
         player_id=row.player_id,
         jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.outcome),
+        outcome=bool(row.is_successful),
         related_event_id=MISSING_INT,
     )
