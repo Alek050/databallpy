@@ -60,7 +60,7 @@ def load_statsbomb_event_data(
 
     Args:
         events_loc (str): location of the event.json file.
-        game_loc (str): location of the game.json file.
+        match_loc (str): location of the game.json file.
         lineup_loc (str): location of the lineup.json file.
         pitch_dimensions (tuple, optional): the length and width of the pitch. Input
             should be in yards (as this is statsbomb standard (120, 80)) and is
