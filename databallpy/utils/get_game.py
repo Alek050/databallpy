@@ -14,6 +14,12 @@ from databallpy.data_parsers.event_data_parsers import (
     load_sportec_open_event_data,
     load_statsbomb_event_data,
 )
+from databallpy.data_parsers.kloppy_parsers import (
+    convert_kloppy_event_dataset,
+    convert_kloppy_tracking_dataset,
+    periods_from_kloppy,
+    players_from_kloppy,
+)
 from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
     load_metrica_open_tracking_data,
@@ -754,6 +760,72 @@ def merge_player_info(
     home_players["position"] = event_metadata.home_players["position"]
     return home_players, away_players
 
+
+def get_game_from_kloppy(tracking_dataset: "TrackingDataset", event_dataset: "EventDataset"):
+    try:
+        from kloppy.domain import EventDataset, Orientation, TrackingDataset
+    except ImportError:
+        raise ImportError(
+                "Seems like you don't have kloppy installed. Please"
+                " install it using: pip install kloppy"
+            )
+        
+    if not isinstance(tracking_dataset, TrackingDataset):
+        raise TypeError("'tracking_dataset' should be of type kloppy.domain.TrackingDataset")
+    
+    if not isinstance(event_dataset, EventDataset):
+        raise TypeError("'tracking_dataset' should be of type kloppy.domain.TrackingDataset")
+    
+    if (
+        not tracking_dataset.metadata.pitch_dimensions.pitch_length == event_dataset.metadata.pitch_dimensions.pitch_length
+        ) or (not tracking_dataset.metadata.pitch_dimensions.pitch_width == event_dataset.metadata.pitch_dimensions.pitch_width
+    ):
+        raise ValueError("kloppy.domain.TrackingDataset and kloppy.domain.EventDataset dimensions aren't equal. To fix this apply a custom coordinate system with the same pitch_length and pitch_dimensions to one of your kloppy Datasets.")
+    
+    tracking_dataset = tracking_dataset.transform(
+        to_coordinate_system="secondspectrum",
+        to_orientation=Orientation.STATIC_HOME_AWAY
+    )
+    
+    event_dataset = event_dataset.transform(
+        to_coordinate_system="secondspectrum",
+        to_orientation=Orientation.STATIC_HOME_AWAY
+    )
+    
+    periods = periods_from_kloppy(event_dataset, tracking_dataset)
+    
+    tracking_data: TrackingData = convert_kloppy_tracking_dataset(tracking_dataset)
+    event_data: EventData = convert_kloppy_event_dataset(event_dataset)
+        
+    pitch_dimensions = (
+        tracking_dataset.metadata.pitch_dimensions.pitch_length,
+        tracking_dataset.metadata.pitch_dimensions.pitch_width,
+    )
+    home_players, away_players = players_from_kloppy(tracking_dataset)
+    
+    home_team = tracking_dataset.metadata.teams[0]
+    away_team = tracking_dataset.metadata.teams[1]
+    Game(
+        tracking_data=tracking_data,
+        event_data=event_data,
+        pitch_dimensions=pitch_dimensions,
+        periods=periods,
+        home_team_id=home_team.team_id,
+        home_team_name=home_team.name,
+        home_players=home_players,
+        home_score=event_dataset.metadata.score.home,
+        home_formation=None,
+        away_team_id=away_team.team_id,
+        away_team_name=away_team.name,
+        away_players=away_players,
+        away_formation=None,
+        away_score=event_dataset.metadata.score.away,
+        country="",
+        shot_events=pd.DataFrame(),
+        dribble_events=pd.DataFrame(),
+        pass_events=pd.DataFrame(),
+        allow_synchronise_tracking_and_event_data=True
+    )
 
 @deprecated(
     "`get_match` is deprecated and will be removed in version 0.8.0. Please use `get_game` instead"
