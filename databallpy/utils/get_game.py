@@ -805,7 +805,7 @@ def get_game_from_kloppy(tracking_dataset: "TrackingDataset", event_dataset: "Ev
     
     home_team = tracking_dataset.metadata.teams[0]
     away_team = tracking_dataset.metadata.teams[1]
-    Game(
+    return Game(
         tracking_data=tracking_data,
         event_data=event_data,
         pitch_dimensions=pitch_dimensions,
