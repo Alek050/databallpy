@@ -32,7 +32,7 @@ from databallpy.schemas import (
     TrackingData,
     TrackingDataSchema,
 )
-from databallpy.utils.align_player_ids import align_player_ids
+from databallpy.utils.align_player_ids import align_player_ids_name_similarity, align_player_ids_jersey
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.warnings import deprecated
@@ -715,8 +715,9 @@ def align_player_and_team_ids(
     )
 
     if not home_eq or not away_eq:
-        tracking_metadata = align_player_ids(tracking_metadata, event_metadata)
-
+        # tracking_metadata = align_player_ids_name_similarity(tracking_metadata, event_metadata)
+        tracking_metadata = align_player_ids_jersey(tracking_metadata, event_metadata)
+        import pdb; pdb.set_trace()
     # Align team id's
     tracking_metadata.home_team_id = event_metadata.home_team_id
     tracking_metadata.away_team_id = event_metadata.away_team_id

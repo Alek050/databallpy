@@ -184,10 +184,11 @@ class TrackingData(pd.DataFrame):
     def add_velocity(
         self,
         column_ids: str | list[str],
-        filter_type: str = None,
+        filter_type: str | None = None,
         window_length: int = 7,
         polyorder: int = 2,
         max_velocity: float = np.inf,
+        allow_overwrite: bool = False,
     ) -> None:
         """Function that adds velocity columns to the tracking data based on the position
            columns
@@ -201,6 +202,11 @@ class TrackingData(pd.DataFrame):
             polyorder (int, optional): polynomial order for the filter. Defaults to 2.
             max_velocity (float, optional): maximum value for the velocity.
                 Defaults to np.inf.
+            allow_overwrite (bool): Whether or not it is allowed to overwrite existing values
+                Note: if "_velocity" exists, but "_vx" and "_vy" not, and allow_overwrite is
+                set to False, "_vx" and "_vy" will be computed and added, but "_velocity"
+                is kept the same, and therefore does not correspond with the other values.
+                Defaults to False.
 
         Returns:
             None
@@ -234,15 +240,17 @@ class TrackingData(pd.DataFrame):
             column_ids=column_ids,
             max_val=max_velocity,
             inplace=True,
+            allow_overwrite=allow_overwrite,
         )
 
     def add_acceleration(
         self,
         column_ids: str | list[str],
-        filter_type: str = None,
+        filter_type: str | None = None,
         window_length: int = 25,
         polyorder: int = 2,
         max_acceleration: float = np.inf,
+        allow_overwrite: bool = False,
     ) -> None:
         """Function that adds acceleration columns to the tracking data based on the
            position columns
@@ -257,6 +265,11 @@ class TrackingData(pd.DataFrame):
             polyorder (int, optional): polynomial order for the filter. Defaults to 2.
             max_acceleration (float, optional): maximum value for the acceleration.
                 Defaults to np.inf.
+            allow_overwrite (bool): Whether or not it is allowed to overwrite existing values
+                Note: if "_acceleration" exists, but "_ax" and "_ay" not, and allow_overwrite is
+                set to False, "_ax" and "_ay" will be computed and added, but "_acceleration"
+                is kept the same, and therefore does not correspond with the other values.
+                Defaults to False.
 
         Returns:
             None
@@ -300,6 +313,7 @@ class TrackingData(pd.DataFrame):
             column_ids=column_ids,
             max_val=max_acceleration,
             inplace=True,
+            allow_overwrite=allow_overwrite,
         )
 
     def add_individual_player_possession(
