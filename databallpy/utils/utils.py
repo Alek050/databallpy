@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from databallpy.utils.constants import MISSING_INT
 
@@ -173,7 +174,11 @@ def _values_are_equal_(input1: any, input2: any) -> bool:
             if not set(input1.columns) == set(input2.columns):
                 return False
             return all(_values_are_equal_(input1[c], input2[c]) for c in input1.columns)
-        return input1.sort_index().round(4).equals(input2.sort_index().round(4))
+        
+        if pd.api.types.is_numeric_dtype(input1.sort_index()):
+            return input1.sort_index().round(4).equals(input2.sort_index().round(4))
+        else:
+            return input1.sort_index().equals(input2.sort_index())
 
     if isinstance(input1, type(pd.to_datetime("NaT"))):
         return isinstance(input2, type(pd.to_datetime("NaT")))
