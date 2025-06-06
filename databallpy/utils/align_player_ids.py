@@ -20,8 +20,9 @@ def get_matching_full_name(full_name: str, options: list) -> str:
         similarity.append(s.ratio())
     return options[similarity.index(max(similarity))]
 
+
 def align_player_ids_jersey(metadata1: Metadata, metadata2: Metadata) -> Metadata:
-    """Function to align player ids based on the jersey numbers. The player ids in 
+    """Function to align player ids based on the jersey numbers. The player ids in
     metadata1 will be replaced by the player ids in metadata2.
 
     Args:
@@ -36,21 +37,25 @@ def align_player_ids_jersey(metadata1: Metadata, metadata2: Metadata) -> Metadat
     metadata1.away_players.drop(columns=["id"], inplace=True)
 
     metadata1.home_players.insert(
-        0, 
-        "id",  
-        metadata1.home_players["shirt_num"].map(metadata2.home_players.set_index("shirt_num")["id"])
+        0,
+        "id",
+        metadata1.home_players["shirt_num"].map(
+            metadata2.home_players.set_index("shirt_num")["id"]
+        ),
     )
     metadata1.away_players.insert(
-        0, 
-        "id",  
-        metadata1.away_players["shirt_num"].map(metadata2.away_players.set_index("shirt_num")["id"])
+        0,
+        "id",
+        metadata1.away_players["shirt_num"].map(
+            metadata2.away_players.set_index("shirt_num")["id"]
+        ),
     )
     return metadata1
 
 
-
-
-def align_player_ids_name_similarity(metadata1: Metadata, metadata2: Metadata) -> Metadata:
+def align_player_ids_name_similarity(
+    metadata1: Metadata, metadata2: Metadata
+) -> Metadata:
     """Function to align player ids when the player ids between tracking and event
     data are different. The player ids in the metadata of metadata1 will be replaced
     by the player ids in the metadata of metadata2.
@@ -64,7 +69,7 @@ def align_player_ids_name_similarity(metadata1: Metadata, metadata2: Metadata) -
     """
     for idx, row in metadata1.home_players.iterrows():
         full_name_tracking_metadata = get_matching_full_name(
-            row["full_name"], metadata2.home_players["full_name"]
+            row["full_name"], metadata2.home_players["full_name"].to_list()
         )
         id_tracking_data = metadata2.home_players.loc[
             metadata2.home_players["full_name"] == full_name_tracking_metadata,
@@ -74,7 +79,7 @@ def align_player_ids_name_similarity(metadata1: Metadata, metadata2: Metadata) -
 
     for idx, row in metadata1.away_players.iterrows():
         full_name_tracking_metadata = get_matching_full_name(
-            row["full_name"], metadata2.away_players["full_name"]
+            row["full_name"], metadata2.away_players["full_name"].to_list()
         )
         id_tracking_data = metadata2.away_players.loc[
             metadata2.away_players["full_name"] == full_name_tracking_metadata,

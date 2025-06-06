@@ -1104,7 +1104,7 @@ MD_INSTAT = Metadata(
             "full_name": ["Player 11", "Player 12"],
             "position": ["goalkeeper", "unspecified"],
             "starter": [True, False],
-            "shirt_num": [1, 3],
+            "shirt_num": [1, 2],
         }
     ),
     away_formation="442",

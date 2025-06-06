@@ -26,8 +26,8 @@ class Metadata:
     away_score: int
     away_formation: str
 
-    country: str
-    periods_changed_playing_direction: list = None
+    country: str | None = None
+    periods_changed_playing_direction: list | None = None
 
     @logging_wrapper(__file__)
     def __post_init__(self):

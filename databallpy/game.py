@@ -599,7 +599,6 @@ class Game:
             if not _values_are_equal_(
                 getattr(self, current_field.name), getattr(other, current_field.name)
             ):
-                import pdb; pdb.set_trace()
                 return False
 
         return True
@@ -617,8 +616,8 @@ class Game:
 
     def save_game(
         self,
-        name: str = None,
-        path: str = None,
+        name: str | None = None,
+        path: str | None = None,
         verbose: bool = True,
         allow_overwrite: bool = False,
     ) -> None:
@@ -865,4 +864,6 @@ def check_inputs_game_object(game: Game):
 
     # country
     if not isinstance(game.country, (str, type(None))):
-        raise TypeError(f"country should be a string or None, not a {type(game.country)}")
+        raise TypeError(
+            f"country should be a string or None, not a {type(game.country)}"
+        )
