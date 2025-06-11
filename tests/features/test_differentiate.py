@@ -8,6 +8,7 @@ from databallpy.features.differentiate import (
     add_acceleration,
     add_velocity,
 )
+from databallpy.utils.warnings import DataBallPyWarning
 
 
 class TestDifferentiate(unittest.TestCase):
@@ -95,9 +96,9 @@ class TestDifferentiate(unittest.TestCase):
             add_acceleration(input_df, ["home_1"], self.framerate, filter_type="wrong")
 
     def test_differentiate_sg_filter(self):
-        output = self.input.copy()
-        _differentiate(
-            output,
+        input = self.input.copy()
+        output1 = _differentiate(
+            input,
             new_name="velocity",
             metric="",
             frame_rate=self.framerate,
@@ -106,7 +107,8 @@ class TestDifferentiate(unittest.TestCase):
             max_val=np.nan,
             poly_order=1,
             column_ids=["home_1"],
-            inplace=True,
+            inplace=False,
+            allow_overwrite=True,
         )
 
         expected_output = pd.DataFrame(
@@ -125,7 +127,23 @@ class TestDifferentiate(unittest.TestCase):
                 ],
             }
         )
-        pd.testing.assert_frame_equal(output, expected_output)
+        pd.testing.assert_frame_equal(output1, expected_output)
+
+        with self.assertWarns(DataBallPyWarning):
+            output2 = _differentiate(
+                input,
+                new_name="velocity",
+                metric="",
+                frame_rate=self.framerate,
+                filter_type="savitzky_golay",
+                window=2,
+                max_val=np.nan,
+                poly_order=1,
+                column_ids=["home_1"],
+                inplace=False,
+                allow_overwrite=False,
+            )
+        pd.testing.assert_frame_equal(output2, input)
 
     def test_differentiate_ma_filter(self):
         output = _differentiate(
@@ -138,6 +156,7 @@ class TestDifferentiate(unittest.TestCase):
             max_val=51,
             poly_order=1,
             column_ids=None,
+            allow_overwrite=True,
         )
 
         expected_output = pd.DataFrame(

@@ -1,8 +1,15 @@
 # Changelog
 
+
+
 ## Version 0.6
 
-## V0.6.0 (DATE)
+## V0.6.1 (DATE)
+- Made Country Nullabe in Game and Metadata.
+- Added player alignment based on jersey numbers over name alignment.
+- Added `allow_overwrite` kwarg for `Game.TrackingData.add_velocity` and `Game.TrackingData.add_acceleration` methods that default to `False`.
+
+## V0.6.0 (28/03/2025)
 
 - Moved from function to an object oriented framework for all user-features and computations of game/match (special thanks to [DaanGro](https://github.com/DaanGro))
 - Renamed the all classes and functions with `match` to `game` (to move away from the internal python `match` statement)
@@ -115,7 +122,6 @@ We sincerely appologize for all the changes you have to make, but we feel this w
 - Added parser for Instat event data
 - Added quality checks for the data, raises warning if quality is not good enough
 
-<<<<<<< HEAD
 ## Version 0.2
 
 ### v0.2.0 (10/03/2023)
@@ -139,30 +145,3 @@ We sincerely appologize for all the changes you have to make, but we feel this w
 ### v0.0.1 (24/01/2023)
 
 - First release of `databallpy`!
-=======
-## V0.5.2 (15/11/2024)
-
-- Added `match.get_column_ids` with filters for team, player positions and minimal minutes played filters.
-- Added parser for DFL/Sportec Solutions event data
-- Added parser for Tracab xml format, used by DFL and Sportec solutions
-- Added integration for open data from DFL (open sourced by Bassek et al.)
-
-### Breaking changes
-- From now on, `match.home_players_column_ids()` and `match.away_players_column_ids()` are depreciated and will be removed in V0.7.0. Please use `match.get_column_ids()` in future version.
-- `get_open_match()` will now, by default, load in match `J03WMX` (1. FC Köln vs. FC Bayern München) instead of the anonimysed match from Metrica. To load in the metrica match, please parse `provider="metrica"` in the key word arguments.
-
-
-## V0.5.3 (10/12/2024)
-
-- Added StatsBomb event data as provider (by [DaanGro](https://github.com/DaanGro))
-- Added json parser for tracab metadata (by [jan-swiatek](https://github.com/jan-swiatek))
-- Made last batch from smart batches in synchronisation last longer to include all events
-- Fixed bug in parsing tracab xml data
-- Fixed bug in combining players info from tracking and event metadata
-
-## V0.5.4 (19/03/2025)
-
-- Support for Python 3.13
-- Added event id of StatsBomb in event data (by [jan-swiatek](https://github.com/jan-swiatek))
-- Fixed bug in sportec tracking data parser.
->>>>>>> main

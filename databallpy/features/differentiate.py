@@ -5,7 +5,7 @@ import pandas as pd
 
 from databallpy.features.filters import _filter_data
 from databallpy.utils.logging import logging_wrapper
-from databallpy.utils.warnings import deprecated
+from databallpy.utils.warnings import DataBallPyWarning, deprecated
 
 
 @logging_wrapper(__file__)
@@ -16,7 +16,7 @@ def add_acceleration(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],
     frame_rate: float,
-    filter_type: str = None,
+    filter_type: str | None = None,
     window_length: int = 25,
     polyorder: int = 2,
     max_acceleration: float = np.inf,
@@ -80,6 +80,7 @@ def add_acceleration(
         column_ids=column_ids,
         max_val=max_acceleration,
         inplace=inplace,
+        allow_overwrite=True,
     )
 
     return res_df
@@ -93,7 +94,7 @@ def add_velocity(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],
     frame_rate: float,
-    filter_type: str = None,
+    filter_type: str | None = None,
     window_length: int = 7,
     polyorder: int = 2,
     max_velocity: float = np.inf,
@@ -146,6 +147,7 @@ def add_velocity(
         column_ids=column_ids,
         max_val=max_velocity,
         inplace=inplace,
+        allow_overwrite=True,
     )
 
     return res_df
@@ -164,6 +166,7 @@ def _differentiate(
     poly_order: int = 2,
     column_ids: list[str] | None = None,
     inplace: bool = False,
+    allow_overwrite: bool = False,
 ) -> pd.DataFrame | None:
     """
     Function that adds the differentiated values to the DataFrame.
@@ -201,13 +204,15 @@ def _differentiate(
 
     dt = 1.0 / frame_rate
 
-    cols_to_drop = np.array(
-        [
-            [c + f"_{new_name}", c + f"_{new_name[0]}x", c + f"_{new_name[0]}y"]
-            for c in column_ids
-        ]
-    ).ravel()
-    df.drop(cols_to_drop, axis=1, errors="ignore", inplace=True)
+    if allow_overwrite:
+        cols_to_drop = np.array(
+            [
+                [c + f"_{new_name}", c + f"_{new_name[0]}x", c + f"_{new_name[0]}y"]
+                for c in column_ids
+            ]
+        ).ravel()
+
+        df.drop(cols_to_drop, axis=1, errors="ignore", inplace=True)
 
     res_dict = {}
     for column_id in column_ids:
@@ -237,10 +242,21 @@ def _differentiate(
                 polyorder=poly_order,
             )
 
-        res_dict[column_id + f"_{new_name[0]}x"] = np.array(gradient_x)
-        res_dict[column_id + f"_{new_name[0]}y"] = np.array(gradient_y)
-        res_dict[column_id + f"_{new_name}"] = np.linalg.norm(
-            [gradient_x, gradient_y], axis=0
+        for col, values in zip(
+            [
+                column_id + f"_{new_name[0]}x",
+                column_id + f"_{new_name[0]}y",
+                column_id + f"_{new_name}",
+            ],
+            [gradient_x, gradient_y, np.linalg.norm([gradient_x, gradient_y], axis=0)],
+        ):
+            if col not in df.columns:
+                res_dict[col] = values
+
+    if len(res_dict) == 0 and not allow_overwrite:
+        warnings.warn(
+            message="No values added to the tracking data. Consider setting `allow_overwrite` to True",
+            category=DataBallPyWarning,
         )
 
     new_columns_df = pd.DataFrame(res_dict)

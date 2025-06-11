@@ -380,9 +380,9 @@ class TestTrackingData(unittest.TestCase):
                 end_idx=6,
             )
 
-    def test_get_velocity(self):
+    def test_add_velocity(self):
         tracking_data = self.td_diff.copy()
-        tracking_data.add_velocity(["home_1"])
+        tracking_data.add_velocity(["home_1"], allow_overwrite=True)
         pd.testing.assert_frame_equal(tracking_data, self.expected_output_vel)
 
         with self.assertRaises(ValueError):

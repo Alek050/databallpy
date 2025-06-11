@@ -105,7 +105,7 @@ class Game:
     away_players: pd.DataFrame
     away_score: int
     away_formation: str
-    country: str
+    country: str | None
     shot_events: pd.DataFrame
     dribble_events: pd.DataFrame
     pass_events: pd.DataFrame
@@ -117,7 +117,7 @@ class Game:
     # synchronisation of the tracking and event data
     _tracking_timestamp_is_precise: bool = False
     _event_timestamp_is_precise: bool = False
-    _periods_changed_playing_direction: list[int] = None
+    _periods_changed_playing_direction: list[int] | None = None
     _check_inputs_: bool = True
 
     def __repr__(self):
@@ -140,7 +140,7 @@ class Game:
         return self._tracking_data_provider
 
     @property
-    def frame_rate(self) -> str:
+    def frame_rate(self) -> int:
         warnings.warn(
             "`game.frame_rate` is deprecated and will be removed in version 0.8.0. Please use `game.tracking_data.frame_rate` instead",
             category=DeprecationWarning,
@@ -284,6 +284,7 @@ class Game:
                 / 60
                 >= min_minutes_played
             ]
+
         col_ids = [
             f"home_{int(row.shirt_num)}"
             if row.id in self.home_players["id"].to_list()
@@ -615,8 +616,8 @@ class Game:
 
     def save_game(
         self,
-        name: str = None,
-        path: str = None,
+        name: str | None = None,
+        path: str | None = None,
         verbose: bool = True,
         allow_overwrite: bool = False,
     ) -> None:
@@ -862,5 +863,7 @@ def check_inputs_game_object(game: Game):
             )
 
     # country
-    if not isinstance(game.country, str):
-        raise TypeError(f"country should be a string, not a {type(game.country)}")
+    if not isinstance(game.country, (str, type(None))):
+        raise TypeError(
+            f"country should be a string or None, not a {type(game.country)}"
+        )

@@ -3,7 +3,7 @@
         "row": [
             {
                 "id": "10054",
-                "number": "1",
+                "number": "-999",
                 "action_id": "161000",
                 "action_name": "GK",
                 "player_id": "100",
@@ -21,7 +21,7 @@
             },
             {
                 "id": "10055",
-                "number": "2",
+                "number": "-999",
                 "action_id": "161000",
                 "action_name": "LCD",
                 "player_id": "200",
@@ -39,7 +39,7 @@
             },
             {
                 "id": "10056",
-                "number": "1",
+                "number": "-999",
                 "action_id": "161000",
                 "action_name": "GK",
                 "player_id": "3",
@@ -57,7 +57,7 @@
             },
             {
                 "id": "10057",
-                "number": "3",
+                "number": "-999",
                 "action_id": "161000",
                 "action_name": "RCD",
                 "player_id": "4",
