@@ -5,7 +5,11 @@ import pandas as pd
 
 from databallpy.features.filters import _filter_data
 from databallpy.utils.logging import logging_wrapper
+<<<<<<< HEAD
 from databallpy.utils.warnings import DataBallPyWarning, deprecated
+=======
+from databallpy.utils.warnings import deprecated
+>>>>>>> main
 
 
 @logging_wrapper(__file__)
@@ -80,7 +84,10 @@ def add_acceleration(
         column_ids=column_ids,
         max_val=max_acceleration,
         inplace=inplace,
+<<<<<<< HEAD
         allow_overwrite=True,
+=======
+>>>>>>> main
     )
 
     return res_df
@@ -147,7 +154,10 @@ def add_velocity(
         column_ids=column_ids,
         max_val=max_velocity,
         inplace=inplace,
+<<<<<<< HEAD
         allow_overwrite=True,
+=======
+>>>>>>> main
     )
 
     return res_df

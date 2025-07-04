@@ -57,6 +57,13 @@ Although reading in and synchronising data is already very helpfull to get start
 - Fixed typo in documentation
 - Updated SciSports parser for v1.0 of the .json files (#301). 
 
+## Changelog 0.6.0
+
+- Moved from function to an object oriented framework for all user-features and computations of game/match (special thanks to [DaanGro](https://github.com/DaanGro))
+- Renamed the all classes and functions with `match` to `game` (to move away from the internal python `match` statement)
+- Removed the function to save game/match objects to pickle, but created a more save way using parquet and json files
+- Added functionality to export tracking data to long format.
+
 #### Breaking changes
 We sincerely appologize for all the changes you have to make, but we feel this will make the package more robust and easier to use for future projects. Just to be clear, **all the functionality that was in 0.5.4, is still in 0.6.0**. However we made to changes that impacts users.
 1) We renamed all functions with `match` in it to `game.` (e.g. `get_match` was changed to `get_game`). This was chosen since `match` is an internal python command, and we do not want to imply to overwrite that (by using something like `match = get_match()`). A deprecation warning is raised when you try to call it from the current version onwards, we strongly encourage to take this warning serious as we do plan to remove it shorlty.

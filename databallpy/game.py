@@ -284,7 +284,6 @@ class Game:
                 / 60
                 >= min_minutes_played
             ]
-
         col_ids = [
             f"home_{int(row.shirt_num)}"
             if row.id in self.home_players["id"].to_list()
