@@ -4,10 +4,12 @@
 
 ## Version 0.6
 
-## V0.6.1 (DATE)
+## V0.6.1 (4/7/2025)
 - Made Country Nullabe in Game and Metadata.
 - Added player alignment based on jersey numbers over name alignment.
 - Added `allow_overwrite` kwarg for `Game.TrackingData.add_velocity` and `Game.TrackingData.add_acceleration` methods that default to `False`.
+- Fixed typo in documentation
+- Updated SciSports parser for v1.0 of the .json files (#301). 
 
 ## V0.6.0 (28/03/2025)
 

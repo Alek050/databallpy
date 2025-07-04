@@ -50,12 +50,12 @@ This package is developed to create a standardized way to analyse soccer games u
 
 Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. If you are interested in some of the features we implemented, see our [official documentation][docs-url].
 
-## Changelog 0.6.0
-
-- Moved from function to an object oriented framework for all user-features and computations of game/match (special thanks to [DaanGro](https://github.com/DaanGro))
-- Renamed the all classes and functions with `match` to `game` (to move away from the internal python `match` statement)
-- Removed the function to save game/match objects to pickle, but created a more save way using parquet and json files
-- Added functionality to export tracking data to long format.
+## Changelog v0.6.1 (4/7/2025)
+- Made Country Nullabe in Game and Metadata.
+- Added player alignment based on jersey numbers over name alignment.
+- Added `allow_overwrite` kwarg for `Game.TrackingData.add_velocity` and `Game.TrackingData.add_acceleration` methods that default to `False`.
+- Fixed typo in documentation
+- Updated SciSports parser for v1.0 of the .json files (#301). 
 
 #### Breaking changes
 We sincerely appologize for all the changes you have to make, but we feel this will make the package more robust and easier to use for future projects. Just to be clear, **all the functionality that was in 0.5.4, is still in 0.6.0**. However we made to changes that impacts users.
