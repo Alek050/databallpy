@@ -16,10 +16,12 @@ BODY_PART_MAPPING = {
     "LEFT_FOOT": "left_foot",
 }
 
-def _get_events_key(events_json:dict) -> str:
-    major_version = int(events_json["version"].split('.')[0])
+
+def _get_events_key(events_json: dict) -> str:
+    major_version = int(events_json["version"].split(".")[0])
     events_key = "events" if major_version == 0 else "data"
     return events_key
+
 
 @logging_wrapper(__file__)
 def load_scisports_event_data(
