@@ -137,7 +137,6 @@ def _get_players(
         "LW": "forward",
         "RW": "forward",
         "CF": "forward",
-<<<<<<< HEAD
         "Goalkeeper": "goalkeeper",
         "Centre forward": "forward",
         "Centre midfield": "midfielder",
@@ -148,8 +147,6 @@ def _get_players(
         "Right back": "defender",
         "Right wing": "forward",
         "Defensive midfield": "midfielder",
-=======
->>>>>>> main
         "UNKNOWN": "",
     }
 
