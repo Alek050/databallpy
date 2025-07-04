@@ -16,6 +16,10 @@ BODY_PART_MAPPING = {
     "LEFT_FOOT": "left_foot",
 }
 
+def _get_events_key(events_json:dict) -> str:
+    major_version = int(events_json["version"].split('.')[0])
+    events_key = "events" if major_version == 0 else "data"
+    return events_key
 
 @logging_wrapper(__file__)
 def load_scisports_event_data(
@@ -144,7 +148,7 @@ def _get_players(
         "UNKNOWN": "",
     }
 
-    events_key = "events" if events_json["version"][0] == "0" else "data"
+    events_key = _get_events_key(events_json)
 
     for player in events_json["players"]:
         players = home_players if player["teamId"] == home_team_id else away_players
@@ -182,7 +186,7 @@ def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.Da
         pd.DataFrame: the periods and frames of the game.
     """
 
-    events_key = "events" if events_json["version"][0] == "0" else "data"
+    events_key = _get_events_key(events_json)
     first_half_start_ms = [
         event["startTimeMs"]
         for event in events_json[events_key]
@@ -287,7 +291,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         metadata.periods_frames["start_datetime_ed"].iloc[0].date()
     ).tz_localize(metadata.periods_frames["start_datetime_ed"].iloc[0].tz)
 
-    events_key = "events" if events_json["version"][0] == "0" else "data"
+    events_key = _get_events_key(events_json)
     for id, event in enumerate(events_json[events_key]):
         event_data["event_id"].append(id)
         event_data["original_event_id"].append(id)
