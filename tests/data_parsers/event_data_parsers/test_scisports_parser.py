@@ -25,6 +25,7 @@ ED_SCISPORTS = pd.DataFrame(ED_SCISPORTS.copy())
 class TestSciSportsParser(unittest.TestCase):
     def setUp(self):
         self.json_loc = "tests/test_data/scisports_test.json"
+        self.json_loc_v1 = "tests/test_data/scisports_test_v1.json"
         self.expected_home_players = MD_SCISPORTS.home_players.copy()
         self.expected_away_players = MD_SCISPORTS.away_players.copy()
         self.expected_periods = MD_SCISPORTS.periods_frames.copy()
@@ -34,40 +35,41 @@ class TestSciSportsParser(unittest.TestCase):
         self.expected_event_data = ED_SCISPORTS.copy()
 
     def test_load_scisports_event_data(self):
-        res_ed, res_md, res_dbe = load_scisports_event_data(self.json_loc)
-        pd.testing.assert_frame_equal(res_ed, self.expected_event_data)
-        self.assertEqual(res_md, self.expected_metadata)
+        for file in [self.json_loc, self.json_loc_v1]:
+            res_ed, res_md, res_dbe = load_scisports_event_data(file)
+            pd.testing.assert_frame_equal(res_ed, self.expected_event_data)
+            self.assertEqual(res_md, self.expected_metadata)
 
-        for key, event in {
-            **res_dbe["shot_events"],
-            **res_dbe["pass_events"],
-            **res_dbe["dribble_events"],
-        }.items():
-            row = self.expected_event_data.loc[
-                self.expected_event_data["event_id"] == key
-            ].iloc[0]
-            databallpy_event = row["databallpy_event"]
+            for key, event in {
+                **res_dbe["shot_events"],
+                **res_dbe["pass_events"],
+                **res_dbe["dribble_events"],
+            }.items():
+                row = self.expected_event_data.loc[
+                    self.expected_event_data["event_id"] == key
+                ].iloc[0]
+                databallpy_event = row["databallpy_event"]
 
-            self.assertAlmostEqual(event.event_id, key)
-            self.assertAlmostEqual(event.period_id, row["period_id"])
-            self.assertAlmostEqual(event.minutes, row["minutes"])
-            self.assertAlmostEqual(event.seconds, row["seconds"])
-            self.assertAlmostEqual(event.datetime, row["datetime"])
-            self.assertAlmostEqual(event.team_id, row["team_id"])
-            self.assertEqual(
-                event.team_side, "home" if row["team_id"] == 100 else "away"
-            )
-            self.assertAlmostEqual(event.pitch_size, (106.0, 68.0))
+                self.assertAlmostEqual(event.event_id, key)
+                self.assertAlmostEqual(event.period_id, row["period_id"])
+                self.assertAlmostEqual(event.minutes, row["minutes"])
+                self.assertAlmostEqual(event.seconds, row["seconds"])
+                self.assertAlmostEqual(event.datetime, row["datetime"])
+                self.assertAlmostEqual(event.team_id, row["team_id"])
+                self.assertEqual(
+                    event.team_side, "home" if row["team_id"] == 100 else "away"
+                )
+                self.assertAlmostEqual(event.pitch_size, (106.0, 68.0))
 
-            if databallpy_event == "shot":
-                self.assertIsInstance(event, ShotEvent)
-                self.assertEqual(event.start_x, row["start_x"])
-            elif databallpy_event == "pass":
-                self.assertIsInstance(event, PassEvent)
-                self.assertTrue(event.end_y in [2.01, -20.8, 32.5])
-            elif databallpy_event == "dribble":
-                self.assertIsInstance(event, DribbleEvent)
-                self.assertEqual(event.start_y, row["start_y"])
+                if databallpy_event == "shot":
+                    self.assertIsInstance(event, ShotEvent)
+                    self.assertEqual(event.start_x, row["start_x"])
+                elif databallpy_event == "pass":
+                    self.assertIsInstance(event, PassEvent)
+                    self.assertTrue(event.end_y in [2.01, -20.8, 32.5])
+                elif databallpy_event == "dribble":
+                    self.assertIsInstance(event, DribbleEvent)
+                    self.assertEqual(event.start_y, row["start_y"])
 
     def test_load_scisports_event_data_errors(self):
         with self.assertRaises(FileNotFoundError):
