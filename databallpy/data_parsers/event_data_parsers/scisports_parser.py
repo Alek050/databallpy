@@ -17,6 +17,12 @@ BODY_PART_MAPPING = {
 }
 
 
+def _get_events_key(events_json: dict) -> str:
+    major_version = int(events_json["version"].split(".")[0])
+    events_key = "events" if major_version == 0 else "data"
+    return events_key
+
+
 @logging_wrapper(__file__)
 def load_scisports_event_data(
     events_json: str, pitch_dimensions: tuple = (106.0, 68.0)
@@ -131,8 +137,20 @@ def _get_players(
         "LW": "forward",
         "RW": "forward",
         "CF": "forward",
+        "Goalkeeper": "goalkeeper",
+        "Centre forward": "forward",
+        "Centre midfield": "midfielder",
+        "Attacking midfield": "midfielder",
+        "Left back": "defender",
+        "Left wing": "forward",
+        "Centre back": "defender",
+        "Right back": "defender",
+        "Right wing": "forward",
+        "Defensive midfield": "midfielder",
         "UNKNOWN": "",
     }
+
+    events_key = _get_events_key(events_json)
 
     for player in events_json["players"]:
         players = home_players if player["teamId"] == home_team_id else away_players
@@ -148,7 +166,7 @@ def _get_players(
 
     for start_event in [
         event
-        for event in events_json["events"]
+        for event in events_json[events_key]
         if event["subTypeName"] == "PLAYER_STARTING_POSITION"
         and event["startTimeMs"] == 0
     ]:
@@ -169,25 +187,27 @@ def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.Da
     Returns:
         pd.DataFrame: the periods and frames of the game.
     """
+
+    events_key = _get_events_key(events_json)
     first_half_start_ms = [
         event["startTimeMs"]
-        for event in events_json["events"]
+        for event in events_json[events_key]
         if event["partName"] == "FIRST_HALF" and event["subTypeName"] == "KICK_OFF"
     ][0]
     first_half_end_ms = [
         event["endTimeMs"]
-        for event in events_json["events"]
+        for event in events_json[events_key]
         if event["partName"] == "FIRST_HALF"
     ][-1]
     second_half_start_ms = [
         event["startTimeMs"]
-        for event in events_json["events"]
+        for event in events_json[events_key]
         if event["partName"] == "SECOND_HALF"
         and event["subTypeName"] in ["PASS", "KICK_OFF"]
     ][0]
     second_half_end_ms = [
         event["endTimeMs"]
-        for event in events_json["events"]
+        for event in events_json[events_key]
         if event["partName"] == "SECOND_HALF"
     ][-1]
 
@@ -272,7 +292,9 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     date = pd.to_datetime(
         metadata.periods_frames["start_datetime_ed"].iloc[0].date()
     ).tz_localize(metadata.periods_frames["start_datetime_ed"].iloc[0].tz)
-    for id, event in enumerate(events_json["events"]):
+
+    events_key = _get_events_key(events_json)
+    for id, event in enumerate(events_json[events_key]):
         event_data["event_id"].append(id)
         event_data["original_event_id"].append(id)
 
