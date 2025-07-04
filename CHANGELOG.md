@@ -4,10 +4,12 @@
 
 ## Version 0.6
 
-## V0.6.1 (DATE)
+## V0.6.1 (4/7/2025)
 - Made Country Nullabe in Game and Metadata.
 - Added player alignment based on jersey numbers over name alignment.
 - Added `allow_overwrite` kwarg for `Game.TrackingData.add_velocity` and `Game.TrackingData.add_acceleration` methods that default to `False`.
+- Fixed typo in documentation
+- Updated SciSports parser for v1.0 of the .json files (#301). 
 
 ## V0.6.0 (28/03/2025)
 
@@ -115,6 +117,35 @@ We sincerely appologize for all the changes you have to make, but we feel this w
 # Version 0.3
 
 ### V0.3.0 (02/06/2023)
+- Added way to save Match objects, and to load saved Match objects
+- Fixed bug in opta event data, own goals are now parsed as seperate event type
+- Added parser for Inmotio tracking data
+- Added parser for Instat event data
+- Added quality checks for the data, raises warning if quality is not good enough
+
+## Version 0.2
+
+### v0.2.0 (10/03/2023)
+
+- Added parser for Metrica, including an open dataset
+- Added functionality to synchronize tracking and event data
+- Added functionality to plot events
+- Fixed bug, now both tracking and event data are normalized in direction
+- Fixed unexpected behaviour, all date related objects are now datetime objects
+
+## Version 0.1
+
+### v0.1.1 (10/02/2023)
+
+- Hot fix to make documentation visible.
+
+### v0.1.0 (10/02/2023)
+
+- First version of `databallpy` with utilities! You can now read in data from tracab and opta and create short videos of the tracking data!
+
+### v0.0.1 (24/01/2023)
+
+- First release of `databallpy`!
 
 - Added way to save Match objects, and to load saved Match objects
 - Fixed bug in opta event data, own goals are now parsed as seperate event type
