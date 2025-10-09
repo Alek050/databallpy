@@ -34,9 +34,6 @@ class EventDataSchema(pa.DataFrameModel):
     )
     to_player_name: Optional[pa.typing.Series[str]] = pa.Field(nullable=True)
     event_type_id: Optional[pa.typing.Series[int]] = pa.Field(ge=-1)
-    datetime_end: Optional[pa.typing.Series[pd.Timestamp]] = pa.Field(
-        ge=pd.Timestamp("1975-01-01"), le=pd.Timestamp.now(), coerce=True, nullable=True
-    )
 
 
 class EventData(pd.DataFrame):
