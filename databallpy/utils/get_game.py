@@ -1,5 +1,7 @@
 import json
 import os
+import warnings
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -13,6 +15,12 @@ from databallpy.data_parsers.event_data_parsers import (
     load_sportec_event_data,
     load_sportec_open_event_data,
     load_statsbomb_event_data,
+)
+from databallpy.data_parsers.kloppy_parsers import (
+    convert_kloppy_event_dataset,
+    convert_kloppy_tracking_dataset,
+    periods_from_kloppy,
+    players_from_kloppy,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
@@ -40,6 +48,9 @@ from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.warnings import deprecated
+
+if TYPE_CHECKING:
+    from kloppy.domain import EventDataset, TrackingDataset
 
 LOGGER = create_logger(__name__)
 
@@ -85,7 +96,6 @@ def get_game(
 
     Returns:
         (Game): a game object with all information available of the game.
-
     """
     LOGGER.info(
         "Trying to load a new game in get_game();"
@@ -766,6 +776,185 @@ def merge_player_info(
     away_players["position"] = event_metadata.away_players["position"]
     home_players["position"] = event_metadata.home_players["position"]
     return home_players, away_players
+
+
+def get_game_from_kloppy(
+    tracking_dataset: "TrackingDataset" = None, event_dataset: "EventDataset" = None
+) -> Game:
+    """
+    Function to get all information of a game given kloppy dataset(s)
+
+    Args:
+        tracking_dataset (kloppy.domain.TrackingDataset, optional): location of the tracking data.
+            Defaults to None.
+        event_dataset (kloppy.domain.EventDataset, optional): location of the event data.
+            Defaults to None.
+    Returns:
+        (Game): a game object with all information available of the game.
+    """
+    LOGGER.info(
+        "Trying to load a new game in get_game();" "\n\tTracking data" "\n\tEvent data"
+    )
+    try:
+        from kloppy.domain import EventDataset, Orientation, TrackingDataset
+    except ImportError:
+        raise ImportError(
+            "Seems like you don't have kloppy installed. Please"
+            " install it using: pip install kloppy>=3.18.0"
+        )
+
+    if tracking_dataset is None and event_dataset is None:
+        raise ValueError(
+            "Please provide at least one of 'tracking_dataset' or 'event_dataset'"
+        )
+
+    if tracking_dataset is not None and not isinstance(
+        tracking_dataset, TrackingDataset
+    ):
+        raise TypeError(
+            "'tracking_dataset' should be of type kloppy.domain.TrackingDataset"
+        )
+
+    if event_dataset is not None and not isinstance(event_dataset, EventDataset):
+        raise TypeError("'event_dataset' should be of type kloppy.domain.EventDataset")
+
+    if tracking_dataset is not None and event_dataset is not None:
+        if (
+            not tracking_dataset.metadata.pitch_dimensions.pitch_length
+            == event_dataset.metadata.pitch_dimensions.pitch_length
+        ) or (
+            not tracking_dataset.metadata.pitch_dimensions.pitch_width
+            == event_dataset.metadata.pitch_dimensions.pitch_width
+        ):
+            raise ValueError(
+                "kloppy.domain.TrackingDataset and kloppy.domain.EventDataset dimensions aren't equal. To fix this apply a custom coordinate system with the same pitch_length and pitch_dimensions to one of your kloppy Datasets."
+            )
+
+        if tracking_dataset.metadata.provider != event_dataset.metadata.provider:
+            tracking_dataset.metadata.teams[0].name = event_dataset.metadata.teams[
+                0
+            ].name
+            tracking_dataset.metadata.teams[1].name = event_dataset.metadata.teams[
+                1
+            ].name
+            tracking_dataset.metadata.teams[0].team_id = event_dataset.metadata.teams[
+                0
+            ].team_id
+            tracking_dataset.metadata.teams[1].team_id = event_dataset.metadata.teams[
+                1
+            ].team_id
+
+        if tracking_dataset.metadata.date != event_dataset.metadata.date:
+            warnings.warn(
+                "Game dates in kloppy TrackingDataset and EventDataset are not equal. Setting both to pd.Timestamp('1975-01-01').",
+                UserWarning,
+            )
+            tracking_dataset.metadata.date = event_dataset.metadata.date = pd.Timestamp(
+                "1975-01-01"
+            )
+
+    uses_tracking_data = False
+    uses_event_data = False
+
+    periods = periods_from_kloppy(event_dataset, tracking_dataset)
+
+    if tracking_dataset is not None:
+        tracking_dataset = tracking_dataset.transform(
+            to_coordinate_system="secondspectrum",
+            to_orientation=Orientation.STATIC_HOME_AWAY,
+        )
+        tracking_data: TrackingData = convert_kloppy_tracking_dataset(
+            tracking_dataset, periods
+        )
+        TrackingDataSchema.validate(tracking_data)
+        uses_tracking_data = True
+    else:
+        tracking_data = TrackingData()
+
+    if event_dataset is not None:
+        event_dataset = event_dataset.transform(
+            to_coordinate_system="secondspectrum",
+            to_orientation=Orientation.STATIC_HOME_AWAY,
+        )
+
+        event_data: EventData = convert_kloppy_event_dataset(event_dataset, periods)
+        EventDataSchema.validate(event_data)
+        uses_event_data = True
+    else:
+        event_data = EventData()
+
+    pitch_dimensions = (
+        float(tracking_dataset.metadata.pitch_dimensions.pitch_length)
+        if uses_tracking_data
+        else float(event_dataset.metadata.pitch_dimensions.pitch_length),
+        float(tracking_dataset.metadata.pitch_dimensions.pitch_width)
+        if uses_tracking_data
+        else float(event_dataset.metadata.pitch_dimensions.pitch_width),
+    )
+
+    home_players, away_players = players_from_kloppy(
+        event_dataset if uses_event_data else tracking_dataset
+    )
+
+    home_team = (
+        tracking_dataset.metadata.teams[0]
+        if uses_tracking_data
+        else event_dataset.metadata.teams[0]
+    )
+    away_team = (
+        tracking_dataset.metadata.teams[1]
+        if uses_tracking_data
+        else event_dataset.metadata.teams[1]
+    )
+
+    home_score = (
+        (
+            MISSING_INT
+            if event_dataset.metadata.score.home is None
+            else event_dataset.metadata.score.home
+        )
+        if uses_event_data
+        else MISSING_INT
+    )
+    away_score = (
+        (
+            MISSING_INT
+            if event_dataset.metadata.score.away is None
+            else event_dataset.metadata.score.away
+        )
+        if uses_event_data
+        else MISSING_INT
+    )
+
+    return Game(
+        tracking_data=tracking_data,
+        event_data=event_data,
+        pitch_dimensions=pitch_dimensions,
+        periods=periods,
+        home_team_id=home_team.team_id,
+        home_team_name=home_team.name,
+        home_players=home_players,
+        home_score=home_score,
+        home_formation=None,
+        away_team_id=away_team.team_id,
+        away_team_name=away_team.name,
+        away_players=away_players,
+        away_formation=None,
+        away_score=away_score,
+        country=None,
+        shot_events=event_data[event_data["databallpy_event"] == "shot"]
+        if uses_event_data
+        else pd.DataFrame(),
+        dribble_events=event_data[event_data["databallpy_event"] == "dribble"]
+        if uses_event_data
+        else pd.DataFrame(),
+        pass_events=event_data[event_data["databallpy_event"] == "pass"]
+        if uses_event_data
+        else pd.DataFrame(),
+        allow_synchronise_tracking_and_event_data=True
+        if uses_tracking_data and uses_event_data
+        else False,
+    )
 
 
 @deprecated(
