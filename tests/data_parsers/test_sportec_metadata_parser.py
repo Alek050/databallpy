@@ -52,5 +52,5 @@ class TestMetricaMetadataParser(unittest.TestCase):
 
         self.assertEqual(
             _get_sportec_open_data_url(game_id="J03WMX", data_type="metadata"),
-            f"{SPORTEC_BASE_URL}/{FILE_ID_MAP["J03WMX"]["metadata"]}",
+            f"{SPORTEC_BASE_URL}/{FILE_ID_MAP['J03WMX']['metadata']}",
         )
