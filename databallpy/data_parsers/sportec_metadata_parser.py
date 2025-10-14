@@ -5,60 +5,32 @@ from bs4 import BeautifulSoup
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.utils.constants import MISSING_INT
 
-SPORTEC_BASE_URL = "https://figshare.com/ndownloader/files"
-SPORTEC_PRIVATE_LINK = "1f806cb3e755c6b54e05"
-SPORTEC_METADATA_ID_MAP = {
-    "J03WMX": "48392485",
-    "J03WN1": "48392491",
-    "J03WPY": "48392497",
-    "J03WOH": "48392515",
-    "J03WQQ": "48392488",
-    "J03WOY": "48392503",
-    "J03WR9": "48392494",
-}
-SPORTEC_EVENT_DATA_ID_MAP = {
-    "J03WMX": "48392524",
-    "J03WN1": "48392527",
-    "J03WPY": "48392542",
-    "J03WOH": "48392500",
-    "J03WQQ": "48392521",
-    "J03WOY": "48392518",
-    "J03WR9": "48392530",
-}
-SPORTEC_TRACKING_DATA_ID_MAP = {
-    "J03WMX": "48392539",
-    "J03WN1": "48392512",
-    "J03WPY": "48392572",
-    "J03WOH": "48392578",
-    "J03WQQ": "48392545",
-    "J03WOY": "48392551",
-    "J03WR9": "48392563",
+SPORTEC_BASE_URL = "https://springernature.figshare.com/ndownloader/files"
+FILE_ID_MAP = {
+    "J03WPY": {"metadata": 51643487, "event_data": 51643505, "tracking_data": 51643526},
+    "J03WN1": {"metadata": 51643472, "event_data": 51643496, "tracking_data": 51643517},
+    "J03WMX": {"metadata": 51643475, "event_data": 51643493, "tracking_data": 51643514},
+    "J03WOH": {"metadata": 51643478, "event_data": 51643499, "tracking_data": 51643520},
+    "J03WQQ": {"metadata": 51643484, "event_data": 51643508, "tracking_data": 51643529},
+    "J03WOY": {"metadata": 51643481, "event_data": 51643502, "tracking_data": 51643523},
+    "J03WR9": {"metadata": 51643490, "event_data": 51643511, "tracking_data": 51643532},
 }
 
 
 def _get_sportec_open_data_url(game_id: str, data_type: str) -> str:
-    if game_id not in SPORTEC_EVENT_DATA_ID_MAP:
+    if game_id not in FILE_ID_MAP:
         raise ValueError(
             f"Unknown game id {game_id}, please specify one of "
-            f"{list(SPORTEC_EVENT_DATA_ID_MAP.keys())}"
+            f"{list(FILE_ID_MAP.keys())}"
         )
 
-    data_type_map = {
-        "metadata": SPORTEC_METADATA_ID_MAP,
-        "event_data": SPORTEC_EVENT_DATA_ID_MAP,
-        "tracking_data": SPORTEC_TRACKING_DATA_ID_MAP,
-    }
-
-    if data_type not in data_type_map:
+    if data_type not in ["metadata", "event_data", "tracking_data"]:
         raise ValueError(
             f"Unknown data type {data_type}, please specify one of "
             "['metadata', 'tracking_data', 'event_data']"
         )
 
-    return (
-        f"{SPORTEC_BASE_URL}/{data_type_map[data_type][game_id]}"
-        f"?private_link={SPORTEC_PRIVATE_LINK}"
-    )
+    return f"{SPORTEC_BASE_URL}/{FILE_ID_MAP[game_id][data_type]}"
 
 
 DFB_POSITIONS = {

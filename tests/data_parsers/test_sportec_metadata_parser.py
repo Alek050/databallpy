@@ -4,8 +4,7 @@ import pandas as pd
 
 from databallpy.data_parsers.sportec_metadata_parser import (
     SPORTEC_BASE_URL,
-    SPORTEC_METADATA_ID_MAP,
-    SPORTEC_PRIVATE_LINK,
+    FILE_ID_MAP,
     _get_sportec_metadata,
     _get_sportec_open_data_url,
 )
@@ -53,9 +52,5 @@ class TestMetricaMetadataParser(unittest.TestCase):
 
         self.assertEqual(
             _get_sportec_open_data_url(game_id="J03WMX", data_type="metadata"),
-            SPORTEC_BASE_URL
-            + "/"
-            + SPORTEC_METADATA_ID_MAP["J03WMX"]
-            + "?private_link="
-            + SPORTEC_PRIVATE_LINK,
+            f"{SPORTEC_BASE_URL}/{FILE_ID_MAP["J03WMX"]["metadata"]}"
         )
