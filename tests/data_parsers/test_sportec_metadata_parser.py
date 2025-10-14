@@ -3,8 +3,8 @@ import unittest
 import pandas as pd
 
 from databallpy.data_parsers.sportec_metadata_parser import (
-    SPORTEC_BASE_URL,
     FILE_ID_MAP,
+    SPORTEC_BASE_URL,
     _get_sportec_metadata,
     _get_sportec_open_data_url,
 )
@@ -52,5 +52,5 @@ class TestMetricaMetadataParser(unittest.TestCase):
 
         self.assertEqual(
             _get_sportec_open_data_url(game_id="J03WMX", data_type="metadata"),
-            f"{SPORTEC_BASE_URL}/{FILE_ID_MAP["J03WMX"]["metadata"]}"
+            f"{SPORTEC_BASE_URL}/{FILE_ID_MAP["J03WMX"]["metadata"]}",
         )
