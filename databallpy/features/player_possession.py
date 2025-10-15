@@ -314,6 +314,6 @@ def get_ball_losses_and_updated_gain_idxs(
     valid_gains_start_idxs = possession_start_idxs[
         (ball_losses_idxs != MISSING_INT) & valid_gains
     ]
-    ball_losses_idxs = ball_losses_idxs[ball_losses_idxs != MISSING_INT]
+    ball_losses_idxs = ball_losses_idxs[(ball_losses_idxs != MISSING_INT) & valid_gains]
 
     return valid_gains_start_idxs, ball_losses_idxs
