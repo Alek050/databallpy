@@ -910,7 +910,8 @@ def get_game_from_kloppy(
     home_score = (
         (
             MISSING_INT
-            if event_dataset.metadata.score.home is None
+            if event_dataset.metadata.score is None
+            or event_dataset.metadata.score.home is None
             else event_dataset.metadata.score.home
         )
         if uses_event_data
@@ -919,7 +920,8 @@ def get_game_from_kloppy(
     away_score = (
         (
             MISSING_INT
-            if event_dataset.metadata.score.away is None
+            if event_dataset.metadata.score is None
+            or event_dataset.metadata.score.away is None
             else event_dataset.metadata.score.away
         )
         if uses_event_data
@@ -932,12 +934,12 @@ def get_game_from_kloppy(
         pitch_dimensions=pitch_dimensions,
         periods=periods,
         home_team_id=home_team.team_id,
-        home_team_name=home_team.name,
+        home_team_name=str(home_team.name),
         home_players=home_players,
         home_score=home_score,
         home_formation=None,
         away_team_id=away_team.team_id,
-        away_team_name=away_team.name,
+        away_team_name=str(away_team.name),
         away_players=away_players,
         away_formation=None,
         away_score=away_score,

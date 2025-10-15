@@ -24,6 +24,8 @@ def _remove_utc(ts: pd.Timestamp) -> pd.Timestamp:
     Returns:
         pd.Timestamp: timezone-naive timestamp in UTC
     """
+    if ts is None:
+        return
     return (
         ts.replace(tzinfo=timezone.utc)
         if ts.tzinfo is None
@@ -116,7 +118,7 @@ def players_from_kloppy(
             else "unspecified",
             "start_frame": -999,
             "end_frame": -999,
-            "starter": player.starting if player.starting_position is not None else None,
+            "starter": player.starting if player.starting is not None else False,
         }
         if player.team.ground == Ground.HOME:
             home_players.append(p)

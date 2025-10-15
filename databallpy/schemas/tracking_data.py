@@ -111,7 +111,7 @@ class TrackingDataSchema(pa.DataFrameModel):
     datetime: pa.typing.Series[pd.Timestamp] = pa.Field(
         ge=pd.Timestamp("1975-01-01"), le=pd.Timestamp.now(), coerce=True, nullable=True
     )
-    ball_x: pa.typing.Series[float] = pa.Field(ge=-60, le=60, nullable=True)
+    ball_x: pa.typing.Series[float] = pa.Field(ge=-62.5, le=62.5, nullable=True)
     ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True)
     ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True)
     ball_status: pa.typing.Series[str] = pa.Field(isin=["alive", "dead"], nullable=True)
