@@ -4,6 +4,9 @@
 
 ## Version 0.6
 
+## V0.6.2 (15/10/2025)
+- Fixed download links for loading in the open dataset from the DFL / Sportec
+
 ## V0.6.1 (4/7/2025)
 - Made Country Nullabe in Game and Metadata.
 - Added player alignment based on jersey numbers over name alignment.
