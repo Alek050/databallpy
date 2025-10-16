@@ -8,6 +8,7 @@ CHARACTERISTIC_TIMEZONE = {
     "Netherlands": "Europe/Amsterdam",
     "Keuken Kampioen Divisie": "Europe/Amsterdam",
     "Eredivisie": "Europe/Amsterdam",
+    "Vrouwen Eredivisie": "Europe/Amsterdam",
 }
 
 
