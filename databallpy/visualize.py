@@ -785,16 +785,16 @@ def _plot_velocities(
         variable_fig_objs.append(fig_obj)
 
     # Ball velocity
-    if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
-        arrow = mpatches.FancyArrowPatch(
-            td.loc[idx, ["ball_x", "ball_y"]].values,
-            td.loc[idx, ["ball_x", "ball_y"]].values
-            + td.loc[idx, ["ball_vx", "ball_vy"]].values,
-            mutation_scale=10,
-            color="black",
-        )
-        fig_obj = ax.add_patch(arrow)
-        variable_fig_objs.append(fig_obj)
+    # if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
+    #     arrow = mpatches.FancyArrowPatch(
+    #         td.loc[idx, ["ball_x", "ball_y"]].values,
+    #         td.loc[idx, ["ball_x", "ball_y"]].values
+    #         + td.loc[idx, ["ball_vx", "ball_vy"]].values,
+    #         mutation_scale=10,
+    #         color="black",
+    #     )
+    #     fig_obj = ax.add_patch(arrow)
+    #     variable_fig_objs.append(fig_obj)
 
     return variable_fig_objs, ax
 

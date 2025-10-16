@@ -492,9 +492,9 @@ class Game:
         self,
         n_batches: int | str = "smart",
         verbose: bool = True,
-        offset: int = 1.0,
-        optimize: bool = True,
+        offset: int = 1,
         cost_functions: dict = {},
+        _optimize: bool = False,
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
@@ -513,9 +513,6 @@ class Game:
                 because this way the event is synced to the last frame the ball is close
                 to a player. Which often corresponds with the event (pass and shots).
                 Defaults to 1.0.
-            optimize (bool, optional): Whether or not to optimize the algorithm. If
-                errors or warnings are raised, try if setting to False works. Defaults
-                to True.
             cost_functions (dict, optional): Dictionary containing the cost functions
                 that are used to calculate the similarity between the tracking and event
                 data. The keys of the dictionary are the event types, the values are the
@@ -524,6 +521,9 @@ class Game:
                 containing the cost of the similarity between the tracking data and the
                 event, scaled between 0 and 1. If no cost functions are passed, the
                 default cost functions are used.
+            _optimize (bool, optional): Whether or not to optimize the algorithm. If
+                errors or warnings are raised, try if setting to False works. Defaults
+                to False.
 
         Currently works for the following databallpy events:
             'pass', 'shot', 'dribble', and 'tackle'
@@ -552,7 +552,7 @@ class Game:
             away_players=self.away_players,
             cost_functions=cost_functions,
             n_batches=n_batches,
-            optimize=optimize,
+            optimize=_optimize,
             verbose=verbose,
         )
         # update tracking and event data
