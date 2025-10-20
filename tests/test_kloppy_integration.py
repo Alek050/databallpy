@@ -1,3 +1,4 @@
+import datetime as dt
 import unittest
 import warnings
 
@@ -33,7 +34,7 @@ class TestKloppySportec(unittest.TestCase):
         assert isinstance(game.event_data, EventData)
         assert isinstance(game.tracking_data, TrackingData)
         assert len(game.event_data) == 29
-        assert len(game.tracking_data) == 199
+        assert len(game.tracking_data) == 90100
 
     def test_sportec_tracking_only(self):
         """Test loading Sportec with only tracking data"""
@@ -43,7 +44,7 @@ class TestKloppySportec(unittest.TestCase):
         assert isinstance(game.event_data, EventData)
         assert isinstance(game.tracking_data, TrackingData)
         assert game.event_data.empty
-        assert len(game.tracking_data) == 199
+        assert len(game.tracking_data) == 90100
 
     def test_sportec_event_only(self):
         """Test loading Sportec with only event data"""
@@ -159,6 +160,17 @@ class TestKloppyStatsBombSignality(unittest.TestCase):
 class TestKloppyEdgeCases(unittest.TestCase):
     """Tests for edge cases and error handling in Kloppy integration"""
 
+    def setUp(self):
+        """Load Sportec datasets for testing"""
+        self.event_dataset = sportec.load_event(
+            meta_data="tests/test_data/from_kloppy/sportec_meta.xml",
+            event_data="tests/test_data/from_kloppy/sportec_events.xml",
+        )
+        self.tracking_dataset = sportec.load_tracking(
+            meta_data="tests/test_data/from_kloppy/sportec_meta.xml",
+            raw_data="tests/test_data/from_kloppy/sportec_positional.xml",
+        )
+
     def test_no_datasets_provided(self):
         """Test that calling get_game_from_kloppy with no datasets raises appropriate error"""
         with self.assertRaises((ValueError, TypeError)):
@@ -168,6 +180,27 @@ class TestKloppyEdgeCases(unittest.TestCase):
         """Test that calling get_game_from_kloppy with None datasets raises appropriate error"""
         with self.assertRaises((ValueError, TypeError)):
             get_game_from_kloppy(tracking_dataset=None, event_dataset=None)
+
+    def test_wrong_type_dataset(self):
+        """Test that calling get_game_from_kloppy with wrong type datasets raises appropriate error"""
+        with self.assertRaises(TypeError):
+            get_game_from_kloppy(tracking_dataset=["my_dataset"])
+
+        with self.assertRaises(TypeError):
+            get_game_from_kloppy(event_dataset={"my_dataset"})
+
+    def test_non_equal_date(self):
+        """Test that event and tracking dataset with non equal date raises userwarning and overwrites both dates"""
+
+        self.event_dataset.metadata.date = dt.datetime(year=2025, month=1, day=1)
+        self.tracking_dataset.metadata.date = dt.datetime(year=2024, month=1, day=1)
+
+        with self.assertWarns(UserWarning):
+            game = get_game_from_kloppy(
+                event_dataset=self.event_dataset, tracking_dataset=self.tracking_dataset
+            )
+
+        assert game.tracking_data["datetime"].iloc[0].year == 1975  # fallback year
 
 
 if __name__ == "__main__":

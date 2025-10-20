@@ -5,7 +5,13 @@ from typing import TYPE_CHECKING, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...schemas import EventData, TrackingData
+from databallpy.data_parsers.tracking_data_parsers.utils import (
+    _adjust_start_end_frames,
+    _get_gametime,
+    _insert_missing_rows,
+)
+from databallpy.schemas import EventData, TrackingData
+from databallpy.utils.constants import MISSING_INT
 
 if TYPE_CHECKING:
     from kloppy.domain import EventDataset, TrackingDataset
@@ -43,7 +49,7 @@ def _convert_datetime(
 
     Kloppy timestamps are relative to the start of each period. This function converts them to
     absolute timestamps by adding the game date and a period-based offset. The offset accounts
-    for the duration of previous periods (45 min for period 2, 90 min for period 3, 105 min
+    for the duration of previous periods (60 min for period 2, 105 min for period 3, 120 min
     for period 4). Note that time between periods is not included in the offset.
 
     Args:
@@ -61,11 +67,11 @@ def _convert_datetime(
     # Note: this disregards the time in between periods
     timestamp_offset = (
         (
-            pd.Timedelta(minutes=45)
+            pd.Timedelta(minutes=60)
             if period_id == 2
-            else pd.Timedelta(minutes=90)
-            if period_id == 3
             else pd.Timedelta(minutes=105)
+            if period_id == 3
+            else pd.Timedelta(minutes=120)
             if period_id == 4
             else pd.Timedelta(0)
         )
@@ -116,8 +122,8 @@ def players_from_kloppy(
             )
             if player.starting_position is not None
             else "unspecified",
-            "start_frame": -999,
-            "end_frame": -999,
+            "start_frame": MISSING_INT,
+            "end_frame": MISSING_INT,
             "starter": player.starting if player.starting is not None else False,
         }
         if player.team.ground == Ground.HOME:
@@ -195,7 +201,7 @@ def periods_from_kloppy(
 
         if uses_tracking_data:
             if len(period_records_td.records) == 0:
-                start_frame = end_frame = -999
+                start_frame = end_frame = MISSING_INT
                 start_timestamp_td = end_timestamp_td = None
             else:
                 period_td = tracking_dataset.metadata.periods[i - 1]
@@ -334,7 +340,7 @@ def convert_kloppy_tracking_dataset(
                 axis=1,
             ),
             team_possession=lambda x: x["ball_owning_team_id"].map(team_id_to_side),
-            gametime_td=lambda x: x["timestamp"].dt.strftime("%M:%S"),
+            # gametime_td=lambda x: x["timestamp"].dt.strftime("%M:%S"),
         )
         .rename(
             columns={
@@ -346,6 +352,23 @@ def convert_kloppy_tracking_dataset(
         )
         .drop(columns=["ball_owning_team_id"])
     )
+
+    class SimplifiedMetada:
+        def __init__(self, periods, frame_rate):
+            self.periods_frames = periods
+            self.frame_rate = frame_rate
+
+    simplified_metadata = SimplifiedMetada(periods, tracking_dataset.metadata.frame_rate)
+    tracking_dataframe = _insert_missing_rows(
+        tracking_dataframe.reset_index(drop=True), "frame"
+    )
+    tracking_dataframe, simplified_metadata = _adjust_start_end_frames(
+        tracking_dataframe, simplified_metadata
+    )
+    tracking_dataframe["gametime_td"] = _get_gametime(
+        tracking_dataframe["frame"], tracking_dataframe["period_id"], simplified_metadata
+    )
+
     return TrackingData(
         tracking_dataframe,
         provider=tracking_dataset.metadata.provider.value,
