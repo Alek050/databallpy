@@ -118,8 +118,7 @@ def get_game(
         )
     elif event_data_loc and event_data_provider is None:
         raise ValueError(
-            "Please provide an event data provider when providing an event"
-            " data location"
+            "Please provide an event data provider when providing an event data location"
         )
     elif event_metadata_loc and event_data_provider is None:
         raise ValueError(
@@ -190,8 +189,7 @@ def get_game(
     }
 
     LOGGER.info(
-        "Succesfully passed input checks. Attempting to load the base "
-        "data (get_game())."
+        "Succesfully passed input checks. Attempting to load the base data (get_game())."
     )
 
     # Check if tracking data should be loaded
@@ -793,10 +791,10 @@ def get_game_from_kloppy(
         (Game): a game object with all information available of the game.
     """
     LOGGER.info(
-        "Trying to load a new game in get_game();" "\n\tTracking data" "\n\tEvent data"
+        "Trying to load a new game in get_game();\n\tTracking data\n\tEvent data"
     )
     try:
-        from kloppy.domain import EventDataset, Orientation, TrackingDataset
+        from kloppy.domain import BallState, EventDataset, Orientation, TrackingDataset
     except ImportError:
         raise ImportError(
             "Seems like you don't have kloppy installed. Please"
@@ -866,6 +864,13 @@ def get_game_from_kloppy(
         tracking_data: TrackingData = convert_kloppy_tracking_dataset(
             tracking_dataset, periods
         )
+
+        if all([True for x in tracking_data if x.ball_state == BallState.ALIVE]):
+            warnings.warn(
+                "All frames in 'tracking_dataset' are 'ALIVE', databallpy expects 'DEAD' frames as well (e.g. for more accurate event synchronization). Set `only_alive=False` in your kloppy `.load_tracking()` call to include 'DEAD' frames.",
+                UserWarning,
+            )
+
         TrackingDataSchema.validate(tracking_data)
         uses_tracking_data = True
     else:

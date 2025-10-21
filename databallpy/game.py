@@ -55,8 +55,7 @@ def requires_event_data(func):
             return func(*args, **kwargs)
         else:
             raise DataBallPyError(
-                "No event data available, please load "
-                "Game object with event data first."
+                "No event data available, please load Game object with event data first."
             )
 
     return wrapper
@@ -745,7 +744,7 @@ def check_inputs_game_object(game: Game):
     # periods
     if not isinstance(game.periods, pd.DataFrame):
         raise TypeError(
-            "periods_frames should be a pandas dataframe, not a " f"{type(game.periods)}"
+            f"periods_frames should be a pandas dataframe, not a {type(game.periods)}"
         )
     if "period_id" not in game.periods.columns:
         raise ValueError("'period' should be one of the columns in period_frames")
@@ -784,8 +783,7 @@ def check_inputs_game_object(game: Game):
     for team, team_id in zip(["home", "away"], [game.home_team_id, game.away_team_id]):
         if not isinstance(team_id, (int, np.integer)) and not isinstance(team_id, str):
             raise TypeError(
-                f"{team} team id should be an integer or string, not a "
-                f"{type(team_id)}"
+                f"{team} team id should be an integer or string, not a {type(team_id)}"
             )
 
     # team names
@@ -862,7 +860,7 @@ def check_inputs_game_object(game: Game):
     ):
         if not isinstance(event_df, pd.DataFrame):
             raise TypeError(
-                f"{event_name}_events should be a dataframe, not a " f"{type(event_df)}"
+                f"{event_name}_events should be a dataframe, not a {type(event_df)}"
             )
 
     # country

@@ -77,12 +77,10 @@ def load_statsbomb_event_data(
 
     if not isinstance(pitch_dimensions, (tuple, list)) or len(pitch_dimensions) != 2:
         LOGGER.error(
-            f"Invalid pitch_dimensions: {pitch_dimensions}. "
-            "Must be a tuple of length 2."
+            f"Invalid pitch_dimensions: {pitch_dimensions}. Must be a tuple of length 2."
         )
         raise ValueError(
-            f"Invalid pitch_dimensions: {pitch_dimensions}. "
-            "Must be a tuple of length 2."
+            f"Invalid pitch_dimensions: {pitch_dimensions}. Must be a tuple of length 2."
         )
 
     # Load the metadata
