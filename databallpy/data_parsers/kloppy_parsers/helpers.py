@@ -340,7 +340,6 @@ def convert_kloppy_tracking_dataset(
                 axis=1,
             ),
             team_possession=lambda x: x["ball_owning_team_id"].map(team_id_to_side),
-            # gametime_td=lambda x: x["timestamp"].dt.strftime("%M:%S"),
         )
         .rename(
             columns={
