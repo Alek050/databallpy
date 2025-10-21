@@ -850,7 +850,7 @@ def get_game_from_kloppy(
                 UserWarning,
             )
             tracking_dataset.metadata.date = event_dataset.metadata.date = pd.Timestamp(
-                "1975-01-01"
+                "1975-01-01", tz="UTC"
             )
 
     uses_tracking_data = False

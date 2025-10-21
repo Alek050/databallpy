@@ -23,7 +23,7 @@ help:
 	@echo
 
 deps:
-	poetry install --with docs,developing
+	poetry install --all-extras --with docs,developing
 
 format:
 	poetry run ruff format $(LINT_FILES)

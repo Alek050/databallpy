@@ -40,6 +40,10 @@ pandas = "^2.1"
 chardet = "^5.2.0"
 pandera = "^0.22.1"
 pyarrow = "^19.0.0"
+kloppy = { git = "https://github.com/PySport/kloppy.git", branch = "master", rev = "master", optional = true }
+
+[tool.poetry.extras]
+kloppy = ["kloppy"]
 
 [tool.poetry.group.developing]
 optional = true
@@ -61,18 +65,10 @@ sphinx = "^7.2.6"
 nbsphinx = "^0.9.3"
 myst-parser = "^2.0.0"
 jupyter-book = "^1.0.0"
-
-
-[tool.poetry.group.test.dependencies]
-kloppy = { git = "https://github.com/PySport/kloppy.git", branch = "master", rev = "master" }
-
+ipykernel = "^6.29.5"
 
 [tool.poetry.group.profiler.dependencies]
 line-profiler = "^4.1.2"
-
-
-[tool.poetry.group.dev.dependencies]
-ipykernel = "^6.29.5"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
