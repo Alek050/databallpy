@@ -66,7 +66,7 @@ jobs:
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install packages
-        run: poetry install --with docs,developing
+        run: poetry install --all-extras --with docs,developing
 
       - name: ruff linting
         run: poetry run ruff format --check tests/ databallpy/
