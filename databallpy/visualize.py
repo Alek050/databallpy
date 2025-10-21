@@ -573,7 +573,7 @@ def save_tracking_video(
     )
 
     writer = animation.FFMpegWriter(
-        fps=game.tracking_data.frame_rate,
+        fps=int(round(game.tracking_data.frame_rate)),
         metadata={
             "title": title,
             "artist": "Matplotlib",
@@ -651,7 +651,10 @@ def save_tracking_video(
                 )
 
                 # 'pause' the clip for 1 second on this event
-                [writer.grab_frame() for _ in range(game.tracking_data.frame_rate)]
+                [
+                    writer.grab_frame()
+                    for _ in range(int(round(game.tracking_data.frame_rate)))
+                ]
 
             # Save current frame
             writer.grab_frame()

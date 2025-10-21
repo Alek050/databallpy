@@ -1,5 +1,6 @@
 from dataclasses import dataclass, fields
 
+import numpy as np
 import pandas as pd
 
 from databallpy.utils.constants import MISSING_INT
@@ -12,7 +13,7 @@ class Metadata:
     game_id: int
     pitch_dimensions: list
     periods_frames: pd.DataFrame
-    frame_rate: int
+    frame_rate: int | float
 
     home_team_id: int
     home_team_name: str
@@ -82,9 +83,9 @@ class Metadata:
 
         # frame_rate
         if not pd.isnull(self.frame_rate) and not self.frame_rate == MISSING_INT:
-            if not isinstance(self.frame_rate, int):
+            if not isinstance(self.frame_rate, (int, np.integer, float, np.floating)):
                 raise TypeError(
-                    f"frame_rate should be an integer, not a {type(self.frame_rate)}"
+                    f"frame_rate should be an integer or a float, not a {type(self.frame_rate)}"
                 )
             if self.frame_rate < 1:
                 raise ValueError(f"frame_rate should be positive, not {self.frame_rate}")

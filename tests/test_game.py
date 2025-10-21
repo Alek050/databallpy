@@ -147,7 +147,7 @@ class TestGame(unittest.TestCase):
             tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
             Game(
                 tracking_data=TrackingData(
-                    tracking_data, provider=tracking_data.provider, frame_rate=6.4
+                    tracking_data, provider=tracking_data.provider, frame_rate="6.4"
                 ),
                 event_data=self.expected_game_tracab_opta.event_data,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,

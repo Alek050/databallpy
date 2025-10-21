@@ -138,7 +138,7 @@ class TrackingData(pd.DataFrame):
         self,
         *args,
         provider: str = "unspecified",
-        frame_rate: int = MISSING_INT,
+        frame_rate: int | float = MISSING_INT,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)

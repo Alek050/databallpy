@@ -15,7 +15,7 @@ from databallpy.utils.warnings import DataBallPyWarning, deprecated
 def add_acceleration(
     tracking_data: pd.DataFrame,
     column_ids: str | list[str],
-    frame_rate: float,
+    frame_rate: float | int,
     filter_type: str | None = None,
     window_length: int = 25,
     polyorder: int = 2,
@@ -159,7 +159,7 @@ def _differentiate(
     *,
     new_name: str,
     metric: str = "",
-    frame_rate: int = 25,
+    frame_rate: int | float = 25,
     filter_type: str = "savitzky_golay",
     window: int = 7,
     max_val: float = np.nan,

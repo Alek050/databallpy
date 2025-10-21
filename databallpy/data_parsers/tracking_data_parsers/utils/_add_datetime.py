@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def _add_datetime(
-    frames: pd.Series, frame_rate: int, dt_start_game: datetime.datetime
+    frames: pd.Series, frame_rate: int | float, dt_start_game: datetime.datetime
 ) -> pd.Series:
     """Function to add datetime to tracking data. Checks if the frame is a timestamp by
     comparing it to the add dt_start_game. If it is a timestamp, it use only the date
