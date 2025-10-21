@@ -4,6 +4,8 @@
 
 ## Version 0.6
 
+- Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
+
 ## V0.6.2 (15/10/2025)
 - Fixed download links for loading in the open dataset from the DFL / Sportec
 
