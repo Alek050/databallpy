@@ -140,7 +140,7 @@ class Game:
         return self._tracking_data_provider
 
     @property
-    def frame_rate(self) -> int:
+    def frame_rate(self) -> float:
         warnings.warn(
             "`game.frame_rate` is deprecated and will be removed in version 0.8.0. Please use `game.tracking_data.frame_rate` instead",
             category=DeprecationWarning,
@@ -770,9 +770,11 @@ def check_inputs_game_object(game: Game):
         not pd.isnull(game.tracking_data.frame_rate)
         and not game.tracking_data.frame_rate == MISSING_INT
     ):
-        if not isinstance(game.tracking_data.frame_rate, (int, np.integer)):
+        if not isinstance(
+            game.tracking_data.frame_rate, (int, np.integer, float, np.floating)
+        ):
             raise TypeError(
-                f"frame_rate should be an integer, not a {type(game.tracking_data.frame_rate)}"
+                f"frame_rate should be an integer or a float, not a {type(game.tracking_data.frame_rate)}"
             )
         if game.tracking_data.frame_rate < 1:
             raise ValueError(

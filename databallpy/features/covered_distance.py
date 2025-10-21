@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from databallpy.utils.logging import logging_wrapper
@@ -11,7 +12,7 @@ from databallpy.utils.warnings import deprecated
 def get_covered_distance(
     tracking_data: pd.DataFrame,
     column_ids: list[str],
-    frame_rate: int,
+    frame_rate: int | float,
     velocity_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] = (),
     acceleration_intervals: tuple[float, ...] | tuple[tuple[float, ...], ...] = (),
     start_idx: int | None = None,
@@ -162,8 +163,10 @@ def _validate_inputs(
     if not all(isinstance(player, str) for player in player_ids):
         raise TypeError("All elements in player_ids must be strings")
 
-    if not isinstance(framerate, int):
-        raise TypeError(f"framerate must be a int, not a {type(framerate).__name__}")
+    if not isinstance(framerate, (int, np.integer, float, np.floating)):
+        raise TypeError(
+            f"framerate must be a int or float, not a {type(framerate).__name__}"
+        )
 
     for player_id in player_ids:
         if player_id + "_velocity" not in tracking_data.columns:
