@@ -40,7 +40,7 @@ pandas = "^2.1"
 chardet = "^5.2.0"
 pandera = "^0.22.1"
 pyarrow = "^19.0.0"
-kloppy = { git = "https://github.com/PySport/kloppy.git", branch = "master", rev = "master", optional = true }
+kloppy = ">=3.18.0"
 
 [tool.poetry.extras]
 kloppy = ["kloppy"]
