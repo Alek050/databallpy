@@ -492,7 +492,7 @@ class Game:
         n_batches: int | str = "smart",
         verbose: bool = True,
         offset: int = 1.0,
-        optimize: bool = True,
+        optimize: bool = False,
         cost_functions: dict = {},
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch

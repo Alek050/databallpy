@@ -69,7 +69,8 @@ def check_first_frame(df):
 @extensions.register_check_method()
 def check_ball_status(df):
     frames_alive = df["ball_status"].value_counts()["alive"]
-    check_passed = frames_alive > (len(df) / 2)
+    len_df = len(df[df["gametime_td"] != "Break"])
+    check_passed = frames_alive > (len_df / 2)
 
     if not check_passed:
         message = (

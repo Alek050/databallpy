@@ -8,6 +8,7 @@ CHARACTERISTIC_TIMEZONE = {
     "Netherlands": "Europe/Amsterdam",
     "Keuken Kampioen Divisie": "Europe/Amsterdam",
     "Eredivisie": "Europe/Amsterdam",
+    "Vrouwen Eredivisie": "Europe/Amsterdam",
 }
 
 
@@ -24,10 +25,7 @@ def utc_to_local_datetime(
         pd.Series: series with converted time
     """
     if characteristic not in CHARACTERISTIC_TIMEZONE:
-        raise DataBallPyError(
-            f"Country or competition {characteristic} is not implemented. Please open\
- an issue with this error on our github page to get it added in our next version."
-        )
+        return dt_series
 
     if isinstance(dt_series, pd.Series):
         if pd.isnull(dt_series).all():
