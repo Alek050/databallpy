@@ -99,7 +99,7 @@ def _find_new_start_frame(
     period_id: int,
     home_players_x_columns: list,
     away_players_x_columns: list,
-    frame_rate: int,
+    frame_rate: int | float,
 ) -> int:
     """Function to find the new start frame of a period. This is done by looking at
     the first frame of the period and checking if the ball is in the centre of the
@@ -135,6 +135,7 @@ def _find_new_start_frame(
             "for unlogical values."
         )
 
+    frame_rate = int(round(frame_rate))
     first_period_idx = first_period_td.index[0]
 
     first_window_idx = max(td.index[0], first_period_idx - (7 * frame_rate))

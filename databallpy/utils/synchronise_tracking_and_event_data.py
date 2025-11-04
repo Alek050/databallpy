@@ -364,7 +364,7 @@ def pre_compute_cost_function_variables(
 
 def pre_compute_synchronisation_variables(
     tracking_data: pd.DataFrame,
-    frame_rate: int,
+    frame_rate: int | float,
     pitch_dimensions: tuple,
 ) -> pd.DataFrame:
     """Function that precomputes variables that are used in the synchronisation.

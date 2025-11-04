@@ -571,7 +571,7 @@ def save_tracking_video(
     )
 
     writer = animation.FFMpegWriter(
-        fps=game.tracking_data.frame_rate,
+        fps=int(round(game.tracking_data.frame_rate)),
         metadata={
             "title": title,
             "artist": "Matplotlib",
@@ -649,7 +649,10 @@ def save_tracking_video(
                 )
 
                 # 'pause' the clip for 1 second on this event
-                [writer.grab_frame() for _ in range(game.tracking_data.frame_rate)]
+                [
+                    writer.grab_frame()
+                    for _ in range(int(round(game.tracking_data.frame_rate)))
+                ]
 
             # Save current frame
             writer.grab_frame()
@@ -783,16 +786,16 @@ def _plot_velocities(
         variable_fig_objs.append(fig_obj)
 
     # Ball velocity
-    if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
-        arrow = mpatches.FancyArrowPatch(
-            td.loc[idx, ["ball_x", "ball_y"]].values,
-            td.loc[idx, ["ball_x", "ball_y"]].values
-            + td.loc[idx, ["ball_vx", "ball_vy"]].values,
-            mutation_scale=10,
-            color="black",
-        )
-        fig_obj = ax.add_patch(arrow)
-        variable_fig_objs.append(fig_obj)
+    # if not pd.isnull(td.loc[idx, ["ball_vx", "ball_x"]]).any():
+    #     arrow = mpatches.FancyArrowPatch(
+    #         td.loc[idx, ["ball_x", "ball_y"]].values,
+    #         td.loc[idx, ["ball_x", "ball_y"]].values
+    #         + td.loc[idx, ["ball_vx", "ball_vy"]].values,
+    #         mutation_scale=10,
+    #         color="black",
+    #     )
+    #     fig_obj = ax.add_patch(arrow)
+    #     variable_fig_objs.append(fig_obj)
 
     return variable_fig_objs, ax
 

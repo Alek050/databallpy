@@ -191,7 +191,8 @@ def _get_periods_frames(events_json: dict, date: pd.Timestamp, tz: str) -> pd.Da
     first_half_start_ms = [
         event["startTimeMs"]
         for event in events_json[events_key]
-        if event["partName"] == "FIRST_HALF" and event["subTypeName"] == "KICK_OFF"
+        if event["partName"] == "FIRST_HALF"
+        and event["subTypeName"] in ["PASS", "KICK_OFF"]
     ][0]
     first_half_end_ms = [
         event["endTimeMs"]

@@ -139,7 +139,7 @@ class Game:
         return self._tracking_data_provider
 
     @property
-    def frame_rate(self) -> int:
+    def frame_rate(self) -> float:
         warnings.warn(
             "`game.frame_rate` is deprecated and will be removed in version 0.8.0. Please use `game.tracking_data.frame_rate` instead",
             category=DeprecationWarning,
@@ -491,9 +491,9 @@ class Game:
         self,
         n_batches: int | str = "smart",
         verbose: bool = True,
-        offset: int = 1.0,
-        optimize: bool = False,
+        offset: int = 1,
         cost_functions: dict = {},
+        _optimize: bool = False,
     ):
         """Function that synchronises tracking and event data using Needleman-Wunsch
            algorithmn. Based on: https://kwiatkowski.io/sync.soccer
@@ -512,9 +512,6 @@ class Game:
                 because this way the event is synced to the last frame the ball is close
                 to a player. Which often corresponds with the event (pass and shots).
                 Defaults to 1.0.
-            optimize (bool, optional): Whether or not to optimize the algorithm. If
-                errors or warnings are raised, try if setting to False works. Defaults
-                to True.
             cost_functions (dict, optional): Dictionary containing the cost functions
                 that are used to calculate the similarity between the tracking and event
                 data. The keys of the dictionary are the event types, the values are the
@@ -523,6 +520,9 @@ class Game:
                 containing the cost of the similarity between the tracking data and the
                 event, scaled between 0 and 1. If no cost functions are passed, the
                 default cost functions are used.
+            _optimize (bool, optional): Whether or not to optimize the algorithm. If
+                errors or warnings are raised, try if setting to False works. Defaults
+                to False.
 
         Currently works for the following databallpy events:
             'pass', 'shot', 'dribble', and 'tackle'
@@ -551,7 +551,7 @@ class Game:
             away_players=self.away_players,
             cost_functions=cost_functions,
             n_batches=n_batches,
-            optimize=optimize,
+            optimize=_optimize,
             verbose=verbose,
         )
         # update tracking and event data
@@ -770,9 +770,11 @@ def check_inputs_game_object(game: Game):
         not pd.isnull(game.tracking_data.frame_rate)
         and not game.tracking_data.frame_rate == MISSING_INT
     ):
-        if not isinstance(game.tracking_data.frame_rate, (int, np.integer)):
+        if not isinstance(
+            game.tracking_data.frame_rate, (int, np.integer, float, np.floating)
+        ):
             raise TypeError(
-                f"frame_rate should be an integer, not a {type(game.tracking_data.frame_rate)}"
+                f"frame_rate should be an integer or a float, not a {type(game.tracking_data.frame_rate)}"
             )
         if game.tracking_data.frame_rate < 1:
             raise ValueError(
