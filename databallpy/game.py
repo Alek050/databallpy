@@ -228,7 +228,7 @@ class Game:
         self,
         team: str | None = None,
         positions: list[str] = DATABALLPY_POSITIONS,
-        min_minutes_played: float | int = 0.1,
+        min_minutes_played: float | int = 0.01,
     ) -> list[str]:
         """Function to get the column ids that are used in the tracking data. With this
         function you can filter on team side, position, or minimum minutes played.
@@ -243,7 +243,7 @@ class Game:
                 ["goalkeeper", "defender", "midfielder", "forward"].
             min_minutes_played (float | int, optional): The minimum number of minutes a
                 player needs to have played during the game to be returned.
-                Defaults to 1.0.
+                Defaults to 0.01.
 
         Raises:
             ValueError: If team is not in {None, home, away}
@@ -289,54 +289,9 @@ class Game:
             else f"away_{int(row.shirt_num)}"
             for row in players.itertuples(index=False)
         ]
+
         return [
             col_id for col_id in col_ids if f"{col_id}_x" in self.tracking_data.columns
-        ]
-
-    @requires_tracking_data
-    def home_players_column_ids(self) -> list[str]:
-        """Function to get all column ids of the tracking data that refer to information
-        about the home team players
-
-        Depreciation: This function is depreciated and will be removed in version
-        0.7.0. Please use game.get_column_ids(team="home").
-
-        Returns:
-            list[str]: All column ids of the home team players
-        """
-
-        warnings.warn(
-            "game.home_players_column_ids is depreciated and will be removed in "
-            "version 0.7. Please use game.get_column_ids(team='home')",
-            DeprecationWarning,
-        )
-        return [
-            id[:-2]
-            for id in self.tracking_data.columns
-            if id[:4] == "home" and id[-2:] == "_x"
-        ]
-
-    @requires_tracking_data
-    def away_players_column_ids(self) -> list[str]:
-        """Function to get all column ids of the tracking data that refer to information
-        about the away team players
-
-        Depreciation: This function is depreciated and will be removed in version
-        0.7.0. Please use game.get_column_ids(team="away").
-
-        Returns:
-            list[str]: All column ids of the away team players
-        """
-
-        warnings.warn(
-            "game.away_players_column_ids is depreciated and will be removed in "
-            "version 0.7. Please use game.get_column_ids(team='away')",
-            DeprecationWarning,
-        )
-        return [
-            id[:-2]
-            for id in self.tracking_data.columns
-            if id[:4] == "away" and id[-2:] == "_x"
         ]
 
     @requires_tracking_data
@@ -836,8 +791,12 @@ def check_inputs_game_object(game: Game):
             continue
         idx = game.tracking_data[game.tracking_data["frame"] == frame].index[0]
         period = period_row["period_id"]
-        home_x = [x + "_x" for x in game.home_players_column_ids()]
-        away_x = [x + "_x" for x in game.away_players_column_ids()]
+        home_x = [
+            x + "_x" for x in game.get_column_ids(team="home", min_minutes_played=0.0)
+        ]
+        away_x = [
+            x + "_x" for x in game.get_column_ids(team="away", min_minutes_played=0.0)
+        ]
         if game.tracking_data.loc[idx, home_x].mean() > 0:
             centroid_x = game.tracking_data.loc[idx, home_x].mean()
             raise DataBallPyError(

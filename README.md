@@ -50,30 +50,33 @@ This package is developed to create a standardized way to analyse soccer games u
 
 Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. If you are interested in some of the features we implemented, see our [official documentation][docs-url].
 
-## Changelog v0.6.1 (4/7/2025)
-- Made Country Nullabe in Game and Metadata.
-- Added player alignment based on jersey numbers over name alignment.
-- Added `allow_overwrite` kwarg for `Game.TrackingData.add_velocity` and `Game.TrackingData.add_acceleration` methods that default to `False`.
-- Fixed typo in documentation
-- Updated SciSports parser for v1.0 of the .json files (#301). 
+## Changelog V0.7.0 (04/11/2025)
 
-## Changelog 0.6.0
+- Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
+```Terminal
+$ pip install 'databallpy[kloppy]'
+```
+```Python
+from kloppy import sportec
+from databallpy import get_game_from_kloppy
 
-- Moved from function to an object oriented framework for all user-features and computations of game/match (special thanks to [DaanGro](https://github.com/DaanGro))
-- Renamed the all classes and functions with `match` to `game` (to move away from the internal python `match` statement)
-- Removed the function to save game/match objects to pickle, but created a more save way using parquet and json files
-- Added functionality to export tracking data to long format.
 
-#### Breaking changes
-We sincerely appologize for all the changes you have to make, but we feel this will make the package more robust and easier to use for future projects. Just to be clear, **all the functionality that was in 0.5.4, is still in 0.6.0**. However we made to changes that impacts users.
-1) We renamed all functions with `match` in it to `game.` (e.g. `get_match` was changed to `get_game`). This was chosen since `match` is an internal python command, and we do not want to imply to overwrite that (by using something like `match = get_match()`). A deprecation warning is raised when you try to call it from the current version onwards, we strongly encourage to take this warning serious as we do plan to remove it shorlty.
-2) If you used any of the features in databallpy (`get_velocity`, `get_approximate_voronoi`, `get_covered_distance`, etc.), you need to refactor your code. All functionality is still available in the package, but likely as a method on the `game.tracking_data` class, for instance: `game.tracking_data.add_velocity(...)`. Please view our documentation of version 0.6.0 to see how you can refactor your code (spoiler: you will need to use less arguments and less lines of code!)
-3) Saved games/matches are only usable in the version in which you saved them up and untill version 0.5.4. For example, if you saved your match in version 0.5.2, you can only load it while using version 0.5.2. From version 0.6.0, you will be able to load your game using the `get_saved_game` as long as your version is greater or equal to 0.6.0.
+event_dataset = sportec.load_open_event_data(match_id="J03WPY")
+tracking_dataset = sportec.load_open_tracking_data(match_id="J03WPY", only_alive=False)
+
+game = get_game_from_kloppy(tracking_dataset=tracking_dataset,event_dataset=event_dataset)
+```
+
+- Allow for more null values in `Game`
+- Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`
+- Removed depricated functions `home_players_column_ids` and `away_players_column_ids`, please use `game.get_column_ids(team="home")` instead.
 
 ## Installation
+Choose either of both commands. If you would like to use Kloppy as data parser, use the second one, else the first one would do.
 
 ```bash
 $ pip install databallpy
+$ pip install 'databallpy[kloppy]'
 ```
 
 ## Usage
@@ -98,14 +101,14 @@ game = get_open_game()
 ```
 
 > [!note]
-> The current supported tracking data providers are:
+> The current internal supported tracking data providers are:
 > - Tracab (including Sportec Solutions from the DFL)
 > - Metrica
 > - Inmotio
 > 
 > The accepted variables for the `tracking_data_provider` are `["tracab", "metrica", "inmotio", "dfl", "sportec"]`
 > 
-> The current supported event data provider are:
+> The current internal supported event data provider are:
 > - Opta
 > - Metrica
 > - Instat
@@ -114,6 +117,8 @@ game = get_open_game()
 > - Statsbomb
 > 
 > The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec", "statsbomb"]`
+> 
+> Don't see your provider here? Check out the integration with [Kloppy](https://databallpy.readthedocs.io/en/latest/getting_started/loading_in_a_game_page.html#currently-supported-providers). Parse your data using Kloppy, and simply convert it to a DataballPy `Game` object using `get_game_from_kloppy`!
 >
 > If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 
@@ -224,6 +229,8 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 - [swopper050](https://github.com/Swopper050)
 - [maritsloots](https://github.com/maritsloots)
 - [jan-swiatek](https://github.com/jan-swiatek)
+- [UnravelSports](https://github.com/UnravelSports) 
+- [migvidal5](https://github.com/migvidal5)
 
 ## License
 
