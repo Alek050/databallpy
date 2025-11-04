@@ -54,7 +54,7 @@ Although reading in and synchronising data is already very helpfull to get start
 
 - Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
 ```Terminal
-$ pip install databallpy[kloppy]
+$ pip install 'databallpy[kloppy]'
 ```
 ```Python
 from kloppy import sportec
@@ -76,7 +76,7 @@ Choose either of both commands. If you would like to use Kloppy as data parser, 
 
 ```bash
 $ pip install databallpy
-$ pip install databallpy[kloppy]
+$ pip install 'databallpy[kloppy]'
 ```
 
 ## Usage
