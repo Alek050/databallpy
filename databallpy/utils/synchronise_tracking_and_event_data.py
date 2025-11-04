@@ -583,6 +583,18 @@ def align_event_data_datetime(
 
     """
 
+    if (tracking_data["datetime"].dt.tz is None) != (
+        event_data["datetime"].dt.tz is None
+    ):
+        if tracking_data["datetime"].dt.tz:
+            event_data["datetime"] = (
+                event_data["datetime"]
+                .dt.tz_localize("UTC")
+                .dt.tz_convert(tracking_data["datetime"].dt.tz)
+            )
+        else:
+            event_data["datetime"] = event_data["datetime"].dt.tz_convert(None)
+
     start_events = ["pass", "shot"]
     for period in tracking_data["period_id"].unique():
         if period == MISSING_INT:

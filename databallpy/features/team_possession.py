@@ -41,7 +41,7 @@ def add_team_possession(
         )
     if home_team_id not in event_data.team_id.unique():
         raise ValueError(
-            "The home team ID is not in the event data, please check" " the home team ID"
+            "The home team ID is not in the event data, please check the home team ID"
         )
 
     if not inplace:

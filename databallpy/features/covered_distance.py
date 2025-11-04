@@ -189,7 +189,7 @@ def _validate_inputs(
     for idx in [idx for idx in [start_idx, end_idx] if idx is not None]:
         if not isinstance(idx, int):
             raise TypeError(
-                "start_idx and end_idx must be integers, " f"not {type(idx).__name__}"
+                f"start_idx and end_idx must be integers, not {type(idx).__name__}"
             )
 
         if idx not in tracking_data.index:

@@ -118,14 +118,17 @@ def load_sportec_open_tracking_data(
     )
     total_size = int(response.headers.get("content-length", 0))
 
-    with open(os.path.join(save_path, "tracking_data_temp.xml"), "wb") as file, tqdm(
-        desc="Downloading",
-        total=total_size,
-        unit="B",
-        unit_scale=True,
-        unit_divisor=1024,
-        disable=not verbose,
-    ) as bar:
+    with (
+        open(os.path.join(save_path, "tracking_data_temp.xml"), "wb") as file,
+        tqdm(
+            desc="Downloading",
+            total=total_size,
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            disable=not verbose,
+        ) as bar,
+    ):
         for chunk in response.iter_content(chunk_size=1024):
             if chunk:
                 file.write(chunk)

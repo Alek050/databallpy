@@ -43,8 +43,7 @@ def load_scisports_event_data(
     """
     if not isinstance(pitch_dimensions, (tuple, list)) or len(pitch_dimensions) != 2:
         raise ValueError(
-            f"Invalid pitch_dimensions: {pitch_dimensions}. "
-            "Must be a tuple of length 2."
+            f"Invalid pitch_dimensions: {pitch_dimensions}. Must be a tuple of length 2."
         )
 
     metadata = _load_metadata(events_json, pitch_dimensions)

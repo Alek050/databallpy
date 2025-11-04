@@ -321,9 +321,7 @@ def plot_events(
 
     event_data = event_data.loc[mask]
     if len(event_data) == 0:
-        print(
-            "No events could be found that game your" "requirements, please try again."
-        )
+        print("No events could be found that game yourrequirements, please try again.")
         return None, None
 
     if fig is None and ax is None:
@@ -698,7 +696,7 @@ def _pre_check_plot_td_inputs(
     if add_player_possession:
         if "player_possession" not in game.tracking_data.columns:
             raise DataBallPyError(
-                "Column 'player_possession' not found in " "game.tracking_data.columns"
+                "Column 'player_possession' not found in game.tracking_data.columns"
             )
 
     if len(events) > 0:

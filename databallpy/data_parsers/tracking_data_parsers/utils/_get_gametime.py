@@ -35,13 +35,13 @@ def _to_gametime(secs: int, max_m: int, start_m: int) -> str:
 
 
 def _get_gametime(
-    timestamp_column: pd.Series, period_column: pd.Series, metadata: Metadata
+    frame_num_column: pd.Series, period_column: pd.Series, metadata: Metadata
 ) -> list:
     """Gives a list with time in the gametime format based
     on the original timestamps and framerate
 
     Args:
-        timestamp_column (pd.Series): containing the timestamps from tracking data
+        frame_num_column (pd.Series): containing the frame number from tracking data
         dataframe
         period_column (pd.Series): containing the period for every frame
         metadata (Metadata): metadata including framerate and
@@ -67,9 +67,10 @@ def _get_gametime(
     rel_timestamp = np.array(
         [
             x - period_start_dict[p] if p > 0 else MISSING_INT * frame_rate
-            for x, p in zip(timestamp_column.values, period_column.values)
+            for x, p in zip(frame_num_column.values, period_column.values)
         ]
     )
+
     seconds = rel_timestamp // frame_rate
     df = pd.DataFrame(
         {
@@ -105,6 +106,6 @@ def _get_gametime(
         gametime_list.extend(["Penalty Shootout"] * frame_rate)
 
     gametime_list = gametime_list[: len(df)]
-    len_diff = len(timestamp_column) - len(gametime_list)
+    len_diff = len(frame_num_column) - len(gametime_list)
     to_add = [None] * len_diff
     return to_add + gametime_list

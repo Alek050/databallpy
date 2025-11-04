@@ -69,7 +69,8 @@ def check_first_frame(df):
 @extensions.register_check_method()
 def check_ball_status(df):
     frames_alive = df["ball_status"].value_counts()["alive"]
-    check_passed = frames_alive > (len(df) / 2)
+    len_df = len(df[df["gametime_td"] != "Break"])
+    check_passed = frames_alive > (len_df / 2)
 
     if not check_passed:
         message = (
@@ -111,7 +112,7 @@ class TrackingDataSchema(pa.DataFrameModel):
     datetime: pa.typing.Series[pd.Timestamp] = pa.Field(
         ge=pd.Timestamp("1975-01-01"), le=pd.Timestamp.now(), coerce=True, nullable=True
     )
-    ball_x: pa.typing.Series[float] = pa.Field(ge=-60, le=60, nullable=True)
+    ball_x: pa.typing.Series[float] = pa.Field(ge=-62.5, le=62.5, nullable=True)
     ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True)
     ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True)
     ball_status: pa.typing.Series[str] = pa.Field(isin=["alive", "dead"], nullable=True)

@@ -101,8 +101,7 @@ def add_new_pseudonym(
     # Check if key_type is valid
     if key_type not in ["player", "team"]:
         raise ValueError(
-            "key_type must be one of the following: 'player'"
-            f" or 'team', not {key_type}",
+            f"key_type must be one of the following: 'player' or 'team', not {key_type}",
         )
 
     if old_id in keys["original_id"].values:

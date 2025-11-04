@@ -26,7 +26,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install packages
-        run: poetry install --with docs,developing
+        run: poetry install --all-extras --with docs,developing
 
       - name: Build documentation (only on ubuntu-latest)
         run: make documentation

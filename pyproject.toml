@@ -41,6 +41,9 @@ chardet = "^5.2.0"
 pandera = "^0.22.1"
 pyarrow = "^19.0.0"
 
+[tool.poetry.extras]
+kloppy = ["kloppy"]
+
 [tool.poetry.group.developing]
 optional = true
 
@@ -50,6 +53,7 @@ jupyter = "^1.0.0"
 ipython-genutils = "^0.2.0"
 scikit-learn = "^1.3.2"
 ruff = "^0.7.3"
+kloppy = ">=3.18.0"
 
 [tool.poetry.group.docs]
 optional = true
@@ -61,7 +65,7 @@ sphinx = "^7.2.6"
 nbsphinx = "^0.9.3"
 myst-parser = "^2.0.0"
 jupyter-book = "^1.0.0"
-
+ipykernel = "^6.29.5"
 
 [tool.poetry.group.profiler.dependencies]
 line-profiler = "^4.1.2"

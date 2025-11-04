@@ -597,7 +597,32 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_event_data.loc[1:, "datetime"] -= pd.to_timedelta(1, unit="hours")
         expected_event_data.loc[1:, "datetime"] += pd.to_timedelta(1, unit="seconds")
 
-        res_event_data = align_event_data_datetime(event_data, tracking_data, offset=1.0)
+        # both tz aware
+        res_event_data = align_event_data_datetime(
+            event_data.copy(), tracking_data, offset=1.0
+        )
+        pd.testing.assert_frame_equal(res_event_data, expected_event_data)
+
+        ed_no_tz = event_data.copy()
+        ed_no_tz["datetime"] = ed_no_tz["datetime"].dt.tz_convert(None)
+        td_no_tz = tracking_data.copy()
+        td_no_tz["datetime"] = td_no_tz["datetime"].dt.tz_convert(None)
+
+        # ed not tz aware
+        res_event_data = align_event_data_datetime(
+            ed_no_tz.copy(), tracking_data, offset=1.0
+        )
+        assert res_event_data["datetime"].dt.tz == tracking_data["datetime"].dt.tz
+        pd.testing.assert_frame_equal(res_event_data, expected_event_data)
+
+        # td not tz aware
+        res_event_data = align_event_data_datetime(
+            event_data.copy(), td_no_tz, offset=1.0
+        )
+        assert res_event_data["datetime"].dt.tz == td_no_tz["datetime"].dt.tz
+        expected_event_data["datetime"] = expected_event_data["datetime"].dt.tz_convert(
+            None
+        )
         pd.testing.assert_frame_equal(res_event_data, expected_event_data)
 
     def test_get_time_difference_cost(self):

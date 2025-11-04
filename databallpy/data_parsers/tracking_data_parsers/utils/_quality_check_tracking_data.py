@@ -183,8 +183,7 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
     if sum_valid_frames < n_total_frames * 0.99:
         warnings.warn(
             DataBallPyWarning(
-                "Ball velocity is unrealistic (> 50 m/s) for "
-                "more than 1% of all frames"
+                "Ball velocity is unrealistic (> 50 m/s) for more than 1% of all frames"
             )
         )
 
