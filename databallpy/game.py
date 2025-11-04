@@ -294,52 +294,6 @@ class Game:
         ]
 
     @requires_tracking_data
-    def home_players_column_ids(self) -> list[str]:
-        """Function to get all column ids of the tracking data that refer to information
-        about the home team players
-
-        Depreciation: This function is depreciated and will be removed in version
-        0.7.0. Please use game.get_column_ids(team="home").
-
-        Returns:
-            list[str]: All column ids of the home team players
-        """
-
-        warnings.warn(
-            "game.home_players_column_ids is depreciated and will be removed in "
-            "version 0.7. Please use game.get_column_ids(team='home')",
-            DeprecationWarning,
-        )
-        return [
-            id[:-2]
-            for id in self.tracking_data.columns
-            if id[:4] == "home" and id[-2:] == "_x"
-        ]
-
-    @requires_tracking_data
-    def away_players_column_ids(self) -> list[str]:
-        """Function to get all column ids of the tracking data that refer to information
-        about the away team players
-
-        Depreciation: This function is depreciated and will be removed in version
-        0.7.0. Please use game.get_column_ids(team="away").
-
-        Returns:
-            list[str]: All column ids of the away team players
-        """
-
-        warnings.warn(
-            "game.away_players_column_ids is depreciated and will be removed in "
-            "version 0.7. Please use game.get_column_ids(team='away')",
-            DeprecationWarning,
-        )
-        return [
-            id[:-2]
-            for id in self.tracking_data.columns
-            if id[:4] == "away" and id[-2:] == "_x"
-        ]
-
-    @requires_tracking_data
     def player_column_id_to_full_name(self, column_id: str) -> str:
         """Simple function to get the full name of a player from the column id
 

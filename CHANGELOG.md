@@ -2,21 +2,28 @@
 
 
 
-## Version 0.6
+## Version 0.7
+
+### V0.7.0 (24/11/2025)
 
 - Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
+- Allow for more null values in `Game`
+- Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`
+- Removed depricated functions `home_players_column_ids` and `away_players_column_ids`, please use `game.get_column_ids(team="home")` instead.
 
-## V0.6.2 (15/10/2025)
+## Version 0.6
+
+### V0.6.2 (15/10/2025)
 - Fixed download links for loading in the open dataset from the DFL / Sportec
 
-## V0.6.1 (4/7/2025)
+### V0.6.1 (4/7/2025)
 - Made Country Nullabe in Game and Metadata.
 - Added player alignment based on jersey numbers over name alignment.
 - Added `allow_overwrite` kwarg for `Game.TrackingData.add_velocity` and `Game.TrackingData.add_acceleration` methods that default to `False`.
 - Fixed typo in documentation
 - Updated SciSports parser for v1.0 of the .json files (#301). 
 
-## V0.6.0 (28/03/2025)
+### V0.6.0 (28/03/2025)
 
 - Moved from function to an object oriented framework for all user-features and computations of game/match (special thanks to [DaanGro](https://github.com/DaanGro))
 - Renamed the all classes and functions with `match` to `game` (to move away from the internal python `match` statement)
