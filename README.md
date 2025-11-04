@@ -54,7 +54,7 @@ Although reading in and synchronising data is already very helpfull to get start
 
 - Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
 ```Terminal
->>> pip install databallpy[kloppy]
+$ pip install databallpy[kloppy]
 ```
 ```Python
 from kloppy import sportec
@@ -71,12 +71,12 @@ game = get_game_from_kloppy(tracking_dataset=tracking_dataset,event_dataset=even
 - Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`
 - Removed depricated functions `home_players_column_ids` and `away_players_column_ids`, please use `game.get_column_ids(team="home")` instead.
 
-rom version 0.6.0, you will be able to load your game using the `get_saved_game` as long as your version is greater or equal to 0.6.0.
-
 ## Installation
+Choose either of both commands. If you would like to use Kloppy as data parser, use the second one, else the first one would do.
 
 ```bash
 $ pip install databallpy
+$ pip install databallpy[kloppy]
 ```
 
 ## Usage
