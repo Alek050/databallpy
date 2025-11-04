@@ -861,7 +861,7 @@ def get_game_from_kloppy(
             to_coordinate_system="secondspectrum",
             to_orientation=Orientation.STATIC_HOME_AWAY,
         )
-        if all([True for x in tracking_dataset if x.ball_state == BallState.ALIVE]):
+        if all([x.ball_state == BallState.ALIVE for x in tracking_dataset]):
             warnings.warn(
                 "All frames in 'tracking_dataset' are 'ALIVE', databallpy expects 'DEAD' frames as well (e.g. for more accurate event synchronization). Set `only_alive=False` in your kloppy `.load_tracking()` call to include 'DEAD' frames.",
                 UserWarning,

@@ -723,6 +723,10 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(DataBallPyError):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "home_34_x"] = 3.0
+            td_changed.rename(
+                columns={"home_34_x": "home_1_x", "home_34_y": "home_1_y"}, inplace=True
+            )
+
             Game(
                 tracking_data=td_changed,
                 event_data=self.expected_game_tracab_opta.event_data,
@@ -747,6 +751,9 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(DataBallPyError):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "away_17_x"] = -3.0
+            td_changed.rename(
+                columns={"away_17_x": "away_1_x", "away_17_y": "away_1_y"}, inplace=True
+            )
             Game(
                 tracking_data=td_changed,
                 event_data=self.expected_game_tracab_opta.event_data,
@@ -894,18 +901,6 @@ class TestGame(unittest.TestCase):
             columns=["start_datetime_td", "start_datetime_ed"], errors="ignore"
         )
         assert game.name == "TeamOne 3 - 1 TeamTwo"
-
-    def test_game_home_players_column_ids(self):
-        with self.assertWarns(DeprecationWarning):
-            assert self.expected_game_tracab_opta.home_players_column_ids() == [
-                "home_34",
-            ]
-
-    def test_game_away_players_column_ids(self):
-        with self.assertWarns(DeprecationWarning):
-            assert self.expected_game_tracab_opta.away_players_column_ids() == [
-                "away_17",
-            ]
 
     def test_game_tracking_data_provider_depricated(self):
         game = self.expected_game_tracab_opta.copy()
