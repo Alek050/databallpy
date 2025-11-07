@@ -49,7 +49,10 @@ def _remove_offside_players(
     return [
         col_id
         for col_id in col_ids
-        if not (attacking_team in col_id and att_x[f"{col_id}_x"] > offside_line)
+        if (
+            f"{col_id}_x" in tracking_frame.index.to_list()
+            and not (attacking_team in col_id and att_x[f"{col_id}_x"] > offside_line)
+        )
     ]
 
 
