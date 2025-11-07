@@ -46,14 +46,12 @@ def _remove_offside_players(
     ball_line_x = tracking_frame["ball_x"]
 
     offside_line = max(midline_x, defending_line_x + tolerance, ball_line_x + tolerance)
-    return [
-        col_id
-        for col_id in col_ids
-        if (
-            f"{col_id}_x" in tracking_frame.index.to_list()
-            and not (attacking_team in col_id and att_x[f"{col_id}_x"] > offside_line)
-        )
+    def_col_ids = [col[:-2] for col in def_x.index.to_list()]
+    att_col_ids = [
+        col_id[:-2] for col_id in att_x.index.to_list() if att_x[col_id] <= offside_line
     ]
+    all_cols = att_col_ids + def_col_ids
+    return [x for x in all_cols if x in col_ids]
 
 
 def player_column_id_to_full_name(
