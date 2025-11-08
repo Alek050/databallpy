@@ -815,35 +815,52 @@ class TrackingData(pd.DataFrame):
         last_team = "home" if current_team_id == home_team_id else "away"
         self.loc[start_idx:, "team_possession"] = last_team
 
-    def add_dangerous_accessible_space(
-        self, **kwargs
-    ) -> None | pd.DataFrame:
+    def add_dangerous_accessible_space(self, mask: pd.Series = None, **kwargs) -> None | pd.DataFrame:
         """Function to add a column 'dangerous_accessible_space' to the tracking data, indicating the accessible space weighted by the expected value (measured by xG) of the respective location.
 
         Warning: Can be expensive, only use for frames that are needed.
 
         Args:
-            self
+            mask (Series): Boolean filter to calculate fewer values.
 
         Returns:
             None
         """
-        self.add_velocity([col.rsplit("_", 1)[0] for col in self.columns if col[-2:] in ["_x", "_y"]])
-        self.add_individual_player_possession()
-        self["team_in_possession"] = self["player_possession"].str.startswith("home").map({True: "home", False: "away"})
+        if mask is None:
+            mask = pd.Series(True, index=self.index)
 
-        td_long = self.to_long_format()
+        self.add_velocity(
+            [col.rsplit("_", 1)[0] for col in self.columns if col[-2:] in ["_x", "_y"]]
+        )
+        self.add_individual_player_possession()
+        self["team_in_possession"] = (
+            self["player_possession"]
+            .str.startswith("home")
+            .map({True: "home", False: "away"})
+        )
+
+        td_long = self[mask].to_long_format()
         td_long["team"] = td_long["column_id"].str[:4]
 
         res = accessible_space.interface.get_dangerous_accessible_space(
-            td_long, frame_col='frame', player_col='column_id', team_col='team', x_col='x', y_col='y',
-            vx_col='vx', vy_col='vy', team_in_possession_col='team_in_possession', period_col="period_id",
-            player_in_possession_col='player_possession', ball_player_id="ball", **kwargs,
+            td_long,
+            frame_col="frame",
+            player_col="column_id",
+            team_col="team",
+            x_col="x",
+            y_col="y",
+            vx_col="vx",
+            vy_col="vy",
+            team_in_possession_col="team_in_possession",
+            period_col="period_id",
+            player_in_possession_col="player_possession",
+            ball_player_id="ball",
+            **kwargs,
         )
         td_long["dangerous_accessible_space"] = res.das
         del res
         td_long = td_long[["frame", "dangerous_accessible_space"]].drop_duplicates()
-        self["dangerous_accessible_space"] = self.merge(
+        self.loc[mask, "dangerous_accessible_space"] = self.merge(
             td_long, on="frame", how="left", validate="one_to_one"
         )["dangerous_accessible_space"]
 

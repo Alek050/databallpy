@@ -6,7 +6,6 @@ from functools import wraps
 
 import numpy as np
 import pandas as pd
-import accessible_space
 
 from databallpy.schemas import (
     EventData,
@@ -317,7 +316,7 @@ class Game:
                 col_id
                 for col_id in col_ids
                 if not pd.isnull(self.tracking_data.loc[idx, col_id + "_x"])
-        ]
+            ]
         if remove_offside_players:
             col_ids = _remove_offside_players(col_ids, self.tracking_data.loc[idx])
 
@@ -665,38 +664,6 @@ class Game:
         if verbose:
             print(f"Game saved in {folder_path}")
 
-    def add_expected_completion(
-        self, **kwargs
-    ) -> None | pd.DataFrame:
-        """Function to add a column 'expected_completion' to the event data, indicating the likelihood the the pass being completed using a physical low pass simulation.
-
-        Args:
-            self
-
-        Returns:
-            None
-        """
-        self.tracking_data.add_velocity([col.rsplit("_", 1)[0] for col in self.tracking_data.columns if col[-2:] in ["_x", "_y"]])
-        self.tracking_data.add_individual_player_possession()
-        self.tracking_data["team_in_possession"] = self.tracking_data["player_possession"].str.startswith("home").map({True: "home", False: "away"})
-
-        td_long = self.tracking_data.to_long_format()
-        td_long["team"] = td_long["column_id"].str[:4]
-
-        self.event_data["tracking_team"] = self.event_data["team_id"].map({self.away_team_id: "away", self.home_team_id: "home"})
-        event_player_to_tracking_player = {player: self.player_id_to_column_id(player) for player in self.event_data["player_id"].unique()}
-        self.event_data["tracking_player"] = self.event_data["player_id"].map(event_player_to_tracking_player).fillna(self.event_data["player_id"])
-        i_valid = self.event_data[["td_frame", "start_x", "start_y", "end_x", "end_y", "tracking_team", "tracking_player"]].notnull().all(axis=1) & ~self.event_data["databallpy_event"].isin(["dribble","shot", "tackle"])
-        res = accessible_space.get_expected_pass_completion(
-            self.event_data.loc[i_valid], td_long, event_frame_col="td_frame", event_start_x_col="start_x",
-            event_start_y_col="start_y", event_end_x_col="end_x", event_end_y_col="end_y",
-            event_team_col="tracking_team", event_player_col="tracking_player",
-            tracking_frame_col='frame', tracking_player_col='column_id', tracking_team_col='team',
-            tracking_x_col='x', tracking_y_col='y', tracking_vx_col='vx', tracking_vy_col='vy',
-            tracking_team_in_possession_col='team_in_possession', tracking_period_col="period_id",
-            ball_tracking_player_id="ball", **kwargs,
-        )
-        self.event_data.loc[i_valid, "expected_completion"] = res.xc
 
 @logging_wrapper(__file__)
 def check_inputs_game_object(game: Game):
