@@ -815,7 +815,9 @@ class TrackingData(pd.DataFrame):
         last_team = "home" if current_team_id == home_team_id else "away"
         self.loc[start_idx:, "team_possession"] = last_team
 
-    def add_dangerous_accessible_space(self, mask: pd.Series = None, **kwargs) -> None | pd.DataFrame:
+    def add_dangerous_accessible_space(
+        self, mask: pd.Series = None, **kwargs
+    ) -> None | pd.DataFrame:
         """Function to add a column 'dangerous_accessible_space' to the tracking data, indicating the accessible space weighted by the expected value (measured by xG) of the respective location.
 
         Warning: Can be expensive, only use for frames that are needed.
