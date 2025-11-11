@@ -15,7 +15,7 @@ authors:
   - given-name: Daan 
     surname: Grob
     affiliation: 2
-  - give-name: Matthias 
+  - given-name: Matthias 
     surname: Kempe
     orcid: 0000-0002-4709-6172
     affiliation: "1, 3"
@@ -33,78 +33,85 @@ bibliography: paper.bib
 
 # Summary
 
-`DataBallPy` is a Python package designed to streamline the analysis of soccer matches by integrating and synchronizing event and tracking data. It provides a standardized interface for loading, preprocessing, and visualizing match data, enabling researchers and analysts to extract meaningful insights with minimal setup. By combining multiple data streams into a unified `Game` object, `DataBallPy` simplifies complex workflows and supports reproducible, data-driven soccer research. Last, DataBallpy is serious on documentation. Every preprocessing option and feature is elaborately explained in the  documentation. `DataBallPy` does not only help in computing scientific features, but the down-to-earth docoumentations helps you better understand how features are computed.
+`DataBallPy` is a Python package designed to quickstart the analysis of soccer data by integrating and synchronizing event and tracking data. It provides a standardized interface for loading, preprocessing, and visualizing match data, enabling researchers and analysts to extract insights with minimal setup. By combining multiple data streams into a unified `Game` object, `DataBallPy` simplifies complex workflows and supports reproducible, data-driven soccer research. Last, DataBallpy is serious on documentation. Every preprocessing option and feature is elaborately explained in the  documentation. `DataBallPy` does not only help in computing scientific features, but the down-to-earth docoumentations helps you better understand how features are computed.
 
 # Statement of need
 
-Modern soccer analytics increasingly rely on both event data (e.g., passes, shots) and tracking data (e.g., player positions over time). While existing tools like `Kloppy` and `Floodlight` offer support for importing these data types, they often treat them separately [@kloppy, @floodlight]. `DataBallPy` addresses this gap by offering robust synchronization between event and tracking data using an soccer data specific Needleman-Wunsch algorithm, ensuring temporal alignment and preserving event order [@Oonk]. This integration is essential for developing advanced metrics and models, such as expected goals (xG), player movement analysis, and tactical evaluations. `DataBallPy` thus serves as a foundational tool for researchers and practitioners seeking to build reproducible and interpretable soccer analytics pipelines.
+Modern soccer analytics increasingly rely on both event data and tracking data. Event data captures specific information about events (e.g. passes and shots) like their location, success, start location, and the athlete involved in the action. This information on itself is primarily used for aggregated statistics that can be uses for tactical match and player analysis [@Goes2020] and is widely used in scouting because of the low cost and wide spread availability of the data [@vanArem2025]. Tracking data, on the other hand, captures spatiotemporal information of all athletes and the ball at frequencies ranging between 10 and 25 Hz [@Linke2020]. This data is primarily used to quantify physical performance, but also for detection of dynamic formation [@sotudeh2025]. Current package allow for parsing [Kloppy](https://kloppy.pysport.org) and analysis[@Raabe2022] of either datastream independently. However, there has been a growing interest in combining event and tracking data to enrich event information with spatiotemporal context. This added context provides insights and nuances, primarily on a tactical level, that neither event and tracking data can not provide independently. 
 
-`DataBallPy` goes further by implementing core features that are neccessary for almost all soccer analytics project (e.g. determining which team and/or player has ball possession, filtering the tracking data, computing velocity and/or acceleration of players and the ball, etc.). All these features give any soccer analytics project a headstart. On top of that, it includes a built in way to visualise single frames of tracking data and create a mp4 file of a subset of the game for more in depth analysis.  
+`DataBallPy` addresses this gap by combining all game related data in a standardized `Game` object. The `Game` object includes event, tracking, and metadata. The primary feature of `DataBallPy` is the robust and efficient synchronistation between event and tracking data. Although event and tracking data often both provide timestamps, their alignment has shown to be extremely poor with reported errors of 1.82 (+-4.06) seconds. Especially the random error is concerning since it does not allow for easy correction and within 4 seconds the game might have evolved to an entirely different situation. Although specific approaches have been introduced to solve this problem, they can take between 3 and 10 minutes per game of runtime, may skip certain events, and shuffle the order of events [@VanRoy2024; @Kim2025]. `DataBallPy` allows for a state of the art synchronisation algorithm that ensures the synchronisation of all events in the right order within a few seconds [@Oonk2025] in just one line of code. 
+
+The synchronisation of event and tracking data allows for deeper analysis. For example `DataBallPy` provides functionality to (re)compute a frame-wise assessment of which team has ball possession, as some tracking data provides do not provide it. Furthermore, a propper analysis of goal scoring probability (xG) and expected threat (xT) is included based on the combined information of both tracking and event data which have been shown to perform better when there is a propper alignment between the event and tracking data [@Oonk2025]. 
+
+Next to the practical value of `DataBallPy`, as it provides low code access to scientific features, `DataBallPy` also provides as an educational tool. Often, open-source python packages provide information on how to get working code, but not on how the code works. `DataBallPy` explicitly goes a step further by elaborately explaining step by step how scientific papers are transformed into code, often refering to specific mathematical formulas as presented in the paper. This explenation is crucial since it (1) allows researchers and practitioners to better understand the strengths and weaknesses of features, and (2) teaches users on how to transform scientific papers into modular, Pythonic code. Both these characteristics provide users of `DataBallPy` a better understanding of their own analysis.
 
 
-`Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
+# Features
 
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
+The features and functionalities in `DataBallPy` can be catagorised in five categories: parsing data, preprocessing, synchronisation, Performance Indicators, and visualisation. 
 
-# Mathematics
+## Parsing Data
 
-Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
+The core goal of parsing data in `DataBallPy` is obtaining a `Game` object. `DataBallPy` allows for parsing data from Tracab, Metrica, Inmotio, Opta, Instat, SciSports, Sportec, and Statsbomb internally using the `get_game` function. The `Game` object contains the event and tracking data internally as Pandas dataframes, making them intuitive to work with [@reback2020pandas]. Alternatively, one can use [Kloppy](https://kloppy.pysport.org/) to parse data from more providers and use the `get_game_from_kloppy` function to transform it to a `Game` object. Last, `DataBallPy` has included a function to load openly available data directly in a `Game` object using `get_open_game` which allows users that do not have access to data to still work with soccer data in `DataBallPy` [@Bassek2025]. Since parsing and the analytical pipeline of soccer data takes time and resources, `DataBallPy` can also save your processed `Game` object. Normally, raw tracking and event data together can take up to 400 MB per game, 'DataBallPy' downscales this to less then 20 MB per game and can be reloaded by using the `get_saved_game` function.
 
-Double dollars make self-standing equations:
+## Preprocessing
 
-$$\Theta(x) = \left\{\begin{array}{l}
-0\textrm{ if } x < 0\cr
-1\textrm{ else}
-\end{array}\right.$$
+Tracking data is often captured via video footage. Depending on the quality and number of camera's, some noise is present in both the athelte and ball positions. `DataBallPy` allows for filtering of the tracking data, differentation of positions to compute velocity and acceleration. Furthermore, the tracking data allows for computation of individual athlete possession [@Vidal-Codina2022] and together with the event data team level possession can be estimated. 
 
-You can also use plain \LaTeX for equations
-\begin{equation}\label{eq:fourier}
-\hat f(\omega) = \int_{-\infty}^{\infty} f(x) e^{i\omega x} dx
-\end{equation}
-and refer to \autoref{eq:fourier} from text.
+## Synchronisation
 
-# Citations
+`DataBallPy` uses a soccer specific implementation of the Needleman-Wunch algorithm to synchronise the event and tracking data[@Oonk2025]. The game can be synchronised via using the following code
+```python
+>>> from databallpy import get_open_game
+>>> game = get_open_game()
+>>> game.synchronise_tracking_and_event_data()
+```
 
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
+## Performance Indicators
 
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
+`DataBallPy` has an elabore list of scientific features included in the package. All features can be computed in a few lines of code after obtaining a `Game` object. Next the the functionality, the documentation covers an elaborate explenation of how the code works that computes the features. Using `DataBallPy` the following features can be computed:
 
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
+- Covered Distance (in specific velocity and acceleration zones) [@Jerome2024]
+- Pressure [@Andrienko2017; @Herold2022]
+- Individual player possession [@Vidal-Codina2022]
+- Expected Goals [@Anzer2021]
+- Expected Threat [@Singh2019]
+- Voronoi Space Occupation [@Rein2017]
+- Pitch Control [@Fernandez2018]
 
-# Figures
+## Visualisation
 
-Figures can be included like this:
-![Caption for example figure.\label{fig:example}](figure.png)
-and referenced from text using \autoref{fig:example}.
+![Example plot of soccer tracking data with pitch control heatmap as introduced in @Fernandez2018](fig1.png)
 
-Figure sizes can be customized by adding an optional second parameter:
-![Caption for example figure.](figure.png){ width=20% }
+`DataBallPy` includes elaborate functionality to visualise the data in the `Game` object. Events locations can be visualised on a pitch using the `plot_events()` function, which allows for coloring of events by outcome, team or event type during specific periods in the game. Similarly, the locations and velocities of all players can be plotted using `plot_tracking_data()` function. If the event and tracking data is synchronised, one can also show information of the event in the same plot. Other features like pitch control heatmaps, player possession, and any custom feature can also be visualised simultaneously with the event and tracking data (Figure 1). Last, the tracking data (with heatmaps and custom features) can be transformed to a video.mp4 to show the true spatiotemporal progression over time.
 
-# Acknowledgements
+```python
+import matplotlib.pyplot as plt
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+from databallpy import get_open_game
+from databallpy.visualize import plot_tracking_data
+
+game = get_open_game()
+game.tracking_data.add_velocity(game.get_column_ids() + ["ball"])
+
+pitch_control = game.tracking_data.get_pitch_control(
+    game.pitch_dimensions,
+    start_idx=100,
+    end_idx = 101
+)
+
+
+fig, ax = plot_tracking_data(
+    game,
+    idx=100,
+    add_velocities=True,
+    heatmap_overlay=pitch_control[0],
+    overlay_cmap="plasma",
+    team_colors=["#00FFFF", "#00FF00"]
+)
+plt.show()
+```
+
+
 
 # References
