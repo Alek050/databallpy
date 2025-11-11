@@ -1,6 +1,7 @@
 import os
 import unittest
 
+import numpy as np
 import pandas as pd
 import pandera as pa
 
@@ -960,12 +961,25 @@ class TestGame(unittest.TestCase):
         away = game.get_column_ids(team="away", positions=["defender"])
         self.assertSetEqual(set(away), {"away_55", "away_66"})
 
+        game.tracking_data.loc[2, "home_11_x"] = np.nan
+        res_1 = game.get_column_ids(team="home", idx=2)
+        self.assertEqual(set(res_1), {"home_22", "home_33", "home_44"})
+
+        game.tracking_data.loc[2, "home_33_x"] = 52.5
+        game.tracking_data["team_possession"] = "home"
+        res_2 = game.get_column_ids(team="home", idx=2, remove_offside_players=True)
+        self.assertEqual(set(res_2), {"home_22", "home_44"})
+
         with self.assertRaises(ValueError):
             game.get_column_ids(team="wrong")
         with self.assertRaises(ValueError):
             game.get_column_ids(positions=["striker"])
         with self.assertRaises(TypeError):
             game.get_column_ids(min_minutes_played="fifteen")
+        with self.assertRaises(ValueError):
+            game.get_column_ids(idx=999)
+        with self.assertWarns(UserWarning):
+            game.get_column_ids(remove_offside_players=True)
 
     def test_game_player_column_id_to_full_name(self):
         res_name_home = self.expected_game_tracab_opta.player_column_id_to_full_name(

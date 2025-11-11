@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from databallpy.utils.game_utils import (
+    _remove_offside_players,
     create_event_attributes_dataframe,
     player_column_id_to_full_name,
     player_id_to_column_id,
@@ -79,3 +80,59 @@ class TestMatchUtils(unittest.TestCase):
 
         df = create_event_attributes_dataframe({})
         pd.testing.assert_frame_equal(df, pd.DataFrame())
+
+
+class TestRemoveOffsidePlayers(unittest.TestCase):
+    def test_ball_not_alive(self):
+        frame = pd.Series({"ball_status": "dead", "team_possession": "home"})
+        col_ids = ["home_1", "away_2"]
+        self.assertEqual(_remove_offside_players(col_ids, frame), col_ids)
+
+    def test_home_possession_no_offside(self):
+        frame = pd.Series(
+            {
+                "ball_status": "alive",
+                "team_possession": "home",
+                "ball_x": 30,
+                "home_1_x": 25,
+                "home_2_x": 28,
+                "away_1_x": 20,
+                "away_2_x": 22,
+            }
+        )
+        col_ids = ["home_1", "home_2", "away_1", "away_2"]
+        result = _remove_offside_players(col_ids, frame)
+        self.assertEqual(set(result), set(col_ids))
+
+    def test_home_possession_with_offside(self):
+        frame = pd.Series(
+            {
+                "ball_status": "alive",
+                "team_possession": "home",
+                "ball_x": 30,
+                "home_1_x": 35,
+                "home_2_x": 28,
+                "away_1_x": 32,
+                "away_2_x": 22,
+            }
+        )
+        col_ids = ["home_1", "home_2", "away_1", "away_2"]
+        result = _remove_offside_players(col_ids, frame)
+        self.assertEqual(set(result), {"home_2", "away_1", "away_2"})
+
+    def test_away_possession_with_offside_within_tolerance(self):
+        frame = pd.Series(
+            {
+                "ball_status": "alive",
+                "team_possession": "away",
+                "ball_x": -10,
+                "home_1_x": -21.6,
+                "home_2_x": -22,
+                "away_1_x": -35,
+                "away_2_x": -22,
+            }
+        )
+        col_ids = ["home_1", "home_2", "away_1", "away_2"]
+        result = _remove_offside_players(col_ids, frame)
+        self.assertNotIn("away_1", result)
+        self.assertIn("away_2", result)

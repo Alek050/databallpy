@@ -17,6 +17,7 @@ from databallpy.schemas import (
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.game_utils import (
+    _remove_offside_players,
     player_column_id_to_full_name,
     player_id_to_column_id,
 )
@@ -92,7 +93,7 @@ class Game:
 
     tracking_data: TrackingData
     event_data: EventData
-    pitch_dimensions: list[float, float]
+    pitch_dimensions: list[float]
     periods: pd.DataFrame
     home_team_id: int
     home_team_name: str
@@ -229,6 +230,8 @@ class Game:
         team: str | None = None,
         positions: list[str] = DATABALLPY_POSITIONS,
         min_minutes_played: float | int = 0.01,
+        idx: int | None = None,
+        remove_offside_players: bool = False,
     ) -> list[str]:
         """Function to get the column ids that are used in the tracking data. With this
         function you can filter on team side, position, or minimum minutes played.
@@ -244,6 +247,11 @@ class Game:
             min_minutes_played (float | int, optional): The minimum number of minutes a
                 player needs to have played during the game to be returned.
                 Defaults to 0.01.
+            idx (int | None): Get only the column ids of players that have valid data
+                in this index in game.TrackingData. If none, returns column ids of valid
+                players on any frame during the game. Defaults to None.
+            remove_offside_players (bool): Whether to remove players that are offside.
+                Note, this only works when idx is not None. Defaults to None.
 
         Raises:
             ValueError: If team is not in {None, home, away}
@@ -265,6 +273,16 @@ class Game:
 
         if not isinstance(min_minutes_played, (float, int, np.floating, np.integer)):
             raise TypeError("min_minutes_played should be a float or integer")
+
+        if idx is not None and idx not in self.tracking_data.index.to_list():
+            raise ValueError(f"idx {idx} not found in game.tracking_data.index.")
+
+        if remove_offside_players and idx is None:
+            warnings.warn(
+                "Cannot determine offside players when idx is not defined",
+                UserWarning,
+            )
+            remove_offside_players = False
 
         if team:
             players = self.home_players if team == "home" else self.away_players
@@ -290,9 +308,19 @@ class Game:
             for row in players.itertuples(index=False)
         ]
 
-        return [
+        col_ids = [
             col_id for col_id in col_ids if f"{col_id}_x" in self.tracking_data.columns
         ]
+        if idx:
+            col_ids = [
+                col_id
+                for col_id in col_ids
+                if not pd.isnull(self.tracking_data.loc[idx, col_id + "_x"])
+            ]
+        if remove_offside_players:
+            col_ids = _remove_offside_players(col_ids, self.tracking_data.loc[idx])
+
+        return col_ids
 
     @requires_tracking_data
     def player_column_id_to_full_name(self, column_id: str) -> str:
