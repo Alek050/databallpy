@@ -696,7 +696,9 @@ class TestGetGame(unittest.TestCase):
         self.assertEqual(game, expected_game_sportec)
         self.assertEqual(mock_os_remove.call_count, 2)
         mock_save_game.assert_called_once_with(
-            "datasets/IDSSE/J03WMX", verbose=False, allow_overwrite=True
+            f"datasets{os.path.sep}IDSSE{os.path.sep}J03WMX",
+            verbose=False,
+            allow_overwrite=True,
         )
 
         with self.assertWarns(DeprecationWarning):

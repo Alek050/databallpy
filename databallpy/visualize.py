@@ -66,12 +66,7 @@ def plot_soccer_pitch(
 
     # Set pitch and line colors
     ax.set_facecolor(pitch_color)
-    if pitch_color not in ["white", "w"]:
-        lc = "whitesmoke"  # line color
-        pc = "w"  # 'spot' colors
-    else:
-        lc = "k"
-        pc = "k"
+    pc = lc = pick_bw_for_contrast(to_rgb(pitch_color))
 
     # All dimensions in meters
     border_dimen = (3, 3)  # include a border arround of the field of width 3m
@@ -133,7 +128,7 @@ def plot_soccer_pitch(
         ax.plot(
             [s * half_pitch_length, s * half_pitch_length],
             [-goal_line_width / 2.0, goal_line_width / 2.0],
-            pc + "s",
+            pc,
             markersize=6 * markersize / 20.0,
             linewidth=linewidth,
             zorder=zorder - 1,
@@ -808,7 +803,6 @@ def _plot_heatmap_overlay(
         ],
         origin="lower",
         cmap=cmap,
-        # alpha=0.5,
         zorder=-5,
     )
 
