@@ -508,6 +508,26 @@ def plot_tracking_data(
 
 
 def pick_bw_for_contrast(rgb):
+    """
+    Determines whether black or white text provides better contrast on a given background color.
+
+    Parameters
+    ----------
+    rgb : tuple or list of float
+        The background color as a tuple or list of three or four floats (RGB or RGBA),
+        where each value is in the range [0, 1].
+
+    Returns
+    -------
+    str
+        "black" if black text provides better contrast, "white" otherwise.
+
+    Notes
+    -----
+    Uses a relative luminance calculation with gamma correction:
+        luminance = 0.2126 * (R ** 2.2) + 0.7152 * (G ** 2.2) + 0.0722 * (B ** 2.2)
+    If luminance > 0.5, returns "black"; otherwise, returns "white".
+    """
     r, g, b = rgb[:3]
     res = 0.2126 * (r**2.2) + 0.7152 * (g**2.2) + 0.0722 * (b**2.2)
     return "black" if res > 0.5 else "white"
