@@ -7,7 +7,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.colors import Colormap
+from matplotlib.colors import Colormap, to_rgb
 from tqdm import tqdm
 
 from databallpy.game import Game
@@ -455,9 +455,13 @@ def plot_tracking_data(
         heatmap_overlay=heatmap_overlay,
         cmap=overlay_cmap,
     )
-
+    pitch_color = "mediumseagreen"
     if fig is None and ax is None:
-        fig, ax = plot_soccer_pitch(field_dimen=game.pitch_dimensions)
+        if heatmap_overlay is not None:
+            pitch_color = plt.get_cmap(overlay_cmap)(0)
+        fig, ax = plot_soccer_pitch(
+            field_dimen=game.pitch_dimensions, pitch_color=pitch_color
+        )
     if title:
         ax.set_title(title)
 
@@ -469,14 +473,16 @@ def plot_tracking_data(
         fontsize=14,
         c=team_colors[0],
         zorder=2.5,
+        ha="left",
     )
     ax.text(
-        game.pitch_dimensions[0] / 2.0 - 15,
+        game.pitch_dimensions[0] / 2.0 - 2,
         game.pitch_dimensions[1] / 2.0 + 1.0,
         game.away_team_name,
         fontsize=14,
         c=team_colors[1],
         zorder=2.5,
+        ha="right",
     )
 
     if heatmap_overlay is not None:
@@ -485,7 +491,9 @@ def plot_tracking_data(
     if add_velocities:
         _, ax = _plot_velocities(ax, td, idx, game, [])
 
-    _, ax = _plot_single_frame(ax, td_ht, td_at, idx, team_colors, [], td, game)
+    _, ax = _plot_single_frame(
+        ax, td_ht, td_at, idx, team_colors, [], td, game, pitch_color
+    )
 
     if variable_of_interest is not None:
         _, ax = _plot_variable_of_interest(ax, variable_of_interest, [], game)
@@ -497,6 +505,12 @@ def plot_tracking_data(
     if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
         _, ax = _plot_events(ax, td, idx, game, [])
     return fig, ax
+
+
+def pick_bw_for_contrast(rgb):
+    r, g, b = rgb[:3]
+    res = 0.2126 * (r**2.2) + 0.7152 * (g**2.2) + 0.0722 * (b**2.2)
+    return "black" if res > 0.5 else "white"
 
 
 @logging_wrapper(__file__)
@@ -580,30 +594,38 @@ def save_tracking_video(
     )
     video_loc = f"{save_folder}/{title}.mp4"
 
-    pitch_color = "white" if heatmap_overlay is not None else "mediumseagreen"
+    pitch_color = (
+        plt.get_cmap(overlay_cmap)(0)
+        if heatmap_overlay is not None
+        else "mediumseagreen"
+    )
     fig, ax = plot_soccer_pitch(
         field_dimen=game.pitch_dimensions, pitch_color=pitch_color
     )
 
-    # Set game name, non variable over time
+    # Set game name
     ax.text(
         game.pitch_dimensions[0] / -2.0 + 2,
         game.pitch_dimensions[1] / 2.0 + 1.0,
         game.home_team_name,
         fontsize=14,
-        color=team_colors[0],
+        c=team_colors[0],
+        zorder=2.5,
+        ha="left",
     )
     ax.text(
-        game.pitch_dimensions[0] / 2.0 - 15,
+        game.pitch_dimensions[0] / 2.0 - 2,
         game.pitch_dimensions[1] / 2.0 + 1.0,
         game.away_team_name,
         fontsize=14,
-        color=team_colors[1],
+        c=team_colors[1],
+        zorder=2.5,
+        ha="right",
     )
-
     indexes = (
         td.index if not verbose else tqdm(td.index, desc="Making game clip", leave=False)
     )
+
     # Generate movie with variable info
     with writer.saving(fig, video_loc, dpi=300):
         for idx_loc, idx in enumerate(indexes):
@@ -624,7 +646,15 @@ def save_tracking_video(
                 )
 
             variable_fig_objs, ax = _plot_single_frame(
-                ax, td_ht, td_at, idx, team_colors, variable_fig_objs, td, game
+                ax,
+                td_ht,
+                td_at,
+                idx,
+                team_colors,
+                variable_fig_objs,
+                td,
+                game,
+                pitch_color,
             )
 
             if variable_of_interest is not None:
@@ -758,7 +788,7 @@ def _plot_heatmap_overlay(
         ],
         origin="lower",
         cmap=cmap,
-        alpha=0.5,
+        # alpha=0.5,
         zorder=-5,
     )
 
@@ -809,6 +839,7 @@ def _plot_single_frame(
     variable_fig_objs: list,
     td: pd.DataFrame,
     game: Game,
+    pitch_color,
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the single frame of the current frame."""
     # Scatter plot the teams
@@ -836,13 +867,15 @@ def _plot_single_frame(
                 td_team[y] - 0.5,
                 x.split("_")[1],  # player number
                 fontsize=9,
-                c="white",
+                c=pick_bw_for_contrast(to_rgb(c)),
                 zorder=3.0,
             )
             variable_fig_objs.append(fig_obj)
 
     # Plot the ball
-    fig_obj = ax.scatter(td.loc[idx, "ball_x"], td.loc[idx, "ball_y"], c="black")
+    fig_obj = ax.scatter(
+        td.loc[idx, "ball_x"], td.loc[idx, "ball_y"], c="black", zorder=4
+    )
     variable_fig_objs.append(fig_obj)
 
     # Add time info
@@ -850,7 +883,7 @@ def _plot_single_frame(
         -20.5,
         game.pitch_dimensions[1] / 2.0 + 1.0,
         td.loc[idx, "gametime_td"],
-        c="k",
+        c=pick_bw_for_contrast(to_rgb(pitch_color)),
         fontsize=14,
     )
     variable_fig_objs.append(fig_obj)
@@ -888,9 +921,11 @@ def _plot_player_possession(
             game.tracking_data.loc[idx, f"{column_id}_x"],
             game.tracking_data.loc[idx, f"{column_id}_y"],
         ),
-        radius=1,
+        radius=2,
         color="gold",
-        fill=False,
+        fill=True,
+        alpha=0.8,
+        zorder=2,
     )
     fig_obj = ax.add_artist(circle)
     variable_fig_objs.append(fig_obj)
