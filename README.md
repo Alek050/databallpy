@@ -231,6 +231,7 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 - [jan-swiatek](https://github.com/jan-swiatek)
 - [UnravelSports](https://github.com/UnravelSports) 
 - [migvidal5](https://github.com/migvidal5)
+- [jonas-bischofberger](https://github.com/jonas-bischofberger)
 
 ## License
 
