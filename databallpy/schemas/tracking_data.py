@@ -814,6 +814,84 @@ class TrackingData(pd.DataFrame):
         last_team = "home" if current_team_id == home_team_id else "away"
         self.loc[start_idx:, "team_possession"] = last_team
 
+    def add_dangerous_accessible_space(
+        self, mask: pd.Series = None, **kwargs
+    ) -> None | pd.DataFrame:
+        """Function to add a column 'dangerous_accessible_space' to the tracking data,
+        indicating the accessible space weighted by the expected value (measured by xG) of the respective location.
+
+        Warning: Can be expensive, only use for frames that are needed.
+
+        SOURCE:
+        Jonas Bischofberger, Arnold Baca. Dangerous Accessible Space: A Unified Model of Space and Value in Team Sports,
+        21 August 2025, PREPRINT (Version 1) available at Research Square [https://doi.org/10.21203/rs.3.rs-6932689/v1]
+
+        Args:
+            mask (Series): Boolean filter to calculate fewer values.
+
+        Returns:
+            None
+        """
+        try:
+            import accessible_space
+        except ImportError:
+            raise ImportError(
+                "This function requires the accessible-space package. Please run `pip install 'accessible-space>=2.0.13'` "
+                "Or install databallpy using `pip install 'databallpy[accessible-space]'`"
+            )
+
+        mask = pd.Series(True, index=self.index) if mask is None else mask
+
+        col_ids = [
+            x[:-2] for x in self.columns if x.endswith("_x") and not x.startswith("ball")
+        ]
+        if not all([f"{col_id}_vx" in self.columns.to_list() for col_id in col_ids]):
+            raise ValueError(
+                "To dangerous accessible space you need to add velocities of all players. Try using the"
+                " game.tracking_data.add_velocity method to do so."
+            )
+        if "player_possession" not in self.columns.to_list():
+            raise ValueError(
+                "To dangerous accessible space you need to add the inidividual player possession column. Try using the"
+                " game.tracking_data.add_individual_player_possession method to do so."
+            )
+
+        self["team_in_possession"] = (
+            self["player_possession"]
+            .str.startswith("home")
+            .map({True: "home", False: "away"})
+        )
+
+        td_long = self[mask].to_long_format()
+        td_long["team"] = td_long["column_id"].str[:4]
+
+        res = accessible_space.interface.get_dangerous_accessible_space(
+            td_long,
+            frame_col="frame",
+            player_col="column_id",
+            team_col="team",
+            x_col="x",
+            y_col="y",
+            vx_col="vx",
+            vy_col="vy",
+            team_in_possession_col="team_in_possession",
+            period_col="period_id",
+            player_in_possession_col="player_possession",
+            ball_player_id="ball",
+            **kwargs,
+        )
+
+        td_long.loc[
+            ~pd.isnull(td_long["team_in_possession"]), "dangerous_accessible_space"
+        ] = res.das
+        del res
+
+        td_long = td_long[["frame", "dangerous_accessible_space"]].drop_duplicates()
+        self["dangerous_accessible_space"] = self.merge(
+            td_long, on="frame", how="left", validate="one_to_one"
+        )["dangerous_accessible_space"]
+        self.drop(columns="team_in_possession", inplace=True)
+
     def to_long_format(self) -> pd.DataFrame:
         """Function that moves from the base format, with a row for every frame,
         to a long format, with a row for every frame/column_id combination

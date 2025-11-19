@@ -20,6 +20,30 @@ dev = ["pillow", "pkginfo (>=1.10)", "playwright", "pre-commit", "setuptools", "
 tests = ["hypothesis", "pytest"]
 
 [[package]]
+name = "accessible-space"
+version = "2.0.13"
+description = "Implementation of the Dangerous Accessible Space (DAS) passing model for football analytics."
+optional = true
+python-versions = ">=3.7"
+groups = ["main"]
+markers = "extra == \"accessible-space\""
+files = [
+    {file = "accessible_space-2.0.13-py3-none-any.whl", hash = "sha256:b65bca924ac85ca5b795b0b6e2d51184f5017738bc44e3a4491593a14f2af44b"},
+    {file = "accessible_space-2.0.13.tar.gz", hash = "sha256:b9601b9e7167f155a021af31fc16b73370b21651ebd299a7947c90a89a96a616"},
+]
+
+[package.dependencies]
+matplotlib = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+tqdm = "*"
+
+[package.extras]
+dev = ["brokenaxes", "build", "databallpy", "kloppy (>=3.15.0)", "mplsoccer", "netcal", "packaging", "pytest", "pytest-cov", "requests", "scikit-learn", "setuptools", "streamlit", "tox", "twine", "wfork-streamlit-profiler", "xmltodict"]
+full = ["brokenaxes", "databallpy", "kloppy (>=3.15.0)", "mplsoccer", "netcal", "scikit-learn", "streamlit", "wfork-streamlit-profiler", "xmltodict"]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 description = "Happy Eyeballs for asyncio"
@@ -5727,9 +5751,10 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_it
 type = ["pytest-mypy"]
 
 [extras]
+accessible-space = ["accessible-space"]
 kloppy = ["kloppy"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "b42fdd73f588950db614db9b14516b2fe01333dbac195281a6163c892ffa1cb0"
+content-hash = "e038ac0a3a609b3e2370b34f2c0eb655af49907b6366997f376d30f42b68359b"
