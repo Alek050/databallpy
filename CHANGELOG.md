@@ -5,6 +5,7 @@
 ## Version 0.7
 
 - Small changes for better color selection in plot tracking data and save tracking video.
+- Integration between `accessible-space` and `DataBallPy` thanks to [jonas-bischofberger](https://github.com/jonas-bischofberger)
 
 ### V0.7.1 (24/11/2025)
 
