@@ -316,7 +316,7 @@ def plot_events(
 
     event_data = event_data.loc[mask]
     if len(event_data) == 0:
-        print("No events could be found that game yourrequirements, please try again.")
+        print("No events could be found that game your requirements, please try again.")
         return None, None
 
     if fig is None and ax is None:
@@ -332,14 +332,16 @@ def plot_events(
         fontsize=14,
         c=team_colors[0],
         zorder=2.5,
+        ha="left",
     )
     ax.text(
-        game.pitch_dimensions[0] / 2.0 - 15,
+        game.pitch_dimensions[0] / 2.0 - 2,
         game.pitch_dimensions[1] / 2.0 + 1.0,
         game.away_team_name,
         fontsize=14,
         c=team_colors[1],
         zorder=2.5,
+        ha="right",
     )
 
     # Check if color_by_col is specified and is a valid column name
@@ -460,6 +462,8 @@ def plot_tracking_data(
     if title:
         ax.set_title(title)
 
+    contrasting_color = pick_bw_for_contrast(to_rgb(pitch_color))
+
     # Set game name
     ax.text(
         game.pitch_dimensions[0] / -2.0 + 2,
@@ -491,14 +495,16 @@ def plot_tracking_data(
     )
 
     if variable_of_interest is not None:
-        _, ax = _plot_variable_of_interest(ax, variable_of_interest, [], game)
+        _, ax = _plot_variable_of_interest(
+            ax, variable_of_interest, [], game, contrasting_color
+        )
 
     if add_player_possession:
         column_id = game.tracking_data.loc[idx, "player_possession"]
         _, ax = _plot_player_possession(ax, column_id, idx, game, [])
 
     if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
-        _, ax = _plot_events(ax, td, idx, game, [])
+        _, ax = _plot_events(ax, td, idx, game, [], contrasting_color)
     return fig, ax
 
 
@@ -641,6 +647,8 @@ def save_tracking_video(
         td.index if not verbose else tqdm(td.index, desc="Making game clip", leave=False)
     )
 
+    contrasting_color = pick_bw_for_contrast(to_rgb(pitch_color))
+
     # Generate movie with variable info
     with writer.saving(fig, video_loc, dpi=300):
         for idx_loc, idx in enumerate(indexes):
@@ -679,7 +687,7 @@ def save_tracking_video(
                     else variable_of_interest[idx_loc]
                 )
                 variable_fig_objs, ax = _plot_variable_of_interest(
-                    ax, value, variable_fig_objs, game
+                    ax, value, variable_fig_objs, game, contrasting_color
                 )
 
             if add_player_possession:
@@ -690,7 +698,7 @@ def save_tracking_video(
 
             if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
                 variable_fig_objs, ax = _plot_events(
-                    ax, td, idx, game, variable_fig_objs
+                    ax, td, idx, game, variable_fig_objs, contrasting_color
                 )
 
                 # 'pause' the clip for 1 second on this event
@@ -804,6 +812,7 @@ def _plot_heatmap_overlay(
         origin="lower",
         cmap=cmap,
         zorder=-5,
+        interpolation="bilinear",
     )
 
     variable_fig_objs.append(fig_obj)
@@ -910,6 +919,7 @@ def _plot_variable_of_interest(
     value: any,
     variable_fig_objs: list,
     game: Game,
+    c: str | tuple,
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the variable of interest of the current frame."""
     fig_obj = ax.text(
@@ -917,6 +927,7 @@ def _plot_variable_of_interest(
         game.pitch_dimensions[1] / 2.0 + 1.0,
         str(value),
         fontsize=14,
+        color=c,
     )
     variable_fig_objs.append(fig_obj)
 
@@ -930,25 +941,32 @@ def _plot_player_possession(
     if pd.isnull(column_id) or pd.isnull(game.tracking_data.loc[idx, f"{column_id}_x"]):
         return variable_fig_objs, ax
 
-    circle = plt.Circle(
-        (
-            game.tracking_data.loc[idx, f"{column_id}_x"],
-            game.tracking_data.loc[idx, f"{column_id}_y"],
-        ),
-        radius=2,
-        color="gold",
-        fill=True,
-        alpha=0.8,
-        zorder=2,
-    )
-    fig_obj = ax.add_artist(circle)
-    variable_fig_objs.append(fig_obj)
+    for r in range(15):
+        radius = r / 8
+        circle = plt.Circle(
+            (
+                game.tracking_data.loc[idx, f"{column_id}_x"],
+                game.tracking_data.loc[idx, f"{column_id}_y"],
+            ),
+            radius=radius,
+            color="white",
+            fill=True,
+            alpha=0.07,
+            zorder=2,
+        )
+        fig_obj = ax.add_artist(circle)
+        variable_fig_objs.append(fig_obj)
 
     return variable_fig_objs, ax
 
 
 def _plot_events(
-    ax: plt.axes, td: pd.DataFrame, idx: int, game: Game, variable_fig_objs: list
+    ax: plt.axes,
+    td: pd.DataFrame,
+    idx: int,
+    game: Game,
+    variable_fig_objs: list,
+    c: str | tuple,
 ) -> tuple[list, plt.axes]:
     """Helper function to plot the events of the current frame."""
     event = (
@@ -956,13 +974,22 @@ def _plot_events(
     )
     player_name = event["player_name"]
     event_name = event["databallpy_event"]
+    text = f"{event_name}: {player_name}"
+    if len(text) > 30:
+        target = len(text) // 2  # roughly the middle
+        spaces = [i for i, c in enumerate(text) if c == " "]
+        split_index = min(spaces, key=lambda x: abs(x - target))
+        text = text[:split_index] + "\n" + text[split_index + 1 :]
 
     # Add event text
     fig_obj = ax.text(
-        5,
-        game.pitch_dimensions[1] / 2.0 + 1,
-        f"{player_name}: {event_name}",
-        fontsize=14,
+        1,
+        game.pitch_dimensions[1] / 2.0,
+        text,
+        fontsize=8,
+        color=c,
+        ha="left",
+        va="bottom",
     )
     variable_fig_objs.append(fig_obj)
 
