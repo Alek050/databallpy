@@ -12,4 +12,3 @@ sphinx-jupyterbook-latex
 sphinx-multitoc-numbering
 markdown-it-py[linkify]
 mdit-py-plugins
-html-image
