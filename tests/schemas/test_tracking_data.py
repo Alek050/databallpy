@@ -977,6 +977,7 @@ class TestTrackingData(unittest.TestCase):
                 "away_2_y": [10.0] * 20,
                 "away_2_vx": [-0.2] * 20,
                 "away_2_vy": [0.0] * 20,
+                "player_possession": ["home"] * 20,
             }
         )
         td_das.add_dangerous_accessible_space(mask=td_das["frame"] >= 0)
@@ -987,3 +988,13 @@ class TestTrackingData(unittest.TestCase):
             td_das["dangerous_accessible_space"].iloc[0],
         )
         self.assertLess(td_das["dangerous_accessible_space"].iloc[5], 1.0)
+
+        with self.assertRaises(ValueError):
+            td_das.drop(columns=["away_1_vx"]).add_dangerous_accessible_space(
+                mask=td_das["frame"] >= 0
+            )
+
+        with self.assertRaises(ValueError):
+            td_das.drop(columns=["player_possession"]).add_dangerous_accessible_space(
+                mask=td_das["frame"] >= 0
+            )
