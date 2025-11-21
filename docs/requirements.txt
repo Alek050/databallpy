@@ -1,5 +1,4 @@
-git+https://github.com/Alek050/databallpy.git@develop#egg=databallpy
-jupyter-book
+databallpy[accessible-space,kloppy] @ git+https://github.com/Alek050/databallpy.git@develop
 sphinx-togglebutton
 sphinx-copybutton
 myst-nb
