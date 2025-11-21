@@ -54,6 +54,17 @@ jobs:
           ffmpeg-version: release
           architecture: x64
           linking-type: static
+      
+      - name: Install Tcl/Tk on Windows
+        if: runner.os == 'Windows'
+        run: choco install tcl-tk -y
+
+      - name: Set Tcl/Tk environment variables
+        if: runner.os == 'Windows'
+        run: |
+          echo "TCL_LIBRARY=C:/Program Files/Tcl/lib/tcl8.6" >> $GITHUB_ENV
+          echo "TK_LIBRARY=C:/Program Files/Tcl/lib/tk8.6" >> $GITHUB_ENV
+
 
       - name: Install poetry
         uses: snok/install-poetry@v1
