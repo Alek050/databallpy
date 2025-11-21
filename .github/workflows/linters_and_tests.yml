@@ -55,13 +55,6 @@ jobs:
           architecture: x64
           linking-type: static
 
-      - name: Set Tcl/Tk environment variables
-        if: runner.os == 'Windows'
-        run: |
-          echo "TCL_LIBRARY=C:/Program Files/Tcl/lib/tcl8.6" >> $GITHUB_ENV
-          echo "TK_LIBRARY=C:/Program Files/Tcl/lib/tk8.6" >> $GITHUB_ENV
-
-
       - name: Install poetry
         uses: snok/install-poetry@v1
         with:
@@ -81,6 +74,8 @@ jobs:
       - name: ruff linting
         run: poetry run ruff format --check tests/ databallpy/
 
+      - name: Set Matplotlib backend
+        run: echo "MPLBACKEND=Agg" >> $GITHUB_ENV
 
       - name: Test with pytest
         run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc
