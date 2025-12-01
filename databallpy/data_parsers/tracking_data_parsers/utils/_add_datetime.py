@@ -24,6 +24,7 @@ def _add_datetime(
     frames_minutes = frames_time.hour * 60 + frames_time.minute
     dt_start_game_minutes = dt_start_game.hour * 60 + dt_start_game.minute
 
+    frames = frames % (frame_rate * 60 * 60 * 24)
     # if diff in minutes < 10, assume it is a timestamp
     if abs(dt_start_game_minutes - frames_minutes) <= 10:
         date = dt_start_game.date()
