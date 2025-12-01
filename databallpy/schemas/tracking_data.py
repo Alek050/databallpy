@@ -109,9 +109,24 @@ def check_all_locations(df):
 
 class TrackingDataSchema(pa.DataFrameModel):
     frame: pa.typing.Series[int] = pa.Field(unique=True)
-    datetime: pa.typing.Series[pd.Timestamp] = pa.Field(
-        ge=pd.Timestamp("1975-01-01"), le=pd.Timestamp.now(), coerce=True, nullable=True
-    )
+    datetime: pa.typing.Series[object] = pa.Field(nullable=True, coerce=True)
+
+    @pa.check("datetime")
+    def is_timestamp(self, series: pa.typing.Series[object]) -> bool:
+        return series.dropna().apply(lambda x: isinstance(x, pd.Timestamp)).all()
+
+    @pa.check("datetime")
+    def after_1975(self, series: pa.typing.Series[object]) -> bool:
+        return (
+            series.dropna()
+            .apply(lambda x: x >= pd.Timestamp("1975-01-01", tz=x.tzinfo))
+            .all()
+        )
+
+    @pa.check("datetime")
+    def before_now(self, series: pa.typing.Series[object]) -> bool:
+        return series.dropna().apply(lambda x: x <= pd.Timestamp.now(tz=x.tzinfo)).all()
+
     ball_x: pa.typing.Series[float] = pa.Field(ge=-62.5, le=62.5, nullable=True)
     ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True)
     ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True)

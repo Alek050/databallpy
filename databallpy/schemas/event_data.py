@@ -20,9 +20,25 @@ class EventDataSchema(pa.DataFrameModel):
     is_successful: pa.typing.Series[pd.BooleanDtype] = pa.Field(nullable=True)
     start_x: pa.typing.Series[float] = pa.Field(ge=-60, le=60, nullable=True)
     start_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True)
-    datetime: pa.typing.Series[pd.Timestamp] = pa.Field(
-        ge=pd.Timestamp("1975-01-01"), le=pd.Timestamp.now(), coerce=True
-    )
+
+    datetime: pa.typing.Series[object] = pa.Field(nullable=True, coerce=True)
+
+    @pa.check("datetime")
+    def is_timestamp(self, series: pa.typing.Series[object]) -> bool:
+        return series.dropna().apply(lambda x: isinstance(x, pd.Timestamp)).all()
+
+    @pa.check("datetime")
+    def after_1975(self, series: pa.typing.Series[object]) -> bool:
+        return (
+            series.dropna()
+            .apply(lambda x: x >= pd.Timestamp("1975-01-01", tz=x.tzinfo))
+            .all()
+        )
+
+    @pa.check("datetime")
+    def before_now(self, series: pa.typing.Series[object]) -> bool:
+        return series.dropna().apply(lambda x: x <= pd.Timestamp.now(tz=x.tzinfo)).all()
+
     original_event_id: pa.typing.Series[object] = pa.Field(coerce=True)
     original_event: pa.typing.Series[str] = pa.Field(nullable=True)
 

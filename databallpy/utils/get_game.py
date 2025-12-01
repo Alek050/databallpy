@@ -175,7 +175,8 @@ def get_game(
             event_match_loc=event_match_loc,
             event_lineup_loc=event_lineup_loc,
         )
-        EventDataSchema.validate(event_data)
+        if _check_game_class_:
+            EventDataSchema.validate(event_data)
         uses_event_data = True
 
     event_precise_timestamps = {
@@ -202,8 +203,8 @@ def get_game(
         )
         if not uses_event_data:
             databallpy_events = {}
-
-        TrackingDataSchema.validate(tracking_data)
+        if _check_game_class_:
+            TrackingDataSchema.validate(tracking_data)
         uses_tracking_data = True
 
     if not uses_event_data and not uses_tracking_data:
