@@ -211,13 +211,37 @@ class TestAddStarterInformation(unittest.TestCase):
         result = _add_starter_information(self.metadata, tracking_data=tracking_data)
 
         # Players 1 and 2 should be marked as starters
-        self.assertTrue(result.home_players.loc[result.home_players["shirt_num"] == 1, "starter"].iloc[0])
-        self.assertTrue(result.home_players.loc[result.home_players["shirt_num"] == 2, "starter"].iloc[0])
-        self.assertFalse(result.home_players.loc[result.home_players["shirt_num"] == 3, "starter"].iloc[0])
+        self.assertTrue(
+            result.home_players.loc[
+                result.home_players["shirt_num"] == 1, "starter"
+            ].iloc[0]
+        )
+        self.assertTrue(
+            result.home_players.loc[
+                result.home_players["shirt_num"] == 2, "starter"
+            ].iloc[0]
+        )
+        self.assertFalse(
+            result.home_players.loc[
+                result.home_players["shirt_num"] == 3, "starter"
+            ].iloc[0]
+        )
 
-        self.assertTrue(result.away_players.loc[result.away_players["shirt_num"] == 1, "starter"].iloc[0])
-        self.assertTrue(result.away_players.loc[result.away_players["shirt_num"] == 2, "starter"].iloc[0])
-        self.assertFalse(result.away_players.loc[result.away_players["shirt_num"] == 3, "starter"].iloc[0])
+        self.assertTrue(
+            result.away_players.loc[
+                result.away_players["shirt_num"] == 1, "starter"
+            ].iloc[0]
+        )
+        self.assertTrue(
+            result.away_players.loc[
+                result.away_players["shirt_num"] == 2, "starter"
+            ].iloc[0]
+        )
+        self.assertFalse(
+            result.away_players.loc[
+                result.away_players["shirt_num"] == 3, "starter"
+            ].iloc[0]
+        )
 
     def test_with_event_data(self):
         # Create event data where players 1 and 2 participated before first substitute
@@ -234,13 +258,25 @@ class TestAddStarterInformation(unittest.TestCase):
 
         # Players 1 and 2 from home, and player 1 and 2 from away should be starters
         # Player 3 from away is involved in the substitution, so should not be a starter
-        self.assertTrue(result.home_players.loc[result.home_players["id"] == 101, "starter"].iloc[0])
-        self.assertTrue(result.home_players.loc[result.home_players["id"] == 102, "starter"].iloc[0])
-        self.assertFalse(result.home_players.loc[result.home_players["id"] == 103, "starter"].iloc[0])
+        self.assertTrue(
+            result.home_players.loc[result.home_players["id"] == 101, "starter"].iloc[0]
+        )
+        self.assertTrue(
+            result.home_players.loc[result.home_players["id"] == 102, "starter"].iloc[0]
+        )
+        self.assertFalse(
+            result.home_players.loc[result.home_players["id"] == 103, "starter"].iloc[0]
+        )
 
-        self.assertTrue(result.away_players.loc[result.away_players["id"] == 201, "starter"].iloc[0])
-        self.assertTrue(result.away_players.loc[result.away_players["id"] == 202, "starter"].iloc[0])
-        self.assertFalse(result.away_players.loc[result.away_players["id"] == 203, "starter"].iloc[0])
+        self.assertTrue(
+            result.away_players.loc[result.away_players["id"] == 201, "starter"].iloc[0]
+        )
+        self.assertTrue(
+            result.away_players.loc[result.away_players["id"] == 202, "starter"].iloc[0]
+        )
+        self.assertFalse(
+            result.away_players.loc[result.away_players["id"] == 203, "starter"].iloc[0]
+        )
 
     def test_with_existing_starter_info(self):
         # Add starter info to metadata
@@ -263,9 +299,21 @@ class TestAddStarterInformation(unittest.TestCase):
         result = _add_starter_information(self.metadata, tracking_data=tracking_data)
 
         # Should keep existing starter info, not overwrite
-        self.assertTrue(result.home_players.loc[result.home_players["shirt_num"] == 1, "starter"].iloc[0])
-        self.assertTrue(result.home_players.loc[result.home_players["shirt_num"] == 2, "starter"].iloc[0])
-        self.assertFalse(result.home_players.loc[result.home_players["shirt_num"] == 3, "starter"].iloc[0])
+        self.assertTrue(
+            result.home_players.loc[
+                result.home_players["shirt_num"] == 1, "starter"
+            ].iloc[0]
+        )
+        self.assertTrue(
+            result.home_players.loc[
+                result.home_players["shirt_num"] == 2, "starter"
+            ].iloc[0]
+        )
+        self.assertFalse(
+            result.home_players.loc[
+                result.home_players["shirt_num"] == 3, "starter"
+            ].iloc[0]
+        )
 
     def test_with_no_data(self):
         # Should initialize starter column to False when no data provided

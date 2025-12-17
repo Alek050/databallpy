@@ -246,8 +246,10 @@ def _add_starters_from_event_data(metadata: Metadata, event_data: pd.DataFrame) 
 
     # Find substitute events (assuming they are marked in some way)
     # Look for substitute/substitution related event types
-    substitute_mask = event_data["event_type"].str.lower().str.contains(
-        "substitut", case=False, na=False
+    substitute_mask = (
+        event_data["event_type"]
+        .str.lower()
+        .str.contains("substitut", case=False, na=False)
     )
     substitute_events = event_data[substitute_mask].sort_values("event_id")
 
@@ -276,7 +278,6 @@ def _add_starters_from_event_data(metadata: Metadata, event_data: pd.DataFrame) 
     # Players who were substituted in
     # This is tricky without standardized substitute event structure
     # We'll identify them by looking for players in substitute events
-    substituted_in_players = set()
     if "player_id" in substitute_events.columns:
         # Players who were subbed in but still appear in events must be starters
         # (this is a conservative approach)
@@ -285,7 +286,9 @@ def _add_starters_from_event_data(metadata: Metadata, event_data: pd.DataFrame) 
             if pd.notna(player_id) and player_id in participating_players:
                 # Check if this player appears in events after being "subbed"
                 # If they do, they were likely actually a starter
-                events_after_sub = event_data[event_data["event_id"] > sub_event["event_id"]]
+                events_after_sub = event_data[
+                    event_data["event_id"] > sub_event["event_id"]
+                ]
                 if player_id in events_after_sub["player_id"].values:
                     starters_from_early_events.add(player_id)
 
