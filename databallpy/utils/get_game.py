@@ -45,7 +45,10 @@ from databallpy.utils.align_player_ids import (
     align_player_ids_name_similarity,
 )
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.game_utils import create_event_attributes_dataframe
+from databallpy.utils.game_utils import (
+    _add_starter_information,
+    create_event_attributes_dataframe,
+)
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.warnings import deprecated
 
@@ -262,6 +265,26 @@ def get_game(
         if "dribble_events" in databallpy_events.keys()
         else pd.DataFrame()
     )
+
+    # Add starter information if not provided
+    if uses_event_data and uses_tracking_data:
+        event_metadata = _add_starter_information(
+            event_metadata,
+            tracking_data=tracking_data,
+            event_data=event_data,
+        )
+    elif uses_tracking_data:
+        tracking_metadata = _add_starter_information(
+            tracking_metadata,
+            tracking_data=tracking_data,
+            event_data=None,
+        )
+    elif uses_event_data:
+        event_metadata = _add_starter_information(
+            event_metadata,
+            tracking_data=None,
+            event_data=event_data,
+        )
 
     if uses_event_data:
         home_players = event_metadata.home_players
@@ -593,6 +616,13 @@ def get_open_game(
         else pd.DataFrame()
     )
 
+    # Add starter information if not provided
+    metadata = _add_starter_information(
+        metadata,
+        tracking_data=tracking_data,
+        event_data=event_data,
+    )
+
     game = Game(
         tracking_data=TrackingData(
             tracking_data, provider=provider, frame_rate=metadata.frame_rate
@@ -902,6 +932,35 @@ def get_game_from_kloppy(
     home_players, away_players = players_from_kloppy(
         event_dataset if uses_event_data else tracking_dataset
     )
+
+    # Add starter information if not provided by kloppy
+    # Create a temporary Metadata object to use the helper function
+    temp_metadata = Metadata(
+        game_id=0,
+        pitch_dimensions=[pitch_dimensions[0], pitch_dimensions[1]],
+        periods_frames=periods,
+        frame_rate=tracking_dataset.frame_rate if uses_tracking_data else MISSING_INT,
+        home_team_id=0,
+        home_team_name="",
+        home_players=home_players,
+        home_score=0,
+        home_formation="",
+        away_team_id=0,
+        away_team_name="",
+        away_players=away_players,
+        away_score=0,
+        away_formation="",
+        country="",
+    )
+
+    temp_metadata = _add_starter_information(
+        temp_metadata,
+        tracking_data=tracking_data if uses_tracking_data else None,
+        event_data=event_data if uses_event_data else None,
+    )
+
+    home_players = temp_metadata.home_players
+    away_players = temp_metadata.away_players
 
     home_team = (
         tracking_dataset.metadata.teams[0]

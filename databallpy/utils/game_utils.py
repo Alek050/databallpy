@@ -1,5 +1,6 @@
 import pandas as pd
 
+from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
 
 
@@ -120,3 +121,177 @@ def create_event_attributes_dataframe(
         attr: [getattr(event, attr) for event in events.values()] for attr in attributes
     }
     return pd.DataFrame(res_dict)
+
+
+def _add_starter_information(
+    metadata: Metadata,
+    tracking_data: pd.DataFrame | None = None,
+    event_data: pd.DataFrame | None = None,
+) -> Metadata:
+    """Function to add starter information to metadata when not provided by the data source.
+
+    This function will only add starter information when it's missing (all None or all False).
+    It prioritizes tracking data if available, otherwise uses event data.
+
+    Args:
+        metadata (Metadata): The metadata object containing player information
+        tracking_data (pd.DataFrame | None): Optional tracking data to determine starters
+            from first 22 players (11 per team) with non-null data. Defaults to None.
+        event_data (pd.DataFrame | None): Optional event data to determine starters
+            from substitute events and player participation. Defaults to None.
+
+    Returns:
+        Metadata: Updated metadata with starter information added
+    """
+    # Check if starter information already exists and has meaningful values
+    home_has_starters = (
+        "starter" in metadata.home_players.columns
+        and metadata.home_players["starter"].notna().any()
+        and metadata.home_players["starter"].any()
+    )
+    away_has_starters = (
+        "starter" in metadata.away_players.columns
+        and metadata.away_players["starter"].notna().any()
+        and metadata.away_players["starter"].any()
+    )
+
+    if home_has_starters and away_has_starters:
+        # Starter information already exists for both teams, no need to add
+        return metadata
+
+    # Initialize starter column if it doesn't exist
+    if "starter" not in metadata.home_players.columns:
+        metadata.home_players["starter"] = False
+    if "starter" not in metadata.away_players.columns:
+        metadata.away_players["starter"] = False
+
+    # Try to use tracking data first
+    if tracking_data is not None and not tracking_data.empty:
+        _add_starters_from_tracking_data(metadata, tracking_data)
+    elif event_data is not None and not event_data.empty:
+        _add_starters_from_event_data(metadata, event_data)
+
+    return metadata
+
+
+def _add_starters_from_tracking_data(
+    metadata: Metadata, tracking_data: pd.DataFrame
+) -> None:
+    """Add starter information based on tracking data.
+
+    Identifies the first 22 players (11 from each team) that have non-null tracking data
+    in the first frames of the game.
+
+    Args:
+        metadata (Metadata): The metadata object to update
+        tracking_data (pd.DataFrame): The tracking data
+    """
+    # Get the first frame of the first period
+    first_period = metadata.periods_frames[metadata.periods_frames["period_id"] == 1]
+    if first_period.empty or "start_frame" not in first_period.columns:
+        return
+
+    start_frame = first_period["start_frame"].iloc[0]
+
+    # Find the first frame in tracking data
+    first_frame_data = tracking_data[tracking_data["frame"] == start_frame]
+    if first_frame_data.empty:
+        # Use the very first frame available
+        first_frame_data = tracking_data.iloc[[0]]
+
+    # Get all player columns (those ending with _x)
+    player_x_cols = [col for col in tracking_data.columns if col.endswith("_x")]
+
+    # Separate home and away players
+    home_cols = [col for col in player_x_cols if col.startswith("home_")]
+    away_cols = [col for col in player_x_cols if col.startswith("away_")]
+
+    # Find players with non-null data in the first frame
+    home_starters = []
+    away_starters = []
+
+    for col in home_cols:
+        if first_frame_data[col].notna().any():
+            shirt_num = int(col.split("_")[1])
+            home_starters.append(shirt_num)
+
+    for col in away_cols:
+        if first_frame_data[col].notna().any():
+            shirt_num = int(col.split("_")[1])
+            away_starters.append(shirt_num)
+
+    # Update metadata with starter information
+    metadata.home_players["starter"] = metadata.home_players["shirt_num"].isin(
+        home_starters
+    )
+    metadata.away_players["starter"] = metadata.away_players["shirt_num"].isin(
+        away_starters
+    )
+
+
+def _add_starters_from_event_data(metadata: Metadata, event_data: pd.DataFrame) -> None:
+    """Add starter information based on event data.
+
+    Uses substitute events to determine starters. A player is a starter if:
+    1. They performed an event before the first substitute event, OR
+    2. They were substituted in but performed an event somewhere during the game
+       (meaning they must have started)
+
+    Args:
+        metadata (Metadata): The metadata object to update
+        event_data (pd.DataFrame): The event data
+    """
+    if event_data.empty or "databallpy_event" not in event_data.columns:
+        return
+
+    # Find substitute events (assuming they are marked in some way)
+    # Look for substitute/substitution related event types
+    substitute_mask = event_data["event_type"].str.lower().str.contains(
+        "substitut", case=False, na=False
+    )
+    substitute_events = event_data[substitute_mask].sort_values("event_id")
+
+    # Get all player IDs that participated in events
+    participating_players = set(event_data["player_id"].dropna().unique())
+
+    # If there are no substitute events, assume all participating players are starters
+    if substitute_events.empty:
+        metadata.home_players["starter"] = metadata.home_players["id"].isin(
+            participating_players
+        )
+        metadata.away_players["starter"] = metadata.away_players["id"].isin(
+            participating_players
+        )
+        return
+
+    # Get the event_id of the first substitute
+    first_sub_event_id = substitute_events["event_id"].iloc[0]
+
+    # Players who performed events before the first substitute are starters
+    events_before_first_sub = event_data[event_data["event_id"] < first_sub_event_id]
+    starters_from_early_events = set(
+        events_before_first_sub["player_id"].dropna().unique()
+    )
+
+    # Players who were substituted in
+    # This is tricky without standardized substitute event structure
+    # We'll identify them by looking for players in substitute events
+    substituted_in_players = set()
+    if "player_id" in substitute_events.columns:
+        # Players who were subbed in but still appear in events must be starters
+        # (this is a conservative approach)
+        for _, sub_event in substitute_events.iterrows():
+            player_id = sub_event.get("player_id")
+            if pd.notna(player_id) and player_id in participating_players:
+                # Check if this player appears in events after being "subbed"
+                # If they do, they were likely actually a starter
+                events_after_sub = event_data[event_data["event_id"] > sub_event["event_id"]]
+                if player_id in events_after_sub["player_id"].values:
+                    starters_from_early_events.add(player_id)
+
+    # Combine starters
+    all_starters = starters_from_early_events
+
+    # Update metadata
+    metadata.home_players["starter"] = metadata.home_players["id"].isin(all_starters)
+    metadata.away_players["starter"] = metadata.away_players["id"].isin(all_starters)
