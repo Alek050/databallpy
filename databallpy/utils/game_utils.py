@@ -232,10 +232,8 @@ def _add_starters_from_tracking_data(
 def _add_starters_from_event_data(metadata: Metadata, event_data: pd.DataFrame) -> None:
     """Add starter information based on event data.
 
-    Uses substitute events to determine starters. A player is a starter if:
-    1. They performed an event before the first substitute event, OR
-    2. They were substituted in but performed an event somewhere during the game
-       (meaning they must have started)
+    Uses substitute events to determine starters. A player is a starter if they
+    performed an event before the first substitute event.
 
     Args:
         metadata (Metadata): The metadata object to update
@@ -270,30 +268,9 @@ def _add_starters_from_event_data(metadata: Metadata, event_data: pd.DataFrame) 
     first_sub_event_id = substitute_events["event_id"].iloc[0]
 
     # Players who performed events before the first substitute are starters
+    # This is the primary and most reliable method
     events_before_first_sub = event_data[event_data["event_id"] < first_sub_event_id]
-    starters_from_early_events = set(
-        events_before_first_sub["player_id"].dropna().unique()
-    )
-
-    # Players who were substituted in
-    # This is tricky without standardized substitute event structure
-    # We'll identify them by looking for players in substitute events
-    if "player_id" in substitute_events.columns:
-        # Players who were subbed in but still appear in events must be starters
-        # (this is a conservative approach)
-        for _, sub_event in substitute_events.iterrows():
-            player_id = sub_event.get("player_id")
-            if pd.notna(player_id) and player_id in participating_players:
-                # Check if this player appears in events after being "subbed"
-                # If they do, they were likely actually a starter
-                events_after_sub = event_data[
-                    event_data["event_id"] > sub_event["event_id"]
-                ]
-                if player_id in events_after_sub["player_id"].values:
-                    starters_from_early_events.add(player_id)
-
-    # Combine starters
-    all_starters = starters_from_early_events
+    all_starters = set(events_before_first_sub["player_id"].dropna().unique())
 
     # Update metadata
     metadata.home_players["starter"] = metadata.home_players["id"].isin(all_starters)

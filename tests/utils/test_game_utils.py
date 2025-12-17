@@ -192,7 +192,7 @@ class TestAddStarterInformation(unittest.TestCase):
         # Create tracking data where players 1 and 2 from each team have data at frame 0
         tracking_data = pd.DataFrame(
             {
-                "frame": [0, 0, 0],
+                "frame": [0, 1, 2],
                 "home_1_x": [10.0, 11.0, 12.0],
                 "home_1_y": [20.0, 21.0, 22.0],
                 "home_2_x": [15.0, 16.0, 17.0],
