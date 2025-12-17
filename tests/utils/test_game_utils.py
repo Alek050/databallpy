@@ -151,6 +151,7 @@ class TestAddStarterInformation(unittest.TestCase):
                 "position": ["goalkeeper", "defender", "midfielder"],
                 "start_frame": [0, 0, 100],
                 "end_frame": [1000, 1000, 1000],
+                "starter": [False, False, False],
             }
         )
         self.away_players = pd.DataFrame(
@@ -161,6 +162,7 @@ class TestAddStarterInformation(unittest.TestCase):
                 "position": ["goalkeeper", "defender", "midfielder"],
                 "start_frame": [0, 0, 100],
                 "end_frame": [1000, 1000, 1000],
+                "starter": [False, False, False],
             }
         )
         self.periods_frames = pd.DataFrame(
@@ -249,7 +251,14 @@ class TestAddStarterInformation(unittest.TestCase):
             {
                 "event_id": [1, 2, 3, 4, 5, 6],
                 "player_id": [101, 102, 201, 202, 203, 103],
-                "event_type": ["pass", "pass", "pass", "pass", "substitution", "pass"],
+                "original_event": [
+                    "pass",
+                    "pass",
+                    "pass",
+                    "pass",
+                    "substitution",
+                    "pass",
+                ],
                 "databallpy_event": ["pass", "pass", "pass", "pass", None, "pass"],
             }
         )

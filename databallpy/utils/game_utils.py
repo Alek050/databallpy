@@ -144,6 +144,7 @@ def _add_starter_information(
         Metadata: Updated metadata with starter information added
     """
     # Check if starter information already exists and has meaningful values
+    # Assume no starters if all are set to False (metadata validator ensures column exists)
     home_has_starters = (
         "starter" in metadata.home_players.columns
         and metadata.home_players["starter"].notna().any()
@@ -158,12 +159,6 @@ def _add_starter_information(
     if home_has_starters and away_has_starters:
         # Starter information already exists for both teams, no need to add
         return metadata
-
-    # Initialize starter column if it doesn't exist
-    if "starter" not in metadata.home_players.columns:
-        metadata.home_players["starter"] = False
-    if "starter" not in metadata.away_players.columns:
-        metadata.away_players["starter"] = False
 
     # Try to use tracking data first
     if tracking_data is not None and not tracking_data.empty:
@@ -180,7 +175,8 @@ def _add_starters_from_tracking_data(
     """Add starter information based on tracking data.
 
     Identifies the first 22 players (11 from each team) that have non-null tracking data
-    in the first frames of the game.
+    in the first 5 minutes of the game. Sometimes tracking data capture starts before
+    players are visible in the data.
 
     Args:
         metadata (Metadata): The metadata object to update
@@ -193,11 +189,19 @@ def _add_starters_from_tracking_data(
 
     start_frame = first_period["start_frame"].iloc[0]
 
-    # Find the first frame in tracking data
-    first_frame_data = tracking_data[tracking_data["frame"] == start_frame]
-    if first_frame_data.empty:
-        # Use the very first frame available
-        first_frame_data = tracking_data.iloc[[0]]
+    # Calculate frame limit for first 5 minutes
+    # Assuming frame_rate is frames per second
+    frames_per_5_min = int(metadata.frame_rate * 5 * 60)
+    end_frame = start_frame + frames_per_5_min
+
+    # Get tracking data for the first 5 minutes
+    first_5_min_data = tracking_data[
+        (tracking_data["frame"] >= start_frame) & (tracking_data["frame"] <= end_frame)
+    ]
+
+    if first_5_min_data.empty:
+        # Fallback to first frame available
+        first_5_min_data = tracking_data.iloc[[0]]
 
     # Get all player columns (those ending with _x)
     player_x_cols = [col for col in tracking_data.columns if col.endswith("_x")]
@@ -206,19 +210,26 @@ def _add_starters_from_tracking_data(
     home_cols = [col for col in player_x_cols if col.startswith("home_")]
     away_cols = [col for col in player_x_cols if col.startswith("away_")]
 
-    # Find players with non-null data in the first frame
+    # Find players with non-null data in the first 5 minutes
+    # A player is a starter if they have at least one non-null position in the first 5 minutes
     home_starters = []
     away_starters = []
 
     for col in home_cols:
-        if first_frame_data[col].notna().any():
+        # Check if player has any non-null data in the first 5 minutes
+        if first_5_min_data[col].notna().any():
             shirt_num = int(col.split("_")[1])
             home_starters.append(shirt_num)
 
     for col in away_cols:
-        if first_frame_data[col].notna().any():
+        # Check if player has any non-null data in the first 5 minutes
+        if first_5_min_data[col].notna().any():
             shirt_num = int(col.split("_")[1])
             away_starters.append(shirt_num)
+
+    # Limit to 11 players per team (in case more than 11 have data)
+    home_starters = home_starters[:11]
+    away_starters = away_starters[:11]
 
     # Update metadata with starter information
     metadata.home_players["starter"] = metadata.home_players["shirt_num"].isin(
@@ -243,24 +254,39 @@ def _add_starters_from_event_data(metadata: Metadata, event_data: pd.DataFrame) 
         return
 
     # Find substitute events (assuming they are marked in some way)
-    # Look for substitute/substitution related event types
+    # Look for substitute/substitution related event types in original_event column
+    if "original_event" not in event_data.columns:
+        return
+
     substitute_mask = (
-        event_data["event_type"]
+        event_data["original_event"]
         .str.lower()
         .str.contains("substitut", case=False, na=False)
     )
     substitute_events = event_data[substitute_mask].sort_values("event_id")
 
     # Get all player IDs that participated in events
-    participating_players = set(event_data["player_id"].dropna().unique())
+    participating_players = list(event_data["player_id"].dropna().unique())
 
-    # If there are no substitute events, assume all participating players are starters
+    # If there are no substitute events, assume first 11 players per team are starters
     if substitute_events.empty:
+        # Get first 11 home players and first 11 away players that participated
+        home_participating = [
+            pid
+            for pid in participating_players
+            if pid in metadata.home_players["id"].values
+        ][:11]
+        away_participating = [
+            pid
+            for pid in participating_players
+            if pid in metadata.away_players["id"].values
+        ][:11]
+
         metadata.home_players["starter"] = metadata.home_players["id"].isin(
-            participating_players
+            home_participating
         )
         metadata.away_players["starter"] = metadata.away_players["id"].isin(
-            participating_players
+            away_participating
         )
         return
 
