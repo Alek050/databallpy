@@ -520,6 +520,13 @@ class Game:
             LOGGER.error(message)
             raise DataBallPyError(message)
 
+        for col in ["sync_certainty", "databallpy_event", "event_id"]:
+            if col in self.tracking_data.columns:
+                self.tracking_data.drop(columns=[col], inplace=True)
+        for col in ["tracking_frame", "sync_certainty"]:
+            if col in self.event_data.columns:
+                self.event_data.drop(columns=[col], inplace=True)
+
         self.tracking_data = pre_compute_synchronisation_variables(
             self.tracking_data, self.tracking_data.frame_rate, self.pitch_dimensions
         )

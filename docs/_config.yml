@@ -21,11 +21,28 @@ latex:
   latex_documents:
     targetname: book.tex
 
+parse:
+  myst_enable_extensions:  # default extensions to enable in the myst parser. See https://myst-parser.readthedocs.io/en/latest/using/syntax-optional.html
+    # - amsmath
+    - colon_fence
+    # - deflist
+    - dollarmath
+    # - html_admonition
+    # - html_image
+    - linkify
+    # - replacements
+    # - smartquotes
+    - substitution
+    - tasklist
+    - html_image
+  myst_url_schemes: [mailto, http, https] # URI schemes that will be recognised as external URLs in Markdown links
+  myst_dmath_double_inline: true  # Allow display math ($$) within an inline context
+
 # Information about where the book exists on the web
 repository:
   url: https://github.com/Alek050/databallpy  # Online location of your book
   path_to_book: docs  # Optional path to your book, relative to the repository root
-  branch: master  # Which branch of the repository should be used when creating links (optional)
+  branch: develop  # Which branch of the repository should be used when creating links (optional)
 
 # Add GitHub buttons to your book
 # See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
@@ -33,6 +50,12 @@ html:
   use_issues_button: true
   use_repository_button: true
   extra_footer: '<p>DataBallPy: Load, Synchronize, and Analyze your soccer data</p>'
+  static_path: ["_static"]
+  extra_files:
+    - _static/accessible_space.png
+    - _static/dangerous_accessible_space.png
+
+
 
 # Sphinx configuration
 sphinx:

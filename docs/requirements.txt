@@ -1,4 +1,4 @@
-git+https://github.com/Alek050/databallpy.git@develop#egg=databallpy
+databallpy[accessible-space,kloppy] @ git+https://github.com/Alek050/databallpy.git@develop
 jupyter-book
 sphinx-togglebutton
 sphinx-copybutton

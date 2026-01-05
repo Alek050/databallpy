@@ -74,6 +74,8 @@ jobs:
       - name: ruff linting
         run: poetry run ruff format --check tests/ databallpy/
 
+      - name: Set Matplotlib backend
+        run: echo "MPLBACKEND=Agg" >> $GITHUB_ENV
 
       - name: Test with pytest
         run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc

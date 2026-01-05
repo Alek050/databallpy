@@ -4,7 +4,10 @@
 
 ## Version 0.7
 
-### V0.7.0 (24/11/2025)
+- Small changes for better color selection in plot tracking data and save tracking video.
+- Integration between `accessible-space` and `DataBallPy` thanks to [jonas-bischofberger](https://github.com/jonas-bischofberger)
+
+### V0.7.1 (24/11/2025)
 
 - Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
 - Allow for more null values in `Game`
