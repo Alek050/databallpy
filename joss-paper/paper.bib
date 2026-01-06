@@ -1,4 +1,246 @@
-@article{Raabe2022, doi = {10.21105/joss.04588}, url = {https://doi.org/10.21105/joss.04588}, year = {2022}, publisher = {The Open Journal}, volume = {7}, number = {76}, pages = {4588}, author = {Raabe, Dominik and Biermann, Henrik and Bassek, Manuel and Wohlan, Martin and Komitova, Rumena and Rein, Robert and Groot, Tobias Kuppens and Memmert, Daniel}, title = {floodlight - A high-level, data-driven sports analytics framework}, journal = {Journal of Open Source Software} } 
+@article{Andrienko2017,
+   abstract = {Modern movement tracking technologies enable acquisition of high quality data about movements of the players and the ball in the course of a football match. However, there is a big difference between the raw data and the insights into team behaviors that analysts would like to gain. To enable such insights, it is necessary first to establish relationships between the concepts characterizing behaviors and what can be extracted from data. This task is challenging since the concepts are not strictly defined. We propose a computational approach to detecting and quantifying the relationships of pressure emerging during a game. Pressure is exerted by defending players upon the ball and the opponents. Pressing behavior of a team consists of multiple instances of pressure exerted by the team members. The extracted pressure relationships can be analyzed in detailed and summarized forms with the use of static and dynamic visualizations and interactive query tools. To support examination of team tactics in different situations, we have designed and implemented a novel interactive visual tool “time mask”. It enables selection of multiple disjoint time intervals in which given conditions are fulfilled. Thus, it is possible to select game situations according to ball possession, ball distance to the goal, time that has passed since the last ball possession change or remaining time before the next change, density of players’ positions, or various other conditions. In response to a query, the analyst receives visual and statistical summaries of the set of selected situations and can thus perform joint analysis of these situations. We give examples of applying the proposed combination of computational, visual, and interactive techniques to real data from games in the German Bundesliga, where the teams actively used pressing in their defense tactics.},
+   author = {Gennady Andrienko and Natalia Andrienko and Guido Budziak and Jason Dykes and Georg Fuchs and Tatiana von Landesberger and Hendrik Weber},
+   doi = {10.1007/s10618-017-0513-2},
+   issn = {1573756X},
+   issue = {6},
+   journal = {Data Mining and Knowledge Discovery},
+   keywords = {Collective movement patterns,Football data analysis,Movement data analysis,Visual analytics},
+   month = {10},
+   pages = {1793-1839},
+   publisher = {Springer New York LLC},
+   title = {Visual analysis of pressure in football},
+   volume = {31},
+   year = {2017}
+}
+
+@article{Anzer2021,
+   abstract = {Due to the low scoring nature of football (soccer), shots are often used as a proxy to evaluate team and player performances. However, not all shots are created equally and their quality differs significantly depending on the situation. The aim of this study is to objectively quantify the quality of any given shot by introducing a so-called expected goals (xG) model. This model is validated statistically and with professional match analysts. The best performing model uses an extreme gradient boosting algorithm and is based on hand-crafted features from synchronized positional and event data of 105, 627 shots in the German Bundesliga. With a ranked probability score (RPS) of 0.197, it is more accurate than any previously published expected goals model. This approach allows us to assess team and player performances far more accurately than is possible with traditional metrics by focusing on process rather than results.},
+   author = {Gabriel Anzer and Pascal Bauer},
+   doi = {https://doi.org/10.3389/fspor.2021.624475},
+   issn = {26249367},
+   journal = {Frontiers in Sports and Active Living},
+   keywords = {XG,applied machine learning,event data,expected goals,football,positional data,soccer,sports analytics},
+   month = {3},
+   pages = {624475},
+   publisher = {Frontiers Media S.A.},
+   title = {A Goal Scoring Probability Model for Shots Based on Synchronized Positional and Event Data in Football (Soccer)},
+   volume = {3},
+   url = {www.frontiersin.org},
+   year = {2021}
+}
+
+@article{Anzer2025,
+   abstract = {During football matches, a variety of different parties (e.g., companies) each collect (possibly overlapping) data about the match ranging from basic information (e.g., starting players) to detailed positional data. This data is provided to clubs, federations, and other organizations who are increasingly interested in leveraging this data to inform their decision making. Unfortunately, analyzing such data pose significant barriers because each provider may (1) collect different data, (2) use different specifications even within the same category of data, (3) represent the data differently, and (4) delivers the data in a different manner (e.g., file format, protocol). Consequently, working with these data requires a significant investment of time and money. The goal of this work is to propose a uniform and standardized format for football data called the Common Data Format (CDF). The CDF specifies a minimal schema for five types of match data: match sheet data, video footage, event data, tracking data, and match meta data. It aims to ensure that the provided data is clear, sufficiently contextualized (e.g., its provenance is clear), and complete such that it enables common downstream analysis tasks. Concretely, this paper will detail the technical specifications of the CDF, the representational choices that were made to help ensure the clarity of the provided data, and a concrete approach for delivering data in the CDF. This represents Version 1.0.0 of the CDF.},
+   author = {Gabriel Anzer and Kilian Arnsmeyer and Pascal Bauer and Joris Bekkers and Ulf Brefeld and Jesse Davis and Nicolas Evans and Matthias Kempe and Samuel J Robertson and Joshua Wyatt Smith and Jan Van Haaren},
+   keywords = {cs.AI,cs.DB},
+   month = {2},
+   title = {Common Data Format (CDF): A Standardized Format for Match-Data in Football (Soccer)},
+   url = {https://arxiv.org/abs/2505.15820v4},
+   year = {2025}
+}
+@article{vanArem2025,
+   title={Forecasting the Future Development in Quality and Value of Professional Football Players},
+   volume={15},
+   ISSN={2076-3417},
+   url={http://dx.doi.org/10.3390/app15168916},
+   DOI={10.3390/app15168916},
+   number={16},
+   journal={Applied Sciences},
+   publisher={MDPI AG},
+   author={van Arem, Koen and Goes-Smit, Floris and Söhl, Jakob},
+   year={2025},
+   month=aug, pages={8916} }
+
+@article{Bassek2025,
+   abstract = {Data-driven match analysis in soccer is a growing discipline in both research and practice. However, public data is scarce, which raises the barrier for entering this field and decreases reproducibility of methods and results. To bridge this gap, this paper presents a dataset of official match information, event, and position data from seven matches of the German Bundesliga's first and second division. The match information contains meta data about the matches and their participants. The event data contain timestamps along with descriptions of discrete events, like passes, shots, or fouls. The position data contain the x/y-coordinates of every player and the ball. By integrating multiple data modalities - i.e., event logs with timestamps, and x-y coordinates of player and ball positions - the dataset offers a multidimensional view of match dynamics. This dataset supports the validation of existing analytical techniques and facilitates the development of new methodologies in sports analytics. With availability under CC-BY 4.0, it promotes transparency, reproducibility, and the idea of open science in match analysis research.},
+   author = {Manuel Bassek and Robert Rein and Hendrik Weber and Daniel Memmert},
+   doi = {10.1038/S41597-025-04505-Y},
+   issn = {2052-4463},
+   issue = {1},
+   journal = {Scientific data},
+   keywords = {Daniel Memmert,Dataset,Germany,Humans,MEDLINE,Manuel Bassek,NCBI,NIH,NLM,National Center for Biotechnology Information,National Institutes of Health,National Library of Medicine,PMC11787359,PubMed Abstract,Robert Rein,Soccer*,doi:10.1038/s41597-025-04505-y,pmid:39893199},
+   month = {12},
+   pages = {195},
+   pmid = {39893199},
+   publisher = {Sci Data},
+   title = {An integrated dataset of spatiotemporal and event data in elite soccer},
+   volume = {12},
+   url = {https://pubmed.ncbi.nlm.nih.gov/39893199/},
+   year = {2025}
+}
+
+@article{Bauer2023,
+   abstract = {Choosing the right formation is one of the coach's most important decisions in football. Teams change formation dynamically throughout matches to achieve their immediate objective: to retain possession, progress the ball up-field and create (or prevent) goal-scoring opportunities. In this work we identify the unique formations used by teams in distinct phases of play in a large sample of tracking data. This we achieve in two steps: first, we train a convolutional neural network to decompose each game into non-overlapping segments and classify these segments into phases with an average F 1-score of 0.76. We then measure and contextualize unique formations used in each distinct phase of play. While conventional discussion tends to reduce team formations over an entire match to a single three-digit code (e.g. 4-4-2; 4 defender, 4 midfielder, 2 striker), we provide an objective representation of team formations per phase of play. Using the most frequently occurring phases of play, mid-block, we identify and contextualize six unique formations. A long-term analysis in the German Bundesliga allows us to quantify the efficiency of each formation, and to present a helpful scouting tool to identify how well a coach's preferred playing style is suited to a potential club.},
+   author = {P Bauer and G Anzer and L Shaw - Journal of sports analytics and undefined 2023},
+   doi = {10.3233/JSA-220620},
+   issue = {1},
+   journal = {journals.sagepub.comP Bauer, G Anzer, L ShawJournal of sports analytics, 2023•journals.sagepub.com},
+   keywords = {Association football,human-in-the-loop machine learning,soccer,sports analytics},
+   month = {3},
+   pages = {39-59},
+   publisher = {SAGE Publications},
+   title = {Putting team formations in association football into context},
+   volume = {9},
+   url = {https://journals.sagepub.com/doi/abs/10.3233/JSA-220620},
+   year = {2023}
+}
+@article{Bischofberger2025,
+   abstract = {The increasing availability of positional data in invasion sports like football drives the development of advanced performance metrics. Two widely adopted examples are space control, which quantifies spatial influence, and expected possession value (EPV), which estimates the value of match situations. However, space control lacks theoretical and empirical grounding while EPV struggles with hypotheticals and demands prohibitively extensive data. We introduce a physically grounded alternative to both measures using pass completion maps generated from simulated passes. Our model is fitted and validated using only three matches of open data with minority-class oversampling. Its individual pass outcome predictions are well-calibrated and produce more plausible completion maps than a leading learning-based approach. By integrating valued completion maps, we derive dangerous accessible space (DAS), which measures threat potential by the amount of dangerous space that can be accessed through passes and carries. DAS captures elusive performance aspects such as defensive positioning, timing of attacking runs, and strategic decision-making in a combined spatial and value-based manner. It achieves 74% accuracy (80.4% excluding ball height tests) on the OJN-EPV benchmark, rivaling cutting-edge EPV methods in identifying valuable match situations. The model and validation are fully available as the open-source Python package accessible-space on PyPI.},
+   author = {Jonas Bischofberger and Arnold Baca},
+   doi = {10.21203/RS.3.RS-6932689/V1},
+   institution = {Research Square},
+   keywords = {data-driven tactical analysis,expected possession value (EPV),football analytics,machine learning in sports,off-ball evaluation,open-source sports analytics,passing behaviour,performance analysis,positional data,space control},
+   month = {8},
+   title = {Dangerous Accessible Space: A Unified Model of Space and Value in Team Sports},
+   url = {https://www.researchsquare.com 'https://www.researchsquare.com/article/rs-6932689/v1},
+   year = {2025}
+}
+
+
+@inproceedings{Fernandez2018,
+   author = {Javier Fernández and F C Barcelona and Javier Fernandez and Luke Bornn},
+   booktitle = {Sloan Sports Analytics Conference},
+   title = {Wide Open Spaces: A statistical technique for measuring space creation in professional soccer},
+   url = {https://www.researchgate.net/publication/324942294_Wide_Open_Spaces_A_statistical_technique_for_measuring_space_creation_in_professional_soccer},
+   year = {2018}
+}
+
+@article{Fernandez2021,
+   abstract = {The expected possession value (EPV) of a soccer possession represents the likelihood of a team scoring or conceding the next goal at any time instance. In this work, we develop a comprehensive analysis framework for the EPV, providing soccer practitioners with the ability to evaluate the impact of observed and potential actions, both visually and analytically. The EPV expression is decomposed into a series of subcomponents that model the influence of passes, ball drives and shot actions on the expected outcome of a possession. We show we can learn from spatiotemporal tracking data and obtain calibrated models for all the components of the EPV. For the components related with passes, we produce visually-interpretable probability surfaces from a series of deep neural network architectures built on top of flexible representations of game states. Additionally, we present a series of novel practical applications providing coaches with an enriched interpretation of specific game situations. This is, to our knowledge, the first EPV approach in soccer that uses this decomposition and incorporates the dynamics of the 22 players and the ball through tracking data.},
+   author = {Javier Fernández and Luke Bornn and Daniel Cervone},
+   doi = {10.1007/S10994-021-05989-6},
+   issn = {15730565},
+   issue = {6},
+   journal = {Machine Learning},
+   keywords = {Convolutional neural networks,Deep learning,Spatiotemporal statistics,Sports analytics},
+   month = {6},
+   pages = {1389-1427},
+   publisher = {Springer},
+   title = {A framework for the fine-grained evaluation of the instantaneous expected value of soccer possessions},
+   volume = {110},
+   year = {2021}
+}
+
+@article{Forcher2022,
+   abstract = {Recently, the availability of big amounts of data enables analysts to dive deeper into the constraints of performance in various team sports. While offensive analyses in football have been extensively conducted, the evaluation of defensive performance is underrepresented in this sport. Hence, the aim of this study was to analyze successful defensive playing phases by investigating the space and time characteristics of defensive pressure. Therefore, tracking and event data of 153 games of the German Bundesliga (second half of 2020/21 season) were assessed. Defensive pressure was measured in the last 10 seconds of a defensive playing sequence (time characteristic) and it was distinguished between pressure on the ball-carrier, pressure on the group (5 attackers closest to the ball), and pressure on the whole team (space characteristic). A linear mixed model was applied to evaluate the effect of success of a defensive play (ball gain), space characteristic, and time characteristic on defensive pressure. Defensive pressure is higher in successful defensive plays (14.47 ± 16.82[%]) compared to unsuccessful defensive plays (12.87 ± 15.31[%]). The characteristics show that defensive pressure is higher in areas closer to the ball (space characteristic) and the closer the measurement is to the end of a defensive play (time characteristic), which is especially true for successful defensive plays. Defensive pressure is a valuable key performance indicator for defensive play. Further, this study shows that there is an association between the pressing of the ball-carrier and areas close to the ball with the success of defensive play.},
+   author = {L Forcher and L Forcher and S Altmann and D Jekauc - Science and Medicine … and undefined 2022},
+   doi = {10.1080/24733938.2022.2158213},
+   journal = {Taylor \& FrancisL Forcher, L Forcher, S Altmann, D Jekauc, M KempeScience and Medicine in Football, 2022•Taylor \& Francis},
+   keywords = {defensive behavior,machine learning,match analysis,performance analysis,team sports},
+   publisher = {Taylor and Francis Ltd.},
+   title = {The keys of pressing to gain the ball–Characteristics of defensive pressure in elite soccer using tracking data},
+   url = {https://www.tandfonline.com/doi/abs/10.1080/24733938.2022.2158213},
+   year = {2022}
+}
+@article{Goes2020a,
+   abstract = {In professional soccer, increasing amounts of data are collected that harness great potential when it comes to analysing tactical behaviour. Unlocking this potential is difficult as big data challenges the data management and analytics methods commonly employed in sports. By joining forces with computer science, solutions to these challenges could be achieved, helping sports science to find new insights, as is happening in other scientific domains. We aim to bring multiple domains together in the context of analysing tactical behaviour in soccer using position tracking data. A systematic literature search for studies employing position tracking data to study tactical behaviour in soccer was conducted in seven electronic databases, resulting in 2338 identified studies and finally the inclusion of 73 papers. Each domain clearly contributes to the analysis of tactical behaviour, albeit in-sometimes radically-different ways. Accordingly, we present a multidisciplinary framework where each domain's contributions to feature construction, modelling and interpretation can be situated. We discuss a set of key challenges concerning the data analytics process, specifically feature construction, spatial and temporal aggregation. Moreover, we discuss how these challenges could be resolved through multidisciplinary collaboration, which is pivotal in unlocking the potential of position tracking data in sports analytics.},
+   author = {F R Goes and L A Meerhoff and M J O Bueno and D M Rodrigues and F A Moura and M S Brink and M T Elferink-Gemser and A J Knobbe and S A Cunha and R S Torres and K A P M Lemmink},
+   doi = {10.1080/17461391.2020.1747552},
+   issue = {4},
+   journal = {Taylor \& FrancisFR Goes, LA Meerhoff, MJO Bueno, DM Rodrigues, FA Moura, MS BrinkEuropean Journal of Sport Science, 2021•Taylor \& Francis},
+   keywords = {Football,big data,performance analysis,tactical analysis,team sport},
+   pages = {481-496},
+   publisher = {Taylor and Francis Ltd.},
+   title = {Unlocking the potential of big data to support tactical performance analysis in professional soccer: A systematic review},
+   volume = {21},
+   url = {https://www.tandfonline.com/doi/abs/10.1080/17461391.2020.1747552},
+   year = {2020}
+}
+@article{Goes2020b,
+   abstract = {Association football teams can be considered complex dynamical systems of individuals grouped in subgroups (defenders, midfielders and attackers), coordinating their behaviour to achieve a shared g...},
+   author = {Floris R Goes and Michel S Brink and Marije T Elferink-Gemser and Matthias Kempe and Koen A P M Lemmink},
+   doi = {10.1080/02640414.2020.1834689},
+   issn = {1466447X},
+   issue = {5},
+   journal = {https://doi.org/10.1080/02640414.2020.1834689},
+   keywords = {Soccer,Spatiotemporal,machine learning,subgroups,tactics},
+   pages = {523-532},
+   pmid = {33106106},
+   publisher = {Routledge},
+   title = {The tactics of successful attacks in professional association football: large-scale spatiotemporal analysis of dynamic subgroups using position tracking data},
+   volume = {39},
+   url = {https://www.tandfonline.com/doi/abs/10.1080/02640414.2020.1834689},
+   year = {2020}
+}
+@article{Goes2021,
+   abstract = {Introduction: Performance assessment in professional soccer often focusses on notational assessment like assists or pass accuracy. However, rather than statistics, performance is more about making the best possible tactical decision, in the context of aplayer's positional role and the available options at the time. With the current paper, we aim to construct an improved model for the assessment of pass risk and reward across different positional roles, and validate that model by studying differences in decision-making between players with different positional roles. Methods: To achieve our aim, we collected position tracking data from an entire season of Dutch Eredivisie matches, containing 286.151 passes of 336 players. From that data, we derived several features on risk and reward, both for the pass that has been played, as well as for the pass options that were available at the time of passing. Results: Our findings indicate that we could adequately model risk and reward, outperforming previously published models, and that there were large differences in decision-making between players with different positional roles. Discussion: Our model can be used to assess player performance based on what could have happened, rather than solely based on what did happen in amatch.},
+   author = {Floris Goes and Edgar Schwarz and Marije Elferink-Gemser and Koen Lemmink and Michel Brink},
+   doi = {10.1080/24733938.2021.1944660},
+   issue = {3},
+   journal = {Taylor \& Francis},
+   keywords = {football,risk-taking behaviour,spatiotemporal behaviour,tactical behaviour,time-motion analysis},
+   pages = {372-380},
+   publisher = {Taylor and Francis Ltd.},
+   title = {A risk-reward assessment of passing decisions: comparison between positional roles using tracking data from professional men's soccer},
+   volume = {6},
+   url = {https://www.tandfonline.com/doi/abs/10.1080/24733938.2021.1944660},
+   year = {2021}
+}
+
+
+@article{Hader2019,
+   abstract = {Background: Monitoring athletes’ external load during a soccer match may be useful to predict post-match acute and residual fatigue. This estimation would allow individual adjustments to training programs to minimize injury risk, improve well-being, and restore players’ physical performance and inform the recovery process. Methods: Using a systematic review and meta-analysis of the literature, the aim is to determine which monitoring variables would be the strongest predictors of acute (immediately) and residual (up to 72 h) fatigue states in soccer. PubMed, SPORTDiscus, and Web of Science databases were searched (until September 2018). Studies concurrently examining soccer match-related external load metrics and subjective and/or objective measures were selected to determine pooled correlations (r¯) with confidence intervals (CI). The quality and strength of the findings of each study were evaluated to identify overall levels of evidence. Results: Eleven studies were included (n = 165 athletes). Acute (r¯ = 0.67; 95% CI = [0.40, 0.94]) and residual (24 h post-match, r¯ = 0.54; 95% CI = [0.35, 0.65]) changes in muscle damage markers and countermovement jump peak power output (CMJPPO) were, with moderate to strong evidence, largely correlated with running distance above 5.5 m s−1. No other external load metric was largely correlated with both biochemical and neuromuscular markers. For every 100-m run above 5.5 m·s−1, CK activity measured 24 h post-match increased by 30% and CMJPPO decreased by 0.5%. Conversely, the total distance covered did not present any evidence of a clear relationship with any fatigue-related marker at any time-point. Conclusions: Running distance above 5.5 m·s−1 represents the most sensitive monitoring variable characterizing biochemical and neuromuscular responses, at least when assessed during the initial 24 h (not at 48 h/72 h) post-match recovery period. In addition, total distance covered is not sensitive enough to inform decision-making during the fatigue monitoring process.},
+   author = {Karim Hader and Michael C. Rumpf and Maxime Hertzog and Liam P. Kilduff and Olivier Girard and Joao R. Silva},
+   doi = {10.1186/S40798-019-0219-7/FIGURES/2},
+   issn = {21989761},
+   issue = {1},
+   journal = {Sports Medicine - Open},
+   keywords = {External load,Monitoring, Fatigue,Muscle damage,Neuromuscular performance,Perceptual responses,Recovery,Time motion analysis},
+   month = {12},
+   pages = {48-},
+   publisher = {Springer},
+   title = {Monitoring the Athlete Match Response: Can External Load Variables Predict Post-match Acute and Residual Fatigue in Soccer? A Systematic Review with Meta-analysis},
+   volume = {5},
+   url = {https://link.springer.com/article/10.1186/s40798-019-0219-7},
+   year = {2019}
+}
+
+
+@article{Herold2022,
+   abstract = {This study describes an approach to evaluate the off-ball behaviour of attacking players in association football. The aim was to implement a defensive pressure model to examine an offensive player’s ability to create separation from a defender using 1411 high-intensity off-ball actions including 988 Deep Runs (DRs) DRs and 423 Change of Directions (CODs). Twenty-two official matches (14 competitive matches and 8 friendlies) of the German National Team were included in the research. To validate the effectiveness of the pressure model, each pass (n = 25,418) was evaluated for defensive pressure on the receiver at the moment of the pass and for the pass completion rate (R = −.34, p < .001). Next, after assessing the inter-rater reliability (Fleiss Kappa of 80 for DRs and 78 for CODs), three expert raters annotated all DRs and CODs that met the pre-set criteria. A time-series analysis of each DR and COD was calculated to the nearest 0.1 second, finding a slight increase in pressure from the start to the end of the off-ball actions as defenders re-established proximity to the attacker after separation was created. A linear mixed model using run type (DR or COD) as a fixed effect with the local maximum as a fixed effect on a continuous scale resulted in p < 0.001, d = 4.81, CI = 0.63 to 0.67 for the greatest decrease in pressure, p < 0.001, d = 0.143, CI = 9.18 to 10.61 for length of the longest decrease in pressure, and p < 0.001, d = 1.13, CI = 0.90 to 1.11 for the fastest rate of decrease in pressure. As these values pertain to the local maximum, situations with greater starting pressure on the attacker often led to greater subsequent decreases. Furthermore, there was a significant (p < .0001) difference between offensive and defensive positions and the number of off-ball actions. Results suggest the model can be applied to quantify and visualise the pressure exerted on non-ball-possessing players. This approach can be combined with other methods of match analysis, providing practitioners with new opportunities to measure tactical performance in football.},
+   author = {Mat Herold and A Hecksteden and D Radke and F Goes and S Nopp and T Meyer and M Kempe},
+   doi = {10.1080/02640414.2022.2081405},
+   issn = {1466447X},
+   issue = {12},
+   journal = {Journal of Sports Sciences},
+   keywords = {Soccer,data science,off-ball behaviour,performance analysis},
+   pages = {1412-1425},
+   pmid = {35640049},
+   publisher = {Routledge},
+   title = {Off-ball behavior in association football: A data-driven model to measure changes in individual defensive pressure},
+   volume = {40},
+   year = {2022}
+}
+
+@article{Jerome2024,
+   abstract = {The physical demands of elite soccer match play have traditionally been measured using aggregated whole-match metrics. However, match play is increasingly considered as distinct phases of play, although the influence of phase of play on match physical demands remains largely unknown. This study compared physical intensity, acceleration and deceleration demands, between phases of play and according to playing position. The duration of each match from a major European league (n = 1083) was divided into one of five reciprocal phases (for the in-/out-of-possession team) using event and tracking data: build-up/high-block, progression/mid-block, chance creation/low-block, fast attack/fast defence, or attacking transition/defensive transition. Player tracking data were used to calculate physical intensity as the rate of distance covered (m⋅min−1) in total and within five speed categories, and the proportion of time spent accelerating and decelerating (>2 m s−2) during each phase of play. Rate of distance covered in total differed markedly with phase of play; fast attack 35%–53% greater, and fast defence 33%–50% greater, than other in-/out-of-possession phases respectively, and these effects were amplified for the rate of distance covered at higher speeds (e.g., sprinting ≥4-fold differences between phases). Match phase also affected the proportion of time spent accelerating and decelerating (highest for fast attack and chance creation, respectively), especially when in-possession for forwards and when out-of-possession for defenders (p < 0.001). Phase of play had a large effect on the physical intensity of match play, particularly rates of distance covered at higher speeds, as well as the acceleration and deceleration demands, and in a position specific manner.},
+   author = {Benjamin W.C. Jerome and Michael Stoeckl and Ben Mackriell and Christian W. Dawson and Daniel T.P. Fong and Jonathan P. Folland},
+   doi = {10.1002/EJSC.12209},
+   issn = {1536-7290},
+   issue = {11},
+   journal = {European journal of sport science},
+   keywords = {Acceleration*,Athletic Performance* / physiology,Benjamin W C Jerome,Competitive Behavior / physiology,Deceleration*,Humans,Jonathan P Folland,MEDLINE,Michael Stoeckl,NCBI,NIH,NLM,National Center for Biotechnology Information,National Institutes of Health,National Library of Medicine,PMC11534638,PubMed Abstract,Running / physiology,Soccer* / physiology,doi:10.1002/ejsc.12209,pmid:39462989},
+   month = {11},
+   pages = {1627-1638},
+   pmid = {39462989},
+   publisher = {Eur J Sport Sci},
+   title = {Contextualised physical metrics: The physical demands vary with phase of play during elite soccer match play},
+   volume = {24},
+   url = {https://pubmed.ncbi.nlm.nih.gov/39462989/},
+   year = {2024}
+}
+
+
+@misc{Kim2025,
+      title={ELASTIC: Event-Tracking Data Synchronization in Soccer Without Annotated Event Locations}, 
+      author={Hyunsung Kim and Hoyoung Choi and Sangwoo Seo and Tom Boomstra and Jinsung Yoon and Chanyoung Park},
+      year={2025},
+      eprint={2508.09238},
+      archivePrefix={arXiv},
+      primaryClass={cs.DB},
+      url={https://arxiv.org/abs/2508.09238}, 
+}
 @article{Linke2020,
    abstract = {The present study aimed to validate and compare the football-specific measurement accuracy of two optical tracking systems engineered by TRACAB. The “Gen4” system consists of two multi-camera units (a stereo pair) in two locations either side of the halfway line, whereas the distributed “Gen5” system combines two stereo pairs on each side of the field as well as two monocular systems behind the goal areas. Data were collected from 20 male football players in two different exercises (a football sport-specific running course and small-sided games) in a professional football stadium. For evaluating the accuracy of the systems, measures were compared against simultaneously recorded measures of a reference system (VICON motion capture system). Statistical analysis uses RMSE for kinematic variables (position, speed and acceleration) and the difference in percentages for performance indicators (e.g. distance covered, peak speed) per run compared to the reference system. Frames in which players were obviously not tracked were excluded. Gen5 had marginally better accuracy (0.08 m RMSE) for position measurements than Gen4 (0.09 m RMSE) compared to the reference. Accuracy difference in instantaneous speed (Gen4: 0.09 m⋅s-1 RMSE; Gen5: 0.08 m⋅s-1 RMSE) and acceleration (Gen4: 0.26 m⋅s-2 RMSE; Gen5: 0.21 m⋅s-2 RMSE) measurements were significant, but also trivial in terms of the effect size. For total distance travelled, both Gen4 (0.42 ± 0.60%) and Gen5 (0.27 ± 0.35%) showed only trivial deviations compared to the reference. Gen4 showed moderate differences in the low-speed distance travelled category (-19.41 ± 13.24%) and small differences in the high-speed distance travelled category (8.94 ± 9.49%). Differences in peak speed, acceleration and deceleration were trivial (<0.5%) for both Gen4 and Gen5. These findings suggest that Gen5’s distributed camera architecture has minor benefits over Gen4’s single-view camera architecture in terms of accuracy. We assume that the main benefit of the Gen5 towards Gen4 lies in increased robustness of the tracking when it comes to optical overlapping of players. Since differences towards the reference system were very low, both TRACAB’s tracking systems can be considered as valid technologies for football-specific performance analyses in the settings tested as long as players are tracked correctly.},
    author = {Daniel Linke and Daniel Link and Martin Lames},
@@ -16,65 +258,42 @@
    url = {https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0230179},
    year = {2020}
 }
-@article{sotudeh2025,
-  title={The principles of tactical formation identification in association football (soccer)—a survey},
-  author={Sotudeh, Hadi},
-  journal={Frontiers in Sports and Active Living},
-  volume={6},
-  pages={1512386},
-  year={2025},
-  publisher={Frontiers Media SA}
+
+@article{Link2016,
+   abstract = {This study describes an approach to quantification of attacking performance in football. Our procedure determines a quantitative representation of the probability of a goal being scored for every point in time at which a player is in possession of the ball–we refer to this as dangerousity. The calculation is based on the spatial constellation of the player and the ball, and comprises four components: (1) Zone describes the danger of a goal being scored from the position of the player on the ball, (2) Control stands for the extent to which the player can implement his tactical intention on the basis of the ball dynamics, (3) Pressure represents the possibility that the defending team prevent the player from completing an action with the ball and (4) Density is the chance of being able to defend the ball after the action. Other metrics can be derived from dangerousity by means of which questions relating to analysis of the play can be answered. Action Value represents the extent to which the player can make a situation more dangerous through his possession of the ball. Performance quantifies the number and quality of the attacks by a team over a period of time, while Dominance describes the difference in performance between teams. The evaluation uses the correlation between probability of winning the match (derived from betting odds) and performance indicators, and indicates that among Goal difference (r = .55), difference in Shots on Goal (r = .58), difference in Passing Accuracy (r = .56), Tackling Rate (r = .24) Ball Possession (r = .71) and Dominance (r = .82), the latter makes the largest contribution to explaining the skill of teams. We use these metrics to analyse individual actions in a match, to describe passages of play, and to characterise the performance and efficiency of teams over the season. For future studies, they provide a criterion that does not depend on chance or results to investigate the influence of central events in a match, various playing systems or tactical group concepts on success.},
+   author = {Daniel Link and Steffen Lang and Philipp Seidenschwarz},
+   doi = {10.1371/JOURNAL.PONE.0168768},
+   isbn = {1111111111},
+   issn = {1932-6203},
+   issue = {12},
+   journal = {PLOS ONE},
+   keywords = {Centrality,Gambling,High pressure,Mass media,Probability density,Sports,Sports science,Team behavior},
+   month = {10},
+   pages = {e0168768},
+   pmid = {28036407},
+   publisher = {Public Library of Science},
+   title = {Real Time Quantification of Dangerousity in Football Using Spatiotemporal Tracking Data},
+   volume = {11},
+   url = {https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0168768},
+   year = {2016}
 }
-@article{Goes2020,
-   abstract = {In professional soccer, increasing amounts of data are collected that harness great potential when it comes to analysing tactical behaviour. Unlocking this potential is difficult as big data challenges the data management and analytics methods commonly employed in sports. By joining forces with computer science, solutions to these challenges could be achieved, helping sports science to find new insights, as is happening in other scientific domains. We aim to bring multiple domains together in the context of analysing tactical behaviour in soccer using position tracking data. A systematic literature search for studies employing position tracking data to study tactical behaviour in soccer was conducted in seven electronic databases, resulting in 2338 identified studies and finally the inclusion of 73 papers. Each domain clearly contributes to the analysis of tactical behaviour, albeit in-sometimes radically-different ways. Accordingly, we present a multidisciplinary framework where each domain's contributions to feature construction, modelling and interpretation can be situated. We discuss a set of key challenges concerning the data analytics process, specifically feature construction, spatial and temporal aggregation. Moreover, we discuss how these challenges could be resolved through multidisciplinary collaboration, which is pivotal in unlocking the potential of position tracking data in sports analytics.},
-   author = {F R Goes and L A Meerhoff and M J O Bueno and D M Rodrigues and F A Moura and M S Brink and M T Elferink-Gemser and A J Knobbe and S A Cunha and R S Torres and K A P M Lemmink},
-   doi = {10.1080/17461391.2020.1747552},
-   issue = {4},
-   journal = {Taylor \& FrancisFR Goes, LA Meerhoff, MJO Bueno, DM Rodrigues, FA Moura, MS BrinkEuropean Journal of Sport Science, 2021•Taylor \& Francis},
-   keywords = {Football,big data,performance analysis,tactical analysis,team sport},
-   pages = {481-496},
-   publisher = {Taylor and Francis Ltd.},
-   title = {Unlocking the potential of big data to support tactical performance analysis in professional soccer: A systematic review},
-   volume = {21},
-   url = {https://www.tandfonline.com/doi/abs/10.1080/17461391.2020.1747552},
-   year = {2020}
+
+@article{Oonk2025a,
+   abstract = {The field of football (soccer) has seen a recent increase in the utilisation of data, mainly for the analysis of physical and tactical performance. Analysis of tactical performance can be conducted...},
+   author = {G. A. Oonk and T. J.W. Buurke and K. A.P.M. Lemmink and M. Kempe},
+   doi = {10.1080/02640414.2025.2555117},
+   issn = {1466447X},
+   journal = {Journal of Sports Sciences},
+   keywords = {Associate football,competitive dyad,competitive interaction,machine learning,tracking data},
+   month = {9},
+   publisher = {Routledge},
+   title = {The interaction between attacker and environment predicts successfulness in one-on-one dribbles in male elite football},
+   url = {https://www.tandfonline.com/doi/abs/10.1080/02640414.2025.2555117},
+   year = {2025}
 }
-@article{vanArem2025,
-   title={Forecasting the Future Development in Quality and Value of Professional Football Players},
-   volume={15},
-   ISSN={2076-3417},
-   url={http://dx.doi.org/10.3390/app15168916},
-   DOI={10.3390/app15168916},
-   number={16},
-   journal={Applied Sciences},
-   publisher={MDPI AG},
-   author={van Arem, Koen and Goes-Smit, Floris and Söhl, Jakob},
-   year={2025},
-   month=aug, pages={8916} }
-@article{VanRoy2024,
-   abstract = {Event data, which records high-level semantic events (e.g., passes), and tracking data, which records positional information for all players, are the two main types of advanced data streams used for analyses in soccer. While both streams when analyzed separately can yield relevant insights, combining them allows us to capture the entirety of the game. However, doing so is complicated by the fact that the two data streams are often not synchronized with each other. That is, the timestamp associated with an event in the event data does not correspond to the analogous frame in the tracking data. Thus, a key problem is to align these sources. However, few papers explicitly describe approaches for doing so. In this paper, we propose a rule-based approach ETSY for synchronizing event and tracking data, evaluate it, and compare experimentally and conceptually with the few state-of-the-art approaches available.},
-   author = {Maaike Van Roy and Lorenzo Cascioli and Jesse Davis},
-   doi = {10.1007/978-3-031-53833-9_2},
-   isbn = {9783031538322},
-   issn = {18650937},
-   journal = {Communications in Computer and Information Science},
-   pages = {11-23},
-   publisher = {Springer Science and Business Media Deutschland GmbH},
-   title = {ETSY: A Rule-Based Approach to Event and Tracking Data SYnchronization},
-   volume = {2035 CCIS},
-   year = {2024}
-}
-@misc{Kim2025,
-      title={ELASTIC: Event-Tracking Data Synchronization in Soccer Without Annotated Event Locations}, 
-      author={Hyunsung Kim and Hoyoung Choi and Sangwoo Seo and Tom Boomstra and Jinsung Yoon and Chanyoung Park},
-      year={2025},
-      eprint={2508.09238},
-      archivePrefix={arXiv},
-      primaryClass={cs.DB},
-      url={https://arxiv.org/abs/2508.09238}, 
-}
-@inproceedings{Oonk2025,
-   abstract = {aluable new insights can be obtained by combining tracking and event data in soccer anal-
+
+@inproceedings{Oonk2025b,
+   abstract = {Valuable new insights can be obtained by combining tracking and event data in soccer anal-
 ysis. However, how to synchronize the two data streams, is rarely discussed. Non systematic
 errors in the timestamps, and synchronizing with cost functions result in suboptimal synchro-
 nization, which hinders further analysis. Within this proceedings we will introduce a com-
@@ -94,115 +313,20 @@ fully open-sourced and available in the DataBallPy package.},
    title = {The Right Way to Synchronize Tracking and Event Data: Using Domain Knowledge to Optimize algorithms},
    year = {2025}
 }
-@software{reback2020pandas,
-    author       = {The pandas development team},
-    title        = {pandas-dev/pandas: Pandas},
-    month        = feb,
-    year         = 2020,
-    publisher    = {Zenodo},
-    version      = {latest},
-    doi          = {10.5281/zenodo.3509134},
-    url          = {https://doi.org/10.5281/zenodo.3509134}
+
+@article{Raabe2022, 
+doi = {10.21105/joss.04588}, 
+url = {https://doi.org/10.21105/joss.04588}, 
+year = {2022}, 
+publisher = {The Open Journal}, 
+volume = {7}, 
+number = {76}, 
+pages = {4588}, 
+author = {Raabe, Dominik and Biermann, Henrik and Bassek, Manuel and Wohlan, Martin and Komitova, Rumena and Rein, Robert and Groot, Tobias Kuppens and Memmert, Daniel}, 
+title = {floodlight - A high-level, data-driven sports analytics framework}, 
+journal = {Journal of Open Source Software} 
 }
-@article{Bassek2025,
-   abstract = {Data-driven match analysis in soccer is a growing discipline in both research and practice. However, public data is scarce, which raises the barrier for entering this field and decreases reproducibility of methods and results. To bridge this gap, this paper presents a dataset of official match information, event, and position data from seven matches of the German Bundesliga's first and second division. The match information contains meta data about the matches and their participants. The event data contain timestamps along with descriptions of discrete events, like passes, shots, or fouls. The position data contain the x/y-coordinates of every player and the ball. By integrating multiple data modalities - i.e., event logs with timestamps, and x-y coordinates of player and ball positions - the dataset offers a multidimensional view of match dynamics. This dataset supports the validation of existing analytical techniques and facilitates the development of new methodologies in sports analytics. With availability under CC-BY 4.0, it promotes transparency, reproducibility, and the idea of open science in match analysis research.},
-   author = {Manuel Bassek and Robert Rein and Hendrik Weber and Daniel Memmert},
-   doi = {10.1038/S41597-025-04505-Y},
-   issn = {2052-4463},
-   issue = {1},
-   journal = {Scientific data},
-   keywords = {Daniel Memmert,Dataset,Germany,Humans,MEDLINE,Manuel Bassek,NCBI,NIH,NLM,National Center for Biotechnology Information,National Institutes of Health,National Library of Medicine,PMC11787359,PubMed Abstract,Robert Rein,Soccer*,doi:10.1038/s41597-025-04505-y,pmid:39893199},
-   month = {12},
-   pages = {195},
-   pmid = {39893199},
-   publisher = {Sci Data},
-   title = {An integrated dataset of spatiotemporal and event data in elite soccer},
-   volume = {12},
-   url = {https://pubmed.ncbi.nlm.nih.gov/39893199/},
-   year = {2025}
-}
-@article{Vidal-Codina2022,
-   abstract = {One of the main shortcomings of event data in football, which has been extensively used for analytics in the recent years, is that it still requires manual collection, thus limiting its availability to a reduced number of tournaments. In this work, we propose a deterministic decision tree-based algorithm to automatically extract football events using tracking data, which consists of two steps: (1) a possession step that evaluates which player was in possession of the ball at each frame in the tracking data, as well as the distinct player configurations during the time intervals where the ball is not in play to inform set piece detection; (2) an event detection step that combines the changes in ball possession computed in the first step with the laws of football to determine in-game events and set pieces. The automatically generated events are benchmarked against manually annotated events and we show that in most event categories the proposed methodology achieves + 90 % detection rate across different tournaments and tracking data providers. Finally, we demonstrate how the contextual information offered by tracking data can be leveraged to increase the granularity of auto-detected events, and exhibit how the proposed framework may be used to conduct a myriad of data analyses in football.},
-   author = {Ferran Vidal-Codina and Nicolas Evans and Bahaeddine El Fakir and Johsan Billingham},
-   doi = {10.1007/s12283-022-00381-6},
-   issn = {14602687},
-   issue = {1},
-   journal = {Sports Engineering},
-   keywords = {Auto-eventing,Ball possession,Data democratization,EPTS,Event data,Football analytics},
-   month = {10},
-   publisher = {Springer Science and Business Media Deutschland GmbH},
-   title = {Automatic event detection in football using tracking data},
-   volume = {25},
-   year = {2022}
-}
-@article{Jerome2024,
-   abstract = {The physical demands of elite soccer match play have traditionally been measured using aggregated whole-match metrics. However, match play is increasingly considered as distinct phases of play, although the influence of phase of play on match physical demands remains largely unknown. This study compared physical intensity, acceleration and deceleration demands, between phases of play and according to playing position. The duration of each match from a major European league (n = 1083) was divided into one of five reciprocal phases (for the in-/out-of-possession team) using event and tracking data: build-up/high-block, progression/mid-block, chance creation/low-block, fast attack/fast defence, or attacking transition/defensive transition. Player tracking data were used to calculate physical intensity as the rate of distance covered (m⋅min−1) in total and within five speed categories, and the proportion of time spent accelerating and decelerating (>2 m s−2) during each phase of play. Rate of distance covered in total differed markedly with phase of play; fast attack 35%–53% greater, and fast defence 33%–50% greater, than other in-/out-of-possession phases respectively, and these effects were amplified for the rate of distance covered at higher speeds (e.g., sprinting ≥4-fold differences between phases). Match phase also affected the proportion of time spent accelerating and decelerating (highest for fast attack and chance creation, respectively), especially when in-possession for forwards and when out-of-possession for defenders (p < 0.001). Phase of play had a large effect on the physical intensity of match play, particularly rates of distance covered at higher speeds, as well as the acceleration and deceleration demands, and in a position specific manner.},
-   author = {Benjamin W.C. Jerome and Michael Stoeckl and Ben Mackriell and Christian W. Dawson and Daniel T.P. Fong and Jonathan P. Folland},
-   doi = {10.1002/EJSC.12209},
-   issn = {1536-7290},
-   issue = {11},
-   journal = {European journal of sport science},
-   keywords = {Acceleration*,Athletic Performance* / physiology,Benjamin W C Jerome,Competitive Behavior / physiology,Deceleration*,Humans,Jonathan P Folland,MEDLINE,Michael Stoeckl,NCBI,NIH,NLM,National Center for Biotechnology Information,National Institutes of Health,National Library of Medicine,PMC11534638,PubMed Abstract,Running / physiology,Soccer* / physiology,doi:10.1002/ejsc.12209,pmid:39462989},
-   month = {11},
-   pages = {1627-1638},
-   pmid = {39462989},
-   publisher = {Eur J Sport Sci},
-   title = {Contextualised physical metrics: The physical demands vary with phase of play during elite soccer match play},
-   volume = {24},
-   url = {https://pubmed.ncbi.nlm.nih.gov/39462989/},
-   year = {2024}
-}
-@article{Andrienko2017,
-   abstract = {Modern movement tracking technologies enable acquisition of high quality data about movements of the players and the ball in the course of a football match. However, there is a big difference between the raw data and the insights into team behaviors that analysts would like to gain. To enable such insights, it is necessary first to establish relationships between the concepts characterizing behaviors and what can be extracted from data. This task is challenging since the concepts are not strictly defined. We propose a computational approach to detecting and quantifying the relationships of pressure emerging during a game. Pressure is exerted by defending players upon the ball and the opponents. Pressing behavior of a team consists of multiple instances of pressure exerted by the team members. The extracted pressure relationships can be analyzed in detailed and summarized forms with the use of static and dynamic visualizations and interactive query tools. To support examination of team tactics in different situations, we have designed and implemented a novel interactive visual tool “time mask”. It enables selection of multiple disjoint time intervals in which given conditions are fulfilled. Thus, it is possible to select game situations according to ball possession, ball distance to the goal, time that has passed since the last ball possession change or remaining time before the next change, density of players’ positions, or various other conditions. In response to a query, the analyst receives visual and statistical summaries of the set of selected situations and can thus perform joint analysis of these situations. We give examples of applying the proposed combination of computational, visual, and interactive techniques to real data from games in the German Bundesliga, where the teams actively used pressing in their defense tactics.},
-   author = {Gennady Andrienko and Natalia Andrienko and Guido Budziak and Jason Dykes and Georg Fuchs and Tatiana von Landesberger and Hendrik Weber},
-   doi = {10.1007/s10618-017-0513-2},
-   issn = {1573756X},
-   issue = {6},
-   journal = {Data Mining and Knowledge Discovery},
-   keywords = {Collective movement patterns,Football data analysis,Movement data analysis,Visual analytics},
-   month = {10},
-   pages = {1793-1839},
-   publisher = {Springer New York LLC},
-   title = {Visual analysis of pressure in football},
-   volume = {31},
-   year = {2017}
-}
-@article{Herold2022,
-   abstract = {This study describes an approach to evaluate the off-ball behaviour of attacking players in association football. The aim was to implement a defensive pressure model to examine an offensive player’s ability to create separation from a defender using 1411 high-intensity off-ball actions including 988 Deep Runs (DRs) DRs and 423 Change of Directions (CODs). Twenty-two official matches (14 competitive matches and 8 friendlies) of the German National Team were included in the research. To validate the effectiveness of the pressure model, each pass (n = 25,418) was evaluated for defensive pressure on the receiver at the moment of the pass and for the pass completion rate (R = −.34, p < .001). Next, after assessing the inter-rater reliability (Fleiss Kappa of 80 for DRs and 78 for CODs), three expert raters annotated all DRs and CODs that met the pre-set criteria. A time-series analysis of each DR and COD was calculated to the nearest 0.1 second, finding a slight increase in pressure from the start to the end of the off-ball actions as defenders re-established proximity to the attacker after separation was created. A linear mixed model using run type (DR or COD) as a fixed effect with the local maximum as a fixed effect on a continuous scale resulted in p < 0.001, d = 4.81, CI = 0.63 to 0.67 for the greatest decrease in pressure, p < 0.001, d = 0.143, CI = 9.18 to 10.61 for length of the longest decrease in pressure, and p < 0.001, d = 1.13, CI = 0.90 to 1.11 for the fastest rate of decrease in pressure. As these values pertain to the local maximum, situations with greater starting pressure on the attacker often led to greater subsequent decreases. Furthermore, there was a significant (p < .0001) difference between offensive and defensive positions and the number of off-ball actions. Results suggest the model can be applied to quantify and visualise the pressure exerted on non-ball-possessing players. This approach can be combined with other methods of match analysis, providing practitioners with new opportunities to measure tactical performance in football.},
-   author = {Mat Herold and A Hecksteden and D Radke and F Goes and S Nopp and T Meyer and M Kempe},
-   doi = {10.1080/02640414.2022.2081405},
-   issn = {1466447X},
-   issue = {12},
-   journal = {Journal of Sports Sciences},
-   keywords = {Soccer,data science,off-ball behaviour,performance analysis},
-   pages = {1412-1425},
-   pmid = {35640049},
-   publisher = {Routledge},
-   title = {Off-ball behavior in association football: A data-driven model to measure changes in individual defensive pressure},
-   volume = {40},
-   year = {2022}
-}
-@article{Anzer2021,
-   abstract = {Due to the low scoring nature of football (soccer), shots are often used as a proxy to evaluate team and player performances. However, not all shots are created equally and their quality differs significantly depending on the situation. The aim of this study is to objectively quantify the quality of any given shot by introducing a so-called expected goals (xG) model. This model is validated statistically and with professional match analysts. The best performing model uses an extreme gradient boosting algorithm and is based on hand-crafted features from synchronized positional and event data of 105, 627 shots in the German Bundesliga. With a ranked probability score (RPS) of 0.197, it is more accurate than any previously published expected goals model. This approach allows us to assess team and player performances far more accurately than is possible with traditional metrics by focusing on process rather than results.},
-   author = {Gabriel Anzer and Pascal Bauer},
-   doi = {https://doi.org/10.3389/fspor.2021.624475},
-   issn = {26249367},
-   journal = {Frontiers in Sports and Active Living},
-   keywords = {XG,applied machine learning,event data,expected goals,football,positional data,soccer,sports analytics},
-   month = {3},
-   pages = {624475},
-   publisher = {Frontiers Media S.A.},
-   title = {A Goal Scoring Probability Model for Shots Based on Synchronized Positional and Event Data in Football (Soccer)},
-   volume = {3},
-   url = {www.frontiersin.org},
-   year = {2021}
-}
-@misc{Singh2019,
-   author = {Karun Singh},
-   title = {Introducing Expected Threat (xT)},
-   url = {https://karun.in/blog/expected-threat.html},
-   year = {2019}
-}
+
 @article{Rein2017,
    abstract = {Passing behaviour is a key property of successful performance in team sports. Previous investigations however have mainly focused on notational measurements like total passing frequencies which provide little information about what actually constitutes successful passing behaviour. Consequently, this has hampered the transfer of research findings into applied settings. Here we present two novel approaches to assess passing effectiveness in elite soccer by evaluating their effects on majority situations and space control in front of the goal. Majority situations are assessed by calculating the number of defenders between the ball carrier and the goal. Control of space is estimated using Voronoi-diagrams based on the player's positions on the pitch. Both methods were applied to position data from 103 German First division games from the 2011/2012, 2012/2013 and 2014/2015 seasons using a big data approach. The results show that both measures are significantly related to successful game play with respect to the number of goals scored and to the probability of winning a game. The results further show that on average passes from the mid-field into the attacking area are most effective. The presented passing efficiency measures thereby offer new opportunities for future applications in soccer and other sports disciplines whilst maintaining practical relevance with respect to tactical training regimes or game performances analysis.},
    author = {Robert Rein and Dominik Raabe and Daniel Memmert},
@@ -217,23 +341,67 @@ fully open-sourced and available in the DataBallPy package.},
    volume = {55},
    year = {2017}
 }
-@inproceedings{Fernandez2018,
-   author = {Javier Fernández and F C Barcelona and Javier Fernandez and Luke Bornn},
-   booktitle = {Sloan Sports Analytics Conference},
-   title = {Wide Open Spaces: A statistical technique for measuring space creation in professional soccer},
-   url = {https://www.researchgate.net/publication/324942294_Wide_Open_Spaces_A_statistical_technique_for_measuring_space_creation_in_professional_soccer},
-   year = {2018}
+@article{VanRoy2024,
+   abstract = {Event data, which records high-level semantic events (e.g., passes), and tracking data, which records positional information for all players, are the two main types of advanced data streams used for analyses in soccer. While both streams when analyzed separately can yield relevant insights, combining them allows us to capture the entirety of the game. However, doing so is complicated by the fact that the two data streams are often not synchronized with each other. That is, the timestamp associated with an event in the event data does not correspond to the analogous frame in the tracking data. Thus, a key problem is to align these sources. However, few papers explicitly describe approaches for doing so. In this paper, we propose a rule-based approach ETSY for synchronizing event and tracking data, evaluate it, and compare experimentally and conceptually with the few state-of-the-art approaches available.},
+   author = {Maaike Van Roy and Lorenzo Cascioli and Jesse Davis},
+   doi = {10.1007/978-3-031-53833-9_2},
+   isbn = {9783031538322},
+   issn = {18650937},
+   journal = {Communications in Computer and Information Science},
+   pages = {11-23},
+   publisher = {Springer Science and Business Media Deutschland GmbH},
+   title = {ETSY: A Rule-Based Approach to Event and Tracking Data SYnchronization},
+   volume = {2035 CCIS},
+   year = {2024}
 }
 
+@misc{Singh2019,
+   author = {Karun Singh},
+   title = {Introducing Expected Threat (xT)},
+   url = {https://karun.in/blog/expected-threat.html},
+   year = {2019}
+}
+@article{sotudeh2025,
+  title={The principles of tactical formation identification in association football (soccer)—a survey},
+  author={Sotudeh, Hadi},
+  journal={Frontiers in Sports and Active Living},
+  volume={6},
+  pages={1512386},
+  year={2025},
+  publisher={Frontiers Media SA}
+}
+@article{Spearman2017,
+   abstract = {In this paper, we present a model for ball control in soccer based on the concepts of how long it takes a player to reach the ball (time-to-intercept) and how long it takes a player to control the ball (time-to-control). We use this model to quantify the likelihood that a given pass will succeed we determine the free parameters of the model using tracking and event data from the 2015-2016 Premier League season. On a reserved test set, the model correctly predicts the receiving team with an accuracy of 81% and the specific receiving player with an accuracy of 68%. Though based on simple mathematical concepts, various phenomena are emergent such as the effect of pressure on receiving a pass. Using the pass probability model, we derive a number of innovative new metrics around passing that can be used to quantify the value of passes and the skill of receivers and defenders. Computed per-team over a 38-game dataset, these metrics are found to correlate strongly with league standing at the end of the season. We believe that this model and derived metrics will be useful for both post-match analysis and player scouting. Lastly, we apply the approach used to compute passing probabilities to calculate a pitch control function that can be used to quantify and visualize regions of the pitch controlled by each team.},
+   author = {William Spearman and Austin T Basye and Austin Basye and Greg Dick and Ryan Hotovy and Paul Pop},
+   journal = {Sports Analytics Conference},
+   month = {10},
+   title = {Physics-based modeling of pass probabilities in soccer},
+   url = {https://www.researchgate.net/profile/William-Spearman/publication/315166647_Physics-Based_Modeling_of_Pass_Probabilities_in_Soccer/links/58cbfca2aca272335513b33c/Physics-Based-Modeling-of-Pass-Probabilities-in-Soccer.pdf},
+   year = {2017}
+}
 
+@software{reback2020pandas,
+    author       = {The pandas development team},
+    title        = {pandas-dev/pandas: Pandas},
+    month        = feb,
+    year         = 2020,
+    publisher    = {Zenodo},
+    version      = {latest},
+    doi          = {10.5281/zenodo.3509134},
+    url          = {https://doi.org/10.5281/zenodo.3509134}
+}
 
-
-
-
-
-
-
-
-
-
-
+@article{Vidal-Codina2022,
+   abstract = {One of the main shortcomings of event data in football, which has been extensively used for analytics in the recent years, is that it still requires manual collection, thus limiting its availability to a reduced number of tournaments. In this work, we propose a deterministic decision tree-based algorithm to automatically extract football events using tracking data, which consists of two steps: (1) a possession step that evaluates which player was in possession of the ball at each frame in the tracking data, as well as the distinct player configurations during the time intervals where the ball is not in play to inform set piece detection; (2) an event detection step that combines the changes in ball possession computed in the first step with the laws of football to determine in-game events and set pieces. The automatically generated events are benchmarked against manually annotated events and we show that in most event categories the proposed methodology achieves + 90 % detection rate across different tournaments and tracking data providers. Finally, we demonstrate how the contextual information offered by tracking data can be leveraged to increase the granularity of auto-detected events, and exhibit how the proposed framework may be used to conduct a myriad of data analyses in football.},
+   author = {Ferran Vidal-Codina and Nicolas Evans and Bahaeddine El Fakir and Johsan Billingham},
+   doi = {10.1007/s12283-022-00381-6},
+   issn = {14602687},
+   issue = {1},
+   journal = {Sports Engineering},
+   keywords = {Auto-eventing,Ball possession,Data democratization,EPTS,Event data,Football analytics},
+   month = {10},
+   publisher = {Springer Science and Business Media Deutschland GmbH},
+   title = {Automatic event detection in football using tracking data},
+   volume = {25},
+   year = {2022}
+}

@@ -1,0 +1,21 @@
+name: JOSS paper preview
+
+on:
+  push:
+    paths:
+      - joss-paper/paper.md
+      - joss-paper/paper.bib
+  pull_request:
+    paths:
+      - joss-paper/paper.md
+      - joss-paper/paper.bib
+
+jobs:
+  paper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: openjournals/openjournals-draft-action@v1
+        with:
+          journal: joss
+          paper-path: paper.md
