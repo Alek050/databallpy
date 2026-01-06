@@ -1,5 +1,5 @@
 ---
-title: 'DataBallPy: Load, Synchronise, and Analyse your Soccer Data
+title: 'DataBallPy: Load, Synchronise, and Analyse your Soccer Data'
 tags:
   - Python
   - Association Football
