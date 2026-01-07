@@ -31,6 +31,7 @@ from databallpy.utils.utils import (
     _copy_value_,
     _values_are_equal_,
 )
+from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__file__)
 
@@ -835,18 +836,20 @@ def check_inputs_game_object(game: Game):
         ]
         if game.tracking_data.loc[idx, home_x].mean() > 0:
             centroid_x = game.tracking_data.loc[idx, home_x].mean()
-            raise DataBallPyError(
+            warnings.warn(
                 "The home team should be represented as playing from left to "
                 f"right the whole game. At the start of period {period} the x "
-                f"centroid of the home team is {centroid_x}."
+                f"centroid of the home team is {centroid_x}.",
+                category=DataBallPyWarning,
             )
 
         if game.tracking_data.loc[idx, away_x].mean() < 0:
             centroid_x = game.tracking_data.loc[idx, away_x].mean()
-            raise DataBallPyError(
+            warnings.warn(
                 "The away team should be represented as playingfrom right to "
                 f"left the whole game. At the start  of period {period} the x "
-                f"centroid ofthe away team is {centroid_x}."
+                f"centroid ofthe away team is {centroid_x}.",
+                category=DataBallPyWarning,
             )
 
     # check databallpy_events

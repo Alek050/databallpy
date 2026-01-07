@@ -9,6 +9,7 @@ from databallpy.game import Game
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
+from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_INSTANCES_OPTA_TRACAB,
     PASS_INSTANCES_OPTA_TRACAB,
@@ -721,7 +722,7 @@ class TestGame(unittest.TestCase):
             )
 
         # playing direction
-        with self.assertRaises(DataBallPyError):
+        with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "home_34_x"] = 3.0
             td_changed.rename(
@@ -749,7 +750,7 @@ class TestGame(unittest.TestCase):
                 dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
-        with self.assertRaises(DataBallPyError):
+        with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "away_17_x"] = -3.0
             td_changed.rename(
