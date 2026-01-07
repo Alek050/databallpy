@@ -846,9 +846,9 @@ def check_inputs_game_object(game: Game):
         if game.tracking_data.loc[idx, away_x].mean() < 0:
             centroid_x = game.tracking_data.loc[idx, away_x].mean()
             warnings.warn(
-                "The away team should be represented as playingfrom right to "
-                f"left the whole game. At the start  of period {period} the x "
-                f"centroid ofthe away team is {centroid_x}.",
+                "The away team should be represented as playing from right to "
+                f"left the whole game. At the start of period {period} the x "
+                f"centroid of the away team is {centroid_x}.",
                 category=DataBallPyWarning,
             )
 
