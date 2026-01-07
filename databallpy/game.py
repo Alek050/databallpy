@@ -295,12 +295,13 @@ class Game:
             players = players[players["position"].isin(positions)]
 
         if not (players["start_frame"] == MISSING_INT).all():
-            players = players[
+            players_mask = (
                 (players["end_frame"] - players["start_frame"])
                 / self.tracking_data.frame_rate
                 / 60
                 >= min_minutes_played
-            ]
+            ) | (players["end_frame"] < players["start_frame"])
+            players = players[players_mask]
         col_ids = [
             f"home_{int(row.shirt_num)}"
             if row.id in self.home_players["id"].to_list()
