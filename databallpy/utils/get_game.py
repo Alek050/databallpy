@@ -791,8 +791,8 @@ def get_game_from_kloppy(
             Defaults to None.
         event_dataset (kloppy.domain.EventDataset, optional): location of the event data.
             Defaults to None.
-        check_game_inputs (bool) : Whether to check the Game object inputs for validation of the data for
-            A workable DataBallPy Game object. Set to False to skips validation checks. Defaults to True.
+        check_game_inputs (bool) : whether to check the Game object inputs for validation of the data for
+            a workable DataBallPy Game object. Set to False to skip validation checks. Defaults to True.
     Returns:
         (Game): a game object with all information available of the game.
     """
