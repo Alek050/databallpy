@@ -970,6 +970,12 @@ class TestGame(unittest.TestCase):
         res_2 = game.get_column_ids(team="home", idx=2, remove_offside_players=True)
         self.assertEqual(set(res_2), {"home_22", "home_44"})
 
+        game.home_players.loc[0, "start_frame"] = 50
+        game.home_players.loc[0, "end_frame"] = 40
+
+        res_3 = game.get_column_ids(team="home")
+        self.assertEqual(set(res_3), {"home_11", "home_22", "home_33", "home_44"})
+
         with self.assertRaises(ValueError):
             game.get_column_ids(team="wrong")
         with self.assertRaises(ValueError):
