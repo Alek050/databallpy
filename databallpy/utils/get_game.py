@@ -15,6 +15,7 @@ from databallpy.data_parsers.event_data_parsers import (
     load_sportec_event_data,
     load_sportec_open_event_data,
     load_statsbomb_event_data,
+    load_fifa_event_data,
 )
 from databallpy.data_parsers.kloppy_parsers import (
     convert_kloppy_event_dataset,
@@ -175,7 +176,8 @@ def get_game(
             event_match_loc=event_match_loc,
             event_lineup_loc=event_lineup_loc,
         )
-        EventDataSchema.validate(event_data)
+        if _check_game_class_:
+            EventDataSchema.validate(event_data)
         uses_event_data = True
 
     event_precise_timestamps = {
@@ -186,6 +188,7 @@ def get_game(
         "sportec": True,
         "dfl": True,
         "statsbomb": False,
+        "fifa":True,
     }
 
     LOGGER.info(
@@ -202,8 +205,8 @@ def get_game(
         )
         if not uses_event_data:
             databallpy_events = {}
-
-        TrackingDataSchema.validate(tracking_data)
+        if _check_game_class_:
+            TrackingDataSchema.validate(tracking_data)
         uses_tracking_data = True
 
     if not uses_event_data and not uses_tracking_data:
@@ -480,6 +483,7 @@ def load_event_data(
         "statsbomb",
         "sportec",
         "dfl",
+        "fifa"
     ]:
         raise ValueError(
             f"We do not support '{event_data_provider}' as event data provider yet, "
@@ -509,6 +513,11 @@ def load_event_data(
             events_loc=event_data_loc,
             match_loc=event_match_loc,
             lineup_loc=event_lineup_loc,
+        )
+    elif event_data_provider == "fifa":
+        event_data, event_metadata, databallpy_events = load_fifa_event_data(
+            metadata_loc=event_metadata_loc, 
+            events_loc=event_data_loc  
         )
     elif event_data_provider in ["sportec", "dfl"]:
         event_data, event_metadata, databallpy_events = load_sportec_event_data(
@@ -619,6 +628,7 @@ def get_open_game(
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
 
+    print(f"saving game at: {save_path}")
     game.save_game(save_path, verbose=False, allow_overwrite=True)
     return game
 
