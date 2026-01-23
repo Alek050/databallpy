@@ -628,8 +628,7 @@ def get_open_game(
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
 
-    print(f"saving game at: {save_path}")
-    game.save_game(save_path, verbose=False, allow_overwrite=True)
+    game.save_game(str(cache_path), verbose=True, allow_overwrite=True)
     return game
 
 

@@ -136,7 +136,6 @@ def load_sportec_open_tracking_data(
                 bar.update(len(chunk))
 
     print("Done!", end="\r")
-    import pdb; pdb.set_trace()
     return load_tracab_tracking_data(
         str(cache_path / "tracking_data_temp.xml"),
         str(cache_path / "metadata_temp.xml"),

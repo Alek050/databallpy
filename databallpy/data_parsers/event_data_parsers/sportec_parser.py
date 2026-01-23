@@ -121,20 +121,19 @@ def load_sportec_open_event_data(
 
     """
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
-    save_path = cache_path / game_id
-    os.makedirs(save_path, exist_ok=True)
-    if not (save_path / "metadata.xml").is_file():
+    os.makedirs(cache_path, exist_ok=True)
+    if not (cache_path / "metadata.xml").is_file():
         metadata = requests.get(metadata_url)
-        with open(save_path / "metadata.xml", "wb") as f:
+        with open(cache_path / "metadata.xml", "wb") as f:
             f.write(metadata.content)
-    if not (save_path / "event_data.xml").is_file():
+    if not (cache_path / "event_data.xml").is_file():
         event_data = requests.get(_get_sportec_open_data_url(game_id, "event_data"))
-        with open(save_path / "event_data.xml", "wb") as f:
+        with open(cache_path / "event_data.xml", "wb") as f:
             f.write(event_data.content)
 
     return load_sportec_event_data(
-        os.path.join(save_path, "event_data.xml"),
-        os.path.join(save_path, "metadata.xml"),
+        os.path.join(cache_path, "event_data.xml"),
+        os.path.join(cache_path, "metadata.xml"),
     )
 
 

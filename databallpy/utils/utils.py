@@ -260,8 +260,9 @@ def resolve_cache_dir(cache_dir: str | Path | None) -> Path:
         path = Path(user_cache_dir("databallpy", "databallpy"))
     else:
         path = Path(cache_dir).expanduser().resolve()
-        
-    path.mkdir(parents=True, exist_ok=True)
+
+    if not path.is_dir():
+        path.mkdir(parents=True, exist_ok=True)
     return path
 
 
