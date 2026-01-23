@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.utils.constants import MISSING_INT
 
-SPORTEC_BASE_URL = "https://springernature.figshare.com/ndownloader/files"
+SPORTEC_BASE_URL = "https://ndownloader.figshare.com/files"
 FILE_ID_MAP = {
     "J03WPY": {"metadata": 51643487, "event_data": 51643505, "tracking_data": 51643526},
     "J03WN1": {"metadata": 51643472, "event_data": 51643496, "tracking_data": 51643517},
