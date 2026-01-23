@@ -2,6 +2,7 @@ import json
 import os
 import warnings
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pandas as pd
 
@@ -48,6 +49,7 @@ from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.warnings import deprecated
+from databallpy.utils.utils import resolve_cache_dir
 
 if TYPE_CHECKING:
     from kloppy.domain import EventDataset, TrackingDataset
@@ -543,27 +545,33 @@ def get_open_game(
             f"Open game provider should be in {provider_options}, not {provider}."
         )
 
+    cache_path = resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR"))
+
     if provider == "metrica":
-        save_path = os.path.join("datasets", "metrica")
-        if use_cache and os.path.exists(save_path):
-            return get_saved_game(save_path)
+        cache_path = cache_path / "metrica"
+        if use_cache and cache_path.is_dir():
+            return get_saved_game(cache_path)
         tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
         event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
     elif provider in ["dfl", "tracab", "sportec"]:
-        save_path = os.path.join("datasets", "IDSSE", game_id)
-        if use_cache and os.path.exists(save_path):
-            return get_saved_game(save_path)
+        cache_path = cache_path / "IDSSE" / game_id
+        if use_cache and cache_path.is_dir():
+            return get_saved_game(cache_path)
 
         tracking_data, metadata = load_sportec_open_tracking_data(
             game_id=game_id,
             verbose=verbose,
+            cache_path=cache_path
         )
         event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(
-            game_id=game_id
+            game_id=game_id, cache_path=cache_path
         )
-        os.remove(os.path.join("datasets", "IDSSE", game_id, "tracking_data_temp.xml"))
-        os.remove(os.path.join("datasets", "IDSSE", game_id, "metadata_temp.xml"))
+        
+        os.remove(str(cache_path / "tracking_data_temp.xml"))
+        os.remove(str(cache_path / "metadata_temp.xml"))
+        os.remove(str(cache_path / "event_data.xml"))
+        os.remove(str(cache_path / "metadata.xml"))
 
     periods_cols = ed_metadata.periods_frames.columns.difference(
         metadata.periods_frames.columns

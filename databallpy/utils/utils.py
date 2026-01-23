@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from pathlib import Path
+from platformdirs import user_cache_dir
 
 from databallpy.utils.constants import MISSING_INT
 
@@ -251,3 +253,16 @@ def _copy_value_(value: any) -> any:
 
     else:
         raise NotImplementedError(f"Copying of {type(value)} is not implemented")
+
+
+def resolve_cache_dir(cache_dir: str | Path | None) -> Path:
+    if cache_dir is None:
+        path = Path(user_cache_dir("databallpy", "databallpy"))
+    else:
+        path = Path(cache_dir).expanduser().resolve()
+        
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+
