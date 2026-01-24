@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import os
+from pathlib import Path
 
 import chardet
 import numpy as np
@@ -9,7 +10,6 @@ import requests
 from bs4 import BeautifulSoup
 from lxml import etree
 from tqdm import tqdm
-from pathlib import Path
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.sportec_metadata_parser import (
@@ -88,7 +88,7 @@ def load_tracab_tracking_data(
 
 @logging_wrapper(__file__)
 def load_sportec_open_tracking_data(
-    game_id: str, verbose: bool, cache_path:Path
+    game_id: str, verbose: bool, cache_path: Path
 ) -> tuple[pd.DataFrame, Metadata]:
     """Load the tracking data from the sportec open data platform
 

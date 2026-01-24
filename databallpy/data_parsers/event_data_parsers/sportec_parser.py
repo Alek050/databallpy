@@ -1,11 +1,11 @@
 import os
+from pathlib import Path
 
 import bs4
 import chardet
 import numpy as np
 import pandas as pd
 import requests
-from pathlib import Path
 
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.data_parsers.sportec_metadata_parser import (

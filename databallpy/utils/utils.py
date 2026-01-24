@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from platformdirs import user_cache_dir
 
 from databallpy.utils.constants import MISSING_INT
@@ -264,6 +265,3 @@ def resolve_cache_dir(cache_dir: str | Path | None) -> Path:
     if not path.is_dir():
         path.mkdir(parents=True, exist_ok=True)
     return path
-
-
-
