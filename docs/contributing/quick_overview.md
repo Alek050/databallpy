@@ -79,14 +79,23 @@ Before you submit a pull request, check that it meets these guidelines:
       > poetry run py.test tests/ --pythonwarnings=once --cov-report=term-missing --cov-report=html --cov=databallpy --cov-config=.coveragerc
       ```
 
+```{warning}
+**It is not allowed to use generative AI tools for generation of tests**   
+Using generative AI for unit tests ignores the whole idea of testing. You lose an important safety net that catches mistakes and wrong assumptions. To keep the project reliable, tests need to come from human developers who actually understand what the code is supposed to do.
+```
+
 ````{margin}
+
 ```{tip}
-For MacOs and Linux users, try running 
+For MacOS and Linux users, try running:
+
 ```console
-> make ready
-``` 
+make ready
+```
+
 to run the tests, linters and documentation in one command!
 ```
+
 ````
 
   2. All linters should pass:
