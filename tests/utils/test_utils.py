@@ -1,5 +1,4 @@
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -271,18 +270,6 @@ def test_resolve_cache_dir_user_cache(tmp_path, monkeypatch):
     assert result.is_dir()
 
 
-def test_resolve_cache_dir_expands_user(tmp_path, monkeypatch):
-    fake_home = tmp_path / "home"
-    monkeypatch.setenv("HOME", str(fake_home))
-
-    path = Path("~") / "cache_test"
-    result = resolve_cache_dir(str(path))
-
-    expected = fake_home / "cache_test"
-    assert result == expected
-    assert expected.is_dir()
-
-
 def test_resolve_cache_dir_existing_dir(tmp_path):
     existing = tmp_path / "already_here"
     existing.mkdir()
@@ -290,4 +277,22 @@ def test_resolve_cache_dir_existing_dir(tmp_path):
     result = resolve_cache_dir(existing)
 
     assert result == existing
-    assert existing.is_dir()  # remains intact
+    assert existing.is_dir()
+
+
+def test_resolve_cache_dir_expands_user(tmp_path, monkeypatch):
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+
+    # linux / macos
+    monkeypatch.setenv("HOME", str(fake_home))
+    # windows
+    monkeypatch.setenv("USERPROFILE", str(fake_home))
+    monkeypatch.setenv("HOMEPATH", str(fake_home))
+    monkeypatch.setenv("HOMEDRIVE", "")
+
+    result = resolve_cache_dir("~/cache_test")
+
+    expected = fake_home / "cache_test"
+    assert result == expected
+    assert expected.is_dir()
