@@ -628,7 +628,7 @@ def get_open_game(
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
 
-    game.save_game(str(cache_path), verbose=True, allow_overwrite=True)
+    game.save_game(str(cache_path), verbose=False, allow_overwrite=True)
     return game
 
 
@@ -643,7 +643,7 @@ def try_cache(provider: str, game_id: str) -> Game | None:
         old_cache_path = old_cache_path / "IDSSE" / game_id
 
     if not cache_path.is_dir() and old_cache_path.is_dir():
-        os.mkdir(cache_path)
+        os.makedirs(cache_path, exist_ok=True)
         for file in old_cache_path.iterdir():
             if file.is_file():
                 shutil.copy(file, cache_path)
