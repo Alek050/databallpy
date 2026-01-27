@@ -779,7 +779,9 @@ def merge_player_info(
 
 
 def get_game_from_kloppy(
-    tracking_dataset: "TrackingDataset" = None, event_dataset: "EventDataset" = None
+    tracking_dataset: "TrackingDataset" = None,
+    event_dataset: "EventDataset" = None,
+    check_game_inputs: bool = True,
 ) -> Game:
     """
     Function to get all information of a game given kloppy dataset(s)
@@ -789,6 +791,8 @@ def get_game_from_kloppy(
             Defaults to None.
         event_dataset (kloppy.domain.EventDataset, optional): location of the event data.
             Defaults to None.
+        check_game_inputs (bool) : whether to check the Game object inputs for validation of the data for
+            a workable DataBallPy Game object. Set to False to skip validation checks. Defaults to True.
     Returns:
         (Game): a game object with all information available of the game.
     """
@@ -863,7 +867,10 @@ def get_game_from_kloppy(
             to_coordinate_system="secondspectrum",
             to_orientation=Orientation.STATIC_HOME_AWAY,
         )
-        if all([x.ball_state == BallState.ALIVE for x in tracking_dataset]):
+        if (
+            all([x.ball_state == BallState.ALIVE for x in tracking_dataset])
+            and check_game_inputs
+        ):
             warnings.warn(
                 "All frames in 'tracking_dataset' are 'ALIVE', databallpy expects 'DEAD' frames as well (e.g. for more accurate event synchronization). Set `only_alive=False` in your kloppy `.load_tracking()` call to include 'DEAD' frames.",
                 UserWarning,
@@ -963,6 +970,7 @@ def get_game_from_kloppy(
         allow_synchronise_tracking_and_event_data=True
         if uses_tracking_data and uses_event_data
         else False,
+        _check_inputs_=check_game_inputs,
     )
 
 

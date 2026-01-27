@@ -9,6 +9,7 @@ from databallpy.game import Game
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
+from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_INSTANCES_OPTA_TRACAB,
     PASS_INSTANCES_OPTA_TRACAB,
@@ -721,7 +722,7 @@ class TestGame(unittest.TestCase):
             )
 
         # playing direction
-        with self.assertRaises(DataBallPyError):
+        with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "home_34_x"] = 3.0
             td_changed.rename(
@@ -749,7 +750,7 @@ class TestGame(unittest.TestCase):
                 dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
-        with self.assertRaises(DataBallPyError):
+        with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "away_17_x"] = -3.0
             td_changed.rename(
@@ -969,6 +970,12 @@ class TestGame(unittest.TestCase):
         game.tracking_data["team_possession"] = "home"
         res_2 = game.get_column_ids(team="home", idx=2, remove_offside_players=True)
         self.assertEqual(set(res_2), {"home_22", "home_44"})
+
+        game.home_players.loc[0, "start_frame"] = 50
+        game.home_players.loc[0, "end_frame"] = 40
+
+        res_3 = game.get_column_ids(team="home")
+        self.assertEqual(set(res_3), {"home_11", "home_22", "home_33", "home_44"})
 
         with self.assertRaises(ValueError):
             game.get_column_ids(team="wrong")

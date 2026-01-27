@@ -31,6 +31,7 @@ from databallpy.utils.utils import (
     _copy_value_,
     _values_are_equal_,
 )
+from databallpy.utils.warnings import DataBallPyWarning
 
 LOGGER = create_logger(__file__)
 
@@ -295,12 +296,13 @@ class Game:
             players = players[players["position"].isin(positions)]
 
         if not (players["start_frame"] == MISSING_INT).all():
-            players = players[
+            players_mask = (
                 (players["end_frame"] - players["start_frame"])
                 / self.tracking_data.frame_rate
                 / 60
                 >= min_minutes_played
-            ]
+            ) | (players["end_frame"] < players["start_frame"])
+            players = players[players_mask]
         col_ids = [
             f"home_{int(row.shirt_num)}"
             if row.id in self.home_players["id"].to_list()
@@ -834,18 +836,20 @@ def check_inputs_game_object(game: Game):
         ]
         if game.tracking_data.loc[idx, home_x].mean() > 0:
             centroid_x = game.tracking_data.loc[idx, home_x].mean()
-            raise DataBallPyError(
+            warnings.warn(
                 "The home team should be represented as playing from left to "
                 f"right the whole game. At the start of period {period} the x "
-                f"centroid of the home team is {centroid_x}."
+                f"centroid of the home team is {centroid_x}.",
+                category=DataBallPyWarning,
             )
 
         if game.tracking_data.loc[idx, away_x].mean() < 0:
             centroid_x = game.tracking_data.loc[idx, away_x].mean()
-            raise DataBallPyError(
-                "The away team should be represented as playingfrom right to "
-                f"left the whole game. At the start  of period {period} the x "
-                f"centroid ofthe away team is {centroid_x}."
+            warnings.warn(
+                "The away team should be represented as playing from right to "
+                f"left the whole game. At the start of period {period} the x "
+                f"centroid of the away team is {centroid_x}.",
+                category=DataBallPyWarning,
             )
 
     # check databallpy_events
