@@ -92,7 +92,7 @@ Tracking data is often captured via video footage using computer vision. Dependi
 `DataBallPy` includes elaborate functionality to visualise the data in the `Game` object. Event locations can be visualised on a pitch using the `plot_events()` function, which allows for coloring of events by outcome, team, or event type during specific periods in the game. Similarly, the locations and velocities of all players can be plotted using `plot_tracking_data()` function. If the event and tracking data are synchronised, one can also show information about the event in the same plot. Other features like pitch control heatmaps, player possession, and any custom feature can also be visualised simultaneously with the event and tracking data (Figure 1). Last, the tracking data (with heatmaps and custom features) can be transformed into a video (mp4) to show the true spatiotemporal progression over time.
 
 
-```python
+```Python
 import matplotlib.pyplot as plt
 
 from databallpy import get_open_game
@@ -119,6 +119,12 @@ fig, ax = plot_tracking_data(
 plt.show()
 ```
 
+# Research impact statement
 
+`DataBallPy` has shown to be increasingly used by coders, practitioners, and researchers. The packages has been dowloaded over 47.000 times on PyPI, averaging more than 250 downloads per week. The project has more than 50 GitHub stars. Issues and PR's are being opened by users outside of the network of the original owners and maintainers. On top of that, `DataBallPy` has been mentioned in numerous published scientific papers [@Robertson2023; @Anzer2025; @Zhang2025; @Bassek2025; @Oonk2025a]. Last, authors that introduce new metrics propose to open a PR with their metric so it is easily available for the scientific community [@Bischofberger2025]. Together this shows that `DataBallPy` has a wide range of users and the package is growing outside of the reach of the original owners and maintainers.
+
+# AI usage disclosure
+
+No generative AI tools were used in the writing of this manuscript and the development of the core functionalities and architecture of `DataBallPy`. With the exception of  unittests, there is no explicit restriction on the usage of generative AI in the further development of `DataBallPy` (e.g. code generation, reviewing, writing documentation, etc.). Unittest are generated to validate the intent of modular code. Because intent is more certainly known by human coders than by generative AI, the writing of unit-tests with AI is prohibited. All code and documentation is checked and verified by human maintainers before merging into the code-base.
 
 # References
