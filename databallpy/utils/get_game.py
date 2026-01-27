@@ -635,12 +635,17 @@ def get_open_game(
 def try_cache(provider: str, game_id: str) -> Game | None:
     cache_path = resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR"))
     old_cache_path = (Path(__file__).parent.parent.parent / "datasets").resolve()
-    if provider == "metrica":
-        cache_path = cache_path / "metrica"
-        old_cache_path = old_cache_path / "metrica"
-    else:
-        cache_path = cache_path / "IDSSE" / game_id
-        old_cache_path = old_cache_path / "IDSSE" / game_id
+
+    cache_path = (
+        cache_path / "metrica"
+        if provider == "metrica"
+        else cache_path / "IDSSE" / game_id
+    )
+    old_cache_path = (
+        old_cache_path / "metrica"
+        if provider == "metrica"
+        else old_cache_path / "IDSSE" / game_id
+    )
 
     if not cache_path.is_dir() and old_cache_path.is_dir():
         os.makedirs(cache_path, exist_ok=True)

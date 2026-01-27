@@ -257,6 +257,14 @@ def _copy_value_(value: any) -> any:
 
 
 def resolve_cache_dir(cache_dir: str | Path | None) -> Path:
+    """Function to get caching path
+
+    Args:
+        cache_dir (str | Path | None): input path to use as cache.
+
+    Returns:
+        Path: caching path
+    """
     if cache_dir is None:
         path = Path(user_cache_dir("databallpy", "databallpy"))
     else:
