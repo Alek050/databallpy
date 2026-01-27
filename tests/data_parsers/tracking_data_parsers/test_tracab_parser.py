@@ -1,5 +1,5 @@
-import os
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import pandas as pd
@@ -158,32 +158,26 @@ class TestTracabParser(unittest.TestCase):
         mock_load_tracab_tracking_data.return_value = (pd.DataFrame(), "mock_metadata")
 
         game_id = "J03WMX"
+        cache_path = Path().parent / "IDSSE" / game_id
+
+        expected_metadata_path = cache_path / "metadata_temp.xml"
+        expected_tracking_data_path = cache_path / "tracking_data_temp.xml"
+
         verbose = True
-        expected_metadata_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", game_id, "metadata_temp.xml"
-        )
-        expected_tracking_data_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data_temp.xml"
-        )
 
         # Call the function
-        result = load_sportec_open_tracking_data(game_id, verbose)
+        result = load_sportec_open_tracking_data(game_id, verbose, cache_path=cache_path)
 
         # Verify the function calls
-        mock_makedirs.assert_called_once_with(
-            os.path.join(os.getcwd(), "datasets", "IDSSE", game_id), exist_ok=True
-        )
+        mock_makedirs.assert_called_once_with(cache_path, exist_ok=True)
         self.assertEqual(mock_requests_get.call_count, 1)
         self.assertEqual(mock_session.return_value.get.call_count, 1)
         mock_open.assert_any_call(expected_metadata_path, "wb")
-        mock_open.assert_any_call(
-            os.path.join(
-                os.getcwd(), "datasets", "IDSSE", game_id, "tracking_data_temp.xml"
-            ),
-            "wb",
-        )
+        mock_open.assert_any_call(expected_tracking_data_path, "wb")
         mock_load_tracab_tracking_data.assert_called_once_with(
-            expected_tracking_data_path, expected_metadata_path, verbose=verbose
+            str(expected_tracking_data_path),
+            str(expected_metadata_path),
+            verbose=verbose,
         )
 
         # Verify the return value
