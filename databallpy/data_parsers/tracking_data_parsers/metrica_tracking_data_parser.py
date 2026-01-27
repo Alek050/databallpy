@@ -95,6 +95,7 @@ def load_metrica_open_tracking_data(
 
     Args:
         verbose (bool): Whether or not to print info in the terminal. Defaults to True.
+        cache_path (Path): path to save the tracking file to as cache.
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the game
     """

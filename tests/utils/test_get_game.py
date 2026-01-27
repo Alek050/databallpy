@@ -26,6 +26,7 @@ from databallpy.utils.get_game import (
     get_saved_game,
     get_saved_match,
 )
+from databallpy.utils.utils import resolve_cache_dir
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
@@ -694,9 +695,11 @@ class TestGetGame(unittest.TestCase):
         )
 
         self.assertEqual(game, expected_game_sportec)
-        self.assertEqual(mock_os_remove.call_count, 2)
+        self.assertEqual(mock_os_remove.call_count, 4)
+
+        cache_dir = resolve_cache_dir(None)
         mock_save_game.assert_called_once_with(
-            f"datasets{os.path.sep}IDSSE{os.path.sep}J03WMX",
+            str(cache_dir / "IDSSE" / "J03WMX"),
             verbose=False,
             allow_overwrite=True,
         )

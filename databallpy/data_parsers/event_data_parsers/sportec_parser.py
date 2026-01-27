@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import bs4
 import chardet
@@ -102,12 +103,13 @@ def load_sportec_event_data(
 
 @logging_wrapper(__file__)
 def load_sportec_open_event_data(
-    game_id: str,
+    game_id: str, cache_path: Path
 ) -> tuple[pd.DataFrame, Metadata, dict[str, dict]]:
     """Function to (down)load on open game from Sportec/Tracab
 
     Args:
         game_id (str): The id of the open game
+        cache_path (Path): path to cache files.
 
     Returns:
         tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
@@ -119,20 +121,19 @@ def load_sportec_open_event_data(
 
     """
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
-    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", game_id)
-    os.makedirs(save_path, exist_ok=True)
-    if not os.path.exists(os.path.join(save_path, "metadata.xml")):
+    os.makedirs(cache_path, exist_ok=True)
+    if not (cache_path / "metadata.xml").is_file():
         metadata = requests.get(metadata_url)
-        with open(os.path.join(save_path, "metadata.xml"), "wb") as f:
+        with open(cache_path / "metadata.xml", "wb") as f:
             f.write(metadata.content)
-    if not os.path.exists(os.path.join(save_path, "event_data.xml")):
+    if not (cache_path / "event_data.xml").is_file():
         event_data = requests.get(_get_sportec_open_data_url(game_id, "event_data"))
-        with open(os.path.join(save_path, "event_data.xml"), "wb") as f:
+        with open(cache_path / "event_data.xml", "wb") as f:
             f.write(event_data.content)
 
     return load_sportec_event_data(
-        os.path.join(save_path, "event_data.xml"),
-        os.path.join(save_path, "metadata.xml"),
+        os.path.join(cache_path, "event_data.xml"),
+        os.path.join(cache_path, "metadata.xml"),
     )
 
 
