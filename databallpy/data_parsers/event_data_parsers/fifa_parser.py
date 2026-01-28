@@ -1,5 +1,5 @@
-from ast import In
 import json
+
 import numpy as np
 import pandas as pd
 
@@ -12,7 +12,6 @@ from databallpy.events import (
 )
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
-
 
 # FIFA event type mappings to databallpy events
 FIFA_TO_DATABALLPY_MAP = {
@@ -31,7 +30,7 @@ SHOT_OUTCOMES = {
     "off_target": "miss_off_target",
     "on_target": "on_target",
     "complete": "goal",
-    "own_goal": "own_goal"
+    "own_goal": "own_goal",
 }
 
 # Body part mappings
@@ -65,9 +64,7 @@ PHASE_TYPE_MAP = {
 
 @logging_wrapper(__file__)
 def load_fifa_event_data(
-    metadata_loc: str, 
-    events_loc: str, 
-    pitch_dimensions: list = [105.0, 68.0]
+    metadata_loc: str, events_loc: str, pitch_dimensions: list = [105.0, 68.0]
 ) -> tuple[
     pd.DataFrame, Metadata, dict[str, dict[str | int, IndividualCloseToBallEvent]]
 ]:
@@ -115,9 +112,7 @@ def load_fifa_event_data(
     )
 
     home_score, away_score = _get_game_score(
-        event_data, 
-        metadata.home_team_id, 
-        metadata.away_team_id
+        event_data, metadata.home_team_id, metadata.away_team_id
     )
 
     metadata.home_score = home_score
@@ -181,23 +176,23 @@ def _load_metadata(metadata_loc: str, pitch_dimensions: list) -> Metadata:
     # Get match information
     match_id = metadata_json["match_id"]
     country = metadata_json.get("country", "UNKNOWN")
-    
+
     # Parse kickoff time
     kickoff_time = pd.to_datetime(metadata_json["kickoff_utc"], utc=True)
-    
+
     # Create periods dataframe from phases
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [],
         "end_datetime_ed": [],
     }
-    
+
     for phase in metadata_json["phases"][:2]:
         start_time = kickoff_time + pd.to_timedelta(phase["phase_start"])
         end_time = kickoff_time + pd.to_timedelta(phase["phase_end"])
         periods["start_datetime_ed"].append(start_time)
         periods["end_datetime_ed"].append(end_time)
-    
+
     # Fill remaining periods with NaT
     for _ in range(3):
         periods["start_datetime_ed"].append(pd.to_datetime("NaT", utc=True))
@@ -215,7 +210,7 @@ def _load_metadata(metadata_loc: str, pitch_dimensions: list) -> Metadata:
     # Get team formation
     home_formation = metadata_json["home_formation"]
     away_formation = metadata_json["away_formation"]
-    
+
     metadata = Metadata(
         game_id=match_id,
         pitch_dimensions=pitch_dimensions,
@@ -224,12 +219,12 @@ def _load_metadata(metadata_loc: str, pitch_dimensions: list) -> Metadata:
         home_team_id=home_team_id,
         home_team_name=metadata_json["home_team_name"],
         home_players=home_players,
-        home_score=home_score,  
+        home_score=home_score,
         home_formation=home_formation,
         away_team_id=away_team_id,
         away_team_name=metadata_json["away_team_name"],
         away_players=away_players,
-        away_score=away_score,  
+        away_score=away_score,
         away_formation=away_formation,
         country=country,
     )
@@ -319,7 +314,7 @@ def _load_event_data(
         "original_event_id": [],
         "original_event": [],
         "original_event_type": [],
-        "outcome_additional": [], 
+        "outcome_additional": [],
     }
 
     for i_event, event in enumerate(events_list):
@@ -335,48 +330,58 @@ def _load_event_data(
         event_name = event["event"]
         result_dict["original_event"].append(event_name)
         result_dict["period_id"].append(event["half_time"])
-        
+
         # Convert time from match_time_in_ms
         total_seconds = event["match_time_in_ms"] / 1000.0
         minutes = int(total_seconds // 60)
         seconds = total_seconds % 60
         result_dict["minutes"].append(minutes)
         result_dict["seconds"].append(seconds)
-        
+
         if kickoff_time is not None:
-            event_datetime = kickoff_time + pd.to_timedelta(total_seconds, unit='s')
+            event_datetime = kickoff_time + pd.to_timedelta(total_seconds, unit="s")
         else:
             event_datetime = pd.NaT
         result_dict["datetime"].append(event_datetime)
-        
+
         result_dict["player_id"].append(
             event["from_player_id"] if event["from_player_id"] != 0 else MISSING_INT
         )
         result_dict["team_id"].append(event["team_id"])
         result_dict["outcome_additional"].append(event.get("outcome_additional", ""))
-        
+
         # Determine success based on outcome
         if event_name in ["pass", "tackle"]:
             outcome = (event.get("outcome") or "").lower()
             result_dict["is_successful"].append(
-                1 if ("possession_complete" in outcome or "possession_won" in outcome) else 0
+                1
+                if ("possession_complete" in outcome or "possession_won" in outcome)
+                else 0
             )
         else:
             result_dict["is_successful"].append(None)
 
-        x_norm = event.get("x_location_start") if "x_location_start" in event else event.get("x")
-        y_norm = event.get("y_location_start") if "y_location_start" in event else event.get("y")
-        
+        x_norm = (
+            event.get("x_location_start")
+            if "x_location_start" in event
+            else event.get("x")
+        )
+        y_norm = (
+            event.get("y_location_start")
+            if "y_location_start" in event
+            else event.get("y")
+        )
+
         if x_norm is None or pd.isna(x_norm):
             x_norm = 0.5
         if y_norm is None or pd.isna(y_norm):
             y_norm = 0.5
-            
+
         x_norm = max(0.0, min(1.0, float(x_norm)))
         y_norm = max(0.0, min(1.0, float(y_norm)))
 
         period_id = event.get("half_time")
-        
+
         if period_id == 1 and flip_first_half:
             x_norm = 1.0 - x_norm
             y_norm = 1.0 - y_norm
@@ -438,18 +443,16 @@ def _load_event_data(
     # Handle shot success
     event_data.loc[
         event_data["original_event"] == "attempt_at_goal", "is_successful"
-    ] = event_data.loc[
-        event_data["original_event"] == "attempt_at_goal"
-    ].apply(
+    ] = event_data.loc[event_data["original_event"] == "attempt_at_goal"].apply(
         lambda row: 1 if str(row.get("outcome_additional", "")).lower() == "goal" else 0,
-        axis=1
+        axis=1,
     )
 
     # Ensure boolean dtype
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
     event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
-    event_data = event_data.drop(columns=["outcome_additional"]) 
-    
+    event_data = event_data.drop(columns=["outcome_additional"])
+
     return event_data, {
         "shot_events": shot_events,
         "pass_events": pass_events,
@@ -473,13 +476,22 @@ def _make_pass_instance(
     on_ball_info = _get_on_ball_event_info(event)
     on_ball_info.update(
         _get_close_to_ball_event_info(
-            event, pitch_dimensions, home_team_id, away_team_id, players,
-            id, period_id, flip_first_half, flip_second_half
+            event,
+            pitch_dimensions,
+            home_team_id,
+            away_team_id,
+            players,
+            id,
+            period_id,
+            flip_first_half,
+            flip_second_half,
         )
     )
 
-    outcome_str = "successful" if event.get("outcome") == "possession_complete" else "unsuccessful"
-    
+    outcome_str = (
+        "successful" if event.get("outcome") == "possession_complete" else "unsuccessful"
+    )
+
     # Get pass_type
     line_break = event.get("line_break_direction")
     if line_break in ["around", "over", "through"]:
@@ -492,7 +504,7 @@ def _make_pass_instance(
     # Get end coordinates
     x_end_norm = event.get("x_location_end")
     y_end_norm = event.get("y_location_end")
-    
+
     if x_end_norm is not None and y_end_norm is not None:
         if period_id == 1 and flip_first_half:
             x_end_norm = 1.0 - x_end_norm
@@ -500,10 +512,10 @@ def _make_pass_instance(
         elif period_id == 2 and flip_second_half:
             x_end_norm = 1.0 - x_end_norm
             y_end_norm = 1.0 - y_end_norm
-        
+
         x_end = (x_end_norm * pitch_dimensions[0]) - (pitch_dimensions[0] / 2.0)
         y_end = (y_end_norm * pitch_dimensions[1]) - (pitch_dimensions[1] / 2.0)
-        
+
         if event.get("team_id") == away_team_id:
             x_end *= -1
             y_end *= -1
@@ -535,15 +547,22 @@ def _make_shot_event_instance(
     on_ball_info = _get_on_ball_event_info(event)
     on_ball_info.update(
         _get_close_to_ball_event_info(
-            event, pitch_dimensions, home_team_id, away_team_id, players,
-            id, period_id, flip_first_half, flip_second_half
+            event,
+            pitch_dimensions,
+            home_team_id,
+            away_team_id,
+            players,
+            id,
+            period_id,
+            flip_first_half,
+            flip_second_half,
         )
     )
     on_ball_info.pop("outcome")
 
     event_name = (event.get("event") or "").lower()
     outcome_additional = (event.get("outcome_additional") or "").lower()
-    
+
     if event_name == "own_goal":
         shot_outcome = "own_goal"
     elif "goal" in outcome_additional:
@@ -572,8 +591,15 @@ def _make_tackle_event_instance(
 ) -> TackleEvent:
     """Function to create a TackleEvent instance from FIFA event data"""
     close_to_ball_info = _get_close_to_ball_event_info(
-        event, pitch_dimensions, home_team_id, away_team_id, players,
-        id, period_id, flip_first_half, flip_second_half
+        event,
+        pitch_dimensions,
+        home_team_id,
+        away_team_id,
+        players,
+        id,
+        period_id,
+        flip_first_half,
+        flip_second_half,
     )
     return TackleEvent(**close_to_ball_info)
 
@@ -590,13 +616,13 @@ def _get_on_ball_event_info(event: dict) -> dict:
     """
     # Get body part
     body_part = BODY_PART_MAP.get(event.get("body_type", "other"), "unspecified")
-    
+
     # Get set piece
     origin = event.get("origin", "")
     set_piece = SET_PIECE_MAP.get(origin, "no_set_piece")
-    
+
     possession_type = "open_play"
-    
+
     return {
         "body_part": body_part,
         "set_piece": set_piece,
@@ -633,27 +659,31 @@ def _get_close_to_ball_event_info(
         dict: dictionary with the base event data
     """
 
-    x_norm = event.get("x_location_start") if "x_location_start" in event else event.get("x")
-    y_norm = event.get("y_location_start") if "y_location_start" in event else event.get("y")
-    
+    x_norm = (
+        event.get("x_location_start") if "x_location_start" in event else event.get("x")
+    )
+    y_norm = (
+        event.get("y_location_start") if "y_location_start" in event else event.get("y")
+    )
+
     if x_norm is None or pd.isna(x_norm):
         x_norm = 0.5
     if y_norm is None or pd.isna(y_norm):
         y_norm = 0.5
-    
+
     x_norm = max(0.0, min(1.0, float(x_norm)))
     y_norm = max(0.0, min(1.0, float(y_norm)))
-    
+
     if period_id == 1 and flip_first_half:
         x_norm = 1.0 - x_norm
         y_norm = 1.0 - y_norm
     elif period_id == 2 and flip_second_half:
         x_norm = 1.0 - x_norm
         y_norm = 1.0 - y_norm
-    
+
     x_start = (x_norm * pitch_dimensions[0]) - (pitch_dimensions[0] / 2.0)
     y_start = (y_norm * pitch_dimensions[1]) - (pitch_dimensions[1] / 2.0)
-    
+
     if event.get("team_id") == away_team_id:
         x_start *= -1
         y_start *= -1
@@ -665,9 +695,11 @@ def _get_close_to_ball_event_info(
 
     # Get player jersey number
     player_id = event.get("from_player_id")
-    jersey = players.loc[players["id"] == player_id, "shirt_num"].iloc[0] if len(
-        players[players["id"] == player_id]
-    ) > 0 else MISSING_INT
+    jersey = (
+        players.loc[players["id"] == player_id, "shirt_num"].iloc[0]
+        if len(players[players["id"] == player_id]) > 0
+        else MISSING_INT
+    )
 
     return {
         "start_x": x_start,
@@ -683,47 +715,45 @@ def _get_close_to_ball_event_info(
         "pitch_size": pitch_dimensions,
         "player_id": player_id,
         "jersey": jersey,
-        "outcome": event.get("outcome") == "possession_complete" if "outcome" in event else True,
+        "outcome": event.get("outcome") == "possession_complete"
+        if "outcome" in event
+        else True,
     }
 
 
 def _get_game_score(
-    events: pd.DataFrame, 
-    home_team_id: int, 
-    away_team_id: int
+    events: pd.DataFrame, home_team_id: int, away_team_id: int
 ) -> tuple[int, int]:
     """
     Function to extract game scores by counting goals from event data.
-    
+
     Args:
         events (pd.DataFrame): DataFrame of event data
         home_team_id (int): ID of the home team
         away_team_id (int): ID of the away team
-    
+
     Returns:
         tuple[int, int]: (home_score, away_score)
     """
     home_score = 0
     away_score = 0
-    
-    shot_events = events[
-        events["original_event"].isin(["attempt_at_goal", "own_goal"])
-    ]
+
+    shot_events = events[events["original_event"].isin(["attempt_at_goal", "own_goal"])]
 
     for _, row in shot_events.iterrows():
         event_name = (row.get("original_event") or "").lower()
-        team_id = row.get("team_id")    
-        
+        team_id = row.get("team_id")
+
         is_goal = False
         is_own_goal = False
-        
+
         if event_name == "own_goal":
             is_own_goal = True
             is_goal = True
         elif event_name == "attempt_at_goal":
-            if row.get("is_successful") == True:
+            if row.get("is_successful"):
                 is_goal = True
-        
+
         if is_goal:
             if is_own_goal:
                 # Own goal: goal counts for opponent
@@ -737,46 +767,48 @@ def _get_game_score(
                     home_score += 1
                 elif team_id == away_team_id:
                     away_score += 1
-    
+
     return home_score, away_score
 
 
 def _determine_period_flips(
-    events_list: list,
-    home_team_id: int,
-    away_team_id: int
+    events_list: list, home_team_id: int, away_team_id: int
 ) -> tuple[bool, bool]:
     """
     Determine whether to flip coordinates for first and second half
-    
+
     Args:
         events_list: List of all events
         home_team_id: Home team ID
         away_team_id: Away team ID
-    
+
     Returns:
         tuple[bool, bool]: (flip_first_half, flip_second_half)
     """
     flip_first_half = False
     flip_second_half = False
-    
+
     # Find first half kickoff event
     for event in events_list:
-        if (event.get("half_time") == 1 and 
-            event.get("event", "").lower() == "game_period_start"):
+        if (
+            event.get("half_time") == 1
+            and event.get("event", "").lower() == "game_period_start"
+        ):
             team_id = event.get("team_id")
             side = (event.get("side") or "").lower()
-            
+
             # If home team kicks off with side='r', or away team kicks off with side='l', flip first half
-            if (team_id == home_team_id and side == "r") or \
-               (team_id == away_team_id and side == "l"):
+            if (team_id == home_team_id and side == "r") or (
+                team_id == away_team_id and side == "l"
+            ):
                 flip_first_half = True
-            
+
             # If home team kicks off with side='l', or away team kicks off with side='r', flip second half
-            if (team_id == home_team_id and side == "l") or \
-               (team_id == away_team_id and side == "r"):
+            if (team_id == home_team_id and side == "l") or (
+                team_id == away_team_id and side == "r"
+            ):
                 flip_second_half = True
-            
+
             break
-    
+
     return flip_first_half, flip_second_half
