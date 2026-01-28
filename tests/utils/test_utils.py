@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ from databallpy.utils.utils import (
     _to_int,
     _values_are_equal_,
     get_next_possession_frame,
+    resolve_cache_dir,
     sigmoid,
 )
 
@@ -252,3 +254,45 @@ class TestUtils(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             _copy_value_(CustomType(1))
+
+
+def test_resolve_cache_dir_user_cache(tmp_path, monkeypatch):
+    fake_cache = tmp_path / "fake_cache"
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    with patch(
+        "databallpy.utils.utils.user_cache_dir", return_value=str(fake_cache)
+    ) as mock_ucd:
+        result = resolve_cache_dir(None)
+
+    mock_ucd.assert_called_once_with("databallpy", "databallpy")
+    assert result == fake_cache
+    assert result.is_dir()
+
+
+def test_resolve_cache_dir_existing_dir(tmp_path):
+    existing = tmp_path / "already_here"
+    existing.mkdir()
+
+    result = resolve_cache_dir(existing)
+
+    assert result == existing
+    assert existing.is_dir()
+
+
+def test_resolve_cache_dir_expands_user(tmp_path, monkeypatch):
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+
+    # linux / macos
+    monkeypatch.setenv("HOME", str(fake_home))
+    # windows
+    monkeypatch.setenv("USERPROFILE", str(fake_home))
+    monkeypatch.setenv("HOMEPATH", str(fake_home))
+    monkeypatch.setenv("HOMEDRIVE", "")
+
+    result = resolve_cache_dir("~/cache_test")
+
+    expected = fake_home / "cache_test"
+    assert result == expected
+    assert expected.is_dir()

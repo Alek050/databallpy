@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import os
+from pathlib import Path
 
 import chardet
 import numpy as np
@@ -87,13 +88,14 @@ def load_tracab_tracking_data(
 
 @logging_wrapper(__file__)
 def load_sportec_open_tracking_data(
-    game_id: str, verbose: bool
+    game_id: str, verbose: bool, cache_path: Path
 ) -> tuple[pd.DataFrame, Metadata]:
     """Load the tracking data from the sportec open data platform
 
     Args:
         game_id (str): The id of the game
         verbose (bool): Whether to print info about the loading of the data.
+        cache_path (Path): path to cache files.
 
     Returns:
         tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
@@ -103,11 +105,10 @@ def load_sportec_open_tracking_data(
         dataset of synchronized spatiotemporal and event data in elite soccer.
     """
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
-    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", game_id)
-    os.makedirs(save_path, exist_ok=True)
+    os.makedirs(cache_path, exist_ok=True)
 
     metadata = requests.get(metadata_url)
-    with open(os.path.join(save_path, "metadata_temp.xml"), "wb") as f:
+    with open(cache_path / "metadata_temp.xml", "wb") as f:
         f.write(metadata.content)
 
     if verbose:
@@ -119,7 +120,7 @@ def load_sportec_open_tracking_data(
     total_size = int(response.headers.get("content-length", 0))
 
     with (
-        open(os.path.join(save_path, "tracking_data_temp.xml"), "wb") as file,
+        open(cache_path / "tracking_data_temp.xml", "wb") as file,
         tqdm(
             desc="Downloading",
             total=total_size,
@@ -135,10 +136,9 @@ def load_sportec_open_tracking_data(
                 bar.update(len(chunk))
 
     print("Done!", end="\r")
-
     return load_tracab_tracking_data(
-        os.path.join(save_path, "tracking_data_temp.xml"),
-        os.path.join(save_path, "metadata_temp.xml"),
+        str(cache_path / "tracking_data_temp.xml"),
+        str(cache_path / "metadata_temp.xml"),
         verbose=verbose,
     )
 

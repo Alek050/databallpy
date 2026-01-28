@@ -246,6 +246,8 @@ class TestVisualize(unittest.TestCase):
 
         heatmap = np.zeros((3, 10, 10))
 
+        # make plotting event player name very long for long string handling
+        game.event_data.loc[3, "player_name"] *= 4
         save_tracking_video(
             game,
             1,

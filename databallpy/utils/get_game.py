@@ -1,6 +1,8 @@
 import json
 import os
+import shutil
 import warnings
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pandas as pd
@@ -48,6 +50,7 @@ from databallpy.utils.align_player_ids import (
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
+from databallpy.utils.utils import resolve_cache_dir
 from databallpy.utils.warnings import deprecated
 
 if TYPE_CHECKING:
@@ -551,27 +554,32 @@ def get_open_game(
             f"Open game provider should be in {provider_options}, not {provider}."
         )
 
+    if use_cache:
+        game = try_cache(provider, game_id)
+        if game is not None:
+            return game
+
+    # no cache available or used
     if provider == "metrica":
-        save_path = os.path.join("datasets", "metrica")
-        if use_cache and os.path.exists(save_path):
-            return get_saved_game(save_path)
+        cache_path = resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR")) / "metrica"
         tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
         event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
-    elif provider in ["dfl", "tracab", "sportec"]:
-        save_path = os.path.join("datasets", "IDSSE", game_id)
-        if use_cache and os.path.exists(save_path):
-            return get_saved_game(save_path)
-
+    else:  # ["dfl", "tracab", "sportec"]:
+        cache_path = (
+            resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR")) / "IDSSE" / game_id
+        )
         tracking_data, metadata = load_sportec_open_tracking_data(
-            game_id=game_id,
-            verbose=verbose,
+            game_id=game_id, verbose=verbose, cache_path=cache_path
         )
         event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(
-            game_id=game_id
+            game_id=game_id, cache_path=cache_path
         )
-        os.remove(os.path.join("datasets", "IDSSE", game_id, "tracking_data_temp.xml"))
-        os.remove(os.path.join("datasets", "IDSSE", game_id, "metadata_temp.xml"))
+
+        os.remove(str(cache_path / "tracking_data_temp.xml"))
+        os.remove(str(cache_path / "metadata_temp.xml"))
+        os.remove(str(cache_path / "event_data.xml"))
+        os.remove(str(cache_path / "metadata.xml"))
 
     periods_cols = ed_metadata.periods_frames.columns.difference(
         metadata.periods_frames.columns
@@ -628,9 +636,34 @@ def get_open_game(
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
 
-    print(f"saving game at: {save_path}")
-    game.save_game(save_path, verbose=False, allow_overwrite=True)
+    game.save_game(str(cache_path), verbose=False, allow_overwrite=True)
     return game
+
+
+def try_cache(provider: str, game_id: str) -> Game | None:
+    cache_path = resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR"))
+    old_cache_path = (Path(__file__).parent.parent.parent / "datasets").resolve()
+
+    cache_path = (
+        cache_path / "metrica"
+        if provider == "metrica"
+        else cache_path / "IDSSE" / game_id
+    )
+    old_cache_path = (
+        old_cache_path / "metrica"
+        if provider == "metrica"
+        else old_cache_path / "IDSSE" / game_id
+    )
+
+    if not cache_path.is_dir() and old_cache_path.is_dir():
+        os.makedirs(cache_path, exist_ok=True)
+        for file in old_cache_path.iterdir():
+            if file.is_file():
+                shutil.copy(file, cache_path)
+
+    if cache_path.is_dir():
+        return get_saved_game(cache_path)
+    return None
 
 
 @logging_wrapper(__file__)
@@ -787,7 +820,9 @@ def merge_player_info(
 
 
 def get_game_from_kloppy(
-    tracking_dataset: "TrackingDataset" = None, event_dataset: "EventDataset" = None
+    tracking_dataset: "TrackingDataset" = None,
+    event_dataset: "EventDataset" = None,
+    check_game_inputs: bool = True,
 ) -> Game:
     """
     Function to get all information of a game given kloppy dataset(s)
@@ -797,6 +832,8 @@ def get_game_from_kloppy(
             Defaults to None.
         event_dataset (kloppy.domain.EventDataset, optional): location of the event data.
             Defaults to None.
+        check_game_inputs (bool) : whether to check the Game object inputs for validation of the data for
+            a workable DataBallPy Game object. Set to False to skip validation checks. Defaults to True.
     Returns:
         (Game): a game object with all information available of the game.
     """
@@ -871,7 +908,10 @@ def get_game_from_kloppy(
             to_coordinate_system="secondspectrum",
             to_orientation=Orientation.STATIC_HOME_AWAY,
         )
-        if all([x.ball_state == BallState.ALIVE for x in tracking_dataset]):
+        if (
+            all([x.ball_state == BallState.ALIVE for x in tracking_dataset])
+            and check_game_inputs
+        ):
             warnings.warn(
                 "All frames in 'tracking_dataset' are 'ALIVE', databallpy expects 'DEAD' frames as well (e.g. for more accurate event synchronization). Set `only_alive=False` in your kloppy `.load_tracking()` call to include 'DEAD' frames.",
                 UserWarning,
@@ -971,6 +1011,7 @@ def get_game_from_kloppy(
         allow_synchronise_tracking_and_event_data=True
         if uses_tracking_data and uses_event_data
         else False,
+        _check_inputs_=check_game_inputs,
     )
 
 

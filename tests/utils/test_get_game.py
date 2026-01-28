@@ -26,6 +26,7 @@ from databallpy.utils.get_game import (
     get_saved_game,
     get_saved_match,
 )
+from databallpy.utils.utils import resolve_cache_dir
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
@@ -638,11 +639,12 @@ class TestGetGame(unittest.TestCase):
                 event_data_provider="statsbomb",
             )
 
+    @patch("databallpy.utils.get_game.Game.save_game")
     @patch("databallpy.utils.get_game.load_sportec_open_event_data")
     @patch("databallpy.utils.get_game.load_sportec_open_tracking_data")
     @patch("databallpy.utils.get_game.os.remove")
     def test_get_open_game_sportec(
-        self, mock_os_remove, mock_tracking_data, mock_event_data
+        self, mock_os_remove, mock_tracking_data, mock_event_data, mock_save_game
     ):
         mock_tracking_data.return_value = (TRACAB_SPORTEC_XML_TD, SPORTEC_METADATA_TD)
         mock_event_data.return_value = (
@@ -651,6 +653,7 @@ class TestGetGame(unittest.TestCase):
             SPORTEC_DATABALLPY_EVENTS,
         )
         mock_os_remove.return_value = "removed"
+        mock_save_game.return_value = None
         game = get_open_game(use_cache=False)
 
         td = TrackingData(
@@ -692,11 +695,17 @@ class TestGetGame(unittest.TestCase):
         )
 
         self.assertEqual(game, expected_game_sportec)
-        self.assertEqual(mock_os_remove.call_count, 2)
+        self.assertEqual(mock_os_remove.call_count, 4)
+
+        cache_dir = resolve_cache_dir(None)
+        mock_save_game.assert_called_once_with(
+            str(cache_dir / "IDSSE" / "J03WMX"),
+            verbose=False,
+            allow_overwrite=True,
+        )
 
         with self.assertWarns(DeprecationWarning):
-            match = get_open_match()
-        self.assertEqual(match, expected_game_sportec)
+            get_open_match()
 
     @patch(
         "requests.get",

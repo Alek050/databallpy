@@ -1,5 +1,6 @@
 import os
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import numpy as np
@@ -216,27 +217,22 @@ class TestSportecParser(unittest.TestCase):
             "mock_metadata",
             {"mock_key": {"mock_subkey": "mock_value"}},
         )
-
         game_id = "J03WMX"
-        expected_metadata_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", game_id, "metadata.xml"
-        )
-        expected_event_data_path = os.path.join(
-            os.getcwd(), "datasets", "IDSSE", game_id, "event_data.xml"
-        )
+        cache_path = Path().parent / "IDSSE" / game_id
+
+        expected_metadata_path = cache_path / "metadata.xml"
+        expected_event_data_path = cache_path / "event_data.xml"
 
         # Call the function
-        result = load_sportec_open_event_data(game_id)
+        result = load_sportec_open_event_data(game_id, cache_path=cache_path)
 
         # Verify the function calls
-        mock_makedirs.assert_called_once_with(
-            os.path.join(os.getcwd(), "datasets", "IDSSE", game_id), exist_ok=True
-        )
+        mock_makedirs.assert_called_once_with(cache_path, exist_ok=True)
         self.assertEqual(mock_requests_get.call_count, 2)
         mock_open.assert_any_call(expected_metadata_path, "wb")
         mock_open.assert_any_call(expected_event_data_path, "wb")
         mock_load_sportec_event_data.assert_called_once_with(
-            expected_event_data_path, expected_metadata_path
+            str(expected_event_data_path), str(expected_metadata_path)
         )
 
         # Verify the return value

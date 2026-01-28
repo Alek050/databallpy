@@ -34,7 +34,7 @@ metrica_databallpy_map = {
 @logging_wrapper(__file__)
 def load_metrica_event_data(
     event_data_loc: str, metadata_loc: str
-) -> tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata, dict]:
     """Function to load the metrica event data.
 
     Args:
@@ -46,7 +46,7 @@ def load_metrica_event_data(
         type (str)
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: The event data and the metadata
+        Tuple[pd.DataFrame, Metadata, dict]: The event data and the metadata, and databallpy events
     """
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
         if not os.path.exists(metadata_loc):
@@ -109,11 +109,11 @@ def load_metrica_event_data(
 
 
 @logging_wrapper(__file__)
-def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
+def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata, dict]:
     """Function to load the open event data of metrica
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: event data and metadata of the game
+        Tuple[pd.DataFrame, Metadata]: event data and metadata of the game and databallpy events
     """
     metadata_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_metadata.xml"
