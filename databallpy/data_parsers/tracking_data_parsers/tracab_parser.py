@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import os
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import chardet
@@ -8,7 +9,6 @@ import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from lxml import etree
 from tqdm import tqdm
 
 from databallpy.data_parsers import Metadata
@@ -165,7 +165,7 @@ def _get_tracking_data_xml(
     frames_df["start_datetime_td"] = pd.to_datetime(frames_df["start_datetime_td"])
     frames_df["end_datetime_td"] = pd.to_datetime(frames_df["end_datetime_td"])
 
-    context = etree.iterparse(tracab_loc, events=("start", "end"))
+    context = ET.iterparse(tracab_loc, events=("start", "end"))
     event, _ = next(context)
 
     frame_values = []
@@ -194,7 +194,7 @@ def _get_tracking_data_xml(
         "datetime": ["NaT"] * size_lines,
     }
 
-    context = etree.iterparse(tracab_loc, events=("start", "end"))
+    context = ET.iterparse(tracab_loc, events=("start", "end"))
     event, _ = next(context)
 
     if verbose:

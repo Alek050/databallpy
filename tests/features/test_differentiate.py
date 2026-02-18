@@ -115,14 +115,14 @@ class TestDifferentiate(unittest.TestCase):
             {
                 "home_1_x": [10, 20, -30, 40, np.nan, 60],
                 "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "home_1_vx": [10.0, -5.0, np.nan, np.nan, np.nan, np.nan],
-                "home_1_vy": [7.0, -1.75, np.nan, np.nan, np.nan, np.nan],
+                "home_1_vx": [10.0, -5.0, 10.0, np.nan, 10.0, np.nan],
+                "home_1_vy": [7.0, -1.75, 10.5, np.nan, 15.0, np.nan],
                 "home_1_velocity": [
                     np.sqrt(149),
                     np.sqrt(25 + 1.75**2),
+                    np.sqrt(100 + 10.5**2),
                     np.nan,
-                    np.nan,
-                    np.nan,
+                    np.sqrt(100 + 225),
                     np.nan,
                 ],
             }
