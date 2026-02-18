@@ -15,7 +15,7 @@ from databallpy.features.covered_distance import (
 )
 from databallpy.features.differentiate import _differentiate
 from databallpy.features.feature_utils import _check_column_ids
-from databallpy.features.filters import savgol_filter
+from databallpy.features.filters import _filter_data
 from databallpy.features.pitch_control import get_pitch_control_single_frame
 from databallpy.features.player_possession import (
     get_ball_losses_and_updated_gain_idxs,
@@ -533,11 +533,11 @@ class TrackingData(pd.DataFrame):
         ]
         for col in xy_columns:
             if filter_type == "savitzky_golay":
-                self[col] = savgol_filter(
-                    self[col].values,
+                self[col] = _filter_data(
+                    self[col].to_numpy(),
+                    filter_type="savitzky_golay",
                     window_length=window_length,
                     polyorder=polyorder,
-                    mode="interp",
                 )
             elif filter_type == "moving_average":
                 self[col] = np.convolve(
