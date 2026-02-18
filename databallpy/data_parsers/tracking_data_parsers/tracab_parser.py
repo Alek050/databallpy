@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import os
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import chardet
@@ -8,8 +9,6 @@ import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-
-import xml.etree.ElementTree as ET
 from tqdm import tqdm
 
 from databallpy.data_parsers import Metadata
