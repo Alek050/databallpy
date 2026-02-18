@@ -48,7 +48,6 @@ def _filter_data(
         raise ValueError("length of data should be greater than the window length")
 
     if filter_type == "savitzky_golay":
-
         try:
             return _savgol_with_nan_compat(
                 array, window_length=window_length, polyorder=polyorder, mode="interp"
@@ -142,6 +141,7 @@ def filter_tracking_data(
 
     if not inplace:
         return tracking_data
+
 
 def _savgol_with_nan_compat(
     array: np.ndarray,

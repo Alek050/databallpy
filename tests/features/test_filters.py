@@ -4,15 +4,15 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
-
-from databallpy.features.filters import _filter_data, filter_tracking_data, _savgol_with_nan_compat
-import warnings
-
 import pytest
 from numpy.testing import assert_allclose
-
 from scipy.signal import savgol_filter
 
+from databallpy.features.filters import (
+    _filter_data,
+    _savgol_with_nan_compat,
+    filter_tracking_data,
+)
 
 
 class TestFilters(unittest.TestCase):
@@ -179,15 +179,14 @@ class TestFilters(unittest.TestCase):
             {
                 "home_1_x": [10, 20, -30, 40, np.nan, 60],
                 "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_x": [20, 0, 10, 20., np.nan, 60.],
-                "ball_y": [11.5, -1, 7.33, 18.33, np.nan, 60.],
+                "ball_x": [20, 0, 10, 20.0, np.nan, 60.0],
+                "ball_y": [11.5, -1, 7.33, 18.33, np.nan, 60.0],
                 "away_13_x": [10, 20, -30, 40, np.nan, 60],
                 "away_13_y": [5, 12, -20, 30, np.nan, 60],
             }
         )
 
         pd.testing.assert_frame_equal(filtered_data, expected_output)
-
 
 
 class TestSavgolWithNanCompat:
@@ -224,8 +223,9 @@ class TestSavgolWithNanCompat:
         assert result.shape == arr.shape
 
         # NaN mask should be identical
-        assert np.array_equal(np.isnan(result), np.isnan(arr)), \
-            "NaN positions must be preserved"
+        assert np.array_equal(
+            np.isnan(result), np.isnan(arr)
+        ), "NaN positions must be preserved"
 
         # At least one finite value should be changed by the smoothing
         finite_mask = np.isfinite(arr)
@@ -270,8 +270,12 @@ class TestSavgolWithNanCompat:
         """Ensure that the 'mode' argument is passed through to savgol_filter."""
         arr = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=float)
 
-        res_interp = _savgol_with_nan_compat(arr, window_length=5, polyorder=2, mode="interp")
-        res_mirror = _savgol_with_nan_compat(arr, window_length=5, polyorder=2, mode="mirror")
+        res_interp = _savgol_with_nan_compat(
+            arr, window_length=5, polyorder=2, mode="interp"
+        )
+        res_mirror = _savgol_with_nan_compat(
+            arr, window_length=5, polyorder=2, mode="mirror"
+        )
 
         # Different mode should generally yield different results
         assert not np.allclose(res_interp, res_mirror)
