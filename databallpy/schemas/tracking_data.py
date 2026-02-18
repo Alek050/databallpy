@@ -4,8 +4,8 @@ from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
-import pandera as pa
 import pandera.extensions as extensions
+import pandera.pandas as pa
 from scipy.spatial import KDTree
 
 from databallpy.features.covered_distance import (
