@@ -49,7 +49,7 @@ def _filter_data(
 
     if filter_type == "savitzky_golay":
         try:
-            return savgol_filter(
+            return _savgol_with_nan_compat(
                 array, window_length=window_length, polyorder=polyorder, mode="interp"
             )
         except Exception as e:
@@ -128,11 +128,11 @@ def filter_tracking_data(
     ]
     for col in xy_columns:
         if filter_type == "savitzky_golay":
-            tracking_data[col] = savgol_filter(
-                tracking_data[col].values,
+            tracking_data[col] = _filter_data(
+                tracking_data[col].to_numpy(),
+                filter_type="savitzky_golay",
                 window_length=window_length,
                 polyorder=polyorder,
-                mode="interp",
             )
         elif filter_type == "moving_average":
             tracking_data[col] = np.convolve(
@@ -141,3 +141,34 @@ def filter_tracking_data(
 
     if not inplace:
         return tracking_data
+
+
+def _savgol_with_nan_compat(
+    array: np.ndarray,
+    window_length: int,
+    polyorder: int,
+    mode: str = "interp",
+) -> np.ndarray:
+    arr = np.asarray(array, dtype=float)
+
+    mask = ~np.isfinite(arr)
+
+    if not mask.any():
+        return savgol_filter(arr, window_length, polyorder, mode=mode).round(2)
+
+    valid_count = (~mask).sum()
+    if valid_count < max(window_length, polyorder + 1):
+        warnings.warn(
+            "Not enough finite samples to apply Savitzky–Golay filter; "
+            "returning original data for backward compatibility."
+        )
+        return arr
+
+    x = np.arange(arr.size)
+    arr_filled = arr.copy()
+    arr_filled[mask] = np.interp(x[mask], x[~mask], arr[~mask])
+
+    filtered = savgol_filter(arr_filled, window_length, polyorder, mode=mode).round(2)
+
+    filtered[mask] = np.nan
+    return filtered

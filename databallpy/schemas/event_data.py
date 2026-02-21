@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pandas as pd
-import pandera as pa
+import pandera.pandas as pa
 
 from databallpy.utils.constants import DATABALLPY_EVENTS
 

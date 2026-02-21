@@ -74,7 +74,6 @@ DATABALLPY_PASS_TYPES = [
     "flick_on",
     "pull_back",
     "switch_off_play",
-    "line_break",
     "unspecified",
 ]
 """The pass type strings that are supported in databallpy."""

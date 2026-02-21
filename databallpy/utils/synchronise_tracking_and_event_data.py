@@ -1,4 +1,5 @@
 import inspect
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
+from databallpy.utils.warnings import DataBallPyWarning
 
 FRAME_UNASSIGNED = 3
 EVENT_FRAME_MATCH = 2
@@ -238,6 +240,11 @@ def _needleman_wunsch(
     Returns:
        event_frame_dict (dict): dictionary with events as keys and frames as values
     """
+    if pd.isnull(sim_mat).any().any():
+        raise ValueError(
+            "Found NaN values in the similarity matrix, can not perform needleman_wunch."
+        )
+
     n_frames, n_events = np.shape(sim_mat)
 
     function_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.float32)
@@ -311,8 +318,9 @@ def _needleman_wunsch(
         elif (
             pointer_matrix[frame_index, event_index] == EVENT_UNASSIGNED
         ):  # event unassigned
-            raise ValueError(
-                "An event was left unassigned, check your gap penalty values"
+            warnings.warn(
+                "An event was left unassigned, please check the quality of your events",
+                category=DataBallPyWarning,
             )
         else:
             raise ValueError(
