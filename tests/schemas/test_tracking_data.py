@@ -487,8 +487,8 @@ class TestTrackingData(unittest.TestCase):
             {
                 "home_1_x": [10, 20, -30, 40, np.nan, 60],
                 "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_x": [20, 0, 10, np.nan, np.nan, np.nan],
-                "ball_y": [11.5, -1, 7.333333, np.nan, np.nan, np.nan],
+                "ball_x": [20, 0, 10, 20.0, np.nan, 60.0],
+                "ball_y": [11.5, -1, 7.33, 18.33, np.nan, 60.0],
                 "away_13_x": [10, 20, -30, 40, np.nan, 60],
                 "away_13_y": [5, 12, -20, 30, np.nan, 60],
             },
