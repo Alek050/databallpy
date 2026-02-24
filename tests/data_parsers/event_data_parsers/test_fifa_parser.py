@@ -759,8 +759,25 @@ class TestFifaParser(unittest.TestCase):
         self.assertEqual(home_score, 1)
         self.assertEqual(away_score, 2)
 
-        event_data = pd.concat([event_data, pd.DataFrame({"team_id": 200, "original_event": "own_goal"}, index=[7])])
-        event_data = pd.concat([event_data, pd.DataFrame({"team_id": 200, "original_event": "attempt_at_goal", "is_successful": True}, index=[8])])
+        event_data = pd.concat(
+            [
+                event_data,
+                pd.DataFrame({"team_id": 200, "original_event": "own_goal"}, index=[7]),
+            ]
+        )
+        event_data = pd.concat(
+            [
+                event_data,
+                pd.DataFrame(
+                    {
+                        "team_id": 200,
+                        "original_event": "attempt_at_goal",
+                        "is_successful": True,
+                    },
+                    index=[8],
+                ),
+            ]
+        )
 
         home_score, away_score = _get_game_score(event_data, 100, 200)
         self.assertEqual(home_score, 2)
