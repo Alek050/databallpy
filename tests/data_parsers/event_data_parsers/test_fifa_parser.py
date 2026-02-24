@@ -9,6 +9,8 @@ import unittest
 
 import numpy as np
 import pandas as pd
+
+from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.fifa_parser import (
     _determine_period_flips,
     _get_game_score,
@@ -20,12 +22,10 @@ from databallpy.data_parsers.event_data_parsers.fifa_parser import (
     _make_shot_event_instance,
     load_fifa_event_data,
 )
-
-from databallpy.data_parsers import Metadata
 from databallpy.events import PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
 
-TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "test_data")
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "test_data")
 METADATA_LOC = os.path.join(TEST_DATA_DIR, "fifa_metadata_test.json")
 EVENTS_LOC = os.path.join(TEST_DATA_DIR, "fifa_events_test.json")
 
@@ -56,7 +56,7 @@ _PERIODS_FRAMES = pd.DataFrame(
 HOME_PLAYERS_FIFA = pd.DataFrame(
     {
         "id": [1001, 1002],
-        "full_name": ["HOME KEEPER", "HOME STRIKER"],
+        "full_name": ["Home Keeper", "Home Striker"],
         "formation_place": [MISSING_INT, MISSING_INT],
         "position": ["unspecified", "unspecified"],
         "starter": [False, False],
@@ -67,7 +67,7 @@ HOME_PLAYERS_FIFA = pd.DataFrame(
 AWAY_PLAYERS_FIFA = pd.DataFrame(
     {
         "id": [2001, 2002],
-        "full_name": ["AWAY KEEPER", "AWAY STRIKER"],
+        "full_name": ["Away Keeper", "Away Striker"],
         "formation_place": [MISSING_INT, MISSING_INT],
         "position": ["unspecified", "unspecified"],
         "starter": [False, False],
@@ -102,13 +102,13 @@ ED_FIFA = pd.DataFrame(
         "seconds": [0.0, 5.0, 30.0, 0.0, 40.0, 20.0, 0.0],
         "player_id": [1002, 1002, 2002, 2002, 1002, 2002, 1001],
         "player_name": [
-            "HOME STRIKER",
-            "HOME STRIKER",
-            "AWAY STRIKER",
-            "AWAY STRIKER",
-            "HOME STRIKER",
-            "AWAY STRIKER",
-            "HOME KEEPER",
+            "Home Striker",
+            "Home Striker",
+            "Away Striker",
+            "Away Striker",
+            "Home Striker",
+            "Away Striker",
+            "Home Keeper",
         ],
         "team_id": [100, 100, 200, 200, 100, 200, 100],
         "is_successful": pd.array(

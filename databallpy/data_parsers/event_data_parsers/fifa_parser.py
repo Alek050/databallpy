@@ -251,7 +251,7 @@ def _get_player_info(players_data: list) -> pd.DataFrame:
         result_dict["shirt_num"][idx] = player["player_shirt_number"]
 
     players_df = pd.DataFrame(result_dict)
-    players_df["full_name"] = players_df["full_name"].str.capitalize()
+    players_df["full_name"] = players_df["full_name"].str.title()
     return players_df
 
 
