@@ -4,7 +4,6 @@ try:
     import pandera.pandas as pa
 except ModuleNotFoundError:
     import pandera as pa
-
 from databallpy.utils.constants import DATABALLPY_POSITIONS
 
 
