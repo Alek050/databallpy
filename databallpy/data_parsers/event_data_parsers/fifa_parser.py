@@ -18,7 +18,7 @@ FIFA_TO_DATABALLPY_MAP = {
     "assist": "pass",
     "cross": "pass",
     "attempt_at_goal": "shot",
-    "goal": "shot",     
+    "goal": "shot",
     "own_goal": "own_goal",
 }
 
@@ -209,7 +209,7 @@ def _load_metadata(metadata_loc: str, pitch_dimensions: list) -> Metadata:
         game_id=match_id,
         pitch_dimensions=pitch_dimensions,
         periods_frames=periods_df,
-        frame_rate=MISSING_INT,  
+        frame_rate=MISSING_INT,
         home_team_id=home_team_id,
         home_team_name=metadata_json["home_team_name"],
         home_players=home_players,
@@ -241,7 +241,7 @@ def _get_player_info(players_data: list) -> pd.DataFrame:
         "full_name": [""] * n,
         "formation_place": [MISSING_INT] * n,
         "position": ["unspecified"] * n,
-        "starter": [False] * n,  
+        "starter": [False] * n,
         "shirt_num": [MISSING_INT] * n,
     }
 
@@ -250,7 +250,9 @@ def _get_player_info(players_data: list) -> pd.DataFrame:
         result_dict["full_name"][idx] = player["player_name"]
         result_dict["shirt_num"][idx] = player["player_shirt_number"]
 
-    return pd.DataFrame(result_dict)
+    players_df = pd.DataFrame(result_dict)
+    players_df["full_name"] = players_df["full_name"].str.capitalize()
+    return players_df
 
 
 @logging_wrapper(__file__)
@@ -468,7 +470,12 @@ def _make_pass_instance(
     x_end_raw = event.get("x_location_end")
     y_end_raw = event.get("y_location_end")
     x_end, y_end = _get_transformed_coordinates(
-        x_end_raw, y_end_raw, pitch_dimensions, period_id, flip_first_half, flip_second_half
+        x_end_raw,
+        y_end_raw,
+        pitch_dimensions,
+        period_id,
+        flip_first_half,
+        flip_second_half,
     )
 
     return PassEvent(
@@ -539,7 +546,9 @@ def _get_on_ball_event_info(event: dict) -> dict:
         dict: dictionary with body_part, set_piece, and possession_type.
     """
     body_type = event.get("body_type")
-    body_part = BODY_PART_MAP.get(body_type, "unspecified") if body_type else "unspecified"
+    body_part = (
+        BODY_PART_MAP.get(body_type, "unspecified") if body_type else "unspecified"
+    )
 
     origin = event.get("origin") or ""
     set_piece = SET_PIECE_MAP.get(origin, "no_set_piece")
@@ -662,7 +671,7 @@ def _get_game_score(
         elif event_name == "goal":
             is_goal = True
         elif event_name == "attempt_at_goal":
-            if row.get("is_successful") == True:
+            if row.get("is_successful"):
                 is_goal = True
 
         if is_goal:

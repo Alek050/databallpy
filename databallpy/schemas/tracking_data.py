@@ -5,7 +5,11 @@ from warnings import simplefilter
 import numpy as np
 import pandas as pd
 import pandera.extensions as extensions
-import pandera.pandas as pa
+
+try:
+    import pandera.pandas as pa
+except ModuleNotFoundError:
+    import pandera as pa
 from scipy.spatial import KDTree
 
 from databallpy.features.covered_distance import (
