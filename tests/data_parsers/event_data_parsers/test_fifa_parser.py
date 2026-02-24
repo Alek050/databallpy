@@ -666,13 +666,14 @@ class TestFifaParser(unittest.TestCase):
             (0.25, 0.5, 26.25, 0.0),  # away goal: 1-0.25=0.75 → 26.25
             (0.25, 0.75, 26.25, -17.0),  # own_goal:  1-0.25=0.75, 1-0.75=0.25
         ]
-        for x_in, y_in, x_exp, y_exp in cases:
-            with self.subTest(x=x_in, y=y_in):
-                x, y = _get_transformed_coordinates(
-                    x_in, y_in, [105.0, 68.0], 2, False, True
-                )
-                self.assertAlmostEqual(x, x_exp)
-                self.assertAlmostEqual(y, y_exp)
+        for period_id in [1, 2]:
+            for x_in, y_in, x_exp, y_exp in cases:
+                with self.subTest(x=x_in, y=y_in):
+                    x, y = _get_transformed_coordinates(
+                        x_in, y_in, [105.0, 68.0], period_id, True, True
+                    )
+                    self.assertAlmostEqual(x, x_exp)
+                    self.assertAlmostEqual(y, y_exp)
 
     def test_get_transformed_coordinates_null(self):
         """None or NaN coordinates return (NaN, NaN)."""
@@ -757,6 +758,13 @@ class TestFifaParser(unittest.TestCase):
         home_score, away_score = _get_game_score(event_data, 100, 200)
         self.assertEqual(home_score, 1)
         self.assertEqual(away_score, 2)
+
+        event_data = pd.concat([event_data, pd.DataFrame({"team_id": 200, "original_event": "own_goal"}, index=[7])])
+        event_data = pd.concat([event_data, pd.DataFrame({"team_id": 200, "original_event": "attempt_at_goal", "is_successful": True}, index=[8])])
+
+        home_score, away_score = _get_game_score(event_data, 100, 200)
+        self.assertEqual(home_score, 2)
+        self.assertEqual(away_score, 3)
 
 
 if __name__ == "__main__":

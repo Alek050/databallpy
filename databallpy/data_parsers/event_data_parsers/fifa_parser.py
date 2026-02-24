@@ -664,7 +664,7 @@ def _get_game_score(
 
         is_goal = False
         is_own_goal = False
-
+        
         if event_name == "own_goal":
             is_own_goal = True
             is_goal = True
