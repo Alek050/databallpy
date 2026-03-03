@@ -1,14 +1,17 @@
 # Changelog
 
-
-
 ## Version 0.7
+## V0.7.3
+- Added FIFA as an event data provider (by [jiangyan yang](https://github.com/ouyang1030))
+- Parses FIFA Unified Event Data format (newline-delimited JSON + metadata JSON)
+- Coordinate normalization to metres centred at (0,0), home team attacks positive x
+- Usage: get_game(event_data_loc=..., event_metadata_loc=..., event_data_provider="fifa")
 
+## Version 0.7.2
 - Small changes for better color selection in plot tracking data and save tracking video.
 - Integration between `accessible-space` and `DataBallPy` thanks to [jonas-bischofberger](https://github.com/jonas-bischofberger)
 
 ### V0.7.1 (24/11/2025)
-
 - Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
 - Allow for more null values in `Game`
 - Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`

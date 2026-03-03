@@ -17,6 +17,7 @@ from databallpy.data_parsers.event_data_parsers import (
     load_sportec_event_data,
     load_sportec_open_event_data,
     load_statsbomb_event_data,
+    load_fifa_event_data,
 )
 from databallpy.data_parsers.kloppy_parsers import (
     convert_kloppy_event_dataset,
@@ -190,6 +191,7 @@ def get_game(
         "sportec": True,
         "dfl": True,
         "statsbomb": False,
+        "fifa": True,
     }
 
     LOGGER.info(
@@ -484,6 +486,7 @@ def load_event_data(
         "statsbomb",
         "sportec",
         "dfl",
+        "fifa"
     ]:
         raise ValueError(
             f"We do not support '{event_data_provider}' as event data provider yet, "
@@ -517,6 +520,11 @@ def load_event_data(
     elif event_data_provider in ["sportec", "dfl"]:
         event_data, event_metadata, databallpy_events = load_sportec_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
+        )
+    elif event_data_provider == "fifa":
+        event_data, event_metadata, databallpy_events = load_fifa_event_data(
+            event_data_loc=event_data_loc,
+            metadata_loc=event_metadata_loc,
         )
     return event_data, event_metadata, databallpy_events
 
