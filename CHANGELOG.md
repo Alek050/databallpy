@@ -3,9 +3,11 @@
 ## Version 0.7
 ## V0.7.3
 - Added FIFA as an event data provider (by [jiangyan yang](https://github.com/ouyang1030))
-- Parses FIFA Unified Event Data format (newline-delimited JSON + metadata JSON)
-- Coordinate normalization to metres centred at (0,0), home team attacks positive x
-- Usage: get_game(event_data_loc=..., event_metadata_loc=..., event_data_provider="fifa")
+- Fix in download open data from DFL
+- Add support for Python 3.14
+- Updated support for Pandera for new version of Python and Pandera
+- Changed event unassinged error in sync to warning
+- Changed default cache behaviour specific for system
 
 ## Version 0.7.2
 - Small changes for better color selection in plot tracking data and save tracking video.
