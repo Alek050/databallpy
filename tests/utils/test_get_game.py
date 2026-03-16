@@ -170,6 +170,12 @@ class TestGetGame(unittest.TestCase):
 
         self.td_tracab["period_id"] = [1, 1, MISSING_INT, 2, 2]
 
+        self.corrected_ed["team_name"] = self.corrected_ed["team_id"].map(
+            {
+                self.md_opta.home_team_id: self.md_opta.home_team_name,
+                self.md_opta.away_team_id: self.md_opta.away_team_name,
+            }
+        )
         self.expected_game_tracab_opta = Game(
             tracking_data=self.td_tracab,
             event_data=self.corrected_ed,
@@ -219,6 +225,12 @@ class TestGetGame(unittest.TestCase):
             "end_datetime_ed"
         ]
 
+        self.ed_metrica["team_name"] = self.ed_metrica["team_id"].map(
+            {
+                md_metrica_ed.home_team_id: md_metrica_ed.home_team_name,
+                md_metrica_ed.away_team_id: md_metrica_ed.away_team_name,
+            }
+        )
         self.expected_game_metrica = Game(
             tracking_data=self.td_metrica,
             event_data=EventData(self.ed_metrica, provider="metrica"),
@@ -332,6 +344,12 @@ class TestGetGame(unittest.TestCase):
                     pd.to_datetime("NaT"),
                     pd.to_datetime("NaT"),
                 ],
+            }
+        )
+        self.ed_instat["team_name"] = self.ed_instat["team_id"].map(
+            {
+                self.md_instat.home_team_id: self.md_instat.home_team_name,
+                self.md_instat.away_team_id: self.md_instat.away_team_name,
             }
         )
         self.expected_game_inmotio_instat = Game(
@@ -494,6 +512,18 @@ class TestGetGame(unittest.TestCase):
         )
 
         assert game == expected_game_opta
+
+    def test_get_game_team_name_column_populated(self):
+        game = get_game(
+            event_data_loc=self.ed_opta_loc,
+            event_metadata_loc=self.md_opta_loc,
+            event_data_provider="opta",
+        )
+        self.assertIn("team_name", game.event_data.columns)
+        home_mask = game.event_data["team_id"] == game.home_team_id
+        away_mask = game.event_data["team_id"] == game.away_team_id
+        self.assertTrue((game.event_data.loc[home_mask, "team_name"] == game.home_team_name).all())
+        self.assertTrue((game.event_data.loc[away_mask, "team_name"] == game.away_team_name).all())
 
     def test_get_game_only_tracking_data(self):
         game = get_game(

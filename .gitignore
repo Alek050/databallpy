@@ -159,3 +159,6 @@ _build/*
 *.mp4
 notebooks/*
 synch_validation/*
+
+# Claude context files
+.claude/

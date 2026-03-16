@@ -22,7 +22,7 @@ from tests.expected_outcomes import (
     SPORTEC_METADATA_ED,
 )
 
-SPORTEC_EVENT_DATA = pd.DataFrame(SPORTEC_EVENT_DATA.copy())
+SPORTEC_EVENT_DATA = pd.DataFrame(SPORTEC_EVENT_DATA.drop(columns=["team_name"]).copy())
 
 
 class TestSportecParser(unittest.TestCase):
