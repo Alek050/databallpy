@@ -522,8 +522,12 @@ class TestGetGame(unittest.TestCase):
         self.assertIn("team_name", game.event_data.columns)
         home_mask = game.event_data["team_id"] == game.home_team_id
         away_mask = game.event_data["team_id"] == game.away_team_id
-        self.assertTrue((game.event_data.loc[home_mask, "team_name"] == game.home_team_name).all())
-        self.assertTrue((game.event_data.loc[away_mask, "team_name"] == game.away_team_name).all())
+        self.assertTrue(
+            (game.event_data.loc[home_mask, "team_name"] == game.home_team_name).all()
+        )
+        self.assertTrue(
+            (game.event_data.loc[away_mask, "team_name"] == game.away_team_name).all()
+        )
 
     def test_get_game_only_tracking_data(self):
         game = get_game(

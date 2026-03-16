@@ -1,5 +1,5 @@
-import tempfile
 import os
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 
@@ -8,9 +8,18 @@ import pandas as pd
 from databallpy import Event, LabelDict, events_to_xml
 from databallpy.schemas.event_data import EventData
 
+_T0 = pd.Timestamp("2023-01-14 12:00:00", tz="UTC")
+
 
 def make_event_data():
-    """Minimal 4-row EventData spanning 2 periods."""
+    """Minimal 4-row EventData spanning 2 periods.
+
+    Datetimes are anchored at _T0 (first pass in H1 = 0 s):
+      event 1 (H1 pass,  player 10): _T0          →  t =    0 s
+      event 2 (H1 shot,  player 20): _T0 + 2640 s →  t = 2640 s
+      event 3 (H2 pass,  player 10): _T0 + 3600 s →  t = 3600 s  (~60 min incl. break)
+      event 4 (H2 tackle,player 20): _T0 + 5455 s →  t = 5455 s
+    """
     data = {
         "event_id": [1, 2, 3, 4],
         "databallpy_event": ["pass", "shot", "pass", None],
@@ -24,7 +33,12 @@ def make_event_data():
         "is_successful": pd.array([True, False, True, None], dtype=pd.BooleanDtype()),
         "start_x": [0.0, 10.0, -5.0, 20.0],
         "start_y": [0.0, 5.0, -3.0, 10.0],
-        "datetime": [None, None, None, None],
+        "datetime": [
+            _T0,
+            _T0 + pd.Timedelta(seconds=2640),
+            _T0 + pd.Timedelta(seconds=3600),
+            _T0 + pd.Timedelta(seconds=5455),
+        ],
         "original_event_id": [100, 200, 300, 400],
         "original_event": ["pass", "shot", "pass", "tackle"],
     }
@@ -38,7 +52,7 @@ class TestEventDataToXml(unittest.TestCase):
     def _parse(self, xml_str):
         # Strip the XML declaration before parsing
         if xml_str.startswith("<?xml"):
-            xml_str = xml_str[xml_str.index("?>") + 2:].lstrip()
+            xml_str = xml_str[xml_str.index("?>") + 2 :].lstrip()
         return ET.fromstring(xml_str)
 
     def _instance_codes(self, root):
@@ -73,20 +87,26 @@ class TestEventDataToXml(unittest.TestCase):
         self.assertEqual(len(instances), 2)
 
     def test_to_xml_minute_range(self):
-        xml_str = self.ed.to_video_analysis_xml(min_minute=40, max_minute=50, tag_period_starts=False)
+        xml_str = self.ed.to_video_analysis_xml(
+            min_minute=40, max_minute=50, tag_period_starts=False
+        )
         root = self._parse(xml_str)
         instances = root.findall(".//instance")
         self.assertEqual(len(instances), 2)
 
     def test_to_xml_databallpy_events_filter(self):
-        xml_str = self.ed.to_video_analysis_xml(databallpy_events=["shot"], tag_period_starts=False)
+        xml_str = self.ed.to_video_analysis_xml(
+            databallpy_events=["shot"], tag_period_starts=False
+        )
         root = self._parse(xml_str)
         instances = root.findall(".//instance")
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0].find("code").text, "shot")
 
     def test_to_xml_is_successful_filter(self):
-        xml_str = self.ed.to_video_analysis_xml(is_successful=True, tag_period_starts=False)
+        xml_str = self.ed.to_video_analysis_xml(
+            is_successful=True, tag_period_starts=False
+        )
         root = self._parse(xml_str)
         instances = root.findall(".//instance")
         self.assertEqual(len(instances), 2)
@@ -101,25 +121,23 @@ class TestEventDataToXml(unittest.TestCase):
         root = self._parse(xml_str)
         instances = root.findall(".//instance")
         self.assertEqual(len(instances), 2)
-        for inst in instances:
-            start = float(inst.find("start").text)
-            end = float(inst.find("end").text)
-            self.assertGreaterEqual(start, 0.0)
-            self.assertGreater(end, start)
-        # Event 1 (period 1, minute=2, seconds=30): relative_t=150, no clip
-        # start=145, end=160 → window = 15s
         by_id = {inst.find("ID").text: inst for inst in instances}
+        for inst in instances:
+            end = float(inst.find("end").text)
+            start = float(inst.find("start").text)
+            self.assertGreater(end, start)
+        # Event 1 (H1 anchor, t=0): start = 0 - 5 = -5, end = 0 + 10 = 10 → window = 15 s
         start1 = float(by_id["1"].find("start").text)
         end1 = float(by_id["1"].find("end").text)
         self.assertAlmostEqual(end1 - start1, 15.0, places=1)
-        # Event 3 (period 2, first in period for player 10): relative_t=0, start clips to 0
+        # Event 3 (H2, t=3600 s): start = 3600 - 5 = 3595, end = 3600 + 10 = 3610
         start3 = float(by_id["3"].find("start").text)
         end3 = float(by_id["3"].find("end").text)
-        self.assertAlmostEqual(start3, 0.0, places=2)
-        self.assertAlmostEqual(end3, 10.0, places=1)
+        self.assertAlmostEqual(start3, 3595.0, places=2)
+        self.assertAlmostEqual(end3, 3610.0, places=1)
 
     def test_to_xml_period_offsets(self):
-        """Second-half event at minute=47 should have a small relative_t."""
+        """H2 events must be positioned well after H1 on the video timeline."""
         xml_str = self.ed.to_video_analysis_xml(
             player_id=10,
             tag_period_starts=False,
@@ -127,11 +145,15 @@ class TestEventDataToXml(unittest.TestCase):
             after_seconds=5.0,
         )
         root = self._parse(xml_str)
-        # Event 3: minute=47, seconds=5 → abs_s=2825; period 2 offset = min abs_s in p2
-        # min in period 2 for player 10 is event 3 (47*60+5=2825) → relative_t = 0
+        # Event 1 (H1 anchor): t = 0 s
+        # Event 3 (H2, _T0 + 3600 s): t = 3600 s — H2 does NOT reset to 0
         instances = root.findall(".//instance")
-        starts = {inst.find("ID").text: float(inst.find("start").text) for inst in instances}
-        self.assertAlmostEqual(starts["3"], 0.0, places=2)
+        starts = {
+            inst.find("ID").text: float(inst.find("start").text) for inst in instances
+        }
+        self.assertAlmostEqual(starts["1"], 0.0, places=2)
+        self.assertAlmostEqual(starts["3"], 3600.0, places=2)
+        self.assertGreater(starts["3"], starts["1"])
 
     def test_to_xml_no_period_starts(self):
         xml_str = self.ed.to_video_analysis_xml(tag_period_starts=False)
@@ -149,7 +171,9 @@ class TestEventDataToXml(unittest.TestCase):
 
     def test_to_xml_null_databallpy_event_falls_back_to_original(self):
         """Row 4 has null databallpy_event; code should fall back to original_event."""
-        xml_str = self.ed.to_video_analysis_xml(player_id=20, is_successful=None, tag_period_starts=False)
+        xml_str = self.ed.to_video_analysis_xml(
+            player_id=20, is_successful=None, tag_period_starts=False
+        )
         root = self._parse(xml_str)
         instances = root.findall(".//instance")
         codes = {inst.find("ID").text: inst.find("code").text for inst in instances}
@@ -176,7 +200,9 @@ class TestEventDataToXml(unittest.TestCase):
             self.ed.to_video_analysis_xml(databallpy_events=["unknown_event"])
 
     def test_to_xml_custom_code_column(self):
-        xml_str = self.ed.to_video_analysis_xml(code_column="original_event", tag_period_starts=False)
+        xml_str = self.ed.to_video_analysis_xml(
+            code_column="original_event", tag_period_starts=False
+        )
         root = self._parse(xml_str)
         codes = self._instance_codes(root)
         self.assertIn("pass", codes)
@@ -221,7 +247,7 @@ class TestEventDataToXml(unittest.TestCase):
         }
         xml_str = events_to_xml(my_events)
         self.assertIsInstance(xml_str, str)
-        root = ET.fromstring(xml_str[xml_str.index("?>") + 2:].lstrip())
+        root = ET.fromstring(xml_str[xml_str.index("?>") + 2 :].lstrip())
         instances = root.findall(".//instance")
         self.assertEqual(len(instances), 2)
         codes = [inst.find("code").text for inst in instances]

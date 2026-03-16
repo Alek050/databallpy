@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, List, TypedDict
-import xml.etree.ElementTree as ET
-import xml.dom.minidom as minidom
 import hashlib
+import xml.dom.minidom as minidom
+import xml.etree.ElementTree as ET
+from typing import Dict, List, TypedDict
 
 
 class LabelDict(TypedDict):
@@ -42,7 +42,7 @@ def events_to_xml(
     """
     Convert a dict of events into a XML string.
 
-    Structure:
+    Structure::
 
         <?xml version="1.0" encoding="UTF-8"?>
           <SORT_INFO>...</SORT_INFO>
@@ -135,13 +135,13 @@ def events_to_xml(
         r, g, b = _color_for_code(code)
 
         r_el = ET.SubElement(row_el, "R")
-        r_el.text = str(int(r/255 * 99999))
+        r_el.text = str(int(r / 255 * 99999))
 
         g_el = ET.SubElement(row_el, "G")
-        g_el.text = str(int(g/255 * 99999))
+        g_el.text = str(int(g / 255 * 99999))
 
         b_el = ET.SubElement(row_el, "B")
-        b_el.text = str(int(b/255 * 99999))
+        b_el.text = str(int(b / 255 * 99999))
 
         sort_el = ET.SubElement(row_el, "sort_order")
         sort_el.text = str(sort_order)

@@ -6,7 +6,7 @@ from databallpy.utils.to_xml import Event, LabelDict, _color_for_code, events_to
 
 def _parse(xml_str: str) -> ET.Element:
     if xml_str.startswith("<?xml"):
-        xml_str = xml_str[xml_str.index("?>") + 2:].lstrip()
+        xml_str = xml_str[xml_str.index("?>") + 2 :].lstrip()
     return ET.fromstring(xml_str)
 
 
