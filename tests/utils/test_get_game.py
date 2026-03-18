@@ -405,6 +405,9 @@ class TestGetGame(unittest.TestCase):
         self.statsbomb_match_loc = "tests/test_data/statsbomb_match_test.json"
         self.statsbomb_lineup_loc = "tests/test_data/statsbomb_lineup_test.json"
 
+        self.fifa_event_loc = "tests/test_data/fifa_events_test.json"
+        self.fifa_metadata_loc = "tests/test_data/fifa_metadata_test.json"
+
     def test_get_game_wrong_inputs(self):
         with self.assertRaises(ValueError):
             get_game(event_data_loc=self.ed_opta_loc, event_data_provider="opta")
@@ -761,3 +764,38 @@ class TestGetGame(unittest.TestCase):
         self.assertTrue(len(res_game.shot_events) == 2)
         self.assertTrue(len(res_game.pass_events) == 3)
         self.assertTrue(len(res_game.dribble_events) == 1)
+
+    def test_get_game_fifa(self):
+        res_game = get_game(
+            event_data_loc=self.fifa_event_loc,
+            event_metadata_loc=self.fifa_metadata_loc,
+            event_data_provider="fifa",
+            check_quality=False,
+        )
+        self.assertIsInstance(res_game, Game)
+        self.assertEqual(res_game.home_team_id, 100)
+        self.assertEqual(res_game.home_team_name, "HOME TEAM")
+        self.assertEqual(res_game.away_team_id, 200)
+        self.assertEqual(res_game.away_team_name, "AWAY TEAM")
+        self.assertEqual(res_game.home_score, 1)
+        self.assertEqual(res_game.away_score, 2)
+        self.assertEqual(len(res_game.event_data), 7)
+        self.assertEqual(res_game.event_data.provider, "fifa")
+        expected_cols = {
+            "event_id", "databallpy_event", "period_id", "minutes",
+            "seconds", "player_id", "team_id", "start_x", "start_y", "datetime",
+        }
+        self.assertTrue(expected_cols.issubset(set(res_game.event_data.columns)))
+        self.assertEqual(len(res_game.shot_events), 4)
+        self.assertEqual(len(res_game.pass_events), 2)
+        self.assertEqual(res_game.pitch_dimensions, [105.0, 68.0])
+        self.assertEqual(res_game.country, "Netherlands")
+        self.assertTrue(res_game._event_timestamp_is_precise)
+
+    def test_get_game_fifa_missing_metadata(self):
+        with self.assertRaises(ValueError):
+            get_game(
+                event_data_loc=self.fifa_event_loc,
+                event_metadata_loc=None,
+                event_data_provider="fifa",
+            )

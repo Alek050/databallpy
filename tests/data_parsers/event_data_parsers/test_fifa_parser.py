@@ -1,5 +1,5 @@
 """
-Unit tests for fifa_parser.py, following the style of test_opta_parser.py.
+Unit tests for fifa_parser.py.
 
 Run with:  pytest test_fifa_parser.py -v
 """
