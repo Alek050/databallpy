@@ -1,8 +1,8 @@
-import bs4
+import xml.etree.ElementTree as ET
+
 import chardet
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from databallpy.data_parsers import Metadata
@@ -168,12 +168,12 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:
     with open(metadata_loc, "r", encoding=encoding) as file:
         lines = file.read()
 
-    soup = BeautifulSoup(lines, "xml")
+    root = ET.fromstring(lines)
 
     res = []
-    for channel in soup.find_all("PlayerChannel"):
-        player_id = int(channel.attrs["id"].split("_")[0][2:])
-        value = channel.attrs["id"].split("_")[1]
+    for channel in root.findall(".//PlayerChannel"):
+        player_id = int(channel.get("id").split("_")[0][2:])
+        value = channel.get("id").split("_")[1]
         if "y" in value:
             continue
         home_mask = metadata.home_players["id"] == player_id
@@ -203,7 +203,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         encoding = chardet.detect(file.read())["encoding"]
     with open(metadata_loc, "r", encoding=encoding) as file:
         lines = file.read()
-    soup = BeautifulSoup(lines, "xml")
+    root = ET.fromstring(lines)
 
     periods_dict = {
         "period_id": [1, 2, 3, 4, 5],
@@ -212,16 +212,19 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         "start_datetime_td": [pd.to_datetime("NaT")] * 5,
         "end_datetime_td": [pd.to_datetime("NaT")] * 5,
     }
-    periods = soup.find_all("Session")
+    periods = root.findall(".//Session")
 
     i = 0
     for period in periods:
-        if period.SessionType.text == "Period":
-            for param in period.find_all("ProviderParameter"):
-                if "Frame" not in param.Name.text:
+        session_type = period.find("SessionType")
+        if session_type is not None and session_type.text == "Period":
+            for param in period.findall(".//ProviderParameter"):
+                name_el = param.find("Name")
+                value_el = param.find("Value")
+                if name_el is None or "Frame" not in name_el.text:
                     continue
-                value = param.Value.text
-                if "Start" in param.Name.text:
+                value = value_el.text
+                if "Start" in name_el.text:
                     dict_key = "start_frame"
                     dt_key = "start_datetime_td"
                     find_key = "Start"
@@ -230,13 +233,14 @@ def _get_metadata(metadata_loc: str) -> Metadata:
                     dt_key = "end_datetime_td"
                     find_key = "End"
                 periods_dict[dict_key][i] = _to_int(value)
+                find_el = period.find(find_key)
                 periods_dict[dt_key][i] = pd.to_datetime(
-                    period.find(find_key).text, utc=True
+                    find_el.text, utc=True
                 )
             i += 1
     periods_frames = pd.DataFrame(periods_dict)
 
-    competition = soup.find("Competition").text.split(",")[0]
+    competition = root.find(".//Competition").text.split(",")[0]
 
     # set to the right timezone
     periods_frames["start_datetime_td"] = utc_to_local_datetime(
@@ -246,34 +250,33 @@ def _get_metadata(metadata_loc: str) -> Metadata:
         periods_frames["end_datetime_td"], competition
     )
 
-    home_team = soup.Teams.find_all("Team")[0]
-    home_team_id = home_team.attrs["id"]
-    home_team_name = home_team.Name.text
-    home_team_player_data = soup.find_all("Player", {"teamId": home_team_id})
+    teams_el = root.find(".//Teams")
+    home_team = teams_el.findall("Team")[0]
+    home_team_id = home_team.get("id")
+    home_team_name = home_team.find("Name").text
+    home_team_player_data = root.findall(f'.//Player[@teamId="{home_team_id}"]')
     home_players = _get_player_data(home_team_player_data)
-    home_score = (
-        int(soup.LocalTeamScore.text) if soup.LocalTeamScore is not None else MISSING_INT
-    )
+    local_score_el = root.find(".//LocalTeamScore")
+    home_score = int(local_score_el.text) if local_score_el is not None else MISSING_INT
 
-    away_team = soup.Teams.find_all("Team")[1]
-    away_team_id = away_team.attrs["id"]
-    away_team_name = away_team.Name.text
-    away_team_player_data = soup.find_all("Player", {"teamId": away_team_id})
+    away_team = teams_el.findall("Team")[1]
+    away_team_id = away_team.get("id")
+    away_team_name = away_team.find("Name").text
+    away_team_player_data = root.findall(f'.//Player[@teamId="{away_team_id}"]')
     away_players = _get_player_data(away_team_player_data)
+    visiting_score_el = root.find(".//VisitingTeamScore")
     away_score = (
-        int(soup.VisitingTeamScore.text)
-        if soup.VisitingTeamScore is not None
-        else MISSING_INT
+        int(visiting_score_el.text) if visiting_score_el is not None else MISSING_INT
     )
 
     metadata = Metadata(
-        game_id=int(soup.Session.attrs["id"]),
+        game_id=int(root.find(".//Session").get("id")),
         pitch_dimensions=[
-            float(soup.MatchParameters.FieldSize.Length.text),
-            float(soup.MatchParameters.FieldSize.Width.text),
+            float(root.find(".//MatchParameters/FieldSize/Length").text),
+            float(root.find(".//MatchParameters/FieldSize/Width").text),
         ],
         periods_frames=periods_frames,
-        frame_rate=int(soup.FrameRate.text),
+        frame_rate=int(root.find(".//FrameRate").text),
         home_team_id=home_team_id,
         home_team_name=home_team_name,
         home_players=home_players,
@@ -289,14 +292,15 @@ def _get_metadata(metadata_loc: str) -> Metadata:
     return metadata
 
 
-def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
+def _get_player_data(team: list) -> pd.DataFrame:
     """Function that creates a df containing info on all players for a team
     Args:
-        team (bs4.element.Tag): containing info no all players of a team
+        team (list): containing ET.Element objects for all players of a team
     Returns:
         pd.DataFrame: contains all player information for a team
     """
 
+    team = [p if isinstance(p, ET.Element) else ET.fromstring(str(p)) for p in team]
     player_dict = {
         "id": [],
         "full_name": [],
@@ -306,10 +310,10 @@ def _get_player_data(team: bs4.element.Tag) -> pd.DataFrame:
         "end_frame": [],
     }
     for player in team:
-        player_dict["id"].append(int(player["id"][2:]))
-        player_dict["full_name"].append(player.Name.text)
-        player_dict["shirt_num"].append(int(player.ShirtNumber.text))
-        values = [x.text for x in player.find_all("Value")]
+        player_dict["id"].append(int(player.get("id")[2:]))
+        player_dict["full_name"].append(player.find("Name").text)
+        player_dict["shirt_num"].append(int(player.find("ShirtNumber").text))
+        values = [x.text for x in player.findall(".//Value")]
         player_dict["player_type"].append(values[0])
         player_dict["start_frame"].append(int(values[1]))
         player_dict["end_frame"].append(int(values[2]))

@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 
-import bs4
+import xml.etree.ElementTree as ET
+
 import chardet
 import numpy as np
 import pandas as pd
@@ -155,9 +156,9 @@ def _get_sportec_event_data(
         encoding = chardet.detect(f.read())["encoding"]
     with open(event_data_loc, "r", encoding=encoding) as file:
         lines = file.read()
-    soup = bs4.BeautifulSoup(lines, "xml")
+    root = ET.fromstring(lines)
 
-    all_events = soup.find_all("Event", {"X-Position": True})
+    all_events = root.findall('.//Event[@X-Position]')
 
     def update_results_dict(res_dict, i, **kwargs):
         for key in res_dict.keys():
@@ -182,7 +183,7 @@ def _get_sportec_event_data(
     }
 
     pitch_center, period_start_times, swap_half = _initialize_search_variables(
-        soup, metadata.home_team_id
+        root, metadata.home_team_id
     )
     metadata.periods_changed_playing_direction = [swap_half]
 
@@ -196,10 +197,10 @@ def _get_sportec_event_data(
     for idx, event in enumerate(all_events):
         kwargs = {}
         kwargs["set_piece"] = SPORTEC_SET_PIECES_MAP.get(
-            event.find_next().name, "no_set_piece"
+            next(iter(event)).tag, "no_set_piece"
         )
 
-        kwargs["datetime"] = pd.to_datetime(event["EventTime"]).tz_convert(
+        kwargs["datetime"] = pd.to_datetime(event.get("EventTime")).tz_convert(
             "Europe/Berlin"
         )
         dt_idx = int(kwargs["datetime"] >= period_start_times[1])
@@ -210,32 +211,31 @@ def _get_sportec_event_data(
         kwargs["minutes"] = int((45 * dt_idx) + time_diff_s // 60)
         kwargs["seconds"] = time_diff_s % 60
         kwargs["event_id"] = idx
-        kwargs["original_event_id"] = int(event["EventId"])
+        kwargs["original_event_id"] = int(event.get("EventId"))
 
-        kwargs["start_x"] = float(event["X-Position"]) - pitch_center[0]
-        kwargs["start_y"] = float(event["Y-Position"]) - pitch_center[1]
+        kwargs["start_x"] = float(event.get("X-Position")) - pitch_center[0]
+        kwargs["start_y"] = float(event.get("Y-Position")) - pitch_center[1]
 
         if kwargs["period_id"] == swap_half:
             kwargs["start_x"] *= -1
             kwargs["start_y"] *= -1
 
-        next_tag = event
-        while next_tag is not None and next_tag.name not in ALL_SPORTEC_EVENTS:
-            next_tag = next_tag.find_next()
+        event = next(
+            (e for e in event.iter() if e is not event and e.tag in ALL_SPORTEC_EVENTS),
+            next(iter(event))
+        )
 
-        event = next_tag if next_tag is not None else event.find_next()
-
-        kwargs["original_event"] = event.name
+        kwargs["original_event"] = event.tag
         kwargs["player_id"] = event.get("Player", event.get("Winner"))
         kwargs["team_id"] = event.get("Team", event.get("WinnerTeam"))
 
-        if event.name == "ShotAtGoal":
+        if event.tag == "ShotAtGoal":
             kwargs, shot_event = _handle_shot_event(event, metadata, kwargs)
             databallpy_events["shot_events"][shot_event.event_id] = shot_event
-        elif event.name == "Play":
+        elif event.tag == "Play":
             kwargs, pass_event = _handle_play_event(event, metadata, kwargs)
             databallpy_events["pass_events"][pass_event.event_id] = pass_event
-        elif event.name == "TacklingGame":
+        elif event.tag == "TacklingGame":
             kwargs, dbp_event = _handle_tackling_game_event(event, metadata, kwargs)
             if isinstance(dbp_event, DribbleEvent):
                 databallpy_events["dribble_events"][dbp_event.event_id] = dbp_event
@@ -264,7 +264,7 @@ def _get_sportec_event_data(
 
 
 def _initialize_search_variables(
-    soup: bs4.element.Tag, home_team_id: str
+    root: ET.Element, home_team_id: str
 ) -> tuple[list[float], list]:
     """Function to get the base variables for the event data.
     The function calculates the center of the pitch, and the start
@@ -272,43 +272,45 @@ def _initialize_search_variables(
     the minutes/seconds and period of the game.
 
     Args:
-        soup (bs4.element.Tag): The soup of an event
+        root (ET.Element): The root element of the event data XML
         home_team_id (str): The id of the home team
 
     Returns:
         tuple[list[float], list[dt.DateTime]]: the x,y location of the center of the
             pitch and the start datetime of the first and second half.
     """
-    first_half_kick_off = soup.find(
-        lambda tag: tag.name == "Event"
-        and tag.find("KickOff", {"GameSection": "firstHalf"})
+    if not isinstance(root, ET.Element):
+        root = ET.fromstring(str(root))
+    first_half_kick_off = next(
+        (e for e in root.iter("Event") if e.find('KickOff[@GameSection="firstHalf"]') is not None),
+        None
     )
-    second_half_kick_off = soup.find(
-        lambda tag: tag.name == "Event"
-        and tag.find("KickOff", {"GameSection": "secondHalf"})
+    second_half_kick_off = next(
+        (e for e in root.iter("Event") if e.find('KickOff[@GameSection="secondHalf"]') is not None),
+        None
     )
     pitch_center = [
-        float(first_half_kick_off["X-Position"]),
-        float(first_half_kick_off["Y-Position"]),
+        float(first_half_kick_off.get("X-Position")),
+        float(first_half_kick_off.get("Y-Position")),
     ]
     period_start_times = pd.to_datetime(
-        [first_half_kick_off["EventTime"], second_half_kick_off["EventTime"]]
+        [first_half_kick_off.get("EventTime"), second_half_kick_off.get("EventTime")]
     )
     swap_period = (
-        1 if first_half_kick_off.find("KickOff")["TeamRight"] == home_team_id else 2
+        1 if first_half_kick_off.find("KickOff").get("TeamRight") == home_team_id else 2
     )
 
     return pitch_center, period_start_times, swap_period
 
 
 def _handle_tackling_game_event(
-    event: bs4.element.Tag, metadata: Metadata, kwargs_dict: dict
+    event: ET.Element, metadata: Metadata, kwargs_dict: dict
 ) -> tuple[dict, DribbleEvent | None]:
     """Funtion to handle tackling game events. Only dribbles
     are now  considered since it is not clear when a tackle was performed.
 
     Args:
-        event (bs4.element.Tag): The TacklingGame event
+        event (ET.Element): The TacklingGame event
         metadata (Metadata): The metadata of the event data
         kwargs_dict (dict): The kwargs for event_data and databallpy events
 
@@ -316,8 +318,10 @@ def _handle_tackling_game_event(
         tuple[dict, DribbleEvent | None]: The updated kwargs for the
         event data, and the dribble event or None if it was not a dribble event
     """
-    kwargs_dict["original_event"] = event.get("WinnerResult", event.name)
-    if not event["WinnerResult"] == "dribbledAround":
+    if not isinstance(event, ET.Element):
+        event = ET.fromstring(str(event))
+    kwargs_dict["original_event"] = event.get("WinnerResult", event.tag)
+    if not event.get("WinnerResult") == "dribbledAround":
         return kwargs_dict, None
 
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
@@ -338,12 +342,12 @@ def _handle_tackling_game_event(
 
 
 def _handle_shot_event(
-    event: bs4.element.Tag, metadata: Metadata, kwargs_dict: dict
+    event: ET.Element, metadata: Metadata, kwargs_dict: dict
 ) -> tuple[dict, ShotEvent]:
     """Funtion to handle ShotAtGoal events from sportec
 
     Args:
-        event (bs4.element.Tag): The ShotAtGoal event
+        event (ET.Element): The ShotAtGoal event
         metadata (Metadata): The metadata of the event data
         kwargs_dict (dict): The kwargs for event_data and databallpy events
 
@@ -351,9 +355,12 @@ def _handle_shot_event(
         tuple[dict, ShotEvent]: The updated kwargs for the event data, and
         the databallpy shot event
     """
+    if not isinstance(event, ET.Element):
+        event = ET.fromstring(str(event))
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
 
-    kwargs_dict["original_event"] = event.find_next().name
+    _first_child_tag = next(iter(event)).tag
+    kwargs_dict["original_event"] = _first_child_tag
     kwargs_dict["databallpy_event"] = "shot"
     kwargs_dict["related_event_id"] = None
     kwargs_dict["body_part"] = SPORTEC_BODY_PARTS.get(
@@ -362,8 +369,8 @@ def _handle_shot_event(
     kwargs_dict["possession_type"] = SPORTEC_ASSISTS.get(
         event.get("AssistAction"), "unspecified"
     )
-    kwargs_dict["outcome"] = SPORTEC_SHOT_OUTCOMES[event.find_next().name] == "goal"
-    kwargs_dict["outcome_str"] = SPORTEC_SHOT_OUTCOMES[event.find_next().name]
+    kwargs_dict["outcome"] = SPORTEC_SHOT_OUTCOMES[_first_child_tag] == "goal"
+    kwargs_dict["outcome_str"] = SPORTEC_SHOT_OUTCOMES[_first_child_tag]
 
     temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
 
@@ -374,12 +381,12 @@ def _handle_shot_event(
 
 
 def _handle_play_event(
-    event: bs4.element.Tag, metadata: Metadata, kwargs_dict: dict
+    event: ET.Element, metadata: Metadata, kwargs_dict: dict
 ) -> tuple[dict, PassEvent]:
     """Funtion to handle Play events from sportec
 
     Args:
-        event (bs4.element.Tag): The Play event
+        event (ET.Element): The Play event
         metadata (Metadata): The metadata of the event data
         kwargs_dict (dict): The kwargs for event_data and databallpy events
 
@@ -387,20 +394,23 @@ def _handle_play_event(
         tuple[dict, PassEvent]: The updated kwargs for the event data, and
         the databallpy pass event
     """
+    if not isinstance(event, ET.Element):
+        event = ET.fromstring(str(event))
     kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
-    kwargs_dict["original_event"] = event.find_next().name
+    _first_child_tag = next(iter(event)).tag
+    kwargs_dict["original_event"] = _first_child_tag
     kwargs_dict["databallpy_event"] = "pass"
-    kwargs_dict["outcome"] = event["Evaluation"] == "successfullyCompleted"
+    kwargs_dict["outcome"] = event.get("Evaluation") == "successfullyCompleted"
     kwargs_dict["related_event_id"] = None
     kwargs_dict["body_part"] = "unspecified"
     kwargs_dict["possession_type"] = (
-        "open_play" if event["FromOpenPlay"] == "true" else "unspecified"
+        "open_play" if event.get("FromOpenPlay") == "true" else "unspecified"
     )
     kwargs_dict["outcome_str"] = "unspecified"
     kwargs_dict["end_x"] = np.nan
     kwargs_dict["end_y"] = np.nan
     kwargs_dict["pass_type"] = (
-        "cross" if event.find_next().name == "Cross" else "unspecified"
+        "cross" if _first_child_tag == "Cross" else "unspecified"
     )
     kwargs_dict["receiver_player_id"] = event.get("Recipient", None)
 

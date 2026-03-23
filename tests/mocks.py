@@ -536,10 +536,11 @@ MD_METRICA_RAW = """<?xml version="1.0" encoding="utf-8"?>
         <SplitRegister separator=",">
           <PlayerChannelRef playerChannelId="player35_x"/>
           <PlayerChannelRef playerChannelId="player35_y"/>
-      </SplitRegister>
-      <SplitRegister separator=",">
-        <BallChannelRef channelId="x"/>
-        <BallChannelRef channelId="y"/>
+        </SplitRegister>
+        <SplitRegister separator=",">
+          <BallChannelRef channelId="x"/>
+          <BallChannelRef channelId="y"/>
+        </SplitRegister>
       </SplitRegister>
     </DataFormatSpecification>
   </DataFormatSpecifications>

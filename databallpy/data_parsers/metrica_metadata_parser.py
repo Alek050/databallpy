@@ -1,10 +1,10 @@
 import datetime as dt
 import os
+import xml.etree.ElementTree as ET
 
 import chardet
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
 
 from databallpy.data_parsers import Metadata
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
@@ -28,28 +28,28 @@ def _get_td_channels(metadata_loc: str, metadata: Metadata) -> pd.DataFrame:
             encoding = chardet.detect(file.read())["encoding"]
         with open(metadata_loc, "r", encoding=encoding) as file:
             lines = file.read()
-        soup = BeautifulSoup(lines, "xml")
+        root = ET.fromstring(lines)
     else:
-        soup = BeautifulSoup(metadata_loc.strip(), "xml")
+        root = ET.fromstring(metadata_loc.strip())
 
     channel_id_to_player_id_dict = {}
-    for player in soup.find_all("PlayerChannel"):
-        channel_id = player.attrs["id"].split("_")[0]
-        value = player.attrs["id"].split("_")[1]
+    for player in root.findall(".//PlayerChannel"):
+        channel_id = player.get("id").split("_")[0]
+        value = player.get("id").split("_")[1]
         if "y" in value:
             continue
-        channel_id_to_player_id_dict[channel_id] = int(player.attrs["playerId"][1:])
+        channel_id_to_player_id_dict[channel_id] = int(player.get("playerId")[1:])
 
     res = {"start": [], "end": [], "ids": []}
     for idx, data_format_specification in enumerate(
-        soup.find_all("DataFormatSpecification")
+        root.findall(".//DataFormatSpecification")
     ):
         res["ids"].append([])
-        res["start"].append(int(data_format_specification.attrs["startFrame"]))
-        res["end"].append(int(data_format_specification.attrs["endFrame"]))
-        for channel in data_format_specification.findChildren("PlayerChannelRef"):
-            channel_id = channel.attrs["playerChannelId"].split("_")[0]
-            value = channel.attrs["playerChannelId"].split("_")[1]
+        res["start"].append(int(data_format_specification.get("startFrame")))
+        res["end"].append(int(data_format_specification.get("endFrame")))
+        for channel in data_format_specification.findall(".//PlayerChannelRef"):
+            channel_id = channel.get("playerChannelId").split("_")[0]
+            value = channel.get("playerChannelId").split("_")[1]
             if "y" in value:
                 continue
             player_id = channel_id_to_player_id_dict[channel_id]
@@ -85,17 +85,17 @@ def _get_metadata(
             encoding = chardet.detect(file.read())["encoding"]
         with open(metadata_loc, "r", encoding=encoding) as file:
             lines = file.read()
-        soup = BeautifulSoup(lines, "xml")
+        root = ET.fromstring(lines)
     else:
-        soup = BeautifulSoup(metadata_loc.strip(), "xml")
+        root = ET.fromstring(metadata_loc.strip())
 
-    game_id = _to_int(soup.find("Session").attrs["id"])
-    pitch_size_x = _to_float(soup.find("FieldSize").find("Width").text)
-    pitch_size_y = _to_float(soup.find("FieldSize").find("Height").text)
-    frame_rate = _to_int(soup.find("FrameRate").text)
+    game_id = _to_int(root.find(".//Session").get("id"))
+    pitch_size_x = _to_float(root.find(".//FieldSize/Width").text)
+    pitch_size_y = _to_float(root.find(".//FieldSize/Height").text)
+    frame_rate = _to_int(root.find(".//FrameRate").text)
 
     # no idea about time zone, so just assume utc
-    datetime = pd.to_datetime(soup.find("Start").text, utc=True)
+    datetime = pd.to_datetime(root.find(".//Start").text, utc=True)
 
     periods_dict = {
         "period_id": [],
@@ -120,7 +120,7 @@ def _get_metadata(
         "second_extra_half_end": 4,
     }
 
-    for period_soup in soup.find("ProviderGlobalParameters").find_all(
+    for period_soup in root.find(".//ProviderGlobalParameters").findall(
         "ProviderParameter"
     ):
         name = period_soup.find("Name").text
@@ -176,13 +176,13 @@ def _get_metadata(
         periods_dict["end_datetime_ed"].append(pd.to_datetime("NaT"))
 
     teams_info = {}
-    for team in soup.find_all("Team"):
+    for team in root.findall(".//Team"):
         team_info = {}
         team_info["team_name"] = team.find("Name").text
-        team_info["team_id"] = team.attrs["id"]
+        team_info["team_id"] = team.get("id")
         team_info["formation"] = ""
-        score = soup.find("Score")
-        if score.attrs["idLocalTeam"] == team_info["team_id"]:
+        score = root.find(".//Score")
+        if score.get("idLocalTeam") == team_info["team_id"]:
             team_info["side"] = "home"
             team_info["score"] = _to_int(score.find("LocalTeamScore").text)
         else:
@@ -191,7 +191,7 @@ def _get_metadata(
 
         teams_info[team_info["side"]] = team_info
 
-    players = soup.find_all("Player")
+    players = root.findall(".//Player")
     team_dicts = [
         {
             "team_id": teams_info["home"]["team_id"],
@@ -223,16 +223,16 @@ def _get_metadata(
 
     for player in players:
         for team in team_dicts:
-            if player.attrs["teamId"] == team["team_id"]:
+            if player.get("teamId") == team["team_id"]:
                 res_dict = team["player_dict"]
 
-                res_dict["id"].append(_to_int(player.attrs["id"][1:]))
+                res_dict["id"].append(_to_int(player.get("id")[1:]))
                 res_dict["full_name"].append(player.find("Name").text)
                 res_dict["shirt_num"].append(_to_int(player.find("ShirtNumber").text))
                 res_dict["starter"].append(np.nan)
                 res_dict["start_frame"].append(MISSING_INT)
                 res_dict["end_frame"].append(MISSING_INT)
-                for param in player.findChildren("ProviderParameter"):
+                for param in player.findall(".//ProviderParameter"):
                     if param.find("Name").text == "position_type":
                         res_dict["position"].append(
                             _metrica_position_to_databallpy_position(
