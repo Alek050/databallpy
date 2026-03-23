@@ -307,7 +307,10 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     end_period_1 = soccer_doc.find('.//Stat[@Type="first_half_stop"]')
     start_period_2 = soccer_doc.find('.//Stat[@Type="second_half_start"]')
     end_period_2 = soccer_doc.find('.//Stat[@Type="second_half_stop"]')
-    if not all(x is not None for x in [start_period_1, end_period_1, start_period_2, end_period_2]):
+    if not all(
+        x is not None
+        for x in [start_period_1, end_period_1, start_period_2, end_period_2]
+    ):
         if soccer_doc.find(".//Date") is None:
             raise ValueError(
                 "The f7.xml opta file does not contain the start "
@@ -684,16 +687,13 @@ def _make_pass_instance(
             pass_type = pass_type_option
             break
 
-    if event.find(f'Q[@qualifier_id="{X_END_QUALIFIER}"]') is not None and event.find(
-        f'Q[@qualifier_id="{Y_END_QUALIFIER}"]'
-    ) is not None:
+    if (
+        event.find(f'Q[@qualifier_id="{X_END_QUALIFIER}"]') is not None
+        and event.find(f'Q[@qualifier_id="{Y_END_QUALIFIER}"]') is not None
+    ):
         x_end, y_end = _rescale_opta_dimensions(
-            float(
-                event.find(f'Q[@qualifier_id="{X_END_QUALIFIER}"]').get("value")
-            ),
-            float(
-                event.find(f'Q[@qualifier_id="{Y_END_QUALIFIER}"]').get("value")
-            ),
+            float(event.find(f'Q[@qualifier_id="{X_END_QUALIFIER}"]').get("value")),
+            float(event.find(f'Q[@qualifier_id="{Y_END_QUALIFIER}"]').get("value")),
             pitch_dimensions=pitch_dimensions,
         )
     else:
@@ -766,9 +766,7 @@ def _make_shot_event_instance(
     else:
         y_target, z_target = np.nan, np.nan
 
-    first_touch = (
-        event.find(f'Q[@qualifier_id="{FIRST_TOUCH_QUALIFIER}"]') is not None
-    )
+    first_touch = event.find(f'Q[@qualifier_id="{FIRST_TOUCH_QUALIFIER}"]') is not None
 
     on_ball_info = _get_on_ball_event_info(event)
     on_ball_info.update(

@@ -234,9 +234,7 @@ def _get_metadata(metadata_loc: str) -> Metadata:
                     find_key = "End"
                 periods_dict[dict_key][i] = _to_int(value)
                 find_el = period.find(find_key)
-                periods_dict[dt_key][i] = pd.to_datetime(
-                    find_el.text, utc=True
-                )
+                periods_dict[dt_key][i] = pd.to_datetime(find_el.text, utc=True)
             i += 1
     periods_frames = pd.DataFrame(periods_dict)
 

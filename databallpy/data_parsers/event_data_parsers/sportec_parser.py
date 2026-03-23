@@ -1,7 +1,6 @@
 import os
-from pathlib import Path
-
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import chardet
 import numpy as np
@@ -158,7 +157,7 @@ def _get_sportec_event_data(
         lines = file.read()
     root = ET.fromstring(lines)
 
-    all_events = root.findall('.//Event[@X-Position]')
+    all_events = root.findall(".//Event[@X-Position]")
 
     def update_results_dict(res_dict, i, **kwargs):
         for key in res_dict.keys():
@@ -222,7 +221,7 @@ def _get_sportec_event_data(
 
         event = next(
             (e for e in event.iter() if e is not event and e.tag in ALL_SPORTEC_EVENTS),
-            next(iter(event))
+            next(iter(event)),
         )
 
         kwargs["original_event"] = event.tag
@@ -282,12 +281,20 @@ def _initialize_search_variables(
     if not isinstance(root, ET.Element):
         root = ET.fromstring(str(root))
     first_half_kick_off = next(
-        (e for e in root.iter("Event") if e.find('KickOff[@GameSection="firstHalf"]') is not None),
-        None
+        (
+            e
+            for e in root.iter("Event")
+            if e.find('KickOff[@GameSection="firstHalf"]') is not None
+        ),
+        None,
     )
     second_half_kick_off = next(
-        (e for e in root.iter("Event") if e.find('KickOff[@GameSection="secondHalf"]') is not None),
-        None
+        (
+            e
+            for e in root.iter("Event")
+            if e.find('KickOff[@GameSection="secondHalf"]') is not None
+        ),
+        None,
     )
     pitch_center = [
         float(first_half_kick_off.get("X-Position")),
@@ -409,9 +416,7 @@ def _handle_play_event(
     kwargs_dict["outcome_str"] = "unspecified"
     kwargs_dict["end_x"] = np.nan
     kwargs_dict["end_y"] = np.nan
-    kwargs_dict["pass_type"] = (
-        "cross" if _first_child_tag == "Cross" else "unspecified"
-    )
+    kwargs_dict["pass_type"] = "cross" if _first_child_tag == "Cross" else "unspecified"
     kwargs_dict["receiver_player_id"] = event.get("Recipient", None)
 
     temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
