@@ -28,7 +28,7 @@ from tests.expected_outcomes import (
     SHOT_INSTANCES_OPTA,
 )
 
-ED_OPTA = pd.DataFrame(ED_OPTA.copy())
+ED_OPTA = pd.DataFrame(ED_OPTA.drop(columns=["team_name"]).copy())
 
 
 class TestOptaParser(unittest.TestCase):
