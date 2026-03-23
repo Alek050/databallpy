@@ -11,6 +11,7 @@ from databallpy.utils.get_game import (
     get_saved_match,
 )
 from databallpy.utils.logging import create_logger
+from databallpy.utils.to_xml import Event, LabelDict, events_to_xml
 
 __version__ = version("databallpy")
 create_logger(__name__).info(f"Using databallpy version {__version__}")
