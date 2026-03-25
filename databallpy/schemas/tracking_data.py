@@ -956,6 +956,7 @@ class TrackingData(pd.DataFrame):
         n_y_bins: int = 68,
         start_idx: int | None = None,
         end_idx: int | None = None,
+        frame_steps: int = 5,
     ) -> np.ndarray:
         """
         Calculate the pitch control for a game using the method suggested by Spearman(2017)
@@ -994,12 +995,25 @@ class TrackingData(pd.DataFrame):
                 (len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32
             )
         
-        for i, idx in enumerate(tracking_data.index):
-            pitch_control[i] = get_spearman_pitch_control_single_frame(
-                tracking_data.loc[idx],
-                pitch_dimensions,
-                n_x_bins,
-                n_y_bins,
-            )
+        if frame_steps != 1:
+        
+            idx = tracking_data.index
+
+            for i in range(0, tracking_data.shape[0], frame_steps):
+                pitch_control[i:(i+frame_steps)] = get_spearman_pitch_control_single_frame(
+                    tracking_data.loc[idx[i]],
+                    pitch_dimensions,
+                    n_x_bins,
+                    n_y_bins,
+                )
+
+        else:
+            for i, idx in enumerate(tracking_data.index):
+                pitch_control[i] = get_spearman_pitch_control_single_frame(
+                    tracking_data.loc[idx],
+                    pitch_dimensions,
+                    n_x_bins,
+                    n_y_bins,
+                )
 
         return pitch_control

@@ -82,7 +82,8 @@ def build_ndarray(
     return np.asarray(output)
 
 def prepare_data(
-        data: pd.Series
+        data: pd.Series,
+        ball: bool = False
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Function to prepare all needed data from a single frame
@@ -108,8 +109,6 @@ def prepare_data(
     Velocities of the away players in the form of an array with the dimensions (n, 2)
     """
 
-    ball_pos = build_ndarray(data)
-
     pattern_home_pos = re.compile(rf"home_(\d+)_(x|y)$")
     home_pos = build_ndarray(data, pattern_home_pos, "position")
 
@@ -122,7 +121,11 @@ def prepare_data(
     pattern_away_vel = re.compile(rf"away_(\d+)_(vx|vy)$")
     away_vel = build_ndarray(data, pattern_away_vel, "velocity")
 
-    return home_pos, away_pos, home_vel, away_vel, ball_pos
+    if ball:
+        ball_pos = build_ndarray(data)
+        return home_pos, away_pos, home_vel, away_vel, ball_pos
+    
+    return home_pos, away_pos, home_vel, away_vel
 
 def time_to_intercept(
     p_players: np.ndarray,
@@ -166,27 +169,15 @@ def time_to_intercept(
         to get to the ball.
     """
 
-    v = (
-        p_ball[:, None, :] - p_players[None, :, :]
-    )  # Relative motion vector between Pressing Players and Players Under Pressure
-
-    u_mag = np.linalg.norm(p_players, axis=-1)  # velocitie of Pressing Players velocity
-    v_mag = np.linalg.norm(v, axis=-1)  # velocitie of relative motion vector
-    dot_product = np.sum(p_players * v, axis=-1)
-
-    epsilon = 1e-10  # We add epsilon to avoid dividing by zero (which throws a warning)
-    angle = np.arccos(dot_product / (u_mag * v_mag + epsilon))
-
     r_reaction = (
         p_players + v_players * reaction_time
     )  # Adjusted position of Pressing Players after reaction time
     d = p_ball[:, None, :] - r_reaction[None, :, :]  # Distance vector after reaction time
 
     t = (
-        u_mag * angle / np.pi  # Time contribution from angular adjustment
-        + reaction_time  # Add reaction time
+        reaction_time
         + np.linalg.norm(d, axis=-1) / max_velocity
-    )  # Time contribution from running
+    )  
 
     return t
 
@@ -240,16 +231,30 @@ def compute_team_tti(
         to get to the ball.
     """
     
-    time_home_players = time_to_intercept(home_player_position, ball_position, home_player_velocity, reaction_time, max_velocity)
-    time_away_players = time_to_intercept(away_player_position, ball_position, away_player_velocity, reaction_time, max_velocity)
+    t_home = time_to_intercept(
+        home_player_position, ball_position,
+        home_player_velocity, reaction_time, max_velocity
+    )[0]
 
-    return time_home_players, time_away_players
+    t_away = time_to_intercept(
+        away_player_position, ball_position,
+        away_player_velocity, reaction_time, max_velocity
+    )[0]
+
+    times = np.concatenate([t_home, t_away])
+    teams = np.array([1] * len(t_home) + [-1] * len(t_away))
+
+    sort_idx = np.argsort(times)
+    teams = teams[sort_idx]
+
+    t_diff = np.diff(times, append= times[-1])
+
+    return teams, t_diff
 
 
 def probability_to_intercept(
     time_to_intercept: np.ndarray,
     tti_sigma: float, 
-    tti_time_threshold: float
 ) -> np.ndarray:
     
     """
@@ -272,57 +277,13 @@ def probability_to_intercept(
     Array holding the probability values for each player to intercept the ball at the given point
     """
     exponent = (
-        #-np.pi / np.sqrt(3.0) / tti_sigma * (tti_time_threshold - time_to_intercept)
-        -(tti_time_threshold - time_to_intercept)/(np.sqrt(3)*tti_sigma/np.pi)
+        -(time_to_intercept)/(np.sqrt(3)*tti_sigma/np.pi)
     )
-    # we take the below step to avoid Overflow errors, np.exp does not like values above ~700.
-    # exp(25) should already result in p ~ 0.000%
-    exponent = np.clip(exponent, -700, 700)
-    p = 1 / (1.0 + np.exp(exponent))
-    return p
-
-def compute_team_probs(
-        home_tti: np.ndarray,
-        away_tti: np.ndarray,
-        tti_threshold: float,
-        tti_sigma:float = 0.45, #as per Spearman 2017
-        ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Calculate the probability of the players of both teams intercepting the ball depending on his time to intercept and the time threshold.
-
-    Parameters
-    -------------
-    home_tti: np.ndarray
-    Array of size (n,1) with the tti's for the home players
-
-    away_tti: np.ndarray
-    Array of size (n,1) with the tti's for the away players
-
-    tti_threshold: float
-    The time at which the ball would be at the position
-
-    tti_sigma: float
-    Sigma-coefficient for the probability function suggested in Spearman(2017). 
-
-
-    Output
-    ---------
-    prob_home: np.ndarray
-    Array holding the probability values for each home player to intercept the ball at the given point
-
-    prob_away: np.ndarray
-    Array holding the probability values for each away player to intercept the ball at the given point
-    """
-    
-    prob_home = probability_to_intercept(home_tti, tti_sigma, tti_threshold)
-    prob_away = probability_to_intercept(away_tti, tti_sigma, tti_threshold)
-
-    return prob_home, prob_away
+    return 1 / (1.0 + np.exp(exponent))
 
 
 def compute_control_prob(
         tti: np.ndarray,
-        tti_threshold: np.ndarray,
         tti_lambda: float = 4.3 #as per Spearman(2017),
 ) -> np.ndarray:
     """
@@ -344,56 +305,15 @@ def compute_control_prob(
     probs: np.ndarray
     Array holding the probabilities for each player being able to control the ball in the given time.
     """
-    t_diff = tti_threshold - tti
-    t_diff[0][t_diff[0] < 0] = 0
-    exponents = -tti_lambda * t_diff
+    exponents = -tti_lambda * tti
 
-    probs = 1- np.exp(exponents)
+    return 1 - np.exp(exponents)
 
-    return probs
-
-def team_control_probs(
-        tti_home: np.ndarray, 
-        tti_away: np.ndarray, 
-        tti_threshold: float, 
-        tti_lambda: float = 4.3
-        ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Computes the probabilities of controling the ball for all players on both teams in the time between getting to a point and the ball arriving
-
-    Parameters
-    -------------
-    tti_home: np.ndarray
-    The estimated time to intercept for the home players
-
-    tti_away: np.ndarray
-    The estimated time to intercept for the away players
-
-    tti_threshold: np.ndarray
-    The estimated time the ball arrives at the point of intercept
-
-    tti_lambda: float
-    Probability parameter, default = 4.3 as suggested in Spearman(2017)
-
-    Output
-    --------
-    home: np.ndarray
-    Array holding the probabilities for each home player being able to control the ball in the given time.
-
-    away: np.ndarray
-    Array holding the probabilities for each away player being able to control the ball in the given time.
-    """
-    
-    home = compute_control_prob(tti_home, tti_threshold, tti_lambda)
-    away = compute_control_prob(tti_away, tti_threshold, tti_lambda)
-
-    return home, away
 
 def calculate_local_pitch_control(
-        int_prob_home: np.ndarray, 
-        int_prob_away: np.ndarray, 
-        cont_prob_home: np.ndarray, 
-        cont_prob_away: np.ndarray
+        int_prob: np.ndarray,
+        cont_prob: np.ndarray,
+        teams: np.ndarray
         ) -> float:
     """
     Calculating the pitch control value for a single point on the field.
@@ -417,40 +337,15 @@ def calculate_local_pitch_control(
     pc: float
     Pitch control coefficient for the point of intercept
     """
-    prob_away = np.sum(np.multiply(int_prob_away, cont_prob_away))
-    prob_home = np.sum(np.multiply(int_prob_home, cont_prob_home))
-    return prob_home - prob_away
+    comb_prob = int_prob * cont_prob
+    tot_prob = 1
+    probs = 0
+    for prob, team in zip(comb_prob, teams):
+        p = tot_prob * prob
+        tot_prob -= p
+        probs += p * team
 
-def calc_time_threshold(
-        ball_pos: np.ndarray, 
-        pitch_pos: np.ndarray
-        ) -> float:
-    """
-    Calculating the time threshold indicating the estimated arrival time of the ball at the point of intercept.
-
-    Parameters
-    --------------
-    ball_pos: np.ndarray
-    Current position of the ball on the field
-
-    pitch_pos: np.ndarray
-    Position where the ball should be passed
-
-    Output
-    ----------
-    time: float
-    Estimated time needed for the ball to get from its current to its needed position
-    """
-    #TODO: proper implementation, for now just rudimentary calculation with distance/velocity
-    
-    movement_vector = pitch_pos - ball_pos
-    
-
-    movement_distance = np.sqrt(movement_vector[0][0]**2 + movement_vector[0][1]**2)
-
-    time = movement_distance/12 #default passing velocity = 12 m/s
-
-    return time
+    return probs
 
 
 def get_spearman_pitch_control_single_frame(
@@ -486,7 +381,7 @@ def get_spearman_pitch_control_single_frame(
         np.linspace(-pitch_dimensions[1] / 2, pitch_dimensions[1] / 2, n_y_bins),
     )
 
-    home_pos, away_pos, home_vel, away_vel, ball_pos = prepare_data(frame)
+    home_pos, away_pos, home_vel, away_vel = prepare_data(frame)
 
     control_grid = []
     grid_shape = grid[0].shape
@@ -497,18 +392,16 @@ def get_spearman_pitch_control_single_frame(
 
             pitch_pos = np.asarray([[grid[0][x][y], grid[1][x][y]]])
 
-            time_threshold = calc_time_threshold(ball_pos, pitch_pos)
+            team, t_diff = compute_team_tti(home_pos, home_vel, away_pos, away_vel, pitch_pos)
 
-            home_tti, away_tti = compute_team_tti(home_pos, home_vel, away_pos, away_vel, pitch_pos)
+            int_prob = probability_to_intercept(t_diff)
 
-            int_prob_home, int_prob_away = compute_team_probs(home_tti, away_tti, time_threshold)
+            cont_prob = compute_control_prob(t_diff)
 
-            cont_prob_home, cont_prob_away = team_control_probs(home_tti, away_tti, time_threshold)
-
-            local_pitch_control = calculate_local_pitch_control(int_prob_home, int_prob_away, cont_prob_home, cont_prob_away)
+            local_pitch_control = calculate_local_pitch_control(int_prob, cont_prob, team)
 
             x_grid.append(local_pitch_control)
         
         control_grid.append(x_grid)
 
-    return control_grid #sigmoid(control_grid, d=5)
+    return control_grid
