@@ -178,6 +178,12 @@ def get_game(
             event_match_loc=event_match_loc,
             event_lineup_loc=event_lineup_loc,
         )
+        if len(event_data) > 0:
+            team_name_map = {
+                event_metadata.home_team_id: event_metadata.home_team_name,
+                event_metadata.away_team_id: event_metadata.away_team_name,
+            }
+            event_data["team_name"] = event_data["team_id"].map(team_name_map)
         if _check_game_class_:
             EventDataSchema.validate(event_data)
         uses_event_data = True
@@ -584,6 +590,13 @@ def get_open_game(
         ),
         axis=1,
     )
+
+    if len(event_data) > 0:
+        team_name_map = {
+            ed_metadata.home_team_id: ed_metadata.home_team_name,
+            ed_metadata.away_team_id: ed_metadata.away_team_name,
+        }
+        event_data["team_name"] = event_data["team_id"].map(team_name_map)
 
     shot_events = (
         create_event_attributes_dataframe(databallpy_events["shot_events"])

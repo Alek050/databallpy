@@ -19,7 +19,7 @@ from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
 from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import ED_SCISPORTS, MD_SCISPORTS
 
-ED_SCISPORTS = pd.DataFrame(ED_SCISPORTS.copy())
+ED_SCISPORTS = pd.DataFrame(ED_SCISPORTS.drop(columns=["team_name"]).copy())
 
 
 class TestSciSportsParser(unittest.TestCase):

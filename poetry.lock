@@ -3502,7 +3502,9 @@ files = [
 ]
 
 [package.dependencies]
+numpy = {version = ">=1.24.4", optional = true, markers = "extra == \"pandas\""}
 packaging = ">=20.0"
+pandas = {version = ">=2.1.1", optional = true, markers = "extra == \"pandas\""}
 pydantic = "*"
 typeguard = "*"
 typing_extensions = "*"
@@ -6124,4 +6126,4 @@ kloppy = ["kloppy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.15"
-content-hash = "b4c9c5b2a7fad2fe02a65a22c0607f567665fdf5649255b988b5cd55683515ca"
+content-hash = "bde82231799537c75b6f4bea66dc79d78cb814eaa71d11103463684d65e116a9"
