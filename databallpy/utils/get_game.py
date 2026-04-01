@@ -667,7 +667,10 @@ def try_cache(provider: str, game_id: str) -> Game | None:
                 shutil.copy(file, cache_path)
 
     if cache_path.is_dir():
-        return get_saved_game(cache_path)
+        try:
+            return get_saved_game(cache_path)
+        except FileNotFoundError:
+            return None
     return None
 
 
