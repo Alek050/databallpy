@@ -160,4 +160,5 @@ _build/*
 *.xml
 notebooks/*
 synch_validation/*
+*.lnk
 .claude/*

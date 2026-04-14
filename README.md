@@ -115,10 +115,9 @@ game = get_open_game()
 > - SciSports
 > - Sportec Solutions (from the DFL)
 > - Statsbomb
+> - Fifa
 > 
-> The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec", "statsbomb"]`
-> 
-> Don't see your provider here? Check out the integration with [Kloppy](https://databallpy.readthedocs.io/en/latest/getting_started/loading_in_a_game_page.html#currently-supported-providers). Parse your data using Kloppy, and simply convert it to a DataballPy `Game` object using `get_game_from_kloppy`!
+> The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec", "statsbomb","fifa"]`
 >
 > If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 
@@ -208,6 +207,7 @@ Event data providers:
 - Instat
 - SciSports
 - Sportec Solutions (for the DFL)
+- FIFA
 
 Tracking data providers:
 - Tracab (including Sportec Solutions format from the DFL)
@@ -235,6 +235,7 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 - [UnravelSports](https://github.com/UnravelSports) 
 - [migvidal5](https://github.com/migvidal5)
 - [jonas-bischofberger](https://github.com/jonas-bischofberger)
+- [jiangyan yang](https://github.com/ouyang1030)
 
 ## License
 

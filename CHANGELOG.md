@@ -1,14 +1,19 @@
 # Changelog
 
-
-
 ## Version 0.7
+## V0.7.3
+- Added FIFA as an event data provider (by [jiangyan yang](https://github.com/ouyang1030))
+- Fix in download open data from DFL
+- Add support for Python 3.14
+- Updated support for Pandera for new version of Python and Pandera
+- Changed event unassinged error in sync to warning
+- Changed default cache behaviour specific for system
 
+## Version 0.7.2
 - Small changes for better color selection in plot tracking data and save tracking video.
 - Integration between `accessible-space` and `DataBallPy` thanks to [jonas-bischofberger](https://github.com/jonas-bischofberger)
 
 ### V0.7.1 (24/11/2025)
-
 - Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
 - Allow for more null values in `Game`
 - Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`

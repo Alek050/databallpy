@@ -9,6 +9,7 @@ import pandas as pd
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers import (
+    load_fifa_event_data,
     load_instat_event_data,
     load_metrica_event_data,
     load_metrica_open_event_data,
@@ -161,9 +162,10 @@ def get_game(
         "metrica": True,
         "instat": False,
         "scisports": False,
-        "statsbomb": False,
         "sportec": True,
         "dfl": True,
+        "statsbomb": False,
+        "fifa": True,
     }
 
     uses_tracking_data = False
@@ -187,16 +189,6 @@ def get_game(
         if _check_game_class_:
             EventDataSchema.validate(event_data)
         uses_event_data = True
-
-    event_precise_timestamps = {
-        "opta": True,
-        "metrica": True,
-        "instat": False,
-        "scisports": False,
-        "sportec": True,
-        "dfl": True,
-        "statsbomb": False,
-    }
 
     LOGGER.info(
         "Succesfully passed input checks. Attempting to load the base data (get_game())."
@@ -490,6 +482,7 @@ def load_event_data(
         "statsbomb",
         "sportec",
         "dfl",
+        "fifa",
     ]:
         raise ValueError(
             f"We do not support '{event_data_provider}' as event data provider yet, "
@@ -523,6 +516,11 @@ def load_event_data(
     elif event_data_provider in ["sportec", "dfl"]:
         event_data, event_metadata, databallpy_events = load_sportec_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
+        )
+    elif event_data_provider == "fifa":
+        event_data, event_metadata, databallpy_events = load_fifa_event_data(
+            events_loc=event_data_loc,
+            metadata_loc=event_metadata_loc,
         )
     return event_data, event_metadata, databallpy_events
 
