@@ -8,7 +8,6 @@ import chardet
 import numpy as np
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from databallpy.data_parsers import Metadata
@@ -381,11 +380,11 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             lines = file.read()
 
         lines = lines.replace("ï»¿", "")
-        soup = BeautifulSoup(lines, "xml")
+        root = ET.fromstring(lines)
 
-        if soup.find("match") is not None:
-            return _get_tracab_metadata_xml(soup)
-        elif soup.find("General") is not None:
+        if root.find(".//match") is not None:
+            return _get_tracab_metadata_xml(root)
+        elif root.find(".//General") is not None:
             return _get_sportec_metadata(metadata_loc)
         else:
             message = "Unknown type of tracab metadata, please open an issue on GitHub."
@@ -507,14 +506,15 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
 
 
 @logging_wrapper(__file__)
-def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
+def _get_tracab_metadata_xml(root: ET.Element) -> Metadata:
     """This version is used in the Netherlands"""
 
-    game_id = int(soup.find("match")["iId"])
-    pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
-    pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
-    frame_rate = int(soup.find("match")["iFrameRateFps"])
-    datetime_string = soup.find("match")["dtDate"]
+    match_elem = root.find(".//match")
+    game_id = int(match_elem.get("iId"))
+    pitch_size_x = float(match_elem.get("fPitchXSizeMeters"))
+    pitch_size_y = float(match_elem.get("fPitchYSizeMeters"))
+    frame_rate = int(match_elem.get("iFrameRateFps"))
+    datetime_string = match_elem.get("dtDate")
     date = pd.to_datetime(datetime_string[:10])
 
     frames_dict = {
@@ -524,10 +524,10 @@ def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
         "start_datetime_td": [],
         "end_datetime_td": [],
     }
-    for _, period in enumerate(soup.find_all("period")):
-        frames_dict["period_id"].append(int(period["iId"]))
-        start_frame = int(period["iStartFrame"])
-        end_frame = int(period["iEndFrame"])
+    for _, period in enumerate(root.findall(".//period")):
+        frames_dict["period_id"].append(int(period.get("iId")))
+        start_frame = int(period.get("iStartFrame"))
+        end_frame = int(period.get("iEndFrame"))
 
         if start_frame != 0:
             frames_dict["start_frame"].append(start_frame)
@@ -561,26 +561,26 @@ def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
     df_frames["end_datetime_td"] = localize_datetime(
         df_frames["end_datetime_td"], "Netherlands"
     )
-    home_team = soup.find("HomeTeam")
+    home_team = root.find(".//HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)
     home_players_info = []
-    for player in home_team.find_all("Player"):
+    for player in home_team.findall(".//Player"):
         player_dict = {}
-        for element in player.findChildren():
-            player_dict[element.name] = element.text
+        for element in player:
+            player_dict[element.tag] = element.text
         home_players_info.append(player_dict)
     df_home_players = _get_players_metadata_v1(home_players_info)
 
-    away_team = soup.find("AwayTeam")
+    away_team = root.find(".//AwayTeam")
     away_team_name = away_team.find("LongName").text
     away_team_id = int(away_team.find("TeamId").text)
 
     away_players_info = []
-    for player in away_team.find_all("Player"):
+    for player in away_team.findall(".//Player"):
         player_dict = {}
-        for element in player.findChildren():
-            player_dict[element.name] = element.text
+        for element in player:
+            player_dict[element.tag] = element.text
         away_players_info.append(player_dict)
     df_away_players = _get_players_metadata_v1(away_players_info)
 
@@ -624,8 +624,9 @@ def _get_players_metadata_v1(players_info: list[dict[str, int | float]]) -> pd.D
     }
     for player in players_info:
         player_dict["id"].append(int(player["PlayerId"]))
-        full_name = player["FirstName"] + " " + player["LastName"]
-        if player["FirstName"] == "":
+        first_name = player["FirstName"] or ""
+        full_name = first_name + " " + player["LastName"]
+        if not first_name:
             full_name = full_name.lstrip()
         player_dict["full_name"].append(full_name)
         player_dict["shirt_num"].append(int(player["JerseyNo"]))

@@ -35,7 +35,6 @@ numpy = [
     { version = ">=2.3.2,<3.0.0", python = ">=3.14" }
 ]
 
-beautifulsoup4 = "^4.11.1"
 tqdm = "^4.64.1"
 matplotlib = "^3.6.3"
 requests = "^2.31"

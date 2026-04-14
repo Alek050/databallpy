@@ -160,6 +160,4 @@ _build/*
 *.xml
 notebooks/*
 synch_validation/*
-
-# Claude context files
-.claude/
+.claude/*
