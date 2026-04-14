@@ -277,26 +277,18 @@ class TrackingData(pd.DataFrame):
 
         Args:
             self,
-            column_ids (str | list[str]): columns for which acceleration should be
-                calculated
-            filter_type (str, optional): filter type to use. Defaults to None.
-                Options are `moving_average` and `savitzky_golay`.
+            column_ids (str | list[str]): columns for which acceleration should be calculated
+            filter_type (str, optional): filter type to use. Defaults to None. Options are `moving_average` and `savitzky_golay`.
             window_length (int, optional): window size for the filter. Defaults to 25.
             polyorder (int, optional): polynomial order for the filter. Defaults to 2.
-            max_acceleration (float, optional): maximum value for the acceleration.
-                Defaults to np.inf.
-            allow_overwrite (bool): Whether or not it is allowed to overwrite existing values
-                Note: if "_acceleration" exists, but "_ax" and "_ay" not, and allow_overwrite is
-                set to False, "_ax" and "_ay" will be computed and added, but "_acceleration"
-                is kept the same, and therefore does not correspond with the other values.
-                Defaults to False.
+            max_acceleration (float, optional): maximum value for the acceleration. Defaults to np.inf.
+            allow_overwrite (bool): Whether or not it is allowed to overwrite existing valuesNote: if "_acceleration" exists, but "_ax" and "_ay" not, and allow_overwrite is set to False, "_ax" and "_ay" will be computed and added, but "_acceleration" is kept the same, and therefore does not correspond with the other values. Defaults to False.
 
         Returns:
             None
 
         Raises:
-            ValueError: if filter_type is not one of `moving_average`, `savitzky_golay`,
-                or None.
+            ValueError: if filter_type is not one of `moving_average`, `savitzky_golay`, or None.
             ValueError: if velocity was not found in the DataFrame for the input_columns.
 
         Note:
