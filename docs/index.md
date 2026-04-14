@@ -10,6 +10,9 @@ This package is developed to create a standardized way to analyse soccer games u
 
 Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. 
 
+## Seek Support
+To reach out to developers, maintainers, and the community in general, you can reply to and open new discussions in the [discussions field](https://github.com/Alek050/databallpy/discussions) of `databallpy`.
+
 <div align="center">
   <img src="https://github.com/Alek050/databallpy/assets/49450063/56100e87-c680-4dc1-82e5-4aa8fdbc8a34" alt="Logo">
 </div>
