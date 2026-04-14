@@ -537,7 +537,7 @@ def get_open_game(
     """Function to load a game object from an open datasource
 
     Args:
-        provider (str, optional): What provider to get the open data from. Defaults to "dfl". Options are ["metrica", "dfl", "sportec", "tracab"]
+        provider (str, optional): What provider to get the open data from. Defaults to "sportec". Options are ["metrica", "dfl", "sportec", "tracab"]
         game_id (str, optional): The Game id of the open game. Defaults to 'J03WMX',
         verbose (bool, optional): Whether or not to print info about progress
         in the terminal, Defaults to True.
