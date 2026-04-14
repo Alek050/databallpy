@@ -308,6 +308,7 @@ ED_OPTA["datetime"] = pd.to_datetime(ED_OPTA["datetime"]).dt.tz_localize(
     "Europe/Amsterdam"
 )
 ED_OPTA["is_successful"] = ED_OPTA["is_successful"].astype("boolean")
+ED_OPTA["team_name"] = ED_OPTA["team_id"].map({3: "TeamOne", 194: "TeamTwo"})
 
 SHOT_INSTANCES_OPTA = {
     9: ShotEvent(
@@ -1418,6 +1419,7 @@ ED_SCISPORTS = EventData(
     provider="scisports",
 )
 ED_SCISPORTS["is_successful"] = ED_SCISPORTS["is_successful"].astype("boolean")
+ED_SCISPORTS["team_name"] = ED_SCISPORTS["team_id"].map({100: "Team 1", 200: "Team 2"})
 
 
 SPORTEC_METADATA_TD = Metadata(
@@ -1556,6 +1558,9 @@ SPORTEC_EVENT_DATA["datetime"] = pd.to_datetime(
 SPORTEC_EVENT_DATA.loc[
     SPORTEC_EVENT_DATA["period_id"] == 1, ["start_x", "start_y"]
 ] *= -1
+SPORTEC_EVENT_DATA["team_name"] = SPORTEC_EVENT_DATA["team_id"].map(
+    {"Team1": "TeamA", "Team2": "TeamB"}
+)
 
 SPORTEC_DATABALLPY_EVENTS = {
     "shot_events": {

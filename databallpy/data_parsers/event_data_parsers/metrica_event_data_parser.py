@@ -1,13 +1,14 @@
 import datetime as dt
+import html
 import io
 import json
 import os
+import re
 
 import chardet
 import numpy as np
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
@@ -143,10 +144,11 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
         with open(event_data_loc, "r", encoding=encoding) as file:
             lines = file.readlines()
         raw_data = "".join(str(i) for i in lines)
-        soup = BeautifulSoup(raw_data, "html.parser")
+        events_dict = json.loads(html.unescape(re.sub(r"<[^>]+>", "", raw_data)))
     else:
-        soup = BeautifulSoup(event_data_loc.strip(), "html.parser")
-    events_dict = json.loads(soup.text)
+        events_dict = json.loads(
+            html.unescape(re.sub(r"<[^>]+>", "", event_data_loc.strip()))
+        )
 
     result_dict = {
         "event_id": [],
