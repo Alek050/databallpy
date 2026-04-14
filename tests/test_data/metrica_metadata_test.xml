@@ -242,11 +242,12 @@
         <SplitRegister separator=",">
           <PlayerChannelRef playerChannelId="player35_x"/>
           <PlayerChannelRef playerChannelId="player35_y"/>
-      </SplitRegister>
+        </SplitRegister>
       <SplitRegister separator=",">
         <BallChannelRef channelId="x"/>
         <BallChannelRef channelId="y"/>
       </SplitRegister>
+    </SplitRegister>
     </DataFormatSpecification>
   </DataFormatSpecifications>
 </main>

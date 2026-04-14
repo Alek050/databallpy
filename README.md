@@ -214,6 +214,9 @@ Tracking data providers:
 - Metrica
 - Inmotio
 
+## Seek Support
+To reach out to developers, maintainers, and the community in general, you can reply to and open new discussions in the [discussions field](https://github.com/Alek050/databallpy/discussions) of `databallpy`.
+
 ## Contributing
 
 Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.
