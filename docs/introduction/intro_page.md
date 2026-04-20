@@ -43,7 +43,7 @@ from databallpy import get_game, get_open_game
 game = get_game(
   tracking_data_loc="../data/tracking_data.dat",
   tracking_metadata_loc="../data/tracking_metadata.xml",
-  tracking_data_provider="tracab"
+  tracking_data_provider="tracab",
   event_data_loc="../data/event_data_f24.xml",
   event_metadata_loc="../data/event_metadata_f7.xml",
   event_data_provider="opta",
