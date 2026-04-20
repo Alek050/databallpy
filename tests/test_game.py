@@ -8,6 +8,11 @@ try:
     import pandera.pandas as pa
 except ModuleNotFoundError:
     import pandera as pa
+
+try:
+    import pandera.pandas as pa
+except ModuleNotFoundError:
+    import pandera as pa
 from databallpy.game import Game
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.errors import DataBallPyError

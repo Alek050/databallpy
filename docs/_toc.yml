@@ -33,8 +33,12 @@ parts:
     chapters:
       - file: api_docs/game_api
       - file: api_docs/visualize_api
+      - file: api_docs/tracking_data_api
+        title: Tracking Data API
       - file: api_docs/event_data_api
         title: Event Data API
+      - file: api_docs/dataparsers_api
+        title: Data Parsers (Event, Tracking & Kloppy)
   - caption: Contributing
     chapters:
       - file: contributing/quick_overview

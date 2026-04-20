@@ -1,3 +1,4 @@
+from databallpy.data_parsers.event_data_parsers.fifa_parser import load_fifa_event_data
 from databallpy.data_parsers.event_data_parsers.instat_parser import (
     load_instat_event_data,
 )
