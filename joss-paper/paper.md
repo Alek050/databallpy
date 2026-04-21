@@ -8,15 +8,15 @@ tags:
   - Tracking Data
   - Event Data
 authors:
-  - given-name: Gerard Alexander 
+  - given-names: Gerard Alexander 
     surname: Oonk
     corresponding: true 
     orcid: 0000-0003-4056-7274
     affiliation: 1 
-  - given-name: Daan 
+  - given-names: Daan 
     surname: Grob
     affiliation: 2
-  - given-name: Matthias 
+  - given-names: Matthias 
     surname: Kempe
     orcid: 0000-0002-4709-6172
     affiliation: "1, 3"
