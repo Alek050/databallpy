@@ -34,14 +34,16 @@
 [example-url]: https://databallpy.readthedocs.io/en/latest/example.html
 [getting-started-url]: https://databallpy.readthedocs.io/en/latest/getting_started/installation_page.html
 
+[joss-image]: https://joss.theoj.org/papers/10.21105/joss.10223/status.svg
+[joss-url]: https://doi.org/10.21105/joss.10223
+
 [![Latest Version][version-image]][version-url]
 [![Python Version][python-image]][python-url]
 [![Documentation Status][docs-image]][docs-url]
 [![CI/CD Status][cicd-image]][cicd-url]
 [![Codecov][codecov-image]][codecov-url]
 [![PyPI Downloads](https://static.pepy.tech/badge/databallpy)](https://pepy.tech/projects/databallpy)
-[![DOI](https://joss.theoj.org/papers/10.21105/joss.010223/status.svg)](https://doi.org/10.21105/joss.010223)
-
+[![DOI][joss-image]][joss-url]
 
 # DataBallPy
 
