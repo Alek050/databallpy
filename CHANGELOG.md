@@ -1,7 +1,7 @@
 # Changelog
 
 ## Version 0.7
-## V0.7.3
+## V0.7.3 (14/04/2026)
 - Added FIFA as an event data provider (by [jiangyan yang](https://github.com/ouyang1030))
 - Fix in download open data from DFL
 - Add support for Python 3.14
