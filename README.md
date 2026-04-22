@@ -25,6 +25,7 @@
 [Expected-Threat-url]: https://databallpy.readthedocs.io/en/latest/features/xT_models.html
 [Voronoi-url]: https://databallpy.readthedocs.io/en/latest/features/space_occupation.html#voronoi-model
 [Guassian-space-occupation-url]: https://databallpy.readthedocs.io/en/latest/features/space_occupation.html#gaussian-model-fernandez-born-2018
+[dangerous-accessible-space-url]: https://databallpy.readthedocs.io/en/latest/features/dangerous_accessible_space.html
 [visualizations-url]: https://databallpy.readthedocs.io/en/latest/getting_started/visualizations_page.html
 
 [floodlight-url]:https://github.com/floodlight-sports/floodlight
@@ -33,12 +34,16 @@
 [example-url]: https://databallpy.readthedocs.io/en/latest/example.html
 [getting-started-url]: https://databallpy.readthedocs.io/en/latest/getting_started/installation_page.html
 
+[joss-image]: https://joss.theoj.org/papers/10.21105/joss.10223/status.svg
+[joss-url]: https://doi.org/10.21105/joss.10223
+
 [![Latest Version][version-image]][version-url]
 [![Python Version][python-image]][python-url]
 [![Documentation Status][docs-image]][docs-url]
 [![CI/CD Status][cicd-image]][cicd-url]
 [![Codecov][codecov-image]][codecov-url]
 [![PyPI Downloads](https://static.pepy.tech/badge/databallpy)](https://pepy.tech/projects/databallpy)
+[![DOI][joss-image]][joss-url]
 
 # DataBallPy
 
@@ -50,23 +55,15 @@ This package is developed to create a standardized way to analyse soccer games u
 
 Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. If you are interested in some of the features we implemented, see our [official documentation][docs-url].
 
-## Changelog V0.7.0 (04/11/2025)
+## Changelog V0.7.3 (14/04/2026)
 
+- New parser for Fifa event data ([ouyang1030](https://github.com/ouyang1030))
+- Added API docs for TrackingData and different data parsers
+- Added support for python 3.14
+- Removed `bs4` as dependency
+- Added functionality to export events to XML for video analysis purposes
+- Fixed bug in donwload open data from IDSSE dataset
 - Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
-```Terminal
-$ pip install 'databallpy[kloppy]'
-```
-```Python
-from kloppy import sportec
-from databallpy import get_game_from_kloppy
-
-
-event_dataset = sportec.load_open_event_data(match_id="J03WPY")
-tracking_dataset = sportec.load_open_tracking_data(match_id="J03WPY", only_alive=False)
-
-game = get_game_from_kloppy(tracking_dataset=tracking_dataset,event_dataset=event_dataset)
-```
-
 - Allow for more null values in `Game`
 - Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`
 - Removed depricated functions `home_players_column_ids` and `away_players_column_ids`, please use `game.get_column_ids(team="home")` instead.
@@ -192,6 +189,7 @@ DataBallPy offers a variety of visualizations to help you understand the data be
 - [Expected Threat model][Expected-Threat-url]: Calculate the expected threat model from Karun Singh to on ball events.
 - [Voronoi Model][Voronoi-url]: Calculate the Voronoi space occupation based on the tracking data.
 - [Gaussian Model][Guassian-space-occupation-url]: Calculate the Gaussian space occupation based on the tracking data (Fernandez & Born, 2018).
+- [Dangerous Accessible Space][dangerous-accessible-space-url]: Compute Dangerous accessible space (Bischofberger & Baca, 2025)
 
 ## Documentation
 
@@ -199,7 +197,7 @@ The official documentation can be found [here][docs-url].
 
 ## Providers
 
-For now we limited providers. We are planning on adding more providers later on.
+Inherintly supported providers.
 
 Event data providers:
 - Opta
@@ -214,8 +212,30 @@ Tracking data providers:
 - Metrica
 - Inmotio
 
+Check the [integration between Kloppy and Databallpy](https://databallpy.readthedocs.io/en/latest/getting_started/loading_in_a_game_page.html#databallpy-kloppy-integration) to parse any kloppy supported data provider into a DataBallPy `Game` object.
+
 ## Seek Support
 To reach out to developers, maintainers, and the community in general, you can reply to and open new discussions in the [discussions field](https://github.com/Alek050/databallpy/discussions) of `databallpy`.
+
+## Citing
+
+If you have used DataBallPy in you work, please consider citing the [corresponding papaer](https://joss.theoj.org/papers/10.21105/joss.10223).
+
+```
+@article{Oonk2026,
+   author = {Gerard Alexander Oonk and Daan Grob and Matthias Kempe},
+   doi = {10.21105/JOSS.10223},
+   issn = {2475-9066},
+   issue = {120},
+   journal = {Journal of Open Source Software},
+   month = {4},
+   pages = {10223},
+   title = {DataBallPy: Load, Synchronize, and Analyse your Soccer Data},
+   volume = {11},
+   url = {https://joss.theoj.org/papers/10.21105/joss.10223},
+   year = {2026}
+}
+```
 
 ## Contributing
 
