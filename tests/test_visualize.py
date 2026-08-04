@@ -9,7 +9,9 @@ from databallpy.features import add_velocity
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.visualize import (
+    _plot_player_positions,
     _pre_check_plot_td_inputs,
+    diff_frames,
     plot_events,
     plot_soccer_pitch,
     plot_tracking_data,
@@ -307,6 +309,64 @@ class TestVisualize(unittest.TestCase):
 
         assert os.path.exists("tests/test_data/test_game_with_events.mp4")
         os.remove("tests/test_data/test_game_with_events.mp4")
+
+    def test_plot_player_positions(self):
+        game = self.game
+        idx = 1
+        td = game.tracking_data.loc[[idx]]
+        home_cols = np.array(
+            [[x + "_x", x + "_y"] for x in game.get_column_ids(team="home")]
+        ).reshape(1, -1)[0]
+        away_cols = np.array(
+            [[x + "_x", x + "_y"] for x in game.get_column_ids(team="away")]
+        ).reshape(1, -1)[0]
+        td_ht = td[home_cols]
+        td_at = td[away_cols]
+
+        _, ax = plot_soccer_pitch(field_dimen=game.pitch_dimensions)
+        n_pitch_collections = len(ax.collections)
+
+        variable_fig_objs, ax = _plot_player_positions(
+            ax, td_ht, td_at, idx, ["green", "red"], [], alpha=0.8
+        )
+
+        self.assertIsInstance(ax, plt.Axes)
+        self.assertEqual(len(ax.collections), n_pitch_collections + 2)
+
+        n_labels = sum(
+            td_ht.loc[idx][[c for c in home_cols if c.endswith("_x")]].notna()
+        ) + sum(td_at.loc[idx][[c for c in away_cols if c.endswith("_x")]].notna())
+        self.assertEqual(len(variable_fig_objs), 2 + n_labels)
+        for scatter in variable_fig_objs[:2]:
+            self.assertAlmostEqual(scatter.get_alpha(), 0.8)
+        plt.close(ax.figure)
+
+    def test_diff_frames(self):
+        game = self.game
+        frame_1_idx = 1
+        frame_2_idx = 2
+        td_2 = game.tracking_data.copy()
+
+        fig, ax = diff_frames(
+            game,
+            frame_1_idx,
+            td_2,
+            frame_2_idx,
+            title="Diff frames test",
+        )
+
+        self.assertIsInstance(fig, plt.Figure)
+        self.assertIsInstance(ax, plt.Axes)
+        self.assertEqual(ax.get_title(), "Diff frames test")
+        self.assertGreaterEqual(len(ax.collections), 8)
+
+        overlay_collections = ax.collections[3:]
+        self.assertAlmostEqual(overlay_collections[0].get_alpha(), 0.9)
+        self.assertAlmostEqual(overlay_collections[1].get_alpha(), 0.9)
+        self.assertAlmostEqual(overlay_collections[3].get_alpha(), 0.5)
+        self.assertAlmostEqual(overlay_collections[4].get_alpha(), 0.5)
+
+        plt.close(fig)
 
     def test_pre_check_plot_td_inputs(self):
         game = self.game.copy()

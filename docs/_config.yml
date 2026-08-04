@@ -11,7 +11,7 @@ exclude_patterns: [_build, Thumbs.db, .DS_Store, .env, "**.ipynb_checkpoints",]
 # See https://jupyterbook.org/content/execute.html
 execute:
   execute_notebooks: auto
-  exclude_patterns: ["features/*models*"]
+  exclude_patterns: ["features/*models*", "features/optimization.ipynb"]
   timeout: 30
   allow_errors: false
   nb_output_stderr: error
