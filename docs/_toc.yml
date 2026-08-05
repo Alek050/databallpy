@@ -29,6 +29,8 @@ parts:
         title: Dangerous Accessible Space
       - file: features/video_analysis_xml_export
         title: Video Analysis XML Export
+      - file: features/optimization
+        title: Optimization
   - caption: API Documentation
     chapters:
       - file: api_docs/game_api
