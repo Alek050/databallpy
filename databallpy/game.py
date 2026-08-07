@@ -313,7 +313,7 @@ class Game:
         col_ids = [
             col_id for col_id in col_ids if f"{col_id}_x" in self.tracking_data.columns
         ]
-        if idx:
+        if idx is not None:
             col_ids = [
                 col_id
                 for col_id in col_ids
@@ -381,6 +381,7 @@ class Game:
         else:
             raise ValueError(f"Event with id {event_id} not found in the game.")
 
+    @requires_tracking_data
     def get_frames(
         self, frames: int | list[int], playing_direction: str = "team_oriented"
     ) -> pd.DataFrame:
@@ -424,6 +425,7 @@ class Game:
         else:
             raise ValueError(f"Coordinate system {playing_direction} is not supported.")
 
+    @requires_tracking_data
     def get_event_frame(
         self, event_id: int | str, playing_direction: str = "team_oriented"
     ) -> pd.DataFrame:
@@ -624,9 +626,8 @@ class Game:
             allow_overwrite (bool): if True, the function will overwrite the
             existing folder with the same name.
         """
-        name = name if isinstance(name, str) else self.name
+        name = name if isinstance(name, str) else self.name.replace(":", "_")
         path = path if path is not None else os.getcwd()
-        name = name.replace(":", "_")
 
         folder_path = os.path.join(path, name)
 

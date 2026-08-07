@@ -12,7 +12,6 @@ from databallpy.events import (
     IndividualCloseToBallEvent,
     PassEvent,
     ShotEvent,
-    TackleEvent,
 )
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
@@ -678,14 +677,13 @@ def _load_event_data(
 
     Returns:
         pd.DataFrame: all events of the game in a pd dataframe
-        dict: dict with "shot_events", "dribble_events", "pass_events", "other_events"
-             as key and a dict with the BaseIndividualCloseToBallEvent instances
+        dict: dict with "shot_events", "dribble_events", "pass_events" as key and a
+             dict with the BaseIndividualCloseToBallEvent instances
     """
 
     dribble_events = {}
     shot_events = {}
     pass_events = {}
-    other_events = {}
 
     with open(f24_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -794,15 +792,6 @@ def _load_event_data(
                 id=i_event,
             )
 
-        if event_name == "tackle":
-            other_events[i_event] = _make_tackle_event_instance(
-                event,
-                away_team_id,
-                pitch_dimensions=pitch_dimensions,
-                players=players,
-                id=i_event,
-            )
-
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
     event_data["databallpy_event"] = (
@@ -829,7 +818,6 @@ def _load_event_data(
         "shot_events": shot_events,
         "pass_events": pass_events,
         "dribble_events": dribble_events,
-        "other_events": other_events,
     }
 
 
@@ -987,32 +975,6 @@ def _make_shot_event_instance(
         z_target=z_target,
         first_touch=first_touch,
     )
-
-
-def _make_tackle_event_instance(
-    event: ET.Element,
-    away_team_id: int | str,
-    players: pd.DataFrame,
-    id: int,
-    pitch_dimensions: list[float, float] = [106.0, 68.0],
-) -> TackleEvent:
-    """Function to create a tackle class based on the qualifiers of the event
-
-    Args:
-        event (ET.Element): tackle event from the f24.xml
-        away_team_id (int | str): id of the away team
-        players (pd.DataFrame): dataframe with player information.
-        id (int): The event id of the shot
-        pitch_dimensions (list[float, float], optional): The dimensions of the pitch in
-            x and y direction. Defaults to [106.0, 68.0].
-
-    Returns:
-        TackleEvent: instance of the TackleEvent class
-    """
-    close_to_ball_info = _get_close_to_ball_event_info(
-        event, pitch_dimensions, away_team_id, players, id
-    )
-    return TackleEvent(**close_to_ball_info)
 
 
 def _make_dribble_event_instance(

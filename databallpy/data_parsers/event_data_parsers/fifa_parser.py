@@ -277,10 +277,9 @@ def _load_event_data(
 
     Returns:
         pd.DataFrame: all events of the game in a pd.DataFrame.
-        dict: dict with "shot_events", "pass_events", "other_events" as keys,
+        dict: dict with "shot_events", "pass_events" as keys,
               each mapping event_id → databallpy event instance.
     """
-    other_events = {}
     shot_events = {}
     pass_events = {}
 
@@ -421,7 +420,6 @@ def _load_event_data(
     return event_data, {
         "shot_events": shot_events,
         "pass_events": pass_events,
-        "other_events": other_events,
     }
 
 
