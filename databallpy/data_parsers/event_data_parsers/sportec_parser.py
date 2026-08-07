@@ -190,7 +190,6 @@ def _get_sportec_event_data(
         "pass_events": {},
         "shot_events": {},
         "dribble_events": {},
-        "other_events": {},
     }
 
     for idx, event in enumerate(all_events):

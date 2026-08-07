@@ -19,7 +19,7 @@ from databallpy.data_parsers.metrica_metadata_parser import (
     _get_td_channels,
     _update_metadata,
 )
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import _to_float, _to_int
@@ -336,27 +336,10 @@ def _get_databallpy_events(
         else {}
     )
 
-    tackle_mask = event_data["databallpy_event"] == "tackle"
-    tackle_events = (
-        {
-            tackle.event_id: tackle
-            for tackle in event_data[tackle_mask].apply(
-                _get_tackle_event,
-                pitch_dimensions=pitch_dimensions,
-                home_team_id=home_team_id,
-                players=all_players,
-                axis=1,
-            )
-        }
-        if tackle_mask.sum() > 0
-        else {}
-    )
-
     databallpy_events = {
         "shot_events": shot_events,
         "pass_events": pass_events,
         "dribble_events": dribble_events,
-        "other_events": tackle_events,
     }
     return databallpy_events
 
@@ -487,40 +470,4 @@ def _get_dribble_event(
         _xt=np.nan,
         duel_type="unspecified",
         with_opponent=False,
-    )
-
-
-def _get_tackle_event(
-    row: pd.Series,
-    pitch_dimensions: tuple[float, float],
-    home_team_id: int,
-    players: pd.DataFrame,
-) -> TackleEvent:
-    """Function to return a DribbleEvent object from a row of the metrica
-     event data.
-
-    Args:
-        row (pd.Series): row of the metrica event data with a dribble event
-        pitch_dimensions (tuple): dimensions of the pitch
-        home_team_id (int): id of the home team
-        players: pd.DataFrame: Metadata of the players
-
-    Returns:
-        TackleEvent: TackleEvent object
-    """
-    return TackleEvent(
-        event_id=row.event_id,
-        period_id=row.period_id,
-        minutes=row.minutes,
-        seconds=row.seconds,
-        datetime=row.datetime,
-        start_x=row.start_x,
-        start_y=row.start_y,
-        team_id=row.team_id,
-        team_side="home" if row.team_id == home_team_id else "away",
-        pitch_size=pitch_dimensions,
-        player_id=row.player_id,
-        jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.is_successful),
-        related_event_id=MISSING_INT,
     )

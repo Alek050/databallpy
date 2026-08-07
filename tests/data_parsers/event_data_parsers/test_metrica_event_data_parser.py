@@ -90,13 +90,6 @@ class TestMetricaEventDataParser(unittest.TestCase):
             expected_dribble_events[event_id] = event.copy()
             expected_dribble_events[event_id].pitch_size = (106, 68)
 
-        tackle_events = res_dbpe["other_events"]
-        expected_tackle_events = {}
-        for event_id, event in tackle_events.items():
-            expected_tackle_events[event_id] = event.copy()
-            expected_tackle_events[event_id].pitch_size = (106, 68)
-
         assert res_dbpe["shot_events"] == expected_shot_events
         assert res_dbpe["pass_events"] == expected_pass_events
         assert res_dbpe["dribble_events"] == expected_dribble_events
-        assert res_dbpe["other_events"] == expected_tackle_events
