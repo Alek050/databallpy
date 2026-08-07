@@ -1,6 +1,6 @@
 import pandas as pd
 
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 
 
 def _remove_offside_players(
@@ -102,7 +102,7 @@ def player_id_to_column_id(
 
 
 def create_event_attributes_dataframe(
-    events: dict[str | int, ShotEvent | PassEvent | DribbleEvent | TackleEvent],
+    events: dict[str | int, ShotEvent | PassEvent | DribbleEvent],
 ) -> pd.DataFrame:
     """Function to create a DataFrame from a dictionary of events
 
