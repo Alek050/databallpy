@@ -4,6 +4,10 @@
 ### V0.8.0
 - Added simulated annealing optimization algorithm for different objectives (by [amarshah1999](https://github.com/amarshah1999))
 - Added support for opta/statsperform MA files
+- Fixed `Game.get_column_ids()` skipping the frame filter when `idx=0`
+- Fixed `Game.save_game()` mangling absolute Windows paths, which broke the open data cache
+- Fixed `get_saved_game()` resolving its default `path` to the working directory at import time
+- Fixed `Game.get_frames()` and `Game.get_event_frame()` raising a pandas `KeyError` instead of a `DataBallPyError` when no tracking data is loaded
 - Removed the `TackleEvent` class; tackles remain available as `"tackle"` in the `databallpy_event` column of the event data
 
 ## Version 0.7
