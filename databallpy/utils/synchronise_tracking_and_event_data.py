@@ -247,13 +247,17 @@ def _needleman_wunsch(
 
     n_frames, n_events = np.shape(sim_mat)
 
-    function_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.float32)
-    function_matrix[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
-    function_matrix[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
-
     pointer_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.int16)
     pointer_matrix[:, 0] = 3
     pointer_matrix[0, :] = 4
+
+    # The dynamic program is solved in ramp free coordinates,
+    # h[frame, event] = f[frame, event] - frame * gap_frame. In these coordinates
+    # leaving a frame unassigned reduces to a running maximum over the frame axis,
+    # so a whole event column is obtained with one np.maximum.accumulate call.
+    # unvisited holds the value of cells the loop never writes (f == 0).
+    unvisited = -np.arange(n_frames + 1, dtype=np.float64) * gap_frame
+    previous_column = np.zeros(n_frames + 1, dtype=np.float64)
 
     frames_high_sim_mat = np.where(sim_mat[:, 0] > 0.5)[0]
     for event_index in range(n_events):
@@ -275,28 +279,38 @@ def _needleman_wunsch(
             (0, n_frames) if not enable_optimization else (start_frame, end_frame)
         )
 
-        for frame_index in range(start_frame, end_frame):
+        current_column = unvisited.copy()
+        current_column[0] = (event_index + 1) * gap_event
+
+        if start_frame < end_frame:
             match = (
-                function_matrix[frame_index, event_index]
-                + sim_mat[frame_index, event_index]
-            )
-            gap_f = (
-                function_matrix[frame_index, event_index + 1] + gap_frame
-            )  # top + gap frame
+                previous_column[start_frame:end_frame]
+                + sim_mat[start_frame:end_frame, event_index]
+                - gap_frame
+            )  # diagonal + similarity
             gap_e = (
-                function_matrix[frame_index + 1, event_index] + gap_event
+                previous_column[start_frame + 1 : end_frame + 1] + gap_event
             )  # left + gap event
+            first_value = current_column[start_frame]
+
+            values = np.maximum(
+                np.maximum.accumulate(np.maximum(match, gap_e)), first_value
+            )
+            gap_f = np.empty_like(values)  # top + gap frame
+            gap_f[0] = first_value
+            gap_f[1:] = values[:-1]
 
             # Determine the maximum value and set the pointer matrix accordingly
-            if gap_f >= match and gap_f >= gap_e:
-                function_matrix[frame_index + 1, event_index + 1] = gap_f
-                pointer_matrix[frame_index + 1, event_index + 1] = FRAME_UNASSIGNED
-            elif match >= gap_e:
-                function_matrix[frame_index + 1, event_index + 1] = match
-                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_FRAME_MATCH
-            else:
-                function_matrix[frame_index + 1, event_index + 1] = gap_e
-                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_UNASSIGNED
+            is_frame_unassigned = (gap_f >= match) & (gap_f >= gap_e)
+            is_match = ~is_frame_unassigned & (match >= gap_e)
+            current_column[start_frame + 1 : end_frame + 1] = values
+            pointer_matrix[start_frame + 1 : end_frame + 1, event_index + 1] = np.where(
+                is_frame_unassigned,
+                FRAME_UNASSIGNED,
+                np.where(is_match, EVENT_FRAME_MATCH, EVENT_UNASSIGNED),
+            )
+
+        previous_column = current_column
 
     # Solve
     frame_index = n_frames
