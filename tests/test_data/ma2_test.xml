@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<matchStats>
+	<matchInfo id="gamemaid001" date="2023-01-22Z" localDate="2023-01-22" numberOfPeriods="2" periodLength="45">
+		<description>TeamAlpha vs TeamBeta</description>
+		<competition id="competitionmaid01" name="Eredivisie">
+			<country id="countrymaid01">Netherlands</country>
+		</competition>
+		<contestants>
+			<contestant id="hteammaid01" name="TeamAlpha" shortName="TeamAlpha" position="home" />
+			<contestant id="ateammaid02" name="TeamBeta" shortName="TeamBeta" position="away" />
+		</contestants>
+	</matchInfo>
+	<liveData>
+		<matchDetails matchStatus="Played" winner="home">
+			<periods>
+				<period id="1" start="2023-01-22T11:18:32Z" end="2023-01-22T12:04:32Z" />
+				<period id="2" start="2023-01-22T12:21:13Z" end="2023-01-22T13:09:58Z" />
+			</periods>
+			<scores>
+				<total home="3" away="1" />
+			</scores>
+		</matchDetails>
+		<lineUp contestantId="hteammaid01" formationUsed="4231">
+			<player playerId="hplayermaid01" firstName="Sem" lastName="Verhoeven" shortFirstName="Sem" shortLastName="Verhoeven" matchName="S. Verhoeven" shirtNumber="1" position="Goalkeeper" formationPlace="4" />
+			<player playerId="hplayermaid02" firstName="Daan" lastName="Willems" shortFirstName="Daan" shortLastName="Willems" matchName="D. Willems" shirtNumber="2" position="Substitute" subPosition="Midfielder" />
+		</lineUp>
+		<lineUp contestantId="ateammaid02" formationUsed="3412">
+			<player playerId="aplayermaid01" firstName="Tim" lastName="de Groot" shortFirstName="Tim" shortLastName="de Groot" matchName="T. de Groot" shirtNumber="1" position="Midfielder" formationPlace="8" />
+			<player playerId="aplayermaid02" firstName="Bram" lastName="Hendriks" shortFirstName="Bram" shortLastName="Hendriks" matchName="B. Hendriks" shirtNumber="2" position="Substitute" subPosition="Goalkeeper" />
+		</lineUp>
+	</liveData>
+</matchStats>

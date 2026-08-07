@@ -532,6 +532,45 @@ class TestGetGame(unittest.TestCase):
             (game.event_data.loc[away_mask, "team_name"] == game.away_team_name).all()
         )
 
+    def test_get_game_statsperform_alias_for_opta(self):
+        game = get_game(
+            event_data_loc=self.ed_opta_loc,
+            event_metadata_loc=self.md_opta_loc,
+            event_data_provider="statsperform",
+        )
+
+        x_cols = [col for col in game.event_data.columns if "_x" in col]
+        y_cols = [col for col in game.event_data.columns if "_y" in col]
+        game.event_data[x_cols] = game.event_data[x_cols] / 106.0 * 100
+        game.event_data[y_cols] = game.event_data[y_cols] / 68.0 * 50
+        game.pitch_dimensions = [100.0, 50.0]
+
+        expected_event_data = EventData(ED_OPTA.copy(), provider="statsperform")
+        expected_game_statsperform = Game(
+            tracking_data=TrackingData(),
+            event_data=expected_event_data,
+            pitch_dimensions=MD_OPTA.pitch_dimensions,
+            periods=MD_OPTA.periods_frames,
+            home_team_id=MD_OPTA.home_team_id,
+            home_formation=MD_OPTA.home_formation,
+            home_score=MD_OPTA.home_score,
+            home_team_name=MD_OPTA.home_team_name,
+            home_players=MD_OPTA.home_players,
+            away_team_id=MD_OPTA.away_team_id,
+            away_formation=MD_OPTA.away_formation,
+            away_score=MD_OPTA.away_score,
+            away_team_name=MD_OPTA.away_team_name,
+            away_players=MD_OPTA.away_players,
+            country=MD_OPTA.country,
+            shot_events=SHOT_EVENTS_OPTA,
+            dribble_events=DRIBBLE_EVENTS_OPTA,
+            pass_events=PASS_EVENTS_OPTA,
+            _event_timestamp_is_precise=True,
+        )
+
+        assert game == expected_game_statsperform
+        assert game.event_data.provider == "statsperform"
+
     def test_get_game_only_tracking_data(self):
         game = get_game(
             tracking_data_loc=self.td_tracab_loc,
