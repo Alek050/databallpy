@@ -8,6 +8,7 @@
 - Fixed `Game.save_game()` mangling absolute Windows paths, which broke the open data cache
 - Fixed `get_saved_game()` resolving its default `path` to the working directory at import time
 - Fixed `Game.get_frames()` and `Game.get_event_frame()` raising a pandas `KeyError` instead of a `DataBallPyError` when no tracking data is loaded
+- Removed the `TackleEvent` class; tackles remain available as `"tackle"` in the `databallpy_event` column of the event data
 
 ## Version 0.7
 ### V0.7.3 (14/04/2026)
