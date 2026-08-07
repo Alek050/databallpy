@@ -4,6 +4,7 @@
 ### V0.8.0
 - Added simulated annealing optimization algorithm for different objectives (by [amarshah1999](https://github.com/amarshah1999))
 - Added support for opta/statsperform MA files
+- Vectorised the Needleman-Wunsch dynamic program, speeding up the synchronisation of tracking and event data and removing float32 rounding drift that could misalign events in long batches
 - Fixed `Game.get_column_ids()` skipping the frame filter when `idx=0`
 - Fixed `Game.save_game()` mangling absolute Windows paths, which broke the open data cache
 - Fixed `get_saved_game()` resolving its default `path` to the working directory at import time
