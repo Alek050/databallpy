@@ -339,7 +339,7 @@ def get_game(
 
 
 @logging_wrapper(__file__)
-def get_saved_game(name: str, path: str = os.getcwd()) -> Game:
+def get_saved_game(name: str, path: str | None = None) -> Game:
     """Function to load a saved game object
 
     Args:
@@ -354,12 +354,13 @@ def get_saved_game(name: str, path: str = os.getcwd()) -> Game:
             - away_players.parquet
             - home_players.parquet
             - metadata.json
-       path (str, optional): path of directory where game is saved. Defaults
-        to current working directory.
+       path (str, optional): path of directory where game is saved. If not
+        provided, the current working directory will be used.
 
     Returns:
         Game: All information about the game
     """
+    path = path if path is not None else os.getcwd()
 
     full_path = os.path.join(path, name)
     if not os.path.isdir(full_path):
