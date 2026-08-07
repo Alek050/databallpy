@@ -1,15 +1,20 @@
 # Changelog
 
+## Version 0.8
+### V0.8.0
+- Added simulated annealing optimization algorithm for different objectives (by [amarshah1999](https://github.com/amarshah1999))
+- Added support for opta/statsperform MA files
+
 ## Version 0.7
-## V0.7.3 (14/04/2026)
-- Added FIFA as an event data provider (by [jiangyan yang](https://github.com/ouyang1030))
+### V0.7.3 (14/04/2026)
+- Added FIFA as an event data provider (by [Jiangyan Yang](https://github.com/ouyang1030))
 - Fix in download open data from DFL
 - Add support for Python 3.14
 - Updated support for Pandera for new version of Python and Pandera
 - Changed event unassinged error in sync to warning
 - Changed default cache behaviour specific for system
 
-## Version 0.7.2
+### Version 0.7.2
 - Small changes for better color selection in plot tracking data and save tracking video.
 - Integration between `accessible-space` and `DataBallPy` thanks to [jonas-bischofberger](https://github.com/jonas-bischofberger)
 

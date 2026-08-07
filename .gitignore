@@ -162,3 +162,5 @@ notebooks/*
 synch_validation/*
 *.lnk
 .claude/*
+CLAUDE.md 
+.codegraph

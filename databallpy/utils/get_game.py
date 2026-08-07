@@ -93,7 +93,9 @@ def get_game(
         tracking_data_provider (str, optional): provider of the tracking data. Defaults
             to None. Supported providers are [tracab, metrica, inmotio]
         event_data_provider (str, optional): provider of the event data. Defaults to
-            None. Supported providers are [opta, metrica, instat, scisports]
+            None. Supported providers are [opta, statsperform, metrica, instat,
+            scisports, statsbomb, sportec, dfl, fifa]. "statsperform" is an alias for
+            "opta" (StatsPerform acquired Opta) and behaves identically.
         check_quality (bool, optional): whether you want to check the quality of the
             tracking data. Defaults to True
         verbose (bool, optional): whether or not to print info about progress
@@ -159,6 +161,7 @@ def get_game(
 
     event_precise_timestamps = {
         "opta": True,
+        "statsperform": True,
         "metrica": True,
         "instat": False,
         "scisports": False,
@@ -476,6 +479,7 @@ def load_event_data(
 
     if event_data_provider not in [
         "opta",
+        "statsperform",
         "metrica",
         "instat",
         "scisports",
@@ -491,7 +495,7 @@ def load_event_data(
 
     # Get event data and event metadata
     databallpy_events = {}
-    if event_data_provider == "opta":
+    if event_data_provider in ("opta", "statsperform"):
         event_data, event_metadata, databallpy_events = load_opta_event_data(
             f7_loc=event_metadata_loc, f24_loc=event_data_loc
         )

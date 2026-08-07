@@ -106,7 +106,7 @@ game = get_open_game()
 > The accepted variables for the `tracking_data_provider` are `["tracab", "metrica", "inmotio", "dfl", "sportec"]`
 > 
 > The current internal supported event data provider are:
-> - Opta
+> - Opta (also accepts `"statsperform"`, since StatsPerform acquired Opta - both values behave identically, and Opta's newer MA2/MA13 files are auto-detected alongside the legacy F7/F24 files)
 > - Metrica
 > - Instat
 > - SciSports
@@ -114,7 +114,7 @@ game = get_open_game()
 > - Statsbomb
 > - Fifa
 > 
-> The accepted variables for the `event_data_provider` are `["opta", "metrica", "instat", "scisports", "dfl", "sportec", "statsbomb","fifa"]`
+> The accepted variables for the `event_data_provider` are `["opta", "statsperform", "metrica", "instat", "scisports", "dfl", "sportec", "statsbomb","fifa"]`
 >
 > If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
 

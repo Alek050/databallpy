@@ -584,6 +584,130 @@ MD_OPTA = Metadata(
     country="Netherlands",
 )
 
+# MA2/MA13 versions of the above: same underlying game (same coordinates, times,
+# qualifier values), but with the opaque alphanumeric ids/names used by the new Opta
+# MA2 (metadata) and MA13 (event data) formats instead of the legacy F7/F24 ones.
+MD_OPTA_MA2 = Metadata(
+    game_id="gamemaid001",
+    pitch_dimensions=[100.0, 50.0],
+    periods_frames=MD_OPTA.periods_frames.copy(),
+    frame_rate=MISSING_INT,
+    home_team_id="hteammaid01",
+    home_team_name="TeamAlpha",
+    home_formation="4231",
+    home_score=3,
+    home_players=pd.DataFrame(
+        {
+            "id": ["hplayermaid01", "hplayermaid02"],
+            "full_name": ["Sem Verhoeven", "Daan Willems"],
+            "formation_place": [4, MISSING_INT],
+            "position": ["goalkeeper", "midfielder"],
+            "starter": [True, False],
+            "shirt_num": [1, 2],
+        }
+    ),
+    away_team_id="ateammaid02",
+    away_team_name="TeamBeta",
+    away_formation="3412",
+    away_score=1,
+    away_players=pd.DataFrame(
+        {
+            "id": ["aplayermaid01", "aplayermaid02"],
+            "full_name": ["Tim de Groot", "Bram Hendriks"],
+            "formation_place": [8, MISSING_INT],
+            "position": ["midfielder", "goalkeeper"],
+            "starter": [True, False],
+            "shirt_num": [1, 2],
+        }
+    ),
+    country="Netherlands",
+)
+
+ED_OPTA_MA13 = ED_OPTA.drop(columns=["team_name"]).copy()
+ED_OPTA_MA13["player_id"] = [
+    MISSING_INT,
+    MISSING_INT,
+    MISSING_INT,
+    "hplayermaid01",
+    "aplayermaid01",
+    "hplayermaid02",
+    "aplayermaid01",
+    "hplayermaid02",
+    "aplayermaid01",
+    "hplayermaid02",
+    "aplayermaid01",
+    "aplayermaid01",
+]
+ED_OPTA_MA13["player_name"] = [
+    None,
+    None,
+    None,
+    "Sem Verhoeven",
+    "Tim de Groot",
+    "Daan Willems",
+    "Tim de Groot",
+    "Daan Willems",
+    "Tim de Groot",
+    "Daan Willems",
+    "Tim de Groot",
+    "Tim de Groot",
+]
+ED_OPTA_MA13["team_id"] = [
+    "ateammaid02",
+    "hteammaid01",
+    "ateammaid02",
+    "hteammaid01",
+    "ateammaid02",
+    "hteammaid01",
+    "ateammaid02",
+    "hteammaid01",
+    "ateammaid02",
+    "hteammaid01",
+    "ateammaid02",
+    "ateammaid02",
+]
+ED_OPTA_MA13["original_annotation_id"] = [
+    9000000001,
+    9000000002,
+    9000000003,
+    9000000004,
+    9000000005,
+    9000000006,
+    9000000007,
+    9000000008,
+    9000000009,
+    9000000010,
+    9000000011,
+    9000000012,
+]
+ED_OPTA_MA13["team_name"] = ED_OPTA_MA13["team_id"].map(
+    {"hteammaid01": "TeamAlpha", "ateammaid02": "TeamBeta"}
+)
+
+SHOT_INSTANCES_OPTA_MA13 = {
+    key: shot_event.copy() for key, shot_event in SHOT_INSTANCES_OPTA.items()
+}
+SHOT_INSTANCES_OPTA_MA13[9].team_id = "hteammaid01"
+SHOT_INSTANCES_OPTA_MA13[9].player_id = "hplayermaid02"
+SHOT_INSTANCES_OPTA_MA13[10].team_id = "ateammaid02"
+SHOT_INSTANCES_OPTA_MA13[10].player_id = "aplayermaid01"
+SHOT_INSTANCES_OPTA_MA13[11].team_id = "ateammaid02"
+SHOT_INSTANCES_OPTA_MA13[11].player_id = "aplayermaid01"
+
+DRIBBLE_INSTANCES_OPTA_MA13 = {
+    key: dribble_event.copy() for key, dribble_event in DRIBBLE_INSTANCES_OPTA.items()
+}
+DRIBBLE_INSTANCES_OPTA_MA13[7].team_id = "hteammaid01"
+DRIBBLE_INSTANCES_OPTA_MA13[7].player_id = "hplayermaid02"
+
+PASS_INSTANCES_OPTA_MA13 = {
+    key: pass_event.copy() for key, pass_event in PASS_INSTANCES_OPTA.items()
+}
+PASS_INSTANCES_OPTA_MA13[3].team_id = "hteammaid01"
+PASS_INSTANCES_OPTA_MA13[3].player_id = "hplayermaid01"
+PASS_INSTANCES_OPTA_MA13[4].team_id = "ateammaid02"
+PASS_INSTANCES_OPTA_MA13[4].player_id = "aplayermaid01"
+
 TD_METRICA = pd.DataFrame(
     {
         "frame": [1, 2, 3, 4, 5, 6],
