@@ -7,32 +7,33 @@
 [version-url]: https://pypi.org/project/databallpy/
 [python-image]: https://img.shields.io/pypi/pyversions/databallpy?color=006666
 [python-url]: https://pypi.org/project/databallpy/
-[docs-image]: https://readthedocs.org/projects/databallpy/badge/?version=latest
-[docs-url]: https://databallpy.readthedocs.io/en/latest/?badge=latest
+[docs-image]: https://readthedocs.org/projects/databallpy/badge/?version=main
+[docs-url]: https://databallpy.readthedocs.io/en/main/?badge=main
 [cicd-image]: https://github.com/Alek050/databallpy/actions/workflows/linters_and_tests.yml/badge.svg
 [cicd-url]: https://github.com/Alek050/databallpy/actions/workflows/linters_and_tests.yml
 [codecov-image]: https://codecov.io/gh/Alek050/databallpy/branch/develop/graph/badge.svg?token=MBI3380I0H
 [codecov-url]: https://codecov.io/gh/Alek050/databallpy
 
-[filter-data-url]: https://databallpy.readthedocs.io/en/latest/getting_started/preprocessing_options.html#filtering-data
-[velocity-acc-url]: https://databallpy.readthedocs.io/en/latest/getting_started/preprocessing_options.html#adding-velocity-and-acceleration
-[synchronisation-url]: https://databallpy.readthedocs.io/en/latest/getting_started/synchronisation_page.html
-[covered-distance-url]: https://databallpy.readthedocs.io/en/latest/features/covered_distance_page.html
-[pressure-url]: https://databallpy.readthedocs.io/en/latest/features/pressure_page.html
-[team-possession-url]: https://databallpy.readthedocs.io/en/latest/features/team_and_player_possession.html#team-possession
-[individual_possession-url]: https://databallpy.readthedocs.io/en/latest/features/team_and_player_possession.html#individual-player-possession-vidal-codina-et-al-2022
-[Expected-Goals-url]: https://databallpy.readthedocs.io/en/latest/features/simple_xG_models.html
-[Expected-Threat-url]: https://databallpy.readthedocs.io/en/latest/features/xT_models.html
-[Voronoi-url]: https://databallpy.readthedocs.io/en/latest/features/space_occupation.html#voronoi-model
-[Guassian-space-occupation-url]: https://databallpy.readthedocs.io/en/latest/features/space_occupation.html#gaussian-model-fernandez-born-2018
-[dangerous-accessible-space-url]: https://databallpy.readthedocs.io/en/latest/features/dangerous_accessible_space.html
-[visualizations-url]: https://databallpy.readthedocs.io/en/latest/getting_started/visualizations_page.html
+[filter-data-url]: https://databallpy.readthedocs.io/en/main/getting_started/preprocessing_options.html#filtering-data
+[velocity-acc-url]: https://databallpy.readthedocs.io/en/main/getting_started/preprocessing_options.html#adding-velocity-and-acceleration
+[synchronisation-url]: https://databallpy.readthedocs.io/en/main/getting_started/synchronisation_page.html
+[covered-distance-url]: https://databallpy.readthedocs.io/en/main/features/covered_distance_page.html
+[pressure-url]: https://databallpy.readthedocs.io/en/main/features/pressure_page.html
+[team-possession-url]: https://databallpy.readthedocs.io/en/main/features/team_and_player_possession.html#team-possession
+[individual_possession-url]: https://databallpy.readthedocs.io/en/main/features/team_and_player_possession.html#individual-player-possession-vidal-codina-et-al-2022
+[Expected-Goals-url]: https://databallpy.readthedocs.io/en/main/features/simple_xG_models.html
+[Expected-Threat-url]: https://databallpy.readthedocs.io/en/main/features/xT_models.html
+[Voronoi-url]: https://databallpy.readthedocs.io/en/main/features/space_occupation.html#voronoi-model
+[Guassian-space-occupation-url]: https://databallpy.readthedocs.io/en/main/features/space_occupation.html#gaussian-model-fernandez-born-2018
+[dangerous-accessible-space-url]: https://databallpy.readthedocs.io/en/main/features/dangerous_accessible_space.html
+[visualizations-url]: https://databallpy.readthedocs.io/en/main/getting_started/visualizations_page.html
+[optimization-url]: https://databallpy.readthedocs.io/en/main/features/optimization.html
 
 [floodlight-url]:https://github.com/floodlight-sports/floodlight
 [kloppy-url]:https://github.com/PySport/kloppy
 [soccer-sync-url]: https://kwiatkowski.io/sync.soccer
-[example-url]: https://databallpy.readthedocs.io/en/latest/example.html
-[getting-started-url]: https://databallpy.readthedocs.io/en/latest/getting_started/installation_page.html
+[example-url]: https://databallpy.readthedocs.io/en/main/example.html
+[getting-started-url]: https://databallpy.readthedocs.io/en/main/getting_started/installation_page.html
 
 [joss-image]: https://joss.theoj.org/papers/10.21105/joss.10223/status.svg
 [joss-url]: https://doi.org/10.21105/joss.10223
@@ -190,6 +191,7 @@ DataBallPy offers a variety of visualizations to help you understand the data be
 - [Voronoi Model][Voronoi-url]: Calculate the Voronoi space occupation based on the tracking data.
 - [Gaussian Model][Guassian-space-occupation-url]: Calculate the Gaussian space occupation based on the tracking data (Fernandez & Born, 2018).
 - [Dangerous Accessible Space][dangerous-accessible-space-url]: Compute Dangerous accessible space (Bischofberger & Baca, 2025)
+- [Defensive Structure Optimization][optimization-url]: Optimize defensive positioning based on different objective functions.
 
 ## Documentation
 
@@ -212,7 +214,7 @@ Tracking data providers:
 - Metrica
 - Inmotio
 
-Check the [integration between Kloppy and Databallpy](https://databallpy.readthedocs.io/en/latest/getting_started/loading_in_a_game_page.html#databallpy-kloppy-integration) to parse any kloppy supported data provider into a DataBallPy `Game` object.
+Check the [integration between Kloppy and Databallpy](https://databallpy.readthedocs.io/en/main/getting_started/loading_in_a_game_page.html#databallpy-kloppy-integration) to parse any kloppy supported data provider into a DataBallPy `Game` object.
 
 ## Seek Support
 To reach out to developers, maintainers, and the community in general, you can reply to and open new discussions in the [discussions field](https://github.com/Alek050/databallpy/discussions) of `databallpy`.
@@ -256,6 +258,7 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 - [migvidal5](https://github.com/migvidal5)
 - [jonas-bischofberger](https://github.com/jonas-bischofberger)
 - [jiangyan yang](https://github.com/ouyang1030)
+- [amarshah1999](https://github.com/amarshah1999)
 
 ## License
 
