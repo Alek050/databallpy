@@ -9,6 +9,8 @@
 - Fixed `Game.save_game()` mangling absolute Windows paths, which broke the open data cache
 - Fixed `get_saved_game()` resolving its default `path` to the working directory at import time
 - Fixed `Game.get_frames()` and `Game.get_event_frame()` raising a pandas `KeyError` instead of a `DataBallPyError` when no tracking data is loaded
+- Load the xG parameters once at import instead of reading `xg_params.json` from disk for every `ShotEvent`
+- Sped up pitch control by caching the constant grid, evaluating the player influence gaussian inline instead of constructing a scipy object per player per frame, and building the player ball distances as floats
 - Removed the `TackleEvent` class; tackles remain available as `"tackle"` in the `databallpy_event` column of the event data
 
 ## Version 0.7
