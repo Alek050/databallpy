@@ -21,6 +21,7 @@ from databallpy.features.differentiate import _differentiate
 from databallpy.features.feature_utils import _check_column_ids
 from databallpy.features.filters import _filter_data
 from databallpy.features.pitch_control import get_pitch_control_single_frame
+from databallpy.features.pitch_control_spearman import get_spearman_pitch_control_single_frame
 from databallpy.features.player_possession import (
     get_ball_losses_and_updated_gain_idxs,
     get_distance_between_ball_and_players,
@@ -950,3 +951,72 @@ class TrackingData(pd.DataFrame):
         ]
         unused_cols = [col for col in self.columns if col not in used_cols]
         return pd.DataFrame(df_long.merge(self[unused_cols], on="frame"))
+    
+    def get_spearman_pitch_control(
+        self,
+        pitch_dimensions: list[float, float],
+        n_x_bins: int = 106,
+        n_y_bins: int = 68,
+        start_idx: int | None = None,
+        end_idx: int | None = None,
+        frame_steps: int = 5,
+    ) -> np.ndarray:
+        """
+        Calculate the pitch control for a game using the method suggested by Spearman(2017)
+
+        Parameters
+        --------------
+        pitch_dimensions: list[float, float]
+        The dimensions of the pitch that is played on.
+
+        n_x_bins: int, default = 106
+        Number of points calculated along the x-axis.
+
+        n_y_bins: int, default = 68
+        Number of points calculated along the y-axis.
+
+        start_idx: int
+        Starting point of calculating pitch control
+
+        end_idx: int
+        Ending point of calculating pitch control
+
+        Output
+        --------
+        pitch_control: np.ndarray
+        Array holding the pitch control values for every point for every frame 
+        """
+
+        if not any(self.columns[-2:] == "vx"):
+            self.add_velocity()
+
+        start_idx = self.index[0] if start_idx is None else start_idx
+        end_idx = self.index[-1] if end_idx is None else end_idx
+        tracking_data = self.loc[start_idx:end_idx]
+
+        pitch_control = np.zeros(
+                (len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32
+            )
+        
+        if frame_steps != 1:
+        
+            idx = tracking_data.index
+
+            for i in range(0, tracking_data.shape[0], frame_steps):
+                pitch_control[i:(i+frame_steps)] = get_spearman_pitch_control_single_frame(
+                    tracking_data.loc[idx[i]],
+                    pitch_dimensions,
+                    n_x_bins,
+                    n_y_bins,
+                )
+
+        else:
+            for i, idx in enumerate(tracking_data.index):
+                pitch_control[i] = get_spearman_pitch_control_single_frame(
+                    tracking_data.loc[idx],
+                    pitch_dimensions,
+                    n_x_bins,
+                    n_y_bins,
+                )
+
+        return pitch_control
