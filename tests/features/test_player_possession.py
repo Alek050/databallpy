@@ -3,17 +3,16 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.features import add_velocity
 from databallpy.features.player_possession import (
     get_ball_angle_condition,
     get_ball_losses_and_updated_gain_idxs,
     get_ball_speed_condition,
     get_distance_between_ball_and_players,
-    get_individual_player_possession,
     get_initial_possessions,
     get_start_end_idxs,
     get_valid_gains,
 )
+from databallpy.schemas import TrackingData
 
 
 class TestPlayerPossession(unittest.TestCase):
@@ -40,7 +39,9 @@ class TestPlayerPossession(unittest.TestCase):
                 ],
             }
         )
-        add_velocity(self.tracking_data, "ball", 1, inplace=True)
+        td = TrackingData(self.tracking_data, frame_rate=1)
+        td.add_velocity("ball")
+        self.tracking_data = pd.DataFrame(td)
 
         self.expected_distances = pd.DataFrame(
             {
@@ -70,33 +71,6 @@ class TestPlayerPossession(unittest.TestCase):
                 ],
             }
         )
-
-    def test_get_individual_player_possession(self):
-        td = self.tracking_data.copy()
-        expected_possession = np.array(
-            [
-                None,
-                "home_1",
-                None,
-                None,
-                "away_1",
-                "away_1",
-                "away_1",
-                "away_1",
-                "away_1",
-                None,
-            ]
-        )
-        individual_possessions = get_individual_player_possession(td)
-        np.testing.assert_array_equal(individual_possessions, expected_possession)
-
-        assert "player_possession" not in td.columns
-        get_individual_player_possession(td, inplace=True)
-        assert "player_possession" in td.columns
-        np.testing.assert_array_equal(td["player_possession"], expected_possession)
-
-        with self.assertRaises(ValueError):
-            get_individual_player_possession(td.drop(columns=["ball_velocity"]))
 
     def test_get_distance_between_ball_and_players(self):
         td = self.tracking_data.copy()

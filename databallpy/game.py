@@ -127,36 +127,17 @@ class Game:
     def __post_init__(self):
         if self._check_inputs_:
             check_inputs_game_object(self)
-        self._tracking_data_provider = self.tracking_data.provider
-        self._frame_rate = self.tracking_data.frame_rate
-        self._event_data_provider = self.event_data.provider
-
-    @property
-    def tracking_data_provider(self) -> str:
-        warnings.warn(
-            "`game.tracking_data_provider` is deprecated and will be removed in version 0.8.0. Please use `game.tracking_data.provider` instead",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._tracking_data_provider
 
     @property
     def frame_rate(self) -> float:
-        warnings.warn(
-            "`game.frame_rate` is deprecated and will be removed in version 0.8.0. Please use `game.tracking_data.frame_rate` instead",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._frame_rate
+        """The frame rate of the tracking data in frames per second.
 
-    @property
-    def event_data_provider(self) -> str:
-        warnings.warn(
-            "`game.event_data_provider` is deprecated and will be removed in version 0.8.0. Please use `game.event_data.provider` instead",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._event_data_provider
+        Shorthand for `game.tracking_data.frame_rate`.
+
+        Returns:
+            float: Frames per second, or MISSING_INT if no tracking data is loaded.
+        """
+        return self.tracking_data.frame_rate
 
     @property
     def tracking_timestamp_is_precise(self) -> bool:

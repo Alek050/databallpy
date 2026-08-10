@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from databallpy.features import add_velocity
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.visualize import (
@@ -149,12 +148,7 @@ class TestVisualize(unittest.TestCase):
                 add_velocities=True,
             )
 
-        add_velocity(
-            game.tracking_data,
-            ["home_34", "away_17", "ball"],
-            frame_rate=1.0,
-            inplace=True,
-        )
+        game.tracking_data.add_velocity(["home_34", "away_17", "ball"])
         game.tracking_data["databallpy_event"] = "pass"
         game.tracking_data["event_id"] = game.pass_events["event_id"].iloc[0]
         game._is_synchronised = True

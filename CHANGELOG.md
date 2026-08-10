@@ -15,6 +15,10 @@
 - Sped up pitch control by caching the constant grid, evaluating the player influence gaussian inline instead of constructing a scipy object per player per frame, and building the player ball distances as floats
 - Added `player_columns` and `frame_columns` arguments to `TrackingData.to_long_format()` to limit the columns that are repeated per object, cutting the memory usage of `add_dangerous_accessible_space()`
 - Removed the `TackleEvent` class; tackles remain available as `"tackle"` in the `databallpy_event` column of the event data
+- Removed the deprecated `databallpy.features` free functions (`add_velocity`, `add_acceleration`, `filter_tracking_data`, `get_covered_distance`, `get_approximate_voronoi`, `get_pitch_control`, `get_pressure_on_player`, `add_team_possession`, `get_individual_player_possession`); use the equivalent `game.tracking_data.*` methods
+- Removed the deprecated `Match` class and the `get_match()`, `get_open_match()` and `get_saved_match()` functions; use `Game`, `get_game()`, `get_open_game()` and `get_saved_game()`
+- Removed the deprecated `game.tracking_data_provider` and `game.event_data_provider` properties; use `game.tracking_data.provider` and `game.event_data.provider`
+- `game.frame_rate` is no longer deprecated and now delegates to `game.tracking_data.frame_rate` instead of caching the value at `Game` creation, so it stays correct when the tracking data is replaced
 
 ## Version 0.7
 ### V0.7.3 (14/04/2026)

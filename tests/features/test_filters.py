@@ -3,16 +3,11 @@ import warnings
 from unittest.mock import patch
 
 import numpy as np
-import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 from scipy.signal import savgol_filter
 
-from databallpy.features.filters import (
-    _filter_data,
-    _savgol_with_nan_compat,
-    filter_tracking_data,
-)
+from databallpy.features.filters import _filter_data, _savgol_with_nan_compat
 
 
 class TestFilters(unittest.TestCase):
@@ -63,33 +58,6 @@ class TestFilters(unittest.TestCase):
             )
         )
 
-    def test_filter_tracking_data_input_types(self):
-        tracking_data = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_x": [10, 20, -30, 40, np.nan, 60],
-                "ball_y": [5, 12, -20, 30, np.nan, 60],
-                "away_13_x": [10, 20, -30, 40, np.nan, 60],
-                "away_13_y": [5, 12, -20, 30, np.nan, 60],
-            }
-        )
-
-        with self.assertRaises(TypeError):
-            filter_tracking_data("tracking_data", column_ids="home_1")
-        with self.assertRaises(ValueError):
-            filter_tracking_data(tracking_data, column_ids=[])
-        with self.assertRaises(TypeError):
-            filter_tracking_data(tracking_data, column_ids="home_1", inplace="True")
-        with self.assertRaises(TypeError):
-            filter_tracking_data(tracking_data, column_ids="home_1", window_length=3.5)
-        with self.assertRaises(TypeError):
-            filter_tracking_data(tracking_data, column_ids="home_1", polyorder=2.5)
-        with self.assertRaises(ValueError):
-            filter_tracking_data(
-                tracking_data, column_ids="home_1", filter_type="invalid"
-            )
-
     @patch(
         "databallpy.features.filters.savgol_filter",
         side_effect=TypeError("Mocked ValueError"),
@@ -119,74 +87,6 @@ class TestFilters(unittest.TestCase):
                 str(w[-1].message),
             )
             np.testing.assert_array_equal(result, arr)
-
-    def test_filter_tracking_data_ma_inplace(self):
-        tracking_data = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_x": [10, 20, -30, 40, np.nan, 60],
-                "ball_y": [5, 12, -20, 30, np.nan, 60],
-                "away_13_x": [10, 20, -30, 40, np.nan, 60],
-                "away_13_y": [5, 12, -20, 30, np.nan, 60],
-            }
-        )
-
-        filter_tracking_data(
-            tracking_data,
-            column_ids=["ball"],
-            filter_type="moving_average",
-            window_length=2,
-            inplace=True,
-        )
-
-        expected_output = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_x": [5, 15, -5, 5, np.nan, np.nan],
-                "ball_y": [2.5, 8.5, -4, 5, np.nan, np.nan],
-                "away_13_x": [10, 20, -30, 40, np.nan, 60],
-                "away_13_y": [5, 12, -20, 30, np.nan, 60],
-            }
-        )
-        pd.testing.assert_frame_equal(tracking_data, expected_output)
-
-    def test_filter_tracking_data_sg_not_inplace(self):
-        tracking_data = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_x": [10, 20, -30, 40, np.nan, 60],
-                "ball_y": [5, 12, -20, 30, np.nan, 60],
-                "away_13_x": [10, 20, -30, 40, np.nan, 60],
-                "away_13_y": [5, 12, -20, 30, np.nan, 60],
-            }
-        )
-
-        filtered_data = filter_tracking_data(
-            tracking_data,
-            column_ids=["ball"],
-            filter_type="savitzky_golay",
-            window_length=3,
-            polyorder=1,
-            inplace=False,
-        )
-
-        assert filtered_data is not tracking_data
-
-        expected_output = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "ball_x": [20, 0, 10, 20.0, np.nan, 60.0],
-                "ball_y": [11.5, -1, 7.33, 18.33, np.nan, 60.0],
-                "away_13_x": [10, 20, -30, 40, np.nan, 60],
-                "away_13_y": [5, 12, -20, 30, np.nan, 60],
-            }
-        )
-
-        pd.testing.assert_frame_equal(filtered_data, expected_output)
 
 
 class TestSavgolWithNanCompat:

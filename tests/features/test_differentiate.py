@@ -3,11 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from databallpy.features.differentiate import (
-    _differentiate,
-    add_acceleration,
-    add_velocity,
-)
+from databallpy.features.differentiate import _differentiate
 from databallpy.utils.warnings import DataBallPyWarning
 
 
@@ -29,71 +25,7 @@ class TestDifferentiate(unittest.TestCase):
                 ],
             }
         )
-        self.expected_output_vel = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "home_1_vx": [10.0, -20.0, 10.0, np.nan, 10.0, np.nan],
-                "home_1_vy": [7.0, -12.5, 9.0, np.nan, 15.0, np.nan],
-                "home_1_velocity": [
-                    np.sqrt(149),
-                    np.sqrt(400 + 12.5**2),
-                    np.sqrt(181),
-                    np.nan,
-                    np.sqrt(325),
-                    np.nan,
-                ],
-            }
-        )
         self.framerate = 1
-
-        self.expected_output_acc = pd.DataFrame(
-            {
-                "home_1_x": [10, 20, -30, 40, np.nan, 60],
-                "home_1_y": [5, 12, -20, 30, np.nan, 60],
-                "home_1_vx": [1, 2, 5, 1, np.nan, -3.0],
-                "home_1_vy": [1, 2, -5, 1, np.nan, 1.0],
-                "home_1_velocity": [
-                    np.sqrt(2),
-                    np.sqrt(8),
-                    np.sqrt(25),
-                    np.sqrt(2),
-                    np.nan,
-                    np.sqrt(10),
-                ],
-                "home_1_ax": [1.0, 2.0, -0.5, np.nan, -2.0, np.nan],
-                "home_1_ay": [1.0, -3, -0.5, np.nan, 0.0, np.nan],
-                "home_1_acceleration": [
-                    np.sqrt(2),
-                    np.sqrt(13),
-                    np.sqrt(0.5),
-                    np.nan,
-                    np.sqrt(4),
-                    np.nan,
-                ],
-            },
-        )
-
-    def test_get_velocity(self):
-        input_df = self.input.copy()
-        output = add_velocity(input_df, ["home_1"], self.framerate)
-        pd.testing.assert_frame_equal(output, self.expected_output_vel)
-
-        with self.assertRaises(ValueError):
-            add_velocity(input_df, ["home_1"], self.framerate, filter_type="test")
-
-    def test_get_acceleration(self):
-        input_df = self.input.copy()
-        input_df.drop(columns=["home_1_vx"], inplace=True)
-        with self.assertRaises(ValueError):
-            add_acceleration(input_df, ["home_1"], self.framerate)
-
-        input_df = self.input.copy()
-        output = add_acceleration(input_df, "home_1", self.framerate)
-        pd.testing.assert_frame_equal(output, self.expected_output_acc)
-
-        with self.assertRaises(ValueError):
-            add_acceleration(input_df, ["home_1"], self.framerate, filter_type="wrong")
 
     def test_differentiate_sg_filter(self):
         input = self.input.copy()
