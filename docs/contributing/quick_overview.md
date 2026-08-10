@@ -116,6 +116,16 @@ to run the tests, linters and documentation in one command!
 When opening the pull request, make sure to link to the approriate issue. For example, when opening a pull request that solves issue 5, add this in the title of the 
 of the pull request and add in the description of the pull request `resolve #5`. This will close issue 5 automatically when the pull request is approved.
 
+## Deprecation policy
+
+Public API that is replaced is not removed straight away, but it does get removed. The policy is:
+
+1. Mark the old function, method, class, or property with the `@deprecated` decorator from `databallpy.utils.warnings`, stating the replacement and the version in which it will be removed.
+2. Keep it available for at least two minor versions.
+3. Remove it in the next minor version after that, together with its tests and any documentation that still uses it.
+
+Deadlines are not moved. If a replacement turns out to be undesirable, un-deprecate the original instead of postponing its removal.
+
 ## Code of Conduct
 
 Please note that the `databallpy` project is released with a

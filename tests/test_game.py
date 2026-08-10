@@ -912,20 +912,14 @@ class TestGame(unittest.TestCase):
         )
         assert game.name == "TeamOne 3 - 1 TeamTwo"
 
-    def test_game_tracking_data_provider_depricated(self):
+    def test_game_frame_rate(self):
         game = self.expected_game_tracab_opta.copy()
-        with self.assertWarns(DeprecationWarning):
-            assert game.tracking_data_provider == game.tracking_data.provider
+        assert game.frame_rate == game.tracking_data.frame_rate
 
-    def test_game_frame_rate_depricated(self):
-        game = self.expected_game_tracab_opta.copy()
-        with self.assertWarns(DeprecationWarning):
-            assert game.frame_rate == game.tracking_data.frame_rate
-
-    def test_game_event_data_provider_depricated(self):
-        game = self.expected_game_tracab_opta.copy()
-        with self.assertWarns(DeprecationWarning):
-            assert game.event_data_provider == game.event_data.provider
+        game.tracking_data = TrackingData(
+            game.tracking_data, provider=game.tracking_data.provider, frame_rate=1
+        )
+        assert game.frame_rate == 1
 
     def test_game_get_column_ids(self):
         game = self.expected_game_tracab_opta.copy()

@@ -20,11 +20,8 @@ from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_game import (
     get_game,
-    get_match,
     get_open_game,
-    get_open_match,
     get_saved_game,
-    get_saved_match,
 )
 from databallpy.utils.utils import resolve_cache_dir
 from tests.expected_outcomes import (
@@ -461,18 +458,6 @@ class TestGetGame(unittest.TestCase):
         )
         assert game == self.expected_game_tracab_opta
 
-        with self.assertWarns(DeprecationWarning):
-            match = get_match(
-                tracking_data_loc=self.td_tracab_loc,
-                tracking_metadata_loc=self.md_tracab_loc,
-                event_data_loc=self.ed_opta_loc,
-                event_metadata_loc=self.md_opta_loc,
-                tracking_data_provider=self.td_provider,
-                event_data_provider=self.ed_provider,
-                check_quality=True,
-            )
-        assert match == self.expected_game_tracab_opta
-
     def test_get_game_no_valid_input(self):
         with self.assertRaises(ValueError):
             get_game()
@@ -780,9 +765,6 @@ class TestGetGame(unittest.TestCase):
             allow_overwrite=True,
         )
 
-        with self.assertWarns(DeprecationWarning):
-            get_open_match()
-
     @patch(
         "requests.get",
         side_effect=[
@@ -812,9 +794,6 @@ class TestGetGame(unittest.TestCase):
         assert expected_game == saved_game
         assert saved_game != self.expected_game_tracab_opta
 
-        with self.assertWarns(DeprecationWarning):
-            saved_match = get_saved_match(name="test_game", path="tests/test_data")
-        assert saved_game == saved_match
         for file in os.listdir(os.path.join("tests", "test_data", "test_game")):
             os.remove(os.path.join("tests", "test_data", "test_game", file))
         os.rmdir(os.path.join("tests", "test_data", "test_game"))

@@ -6,9 +6,7 @@ import pandas as pd
 from databallpy.features.pitch_control import (
     calculate_covariance_matrix,
     calculate_scaling_matrix,
-    get_approximate_voronoi,
     get_mean_position_of_influence,
-    get_pitch_control,
     get_pitch_control_single_frame,
     get_pitch_control_surface_radius,
     get_player_influence,
@@ -41,57 +39,6 @@ class TestPitchControl(unittest.TestCase):
             },
             index=[1, 2],
         )
-
-    def test_approximate_voronoi(self):
-        td = self.td.copy()
-
-        output_dists, output_col_ids = get_approximate_voronoi(td, [20, 20], 5, 3)
-
-        assert output_dists.shape == output_col_ids.shape == (2, 3, 5)
-
-        expected_dists = np.array(
-            [
-                [
-                    [12.494443, 10.005554, 8.724168, 9.171211, 11.140516],
-                    [9.219544, 5.3851647, 2.236068, 3.6055512, 6.4031243],
-                    [10.137938, 6.839428, 4.013865, 2.8480012, 5.6666665],
-                ],
-                [
-                    [12.494443, 10.005554, 8.724168, 9.171211, 10.46157],
-                    [9.219544, 5.3851647, 2.236068, 3.0, 5.0],
-                    [10.137938, 6.839428, 4.772607, 3.6666667, 5.4262733],
-                ],
-            ]
-        )
-        expected_col_ids = np.array(
-            [
-                [
-                    ["home_1", "home_1", "home_1", "home_1", "home_1"],
-                    ["home_1", "home_1", "home_1", "home_1", "away_1"],
-                    ["home_1", "home_1", "away_1", "away_1", "away_1"],
-                ],
-                [
-                    ["home_1", "home_1", "home_1", "home_1", "away_1"],
-                    ["home_1", "home_1", "home_1", "away_1", "away_1"],
-                    ["home_1", "home_1", "home_1", "away_1", "away_1"],
-                ],
-            ],
-            dtype="U7",
-        )
-        np.testing.assert_array_equal(output_col_ids, expected_col_ids)
-        np.testing.assert_array_almost_equal(output_dists, expected_dists)
-
-        dists, col_ids = get_approximate_voronoi(td.iloc[0], [20, 20], 5, 3)
-
-        assert dists.shape == col_ids.shape == (3, 5)
-        np.testing.assert_array_equal(col_ids, expected_col_ids[0])
-        np.testing.assert_array_almost_equal(dists, expected_dists[0])
-
-    def test_get_pitch_control_period(self):
-        td = self.td.copy()
-        output = get_pitch_control(td, [106, 68], 100, 50)
-        self.assertIsInstance(output, np.ndarray)
-        self.assertEqual(output.shape, (2, 50, 100))
 
     def test_get_pitch_control_single_frame(self):
         frame = self.td.iloc[0].copy()

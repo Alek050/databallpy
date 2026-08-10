@@ -51,7 +51,6 @@ from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.utils import resolve_cache_dir
-from databallpy.utils.warnings import deprecated
 
 if TYPE_CHECKING:
     from kloppy.domain import EventDataset, TrackingDataset
@@ -1024,24 +1023,3 @@ def get_game_from_kloppy(
         else False,
         _check_inputs_=check_game_inputs,
     )
-
-
-@deprecated(
-    "`get_match` is deprecated and will be removed in version 0.8.0. Please use `get_game` instead"
-)
-def get_match(*args, **kwargs):
-    return get_game(*args, **kwargs)
-
-
-@deprecated(
-    "`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead"
-)
-def get_open_match(*args, **kwargs):
-    return get_open_game(*args, **kwargs)
-
-
-@deprecated(
-    "`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead"
-)
-def get_saved_match(*args, **kwargs):
-    return get_saved_game(*args, **kwargs)
