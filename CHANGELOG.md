@@ -1,7 +1,7 @@
 # Changelog
 
 ## Version 0.8
-### V0.8.0
+### V0.8.0 (10/08/2026)
 - Added simulated annealing optimization algorithm for different objectives (by [amarshah1999](https://github.com/amarshah1999))
 - Added support for opta/statsperform MA files
 - Vectorised the Needleman-Wunsch dynamic program, speeding up the synchronisation of tracking and event data and removing float32 rounding drift that could misalign events in long batches
