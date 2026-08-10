@@ -183,8 +183,7 @@ def _check_ball_velocity(tracking_data: pd.DataFrame, framerate: int) -> None:
     if sum_valid_frames < n_total_frames * 0.99:
         warnings.warn(
             DataBallPyWarning(
-                "Ball velocity is unrealistic (> 50 m/s) for "
-                "more than 1% of all frames"
+                "Ball velocity is unrealistic (> 50 m/s) for more than 1% of all frames"
             )
         )
 
@@ -230,19 +229,21 @@ def _check_player_velocity(
         column_ids=players_column_ids,
     )
 
-    mask_no_break = [False] * len(tracking_data)
-    first_frame = periods.loc[0, "start_frame"]
+    frames = tracking_data.get(
+        "frame", pd.Series(tracking_data.index, index=tracking_data.index)
+    )
+    mask_no_break = pd.Series(False, index=tracking_data.index)
     for _, row in periods.iterrows():
         if row["start_frame"] != MISSING_INT:
-            p_start = row["start_frame"] - first_frame
-            p_end = row["end_frame"] - first_frame
-            mask_no_break[p_start:p_end] = [True] * (p_end - p_start)
+            mask_no_break |= frames.between(row["start_frame"], row["end_frame"] - 1)
 
     percentages_valid_frames = []
     max_sequences_invalid_frames = []
     for player in players_column_ids:
         velocity_player = tracking_data[f"{player}_velocity"]
         velocity_player = velocity_player[mask_no_break][1:].reset_index(drop=True)
+        if len(velocity_player) == 0:
+            continue
         valid_frames = velocity_player < 12
         sum_valid_frames = sum(valid_frames)
         player_specific_total_frames = (

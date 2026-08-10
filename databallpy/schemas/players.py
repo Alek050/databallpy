@@ -1,7 +1,9 @@
 from typing import Optional
 
-import pandera as pa
-
+try:
+    import pandera.pandas as pa
+except ModuleNotFoundError:
+    import pandera as pa
 from databallpy.utils.constants import DATABALLPY_POSITIONS
 
 

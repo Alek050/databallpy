@@ -4,8 +4,12 @@ from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
-import pandera as pa
 import pandera.extensions as extensions
+
+try:
+    import pandera.pandas as pa
+except ModuleNotFoundError:
+    import pandera as pa
 from scipy.spatial import KDTree
 
 from databallpy.features.covered_distance import (
@@ -15,7 +19,7 @@ from databallpy.features.covered_distance import (
 )
 from databallpy.features.differentiate import _differentiate
 from databallpy.features.feature_utils import _check_column_ids
-from databallpy.features.filters import savgol_filter
+from databallpy.features.filters import _filter_data
 from databallpy.features.pitch_control import get_pitch_control_single_frame
 from databallpy.features.player_possession import (
     get_ball_losses_and_updated_gain_idxs,
@@ -69,7 +73,8 @@ def check_first_frame(df):
 @extensions.register_check_method()
 def check_ball_status(df):
     frames_alive = df["ball_status"].value_counts()["alive"]
-    check_passed = frames_alive > (len(df) / 2)
+    len_df = len(df[df["gametime_td"] != "Break"])
+    check_passed = frames_alive > (len_df / 2)
 
     if not check_passed:
         message = (
@@ -108,12 +113,29 @@ def check_all_locations(df):
 
 class TrackingDataSchema(pa.DataFrameModel):
     frame: pa.typing.Series[int] = pa.Field(unique=True)
-    datetime: pa.typing.Series[pd.Timestamp] = pa.Field(
-        ge=pd.Timestamp("1975-01-01"), le=pd.Timestamp.now(), coerce=True, nullable=True
+    datetime: pa.typing.Series[object] = pa.Field(nullable=True, coerce=True)
+
+    @pa.check("datetime")
+    def is_timestamp(self, series: pa.typing.Series[object]) -> bool:
+        return series.dropna().apply(lambda x: isinstance(x, pd.Timestamp)).all()
+
+    @pa.check("datetime")
+    def after_1975(self, series: pa.typing.Series[object]) -> bool:
+        return (
+            series.dropna()
+            .apply(lambda x: x >= pd.Timestamp("1975-01-01", tz=x.tzinfo))
+            .all()
+        )
+
+    @pa.check("datetime")
+    def before_now(self, series: pa.typing.Series[object]) -> bool:
+        return series.dropna().apply(lambda x: x <= pd.Timestamp.now(tz=x.tzinfo)).all()
+
+    ball_x: pa.typing.Series[float] = pa.Field(
+        ge=-62.5, le=62.5, nullable=True, coerce=True
     )
-    ball_x: pa.typing.Series[float] = pa.Field(ge=-60, le=60, nullable=True)
-    ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True)
-    ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True)
+    ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True, coerce=True)
+    ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True, coerce=True)
     ball_status: pa.typing.Series[str] = pa.Field(isin=["alive", "dead"], nullable=True)
     team_possession: pa.typing.Series[str] = pa.Field(nullable=True)
 
@@ -138,7 +160,7 @@ class TrackingData(pd.DataFrame):
         self,
         *args,
         provider: str = "unspecified",
-        frame_rate: int = MISSING_INT,
+        frame_rate: int | float = MISSING_INT,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -253,35 +275,30 @@ class TrackingData(pd.DataFrame):
         allow_overwrite: bool = False,
     ) -> None:
         """Function that adds acceleration columns to the tracking data based on the
-           position columns
+        position columns.
 
         Args:
-            self,
-            column_ids (str | list[str]): columns for which acceleration should be
-                calculated
-            filter_type (str, optional): filter type to use. Defaults to None.
+            column_ids (str | list[str]): Columns for which acceleration should be calculated.
+            filter_type (str, optional): Filter type to use. Defaults to None.
                 Options are `moving_average` and `savitzky_golay`.
-            window_length (int, optional): window size for the filter. Defaults to 25.
-            polyorder (int, optional): polynomial order for the filter. Defaults to 2.
-            max_acceleration (float, optional): maximum value for the acceleration.
-                Defaults to np.inf.
-            allow_overwrite (bool): Whether or not it is allowed to overwrite existing values
-                Note: if "_acceleration" exists, but "_ax" and "_ay" not, and allow_overwrite is
-                set to False, "_ax" and "_ay" will be computed and added, but "_acceleration"
-                is kept the same, and therefore does not correspond with the other values.
-                Defaults to False.
+            window_length (int, optional): Window size for the filter. Defaults to 25.
+            polyorder (int, optional): Polynomial order for the filter. Defaults to 2.
+            max_acceleration (float, optional): Maximum value for the acceleration. Defaults to np.inf.
+            allow_overwrite (bool): Whether or not it is allowed to overwrite existing values.
 
         Returns:
             None
 
         Raises:
-            ValueError: if filter_type is not one of `moving_average`, `savitzky_golay`,
-                or None.
-            ValueError: if velocity was not found in the DataFrame for the input_columns.
+            ValueError: If filter_type is not one of `moving_average`, `savitzky_golay`, or None.
+            ValueError: If velocity was not found in the DataFrame for the input_columns.
 
         Note:
-            The function will delete the columns in input_columns with the acceleration if
-            they already exist.
+            If "_acceleration" exists, but "_ax" and "_ay" do not, and allow_overwrite is False,
+            "_ax" and "_ay" will be computed and added, but "_acceleration" is kept unchanged.
+            Therefore, it may not correspond with the other values.
+
+            The function will delete acceleration columns if they already exist.
         """
 
         if isinstance(column_ids, str):
@@ -517,11 +534,11 @@ class TrackingData(pd.DataFrame):
         ]
         for col in xy_columns:
             if filter_type == "savitzky_golay":
-                self[col] = savgol_filter(
-                    self[col].values,
+                self[col] = _filter_data(
+                    self[col].to_numpy(),
+                    filter_type="savitzky_golay",
                     window_length=window_length,
                     polyorder=polyorder,
-                    mode="interp",
                 )
             elif filter_type == "moving_average":
                 self[col] = np.convolve(
@@ -653,13 +670,17 @@ class TrackingData(pd.DataFrame):
             for x in tracking_data.columns
             if ("home" in x or "away" in x) and x[-2:] == "_x"
         ]
-        player_ball_distances = pd.DataFrame(columns=col_ids, index=tracking_data.index)
-        for col_id in col_ids:
-            player_ball_distances[col_id] = np.linalg.norm(
-                tracking_data[[f"{col_id}_x", f"{col_id}_y"]].values
-                - tracking_data[["ball_x", "ball_y"]].values,
-                axis=1,
-            )
+        ball_xy = tracking_data[["ball_x", "ball_y"]].values
+        player_ball_distances = pd.DataFrame(
+            {
+                col_id: np.linalg.norm(
+                    tracking_data[[f"{col_id}_x", f"{col_id}_y"]].values - ball_xy,
+                    axis=1,
+                )
+                for col_id in col_ids
+            },
+            index=tracking_data.index,
+        )
 
         for i, idx in enumerate(tracking_data.index):
             pitch_control[i] = get_pitch_control_single_frame(
@@ -667,7 +688,7 @@ class TrackingData(pd.DataFrame):
                 pitch_dimensions,
                 n_x_bins,
                 n_y_bins,
-                player_ball_distances=player_ball_distances.loc[idx],
+                player_ball_distances=player_ball_distances.iloc[i],
             )
         return np.array(pitch_control)
 
@@ -796,32 +817,138 @@ class TrackingData(pd.DataFrame):
         ].iloc[0]
         start_idx = 0
         self["team_possession"] = None
-        for event_id in [x for x in self.event_id if x != MISSING_INT]:
-            event = event_data[event_data.event_id == event_id].iloc[0]
+        events_by_id = (
+            event_data.drop_duplicates(subset="event_id")
+            .set_index("event_id")[["databallpy_event", "team_id", "is_successful"]]
+            .to_dict("index")
+        )
+        event_ids = self["event_id"]
+        for end_idx, event_id in event_ids[event_ids != MISSING_INT].items():
+            event = events_by_id[event_id]
             if (
                 event["databallpy_event"] in on_ball_events
-                and event.team_id != current_team_id
-                and event.is_successful == 1
+                and event["team_id"] != current_team_id
+                and event["is_successful"] == 1
             ):
-                end_idx = self[self.event_id == event_id].index[0]
                 team = "home" if current_team_id == home_team_id else "away"
                 self.loc[start_idx:end_idx, "team_possession"] = team
 
-                current_team_id = event.team_id
+                current_team_id = event["team_id"]
                 start_idx = end_idx
 
         last_team = "home" if current_team_id == home_team_id else "away"
         self.loc[start_idx:, "team_possession"] = last_team
 
-    def to_long_format(self) -> pd.DataFrame:
+    def add_dangerous_accessible_space(
+        self, mask: pd.Series = None, **kwargs
+    ) -> None | pd.DataFrame:
+        """Function to add a column 'dangerous_accessible_space' to the tracking data,
+        indicating the accessible space weighted by the expected value (measured by xG) of the respective location.
+
+        Warning: Can be expensive, only use for frames that are needed.
+
+        SOURCE:
+        Jonas Bischofberger, Arnold Baca. Dangerous Accessible Space: A Unified Model of Space and Value in Team Sports,
+        21 August 2025, PREPRINT (Version 1) available at Research Square [https://doi.org/10.21203/rs.3.rs-6932689/v1]
+
+        Args:
+            mask (Series): Boolean filter to calculate fewer values.
+
+        Returns:
+            None
+        """
+        try:
+            import accessible_space
+        except ImportError:
+            raise ImportError(
+                "This function requires the accessible-space package. Please run `pip install 'accessible-space>=2.0.13'` "
+                "Or install databallpy using `pip install 'databallpy[accessible-space]'`"
+            )
+
+        mask = pd.Series(True, index=self.index) if mask is None else mask
+
+        col_ids = [
+            x[:-2] for x in self.columns if x.endswith("_x") and not x.startswith("ball")
+        ]
+        if not all([f"{col_id}_vx" in self.columns.to_list() for col_id in col_ids]):
+            raise ValueError(
+                "To dangerous accessible space you need to add velocities of all players. Try using the"
+                " game.tracking_data.add_velocity method to do so."
+            )
+        if "player_possession" not in self.columns.to_list():
+            raise ValueError(
+                "To dangerous accessible space you need to add the inidividual player possession column. Try using the"
+                " game.tracking_data.add_individual_player_possession method to do so."
+            )
+
+        self["team_in_possession"] = (
+            self["player_possession"]
+            .str.startswith("home")
+            .map({True: "home", False: "away"})
+        )
+
+        td_long = self[mask].to_long_format(
+            player_columns=["x", "y", "vx", "vy"],
+            frame_columns=["period_id", "player_possession", "team_in_possession"],
+        )
+        td_long["team"] = td_long["column_id"].str[:4]
+
+        res = accessible_space.interface.get_dangerous_accessible_space(
+            td_long,
+            frame_col="frame",
+            player_col="column_id",
+            team_col="team",
+            x_col="x",
+            y_col="y",
+            vx_col="vx",
+            vy_col="vy",
+            team_in_possession_col="team_in_possession",
+            period_col="period_id",
+            player_in_possession_col="player_possession",
+            ball_player_id="ball",
+            **kwargs,
+        )
+
+        td_long.loc[
+            ~pd.isnull(td_long["team_in_possession"]), "dangerous_accessible_space"
+        ] = res.das
+        del res
+
+        td_long = td_long[["frame", "dangerous_accessible_space"]].drop_duplicates()
+        self["dangerous_accessible_space"] = self.merge(
+            td_long, on="frame", how="left", validate="one_to_one"
+        )["dangerous_accessible_space"]
+        self.drop(columns="team_in_possession", inplace=True)
+
+    def to_long_format(
+        self,
+        *,
+        player_columns: list[str] | None = None,
+        frame_columns: list[str] | None = None,
+    ) -> pd.DataFrame:
         """Function that moves from the base format, with a row for every frame,
         to a long format, with a row for every frame/column_id combination
 
         The ball/team information will be added to every row
 
-        returns: pd.DataFrame
+        Args:
+            player_columns (list[str], optional): Object level values to keep, without
+                the object prefix, e.g. ["x", "y", "vx", "vy"]. Defaults to None, all
+                object level values.
+            frame_columns (list[str], optional): Frame level columns to keep, e.g.
+                ["period_id"]. The "frame" column is always included. Defaults to None,
+                all frame level columns.
+
+        Returns:
+            pd.DataFrame: the tracking data in long format.
+
+        Note:
+            Every frame level column is repeated once per object (ball + players), so
+            restricting `frame_columns` and `player_columns` to what is needed
+            downstream greatly reduces the memory usage.
         """
         df_players = []
+        object_columns = []
         player_cols = [
             x[:-2]
             for x in self.columns
@@ -836,6 +963,10 @@ class TrackingData(pd.DataFrame):
                 ]
             else:
                 value_cols = [x.split("_")[2] for x in self.columns if player + "_" in x]
+            object_columns += [player + "_" + x for x in value_cols]
+            if player_columns is not None:
+                value_cols = [x for x in value_cols if x in player_columns]
+
             df_player = self[["frame"] + [player + "_" + x for x in value_cols]].copy()
             df_player.rename(
                 columns={player + "_" + x: x for x in value_cols}, inplace=True
@@ -846,10 +977,17 @@ class TrackingData(pd.DataFrame):
 
         df_long = pd.concat(df_players, axis=0).reset_index(drop=True)
 
-        used_cols = [
-            player + "_" + value
-            for player in player_cols + ["ball"]
-            for value in df_long.columns[2:]
+        unused_cols = [
+            col
+            for col in self.columns
+            if col not in object_columns
+            and col != "frame"
+            and (frame_columns is None or col in frame_columns)
         ]
-        unused_cols = [col for col in self.columns if col not in used_cols]
-        return pd.DataFrame(df_long.merge(self[unused_cols], on="frame"))
+        if len(unused_cols) == 0:
+            return pd.DataFrame(df_long)
+
+        df_unused = pd.concat([self[unused_cols]] * len(df_players), axis=0).reset_index(
+            drop=True
+        )
+        return pd.DataFrame(pd.concat([df_long, df_unused], axis=1))

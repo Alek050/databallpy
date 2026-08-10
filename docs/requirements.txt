@@ -1,2 +1,14 @@
-git+https://github.com/Alek050/databallpy.git@develop#egg=databallpy
+databallpy[accessible-space,kloppy] @ git+https://github.com/Alek050/databallpy.git@develop
 jupyter-book
+sphinx-togglebutton
+sphinx-copybutton
+myst-nb
+sphinx-thebe
+sphinx-comments
+sphinx-external-toc
+sphinx-design
+sphinx-book-theme
+sphinx-jupyterbook-latex
+sphinx-multitoc-numbering
+markdown-it-py[linkify]
+mdit-py-plugins

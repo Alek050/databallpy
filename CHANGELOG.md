@@ -1,20 +1,57 @@
 # Changelog
 
+## Version 0.8
+### V0.8.0 (10/08/2026)
+- Added simulated annealing optimization algorithm for different objectives (by [amarshah1999](https://github.com/amarshah1999))
+- Added support for opta/statsperform MA files
+- Vectorised the Needleman-Wunsch dynamic program, speeding up the synchronisation of tracking and event data and removing float32 rounding drift that could misalign events in long batches
+- Fixed `Game.get_column_ids()` skipping the frame filter when `idx=0`
+- Fixed `Game.save_game()` mangling absolute Windows paths, which broke the open data cache
+- Fixed `get_saved_game()` resolving its default `path` to the working directory at import time
+- Fixed `Game.get_frames()` and `Game.get_event_frame()` raising a pandas `KeyError` instead of a `DataBallPyError` when no tracking data is loaded
+- Sped up `TrackingData.add_team_possession()` by replacing the per-event scans of the event data with a single lookup table
+- Added `period_id` and `frames` arguments to `get_game()` and the tracking data loaders to load only a part of the tracking data, and halved the memory usage of the tracking data by storing the coordinates as float32
+- Load the xG parameters once at import instead of reading `xg_params.json` from disk for every `ShotEvent`
+- Sped up pitch control by caching the constant grid, evaluating the player influence gaussian inline instead of constructing a scipy object per player per frame, and building the player ball distances as floats
+- Added `player_columns` and `frame_columns` arguments to `TrackingData.to_long_format()` to limit the columns that are repeated per object, cutting the memory usage of `add_dangerous_accessible_space()`
+- Removed the `TackleEvent` class; tackles remain available as `"tackle"` in the `databallpy_event` column of the event data
+- Removed the deprecated `databallpy.features` free functions (`add_velocity`, `add_acceleration`, `filter_tracking_data`, `get_covered_distance`, `get_approximate_voronoi`, `get_pitch_control`, `get_pressure_on_player`, `add_team_possession`, `get_individual_player_possession`); use the equivalent `game.tracking_data.*` methods
+- Removed the deprecated `Match` class and the `get_match()`, `get_open_match()` and `get_saved_match()` functions; use `Game`, `get_game()`, `get_open_game()` and `get_saved_game()`
+- Removed the deprecated `game.tracking_data_provider` and `game.event_data_provider` properties; use `game.tracking_data.provider` and `game.event_data.provider`
+- `game.frame_rate` is no longer deprecated and now delegates to `game.tracking_data.frame_rate` instead of caching the value at `Game` creation, so it stays correct when the tracking data is replaced
 
+## Version 0.7
+### V0.7.3 (14/04/2026)
+- Added FIFA as an event data provider (by [Jiangyan Yang](https://github.com/ouyang1030))
+- Fix in download open data from DFL
+- Add support for Python 3.14
+- Updated support for Pandera for new version of Python and Pandera
+- Changed event unassinged error in sync to warning
+- Changed default cache behaviour specific for system
+
+### Version 0.7.2
+- Small changes for better color selection in plot tracking data and save tracking video.
+- Integration between `accessible-space` and `DataBallPy` thanks to [jonas-bischofberger](https://github.com/jonas-bischofberger)
+
+### V0.7.1 (24/11/2025)
+- Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
+- Allow for more null values in `Game`
+- Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`
+- Removed depricated functions `home_players_column_ids` and `away_players_column_ids`, please use `game.get_column_ids(team="home")` instead.
 
 ## Version 0.6
 
-## V0.6.2 (15/10/2025)
+### V0.6.2 (15/10/2025)
 - Fixed download links for loading in the open dataset from the DFL / Sportec
 
-## V0.6.1 (4/7/2025)
+### V0.6.1 (4/7/2025)
 - Made Country Nullabe in Game and Metadata.
 - Added player alignment based on jersey numbers over name alignment.
 - Added `allow_overwrite` kwarg for `Game.TrackingData.add_velocity` and `Game.TrackingData.add_acceleration` methods that default to `False`.
 - Fixed typo in documentation
 - Updated SciSports parser for v1.0 of the .json files (#301). 
 
-## V0.6.0 (28/03/2025)
+### V0.6.0 (28/03/2025)
 
 - Moved from function to an object oriented framework for all user-features and computations of game/match (special thanks to [DaanGro](https://github.com/DaanGro))
 - Renamed the all classes and functions with `match` to `game` (to move away from the internal python `match` statement)

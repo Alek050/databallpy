@@ -1,4 +1,5 @@
 import inspect
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import sigmoid
+from databallpy.utils.warnings import DataBallPyWarning
 
 FRAME_UNASSIGNED = 3
 EVENT_FRAME_MATCH = 2
@@ -238,15 +240,24 @@ def _needleman_wunsch(
     Returns:
        event_frame_dict (dict): dictionary with events as keys and frames as values
     """
-    n_frames, n_events = np.shape(sim_mat)
+    if pd.isnull(sim_mat).any().any():
+        raise ValueError(
+            "Found NaN values in the similarity matrix, can not perform needleman_wunch."
+        )
 
-    function_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.float32)
-    function_matrix[:, 0] = np.linspace(0, n_frames * gap_frame, n_frames + 1)
-    function_matrix[0, :] = np.linspace(0, n_events * gap_event, n_events + 1)
+    n_frames, n_events = np.shape(sim_mat)
 
     pointer_matrix = np.zeros((n_frames + 1, n_events + 1), dtype=np.int16)
     pointer_matrix[:, 0] = 3
     pointer_matrix[0, :] = 4
+
+    # The dynamic program is solved in ramp free coordinates,
+    # h[frame, event] = f[frame, event] - frame * gap_frame. In these coordinates
+    # leaving a frame unassigned reduces to a running maximum over the frame axis,
+    # so a whole event column is obtained with one np.maximum.accumulate call.
+    # unvisited holds the value of cells the loop never writes (f == 0).
+    unvisited = -np.arange(n_frames + 1, dtype=np.float64) * gap_frame
+    previous_column = np.zeros(n_frames + 1, dtype=np.float64)
 
     frames_high_sim_mat = np.where(sim_mat[:, 0] > 0.5)[0]
     for event_index in range(n_events):
@@ -268,28 +279,38 @@ def _needleman_wunsch(
             (0, n_frames) if not enable_optimization else (start_frame, end_frame)
         )
 
-        for frame_index in range(start_frame, end_frame):
+        current_column = unvisited.copy()
+        current_column[0] = (event_index + 1) * gap_event
+
+        if start_frame < end_frame:
             match = (
-                function_matrix[frame_index, event_index]
-                + sim_mat[frame_index, event_index]
-            )
-            gap_f = (
-                function_matrix[frame_index, event_index + 1] + gap_frame
-            )  # top + gap frame
+                previous_column[start_frame:end_frame]
+                + sim_mat[start_frame:end_frame, event_index]
+                - gap_frame
+            )  # diagonal + similarity
             gap_e = (
-                function_matrix[frame_index + 1, event_index] + gap_event
+                previous_column[start_frame + 1 : end_frame + 1] + gap_event
             )  # left + gap event
+            first_value = current_column[start_frame]
+
+            values = np.maximum(
+                np.maximum.accumulate(np.maximum(match, gap_e)), first_value
+            )
+            gap_f = np.empty_like(values)  # top + gap frame
+            gap_f[0] = first_value
+            gap_f[1:] = values[:-1]
 
             # Determine the maximum value and set the pointer matrix accordingly
-            if gap_f >= match and gap_f >= gap_e:
-                function_matrix[frame_index + 1, event_index + 1] = gap_f
-                pointer_matrix[frame_index + 1, event_index + 1] = FRAME_UNASSIGNED
-            elif match >= gap_e:
-                function_matrix[frame_index + 1, event_index + 1] = match
-                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_FRAME_MATCH
-            else:
-                function_matrix[frame_index + 1, event_index + 1] = gap_e
-                pointer_matrix[frame_index + 1, event_index + 1] = EVENT_UNASSIGNED
+            is_frame_unassigned = (gap_f >= match) & (gap_f >= gap_e)
+            is_match = ~is_frame_unassigned & (match >= gap_e)
+            current_column[start_frame + 1 : end_frame + 1] = values
+            pointer_matrix[start_frame + 1 : end_frame + 1, event_index + 1] = np.where(
+                is_frame_unassigned,
+                FRAME_UNASSIGNED,
+                np.where(is_match, EVENT_FRAME_MATCH, EVENT_UNASSIGNED),
+            )
+
+        previous_column = current_column
 
     # Solve
     frame_index = n_frames
@@ -311,8 +332,9 @@ def _needleman_wunsch(
         elif (
             pointer_matrix[frame_index, event_index] == EVENT_UNASSIGNED
         ):  # event unassigned
-            raise ValueError(
-                "An event was left unassigned, check your gap penalty values"
+            warnings.warn(
+                "An event was left unassigned, please check the quality of your events",
+                category=DataBallPyWarning,
             )
         else:
             raise ValueError(
@@ -364,7 +386,7 @@ def pre_compute_cost_function_variables(
 
 def pre_compute_synchronisation_variables(
     tracking_data: pd.DataFrame,
-    frame_rate: int,
+    frame_rate: int | float,
     pitch_dimensions: tuple,
 ) -> pd.DataFrame:
     """Function that precomputes variables that are used in the synchronisation.
@@ -582,6 +604,18 @@ def align_event_data_datetime(
         pd.DataFrame: Event data with aligned datetimes
 
     """
+
+    if (tracking_data["datetime"].dt.tz is None) != (
+        event_data["datetime"].dt.tz is None
+    ):
+        if tracking_data["datetime"].dt.tz:
+            event_data["datetime"] = (
+                event_data["datetime"]
+                .dt.tz_localize("UTC")
+                .dt.tz_convert(tracking_data["datetime"].dt.tz)
+            )
+        else:
+            event_data["datetime"] = event_data["datetime"].dt.tz_convert(None)
 
     start_events = ["pass", "shot"]
     for period in tracking_data["period_id"].unique():

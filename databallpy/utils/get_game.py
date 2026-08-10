@@ -1,10 +1,15 @@
 import json
 import os
+import shutil
+import warnings
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers import (
+    load_fifa_event_data,
     load_instat_event_data,
     load_metrica_event_data,
     load_metrica_open_event_data,
@@ -13,6 +18,12 @@ from databallpy.data_parsers.event_data_parsers import (
     load_sportec_event_data,
     load_sportec_open_event_data,
     load_statsbomb_event_data,
+)
+from databallpy.data_parsers.kloppy_parsers import (
+    convert_kloppy_event_dataset,
+    convert_kloppy_tracking_dataset,
+    periods_from_kloppy,
+    players_from_kloppy,
 )
 from databallpy.data_parsers.tracking_data_parsers import (
     load_inmotio_tracking_data,
@@ -39,7 +50,10 @@ from databallpy.utils.align_player_ids import (
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
-from databallpy.utils.warnings import deprecated
+from databallpy.utils.utils import resolve_cache_dir
+
+if TYPE_CHECKING:
+    from kloppy.domain import EventDataset, TrackingDataset
 
 LOGGER = create_logger(__name__)
 
@@ -59,6 +73,9 @@ def get_game(
     check_quality: bool = True,
     _check_game_class_: bool = True,
     verbose: bool = True,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> Game:
     """
     Function to get all information of a game given its datasources
@@ -78,14 +95,23 @@ def get_game(
         tracking_data_provider (str, optional): provider of the tracking data. Defaults
             to None. Supported providers are [tracab, metrica, inmotio]
         event_data_provider (str, optional): provider of the event data. Defaults to
-            None. Supported providers are [opta, metrica, instat, scisports]
+            None. Supported providers are [opta, statsperform, metrica, instat,
+            scisports, statsbomb, sportec, dfl, fifa]. "statsperform" is an alias for
+            "opta" (StatsPerform acquired Opta) and behaves identically.
         check_quality (bool, optional): whether you want to check the quality of the
             tracking data. Defaults to True
         verbose (bool, optional): whether or not to print info about progress
+        period_id (int | list[int], optional): only load the tracking data frames of
+            these period(s). Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the tracking data frames between
+            the first and the last frame, inclusive. Defaults to None (load all frames).
 
     Returns:
         (Game): a game object with all information available of the game.
 
+    Note:
+        The metadata, and thus the periods and the event data, always describe the
+        full game, also when only a part of the tracking data is loaded.
     """
     LOGGER.info(
         "Trying to load a new game in get_game();"
@@ -108,8 +134,7 @@ def get_game(
         )
     elif event_data_loc and event_data_provider is None:
         raise ValueError(
-            "Please provide an event data provider when providing an event"
-            " data location"
+            "Please provide an event data provider when providing an event data location"
         )
     elif event_metadata_loc and event_data_provider is None:
         raise ValueError(
@@ -146,12 +171,14 @@ def get_game(
 
     event_precise_timestamps = {
         "opta": True,
+        "statsperform": True,
         "metrica": True,
         "instat": False,
         "scisports": False,
-        "statsbomb": False,
         "sportec": True,
         "dfl": True,
+        "statsbomb": False,
+        "fifa": True,
     }
 
     uses_tracking_data = False
@@ -166,22 +193,18 @@ def get_game(
             event_match_loc=event_match_loc,
             event_lineup_loc=event_lineup_loc,
         )
-        EventDataSchema.validate(event_data)
+        if len(event_data) > 0:
+            team_name_map = {
+                event_metadata.home_team_id: event_metadata.home_team_name,
+                event_metadata.away_team_id: event_metadata.away_team_name,
+            }
+            event_data["team_name"] = event_data["team_id"].map(team_name_map)
+        if _check_game_class_:
+            EventDataSchema.validate(event_data)
         uses_event_data = True
 
-    event_precise_timestamps = {
-        "opta": True,
-        "metrica": True,
-        "instat": False,
-        "scisports": False,
-        "sportec": True,
-        "dfl": True,
-        "statsbomb": False,
-    }
-
     LOGGER.info(
-        "Succesfully passed input checks. Attempting to load the base "
-        "data (get_game())."
+        "Succesfully passed input checks. Attempting to load the base data (get_game())."
     )
 
     # Check if tracking data should be loaded
@@ -191,11 +214,13 @@ def get_game(
             tracking_metadata_loc=tracking_metadata_loc,
             tracking_data_provider=tracking_data_provider,
             verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
         if not uses_event_data:
             databallpy_events = {}
-
-        TrackingDataSchema.validate(tracking_data)
+        if _check_game_class_:
+            TrackingDataSchema.validate(tracking_data)
         uses_tracking_data = True
 
     if not uses_event_data and not uses_tracking_data:
@@ -326,7 +351,7 @@ def get_game(
 
 
 @logging_wrapper(__file__)
-def get_saved_game(name: str, path: str = os.getcwd()) -> Game:
+def get_saved_game(name: str, path: str | None = None) -> Game:
     """Function to load a saved game object
 
     Args:
@@ -341,12 +366,13 @@ def get_saved_game(name: str, path: str = os.getcwd()) -> Game:
             - away_players.parquet
             - home_players.parquet
             - metadata.json
-       path (str, optional): path of directory where game is saved. Defaults
-        to current working directory.
+       path (str, optional): path of directory where game is saved. If not
+        provided, the current working directory will be used.
 
     Returns:
         Game: All information about the game
     """
+    path = path if path is not None else os.getcwd()
 
     full_path = os.path.join(path, name)
     if not os.path.isdir(full_path):
@@ -403,6 +429,8 @@ def load_tracking_data(
     tracking_metadata_loc: str,
     tracking_data_provider: str,
     verbose: bool = True,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the tracking data of a game
 
@@ -411,9 +439,17 @@ def load_tracking_data(
         tracking_metadata_loc (str): location of the tracking metadata file
         tracking_data_provider (str): provider of the tracking data
         verbose (bool, optional): whether or not to print info about progress
+        period_id (int | list[int], optional): only load the frames of these
+            period(s). Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the frames between the first
+            and the last frame, inclusive. Defaults to None (load all frames).
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the game
+
+    Note:
+        The metadata always describes the full game, also when only a part of the
+        tracking data is loaded.
     """
 
     if tracking_data_provider not in ["tracab", "metrica", "inmotio", "sportec", "dfl"]:
@@ -425,19 +461,27 @@ def load_tracking_data(
     # Get tracking data and tracking metadata
     if tracking_data_provider in ["tracab", "sportec", "dfl"]:
         tracking_data, tracking_metadata = load_tracab_tracking_data(
-            tracking_data_loc, tracking_metadata_loc, verbose=verbose
+            tracking_data_loc,
+            tracking_metadata_loc,
+            verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
     elif tracking_data_provider == "metrica":
         tracking_data, tracking_metadata = load_metrica_tracking_data(
             tracking_data_loc=tracking_data_loc,
             metadata_loc=tracking_metadata_loc,
             verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
     elif tracking_data_provider == "inmotio":
         tracking_data, tracking_metadata = load_inmotio_tracking_data(
             tracking_data_loc=tracking_data_loc,
             metadata_loc=tracking_metadata_loc,
             verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
     return tracking_data, tracking_metadata
 
@@ -466,12 +510,14 @@ def load_event_data(
 
     if event_data_provider not in [
         "opta",
+        "statsperform",
         "metrica",
         "instat",
         "scisports",
         "statsbomb",
         "sportec",
         "dfl",
+        "fifa",
     ]:
         raise ValueError(
             f"We do not support '{event_data_provider}' as event data provider yet, "
@@ -480,7 +526,7 @@ def load_event_data(
 
     # Get event data and event metadata
     databallpy_events = {}
-    if event_data_provider == "opta":
+    if event_data_provider in ("opta", "statsperform"):
         event_data, event_metadata, databallpy_events = load_opta_event_data(
             f7_loc=event_metadata_loc, f24_loc=event_data_loc
         )
@@ -506,6 +552,11 @@ def load_event_data(
         event_data, event_metadata, databallpy_events = load_sportec_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
+    elif event_data_provider == "fifa":
+        event_data, event_metadata, databallpy_events = load_fifa_event_data(
+            events_loc=event_data_loc,
+            metadata_loc=event_metadata_loc,
+        )
     return event_data, event_metadata, databallpy_events
 
 
@@ -519,7 +570,7 @@ def get_open_game(
     """Function to load a game object from an open datasource
 
     Args:
-        provider (str, optional): What provider to get the open data from. Defaults to "dfl". Options are ["metrica", "dfl", "sportec", "tracab"]
+        provider (str, optional): What provider to get the open data from. Defaults to "sportec". Options are ["metrica", "dfl", "sportec", "tracab"]
         game_id (str, optional): The Game id of the open game. Defaults to 'J03WMX',
         verbose (bool, optional): Whether or not to print info about progress
         in the terminal, Defaults to True.
@@ -534,27 +585,32 @@ def get_open_game(
             f"Open game provider should be in {provider_options}, not {provider}."
         )
 
+    if use_cache:
+        game = try_cache(provider, game_id)
+        if game is not None:
+            return game
+
+    # no cache available or used
     if provider == "metrica":
-        save_path = os.path.join("datasets", "metrica")
-        if use_cache and os.path.exists(save_path):
-            return get_saved_game(save_path)
+        cache_path = resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR")) / "metrica"
         tracking_data, metadata = load_metrica_open_tracking_data(verbose=verbose)
         event_data, ed_metadata, databallpy_events = load_metrica_open_event_data()
 
-    elif provider in ["dfl", "tracab", "sportec"]:
-        save_path = os.path.join("datasets", "IDSSE", game_id)
-        if use_cache and os.path.exists(save_path):
-            return get_saved_game(save_path)
-
+    else:  # ["dfl", "tracab", "sportec"]:
+        cache_path = (
+            resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR")) / "IDSSE" / game_id
+        )
         tracking_data, metadata = load_sportec_open_tracking_data(
-            game_id=game_id,
-            verbose=verbose,
+            game_id=game_id, verbose=verbose, cache_path=cache_path
         )
         event_data, ed_metadata, databallpy_events = load_sportec_open_event_data(
-            game_id=game_id
+            game_id=game_id, cache_path=cache_path
         )
-        os.remove(os.path.join("datasets", "IDSSE", game_id, "tracking_data_temp.xml"))
-        os.remove(os.path.join("datasets", "IDSSE", game_id, "metadata_temp.xml"))
+
+        os.remove(str(cache_path / "tracking_data_temp.xml"))
+        os.remove(str(cache_path / "metadata_temp.xml"))
+        os.remove(str(cache_path / "event_data.xml"))
+        os.remove(str(cache_path / "metadata.xml"))
 
     periods_cols = ed_metadata.periods_frames.columns.difference(
         metadata.periods_frames.columns
@@ -567,6 +623,13 @@ def get_open_game(
         ),
         axis=1,
     )
+
+    if len(event_data) > 0:
+        team_name_map = {
+            ed_metadata.home_team_id: ed_metadata.home_team_name,
+            ed_metadata.away_team_id: ed_metadata.away_team_name,
+        }
+        event_data["team_name"] = event_data["team_id"].map(team_name_map)
 
     shot_events = (
         create_event_attributes_dataframe(databallpy_events["shot_events"])
@@ -611,8 +674,37 @@ def get_open_game(
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
     )
 
-    game.save_game(save_path, verbose=False, allow_overwrite=True)
+    game.save_game(str(cache_path), verbose=False, allow_overwrite=True)
     return game
+
+
+def try_cache(provider: str, game_id: str) -> Game | None:
+    cache_path = resolve_cache_dir(os.getenv("DATABALLPY_CACHE_DIR"))
+    old_cache_path = (Path(__file__).parent.parent.parent / "datasets").resolve()
+
+    cache_path = (
+        cache_path / "metrica"
+        if provider == "metrica"
+        else cache_path / "IDSSE" / game_id
+    )
+    old_cache_path = (
+        old_cache_path / "metrica"
+        if provider == "metrica"
+        else old_cache_path / "IDSSE" / game_id
+    )
+
+    if not cache_path.is_dir() and old_cache_path.is_dir():
+        os.makedirs(cache_path, exist_ok=True)
+        for file in old_cache_path.iterdir():
+            if file.is_file():
+                shutil.copy(file, cache_path)
+
+    if cache_path.is_dir():
+        try:
+            return get_saved_game(cache_path)
+        except FileNotFoundError:
+            return None
+    return None
 
 
 @logging_wrapper(__file__)
@@ -768,22 +860,197 @@ def merge_player_info(
     return home_players, away_players
 
 
-@deprecated(
-    "`get_match` is deprecated and will be removed in version 0.8.0. Please use `get_game` instead"
-)
-def get_match(*args, **kwargs):
-    return get_game(*args, **kwargs)
+def get_game_from_kloppy(
+    tracking_dataset: "TrackingDataset" = None,
+    event_dataset: "EventDataset" = None,
+    check_game_inputs: bool = True,
+) -> Game:
+    """
+    Function to get all information of a game given kloppy dataset(s)
 
+    Args:
+        tracking_dataset (kloppy.domain.TrackingDataset, optional): location of the tracking data.
+            Defaults to None.
+        event_dataset (kloppy.domain.EventDataset, optional): location of the event data.
+            Defaults to None.
+        check_game_inputs (bool) : whether to check the Game object inputs for validation of the data for
+            a workable DataBallPy Game object. Set to False to skip validation checks. Defaults to True.
+    Returns:
+        (Game): a game object with all information available of the game.
+    """
+    LOGGER.info(
+        "Trying to load a new game in get_game();\n\tTracking data\n\tEvent data"
+    )
+    try:
+        from kloppy.domain import BallState, EventDataset, Orientation, TrackingDataset
+    except ImportError:
+        raise ImportError(
+            "Seems like you don't have kloppy installed. Please"
+            " install it using: pip install kloppy>=3.18.0"
+        )
 
-@deprecated(
-    "`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead"
-)
-def get_open_match(*args, **kwargs):
-    return get_open_game(*args, **kwargs)
+    if tracking_dataset is None and event_dataset is None:
+        raise ValueError(
+            "Please provide at least one of 'tracking_dataset' or 'event_dataset'"
+        )
 
+    if tracking_dataset is not None and not isinstance(
+        tracking_dataset, TrackingDataset
+    ):
+        raise TypeError(
+            "'tracking_dataset' should be of type kloppy.domain.TrackingDataset"
+        )
 
-@deprecated(
-    "`get_saved_match` is deprecated and will be removed in version 0.8.0. Please use `get_saved_game` instead"
-)
-def get_saved_match(*args, **kwargs):
-    return get_saved_game(*args, **kwargs)
+    if event_dataset is not None and not isinstance(event_dataset, EventDataset):
+        raise TypeError("'event_dataset' should be of type kloppy.domain.EventDataset")
+
+    if tracking_dataset is not None and event_dataset is not None:
+        if (
+            not tracking_dataset.metadata.pitch_dimensions.pitch_length
+            == event_dataset.metadata.pitch_dimensions.pitch_length
+        ) or (
+            not tracking_dataset.metadata.pitch_dimensions.pitch_width
+            == event_dataset.metadata.pitch_dimensions.pitch_width
+        ):
+            raise ValueError(
+                "kloppy.domain.TrackingDataset and kloppy.domain.EventDataset dimensions aren't equal. To fix this apply a custom coordinate system with the same pitch_length and pitch_dimensions to one of your kloppy Datasets."
+            )
+
+        if tracking_dataset.metadata.provider != event_dataset.metadata.provider:
+            tracking_dataset.metadata.teams[0].name = event_dataset.metadata.teams[
+                0
+            ].name
+            tracking_dataset.metadata.teams[1].name = event_dataset.metadata.teams[
+                1
+            ].name
+            tracking_dataset.metadata.teams[0].team_id = event_dataset.metadata.teams[
+                0
+            ].team_id
+            tracking_dataset.metadata.teams[1].team_id = event_dataset.metadata.teams[
+                1
+            ].team_id
+
+        if tracking_dataset.metadata.date != event_dataset.metadata.date:
+            warnings.warn(
+                "Game dates in kloppy TrackingDataset and EventDataset are not equal. Setting both to pd.Timestamp('1975-01-01').",
+                UserWarning,
+            )
+            tracking_dataset.metadata.date = event_dataset.metadata.date = pd.Timestamp(
+                "1975-01-01", tz="UTC"
+            )
+
+    uses_tracking_data = False
+    uses_event_data = False
+
+    periods = periods_from_kloppy(event_dataset, tracking_dataset)
+
+    if tracking_dataset is not None:
+        tracking_dataset = tracking_dataset.transform(
+            to_coordinate_system="secondspectrum",
+            to_orientation=Orientation.STATIC_HOME_AWAY,
+        )
+        if (
+            all([x.ball_state == BallState.ALIVE for x in tracking_dataset])
+            and check_game_inputs
+        ):
+            warnings.warn(
+                "All frames in 'tracking_dataset' are 'ALIVE', databallpy expects 'DEAD' frames as well (e.g. for more accurate event synchronization). Set `only_alive=False` in your kloppy `.load_tracking()` call to include 'DEAD' frames.",
+                UserWarning,
+            )
+
+        tracking_data: TrackingData = convert_kloppy_tracking_dataset(
+            tracking_dataset, periods
+        )
+
+        TrackingDataSchema.validate(tracking_data)
+        uses_tracking_data = True
+    else:
+        tracking_data = TrackingData()
+
+    if event_dataset is not None:
+        event_dataset = event_dataset.transform(
+            to_coordinate_system="secondspectrum",
+            to_orientation=Orientation.STATIC_HOME_AWAY,
+        )
+
+        event_data: EventData = convert_kloppy_event_dataset(event_dataset, periods)
+        EventDataSchema.validate(event_data)
+        uses_event_data = True
+    else:
+        event_data = EventData()
+
+    pitch_dimensions = (
+        float(tracking_dataset.metadata.pitch_dimensions.pitch_length)
+        if uses_tracking_data
+        else float(event_dataset.metadata.pitch_dimensions.pitch_length),
+        float(tracking_dataset.metadata.pitch_dimensions.pitch_width)
+        if uses_tracking_data
+        else float(event_dataset.metadata.pitch_dimensions.pitch_width),
+    )
+
+    home_players, away_players = players_from_kloppy(
+        event_dataset if uses_event_data else tracking_dataset
+    )
+
+    home_team = (
+        tracking_dataset.metadata.teams[0]
+        if uses_tracking_data
+        else event_dataset.metadata.teams[0]
+    )
+    away_team = (
+        tracking_dataset.metadata.teams[1]
+        if uses_tracking_data
+        else event_dataset.metadata.teams[1]
+    )
+
+    home_score = (
+        (
+            MISSING_INT
+            if event_dataset.metadata.score is None
+            or event_dataset.metadata.score.home is None
+            else event_dataset.metadata.score.home
+        )
+        if uses_event_data
+        else MISSING_INT
+    )
+    away_score = (
+        (
+            MISSING_INT
+            if event_dataset.metadata.score is None
+            or event_dataset.metadata.score.away is None
+            else event_dataset.metadata.score.away
+        )
+        if uses_event_data
+        else MISSING_INT
+    )
+
+    return Game(
+        tracking_data=tracking_data,
+        event_data=event_data,
+        pitch_dimensions=pitch_dimensions,
+        periods=periods,
+        home_team_id=home_team.team_id,
+        home_team_name=str(home_team.name),
+        home_players=home_players,
+        home_score=home_score,
+        home_formation=None,
+        away_team_id=away_team.team_id,
+        away_team_name=str(away_team.name),
+        away_players=away_players,
+        away_formation=None,
+        away_score=away_score,
+        country=None,
+        shot_events=event_data[event_data["databallpy_event"] == "shot"]
+        if uses_event_data
+        else pd.DataFrame(),
+        dribble_events=event_data[event_data["databallpy_event"] == "dribble"]
+        if uses_event_data
+        else pd.DataFrame(),
+        pass_events=event_data[event_data["databallpy_event"] == "pass"]
+        if uses_event_data
+        else pd.DataFrame(),
+        allow_synchronise_tracking_and_event_data=True
+        if uses_tracking_data and uses_event_data
+        else False,
+        _check_inputs_=check_game_inputs,
+    )

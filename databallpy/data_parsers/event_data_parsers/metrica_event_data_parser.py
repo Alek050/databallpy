@@ -1,13 +1,14 @@
 import datetime as dt
+import html
 import io
 import json
 import os
+import re
 
 import chardet
 import numpy as np
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
@@ -18,7 +19,7 @@ from databallpy.data_parsers.metrica_metadata_parser import (
     _get_td_channels,
     _update_metadata,
 )
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent, TackleEvent
+from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import _to_float, _to_int
@@ -34,7 +35,7 @@ metrica_databallpy_map = {
 @logging_wrapper(__file__)
 def load_metrica_event_data(
     event_data_loc: str, metadata_loc: str
-) -> tuple[pd.DataFrame, Metadata]:
+) -> tuple[pd.DataFrame, Metadata, dict]:
     """Function to load the metrica event data.
 
     Args:
@@ -46,7 +47,7 @@ def load_metrica_event_data(
         type (str)
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: The event data and the metadata
+        Tuple[pd.DataFrame, Metadata, dict]: The event data and the metadata, and databallpy events
     """
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
         if not os.path.exists(metadata_loc):
@@ -109,11 +110,11 @@ def load_metrica_event_data(
 
 
 @logging_wrapper(__file__)
-def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata]:
+def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata, dict]:
     """Function to load the open event data of metrica
 
     Returns:
-        Tuple[pd.DataFrame, Metadata]: event data and metadata of the game
+        Tuple[pd.DataFrame, Metadata]: event data and metadata of the game and databallpy events
     """
     metadata_link = "https://raw.githubusercontent.com/metrica-sports/sample-data\
         /master/data/Sample_Game_3/Sample_Game_3_metadata.xml"
@@ -143,10 +144,11 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
         with open(event_data_loc, "r", encoding=encoding) as file:
             lines = file.readlines()
         raw_data = "".join(str(i) for i in lines)
-        soup = BeautifulSoup(raw_data, "html.parser")
+        events_dict = json.loads(html.unescape(re.sub(r"<[^>]+>", "", raw_data)))
     else:
-        soup = BeautifulSoup(event_data_loc.strip(), "html.parser")
-    events_dict = json.loads(soup.text)
+        events_dict = json.loads(
+            html.unescape(re.sub(r"<[^>]+>", "", event_data_loc.strip()))
+        )
 
     result_dict = {
         "event_id": [],
@@ -334,27 +336,10 @@ def _get_databallpy_events(
         else {}
     )
 
-    tackle_mask = event_data["databallpy_event"] == "tackle"
-    tackle_events = (
-        {
-            tackle.event_id: tackle
-            for tackle in event_data[tackle_mask].apply(
-                _get_tackle_event,
-                pitch_dimensions=pitch_dimensions,
-                home_team_id=home_team_id,
-                players=all_players,
-                axis=1,
-            )
-        }
-        if tackle_mask.sum() > 0
-        else {}
-    )
-
     databallpy_events = {
         "shot_events": shot_events,
         "pass_events": pass_events,
         "dribble_events": dribble_events,
-        "other_events": tackle_events,
     }
     return databallpy_events
 
@@ -485,40 +470,4 @@ def _get_dribble_event(
         _xt=np.nan,
         duel_type="unspecified",
         with_opponent=False,
-    )
-
-
-def _get_tackle_event(
-    row: pd.Series,
-    pitch_dimensions: tuple[float, float],
-    home_team_id: int,
-    players: pd.DataFrame,
-) -> TackleEvent:
-    """Function to return a DribbleEvent object from a row of the metrica
-     event data.
-
-    Args:
-        row (pd.Series): row of the metrica event data with a dribble event
-        pitch_dimensions (tuple): dimensions of the pitch
-        home_team_id (int): id of the home team
-        players: pd.DataFrame: Metadata of the players
-
-    Returns:
-        TackleEvent: TackleEvent object
-    """
-    return TackleEvent(
-        event_id=row.event_id,
-        period_id=row.period_id,
-        minutes=row.minutes,
-        seconds=row.seconds,
-        datetime=row.datetime,
-        start_x=row.start_x,
-        start_y=row.start_y,
-        team_id=row.team_id,
-        team_side="home" if row.team_id == home_team_id else "away",
-        pitch_size=pitch_dimensions,
-        player_id=row.player_id,
-        jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.is_successful),
-        related_event_id=MISSING_INT,
     )

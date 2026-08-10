@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     defaults:
       run:
         shell: bash
@@ -47,10 +47,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Install ffmpeg on Windows
+      - name: Setup FFmpeg on Windows
         if: runner.os == 'Windows'
-        run: |
-          choco install ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          ffmpeg-version: release
+          architecture: x64
+          linking-type: static
 
       - name: Install poetry
         uses: snok/install-poetry@v1
@@ -66,11 +69,13 @@ jobs:
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install packages
-        run: poetry install --with docs,developing
+        run: poetry install --all-extras --with docs,developing
 
       - name: ruff linting
         run: poetry run ruff format --check tests/ databallpy/
 
+      - name: Set Matplotlib backend
+        run: echo "MPLBACKEND=Agg" >> $GITHUB_ENV
 
       - name: Test with pytest
         run: poetry run python -m pytest tests --pythonwarnings=once --cov-report=term-missing --cov-report=xml --cov=databallpy --cov-config=.coveragerc

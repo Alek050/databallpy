@@ -45,6 +45,22 @@ class TestMetricaTrackingDataParser(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             load_metrica_tracking_data(self.td_loc, self.md_loc + ".xml", verbose=False)
 
+    def test_load_metrica_tracking_data_selection(self):
+        full_td, _ = load_metrica_tracking_data(self.td_loc, self.md_loc, verbose=False)
+
+        res_td, res_md = load_metrica_tracking_data(
+            self.td_loc, self.md_loc, verbose=False, period_id=2
+        )
+        expected_td = full_td[full_td["period_id"] == 2].reset_index(drop=True)
+        pd.testing.assert_frame_equal(res_td, expected_td)
+        assert res_md == MD_METRICA_TD
+
+        res_td, _ = load_metrica_tracking_data(
+            self.td_loc, self.md_loc, verbose=False, frames=(3, 5)
+        )
+        expected_td = full_td[full_td["frame"].between(3, 5)].reset_index(drop=True)
+        pd.testing.assert_frame_equal(res_td, expected_td)
+
     @patch(
         "requests.get",
         side_effect=[Mock(text=TD_METRICA_RAW), Mock(text=MD_METRICA_RAW)],

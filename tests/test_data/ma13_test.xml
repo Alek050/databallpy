@@ -1,0 +1,79 @@
+<?xml version="1.0" ?>
+<possessionEvents xmlns:soccerdata="http://www.performgroup.com/schema/soccerdata">
+	<liveData>
+		<events>
+			<event id="9000000001" eventId="1" typeId="34" periodId="16" timeMin="0" timeSec="0" contestantId="ateammaid02" outcome="1" x="0.0" y="0.0" timeStamp="2023-01-22T10:28:32.117Z" />
+			<event id="9000000002" eventId="2" typeId="32" periodId="1" timeMin="0" timeSec="0" contestantId="hteammaid01" outcome="1" x="0.0" y="0.0" timeStamp="2023-01-22T11:18:32.152Z">
+				<qualifier qualifierId="127" value="Left to Right" />
+			</event>
+			<event id="9000000003" eventId="2" typeId="32" periodId="1" timeMin="0" timeSec="0" contestantId="ateammaid02" outcome="1" x="0.0" y="0.0" timeStamp="2023-01-22T11:18:32.152Z">
+				<qualifier qualifierId="127" value="Right to Left" />
+			</event>
+			<event id="9000000004" eventId="3" typeId="1" periodId="1" timeMin="0" timeSec="1" contestantId="hteammaid01" playerId="hplayermaid01" outcome="1" x="49.7" y="50.1" timeStamp="2023-01-22T11:18:33.637Z">
+				<qualifier qualifierId="279" value="S" />
+				<qualifier qualifierId="213" value="3.4" />
+				<qualifier qualifierId="56" value="Back" />
+				<qualifier qualifierId="212" value="22.7" />
+				<qualifier qualifierId="140" value="29.1" />
+			</event>
+			<event id="9000000005" eventId="22" typeId="1" periodId="1" timeMin="0" timeSec="4" contestantId="ateammaid02" playerId="aplayermaid01" outcome="0" x="31.6" y="40.7" timeStamp="2023-01-22T11:18:36.207Z">
+				<qualifier qualifierId="56" value="Center" />
+				<qualifier qualifierId="140" value="70.6" />
+				<qualifier qualifierId="155" />
+				<qualifier qualifierId="141" value="57.5" />
+				<qualifier qualifierId="1" />
+				<qualifier qualifierId="213" value="0.3" />
+				<qualifier qualifierId="212" value="42.5" />
+			</event>
+			<event id="9000000006" eventId="5" typeId="100" periodId="1" timeMin="0" timeSec="6" contestantId="hteammaid01" playerId="hplayermaid02" outcome="0" x="31.0" y="44.3" timeStamp="2023-01-22T11:18:39.109Z">
+				<qualifier qualifierId="140" value="41.2" />
+				<qualifier qualifierId="141" value="65.0" />
+				<qualifier qualifierId="56" value="Back" />
+				<qualifier qualifierId="212" value="17.7" />
+				<qualifier qualifierId="3" />
+				<qualifier qualifierId="213" value="0.9" />
+			</event>
+			<event id="9000000007" eventId="6" typeId="43" periodId="2" timeMin="30" timeSec="9" contestantId="ateammaid02" playerId="aplayermaid01" outcome="1" x="0.0" y="0.0" timeStamp="2023-01-22T11:18:41.615Z">
+				<qualifier qualifierId="212" value="2.5" />
+				<qualifier qualifierId="56" value="Center" />
+				<qualifier qualifierId="213" value="4.9" />
+				<qualifier qualifierId="140" value="71.3" />
+				<qualifier qualifierId="141" value="24.1" />
+				<qualifier qualifierId="144" value="1" />
+			</event>
+			<event id="9000000008" eventId="7" typeId="3" periodId="2" timeMin="30" timeSec="10" contestantId="hteammaid01" playerId="hplayermaid02" outcome="0" x="65.7" y="23.2" timeStamp="2023-01-22T11:18:43.119Z">
+				<qualifier qualifierId="464" />
+				<qualifier qualifierId="286" />
+				<qualifier qualifierId="233" value="4" />
+				<qualifier qualifierId="56" value="Center" />
+			</event>
+			<event id="9000000009" eventId="8" typeId="7" periodId="2" timeMin="31" timeSec="10" contestantId="ateammaid02" playerId="aplayermaid01" outcome="1" x="34.3" y="76.8" timeStamp="2023-01-22T11:18:43.120Z">
+				<qualifier qualifierId="233" value="6" />
+				<qualifier qualifierId="383" />
+				<qualifier qualifierId="56" value="Back" />
+				<qualifier qualifierId="285" />
+			</event>
+			<event id="9000000010" eventId="9" typeId="16" periodId="1" timeMin="9" timeSec="17" contestantId="hteammaid01" playerId="hplayermaid02" outcome="1" x="9.5" y="52.8" timeStamp="2023-01-22T11:18:44.120Z">
+				<qualifier qualifierId="25" />
+				<qualifier qualifierId="102" value="54.3" />
+				<qualifier qualifierId="103" value="18.4" />
+				<qualifier qualifierId="15" />
+				<qualifier qualifierId="280" value="OWN_GOAL" />
+				<qualifier qualifierId="56" value="Center" />
+			</event>
+			<event id="9000000011" eventId="10" typeId="16" periodId="1" timeMin="9" timeSec="17" contestantId="ateammaid02" playerId="aplayermaid01" outcome="1" x="9.5" y="52.8" timeStamp="2023-01-22T11:18:44.120Z">
+				<qualifier qualifierId="55" value="22" />
+				<qualifier qualifierId="22" />
+				<qualifier qualifierId="102" value="54.3" />
+				<qualifier qualifierId="103" value="18.4" />
+				<qualifier qualifierId="15" />
+				<qualifier qualifierId="56" value="Center" />
+			</event>
+			<event id="9000000012" eventId="11" typeId="15" periodId="1" timeMin="9" timeSec="17" contestantId="ateammaid02" playerId="aplayermaid01" outcome="1" x="9.5" y="52.8" timeStamp="2023-01-22T11:18:44.120Z">
+				<qualifier qualifierId="82" />
+				<qualifier qualifierId="15" />
+				<qualifier qualifierId="56" value="Center" />
+			</event>
+		</events>
+	</liveData>
+</possessionEvents>

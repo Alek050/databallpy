@@ -1,0 +1,26 @@
+{
+  "version": "v1.1",
+  "competition_name": "TEST COMPETITION",
+  "match_id": 99999,
+  "home_team_id": 100,
+  "home_team_name": "HOME TEAM",
+  "away_team_id": 200,
+  "away_team_name": "AWAY TEAM",
+  "city": "AMSTERDAM",
+  "country": "Netherlands",
+  "kickoff_utc": "2023-01-01T14:00:00Z",
+  "phases": [
+    {"phase_id": 1, "phase_start": "00:00:00", "phase_end": "00:45:00"},
+    {"phase_id": 2, "phase_start": "01:00:00", "phase_end": "01:45:00"}
+  ],
+  "home_team_players": [
+    {"player_id": 1001, "player_name": "HOME KEEPER",  "player_shirt_number": 1},
+    {"player_id": 1002, "player_name": "HOME STRIKER", "player_shirt_number": 9}
+  ],
+  "away_team_players": [
+    {"player_id": 2001, "player_name": "AWAY KEEPER",  "player_shirt_number": 1},
+    {"player_id": 2002, "player_name": "AWAY STRIKER", "player_shirt_number": 9}
+  ],
+  "home_formation": "4231",
+  "away_formation": "442"
+}

@@ -1,10 +1,9 @@
 import warnings
+import xml.etree.ElementTree as ET
 
-import bs4
 import chardet
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
@@ -13,7 +12,6 @@ from databallpy.events import (
     IndividualCloseToBallEvent,
     PassEvent,
     ShotEvent,
-    TackleEvent,
 )
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
@@ -179,6 +177,62 @@ RELATED_EVENT_QUALIFIER = 55
 OPPOSITE_RELATED_EVENT_ID = 233  # used for dribbles
 
 
+def _maybe_int(value: str | None) -> int | str | None:
+    """Cast to int when the value is purely numeric (legacy Opta f7/f24 ids); keep it
+    as a string otherwise (Opta MA2/MA13 files use opaque alphanumeric ids).
+
+    Args:
+        value (str | None): the raw id string from the xml.
+
+    Returns:
+        int | str | None: the id, cast to int when possible.
+    """
+    if value is not None and value.lstrip("-").isdigit():
+        return int(value)
+    return value
+
+
+def _ma13_event_to_f24_element(event: ET.Element) -> ET.Element:
+    """Translate an MA13 <event> element (+ its <qualifier> children) into a synthetic
+    F24-shaped <Event>/<Q> element, so the existing F24 parsing helpers can be reused
+    unchanged for MA13 data. Note: MA13's small `eventId` plays the role of legacy
+    F24's `event_id` (it is what qualifier cross-references point to), while MA13's
+    large `id` plays the role of legacy F24's `id` - this is the reverse of what the
+    attribute names suggest.
+
+    Args:
+        event (ET.Element): event element from the ma13.xml file.
+
+    Returns:
+        ET.Element: a synthetic element with F24 attribute/tag naming.
+    """
+    attrib = {
+        "id": event.get("id", ""),
+        "event_id": event.get("eventId", ""),
+        "type_id": event.get("typeId", ""),
+        "period_id": event.get("periodId", ""),
+        "min": event.get("timeMin", ""),
+        "sec": event.get("timeSec", ""),
+        "team_id": event.get("contestantId", ""),
+        "outcome": event.get("outcome", "0"),
+        "x": event.get("x", ""),
+        "y": event.get("y", ""),
+        "timestamp": event.get("timeStamp", ""),
+    }
+    player_id = event.get("playerId")
+    if player_id is not None:
+        attrib["player_id"] = player_id
+
+    f24_event = ET.Element("Event", attrib=attrib)
+    for qualifier in event.findall("qualifier"):
+        q_attrib = {"qualifier_id": qualifier.get("qualifierId", "")}
+        value = qualifier.get("value")
+        if value is not None:
+            q_attrib["value"] = value
+        ET.SubElement(f24_event, "Q", attrib=q_attrib)
+    return f24_event
+
+
 @logging_wrapper(__file__)
 def load_opta_event_data(
     f7_loc: str, f24_loc: str, pitch_dimensions: list = [106.0, 68.0]
@@ -191,9 +245,16 @@ def load_opta_event_data(
     that the home team is represented as playing from left to right for the entire
     game, and the away team is represented as playing from right to left.
 
+    Also accepts Opta's newer MA2 (metadata) / MA13 (event data) files in place of
+    f7/f24 - the format is auto-detected from the xml root tag, so f7_loc/f24_loc can
+    point to either an f7.xml + f24.xml pair or an ma2.xml + ma13.xml pair. This
+    function is used for both the "opta" and "statsperform" event_data_provider
+    values in get_game() (Opta was acquired by StatsPerform); the two names are
+    interchangeable.
+
     Args:
-        f7_loc (str): location of the f7.xml file.
-        f24_loc (str): location of the f24.xml file.
+        f7_loc (str): location of the f7.xml (or ma2.xml) file.
+        f24_loc (str): location of the f24.xml (or ma13.xml) file.
         pitch_dimensions (list, optional): the length and width of the pitch in meters
 
     Returns:
@@ -279,10 +340,11 @@ logging_wrapper(__file__)
 
 
 def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
-    """Function to load metadata from the f7.xml opta file
+    """Function to load metadata from the f7.xml opta file. Also accepts an ma2.xml
+    file (Opta's newer metadata format), auto-detected from the xml root tag.
 
     Args:
-        f7_loc (str): location of the f7.xml opta file
+        f7_loc (str): location of the f7.xml (or ma2.xml) opta file
         pitch_dimensions (list): the length and width of the pitch in meters
 
     Returns:
@@ -292,52 +354,52 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
         encoding = chardet.detect(f.read())["encoding"]
     with open(f7_loc, "r", encoding=encoding) as file:
         lines = file.read()
-    soup = BeautifulSoup(lines, "xml")
-
-    if len(soup.find_all("SoccerDocument")) > 1:
-        # Multiple games found in f7.xml file
-        # Eliminate the rest of the `SoccerDocument` elements
-        for game in soup.find_all("SoccerDocument")[1:]:
-            game.decompose()
+    root = ET.fromstring(lines)
+    if root.tag == "matchStats":
+        return _load_metadata_ma2(root, pitch_dimensions)
+    soccer_doc = root.find(".//SoccerDocument")
 
     # Obtain game id
-    game_id = int(soup.find("SoccerDocument").attrs["uID"][1:])
-    country = soup.find("Country").text
+    game_id = int(soccer_doc.get("uID")[1:])
+    country = soccer_doc.find(".//Country").text
     # Obtain game start and end of period datetime
     periods = {
         "period_id": [1, 2, 3, 4, 5],
         "start_datetime_ed": [],
         "end_datetime_ed": [],
     }
-    start_period_1 = soup.find("Stat", attrs={"Type": "first_half_start"})
-    end_period_1 = soup.find("Stat", attrs={"Type": "first_half_stop"})
-    start_period_2 = soup.find("Stat", attrs={"Type": "second_half_start"})
-    end_period_2 = soup.find("Stat", attrs={"Type": "second_half_stop"})
-    if not all([start_period_1, end_period_1, start_period_2, end_period_2]):
-        if not soup.find("Date"):
+    start_period_1 = soccer_doc.find('.//Stat[@Type="first_half_start"]')
+    end_period_1 = soccer_doc.find('.//Stat[@Type="first_half_stop"]')
+    start_period_2 = soccer_doc.find('.//Stat[@Type="second_half_start"]')
+    end_period_2 = soccer_doc.find('.//Stat[@Type="second_half_stop"]')
+    if not all(
+        x is not None
+        for x in [start_period_1, end_period_1, start_period_2, end_period_2]
+    ):
+        if soccer_doc.find(".//Date") is None:
             raise ValueError(
                 "The f7.xml opta file does not contain the start "
                 "and end of period datetime"
             )
         else:
-            start_date = pd.to_datetime(soup.find("Date").text)
+            start_date = pd.to_datetime(soccer_doc.find(".//Date").text)
             warnings.warn(
                 message="Using estimated date for event data since specific information"
                 " is not provided in the f7 metadata. Estimated start of game"
                 f" = {start_date}",
                 category=DataBallPyWarning,
             )
-            start_date = pd.to_datetime(soup.find("Date").text, utc=True)
+            start_date = pd.to_datetime(soccer_doc.find(".//Date").text, utc=True)
             start_period_1 = start_date
             start_period_2 = start_date + pd.to_timedelta(60, unit="minutes")
             end_period_1 = start_date + pd.to_timedelta(45, unit="minutes")
             end_period_2 = start_date + pd.to_timedelta(105, unit="minutes")
 
     else:
-        start_period_1 = pd.to_datetime(start_period_1.contents[0], utc=True)
-        start_period_2 = pd.to_datetime(start_period_2.contents[0], utc=True)
-        end_period_1 = pd.to_datetime(end_period_1.contents[0], utc=True)
-        end_period_2 = pd.to_datetime(end_period_2.contents[0], utc=True)
+        start_period_1 = pd.to_datetime(start_period_1.text, utc=True)
+        start_period_2 = pd.to_datetime(start_period_2.text, utc=True)
+        end_period_1 = pd.to_datetime(end_period_1.text, utc=True)
+        end_period_2 = pd.to_datetime(end_period_2.text, utc=True)
 
     for start, end in zip(
         [start_period_1, start_period_2], [end_period_1, end_period_2]
@@ -359,33 +421,29 @@ def _load_metadata(f7_loc: str, pitch_dimensions: list) -> Metadata:
     )
 
     # Opta has a TeamData and Team attribute in the f7 file
-    team_datas = soup.find_all("TeamData")
-    teams = soup.find_all("Team")
+    team_datas = soccer_doc.findall(".//TeamData")
+    teams = soccer_doc.findall(".//Team")
     teams_info = {}
     teams_player_info = {}
     for team_data, team in zip(team_datas, teams):
         # Team information
-        team_name = team.findChildren("Name")[0].contents[0]
+        team_name = team.find("Name").text
         team_info = {}
         team_info["team_name"] = team_name
-        team_info["side"] = team_data["Side"].lower()
-        team_info["formation"] = team_data["Formation"]
-        team_info["score"] = int(team_data["Score"])
-        team_info["team_id"] = int(team_data["TeamRef"][1:])
+        team_info["side"] = team_data.get("Side").lower()
+        team_info["formation"] = team_data.get("Formation")
+        team_info["score"] = int(team_data.get("Score"))
+        team_info["team_id"] = int(team_data.get("TeamRef")[1:])
         teams_info[team_info["side"]] = team_info
 
         # Player information
-        players_data = [player.attrs for player in team_data.findChildren("MatchPlayer")]
+        players_data = [player.attrib for player in team_data.findall(".//MatchPlayer")]
         players_names = {}
-        for player in team.findChildren("Player"):
-            player_id = int(player.attrs["uID"][1:])
-            first_name = player.contents[1].contents[1].text
-
-            if "Last" in str(player.contents[1].contents[3]):
-                last_name_idx = 3
-            else:
-                last_name_idx = 5
-            last_name = player.contents[1].contents[last_name_idx].contents[0]
+        for player in team.findall(".//Player"):
+            player_id = int(player.get("uID")[1:])
+            person_name = player.find("PersonName")
+            first_name = person_name.find("First").text or ""
+            last_name = person_name.find("Last").text or ""
             if first_name:
                 players_names[str(player_id)] = f"{first_name} {last_name}"
             else:
@@ -461,23 +519,157 @@ def _get_player_info(players_data: list, players_names: dict) -> pd.DataFrame:
     return pd.DataFrame(result_dict)
 
 
+MA2_POSITIONS = {
+    "goalkeeper": "goalkeeper",
+    "defender": "defender",
+    "midfielder": "midfielder",
+    "defensive midfielder": "midfielder",
+    "attacking midfielder": "midfielder",
+    "striker": "forward",
+    "attacker": "forward",
+}
+
+
+def _load_metadata_ma2(root: ET.Element, pitch_dimensions: list) -> Metadata:
+    """Function to load metadata from the ma2.xml opta file (the successor of the
+    f7.xml file).
+
+    Args:
+        root (ET.Element): parsed root element of the ma2.xml opta file
+        pitch_dimensions (list): the length and width of the pitch in meters
+
+    Returns:
+        MetaData: all metadata information of the current game
+    """
+    match_info = root.find(".//matchInfo")
+    live_data = root.find(".//liveData")
+
+    game_id = _maybe_int(match_info.get("id"))
+    country = match_info.find(".//country").text
+
+    match_details = live_data.find("matchDetails")
+    period_elements = {p.get("id"): p for p in match_details.findall(".//period")}
+    periods = {
+        "period_id": [1, 2, 3, 4, 5],
+        "start_datetime_ed": [],
+        "end_datetime_ed": [],
+    }
+    for period_id in periods["period_id"]:
+        period = period_elements.get(str(period_id))
+        if period is not None:
+            periods["start_datetime_ed"].append(
+                pd.to_datetime(period.get("start"), utc=True)
+            )
+            periods["end_datetime_ed"].append(
+                pd.to_datetime(period.get("end"), utc=True)
+            )
+        else:
+            periods["start_datetime_ed"].append(pd.to_datetime("NaT", utc=True))
+            periods["end_datetime_ed"].append(pd.to_datetime("NaT", utc=True))
+
+    periods = pd.DataFrame(periods)
+    periods["start_datetime_ed"] = utc_to_local_datetime(
+        periods["start_datetime_ed"], country
+    )
+    periods["end_datetime_ed"] = utc_to_local_datetime(
+        periods["end_datetime_ed"], country
+    )
+
+    contestants = match_info.findall(".//contestant")
+    contestant_side = {c.get("id"): c.get("position") for c in contestants}
+    contestant_name = {c.get("id"): c.get("name") for c in contestants}
+    scores = match_details.find("scores/total")
+
+    teams_info = {}
+    teams_player_info = {}
+    for line_up in live_data.findall("lineUp"):
+        contestant_id = line_up.get("contestantId")
+        side = contestant_side[contestant_id]
+        teams_info[side] = {
+            "team_id": _maybe_int(contestant_id),
+            "team_name": contestant_name[contestant_id],
+            "formation": line_up.get("formationUsed"),
+            "score": int(scores.get(side)),
+        }
+        teams_player_info[side] = _get_player_info_ma2(line_up.findall("player"))
+
+    return Metadata(
+        game_id=game_id,
+        pitch_dimensions=pitch_dimensions,
+        periods_frames=periods,
+        frame_rate=MISSING_INT,
+        home_team_id=teams_info["home"]["team_id"],
+        home_team_name=str(teams_info["home"]["team_name"]),
+        home_players=teams_player_info["home"],
+        home_score=teams_info["home"]["score"],
+        home_formation=teams_info["home"]["formation"],
+        away_team_id=teams_info["away"]["team_id"],
+        away_team_name=str(teams_info["away"]["team_name"]),
+        away_players=teams_player_info["away"],
+        away_score=teams_info["away"]["score"],
+        away_formation=teams_info["away"]["formation"],
+        country=country,
+    )
+
+
+def _get_player_info_ma2(players: list[ET.Element]) -> pd.DataFrame:
+    """Function to loop over all players of a ma2.xml lineUp and save data in a
+    pd.DataFrame
+
+    Args:
+        players (list[ET.Element]): the <player> elements of one team's lineUp
+
+    Returns:
+        pd.DataFrame: all information of the players
+    """
+    result_dict = {
+        "id": [],
+        "full_name": [],
+        "formation_place": [],
+        "position": [],
+        "starter": [],
+        "shirt_num": [],
+    }
+
+    for player in players:
+        result_dict["id"].append(_maybe_int(player.get("playerId")))
+        result_dict["full_name"].append(
+            f"{player.get('firstName')} {player.get('lastName')}"
+        )
+        formation_place = player.get("formationPlace")
+        result_dict["formation_place"].append(
+            int(formation_place) if formation_place is not None else MISSING_INT
+        )
+        position = player.get("position")
+        position = player.get("subPosition") if position == "Substitute" else position
+        result_dict["position"].append(
+            MA2_POSITIONS.get((position or "").lower(), "unspecified")
+        )
+        result_dict["starter"].append(player.get("position") != "Substitute")
+        result_dict["shirt_num"].append(int(player.get("shirtNumber")))
+
+    return pd.DataFrame(result_dict)
+
+
 logging_wrapper(__file__)
 
 
 def _load_event_data(
     f24_loc: str,
     country: str,
-    away_team_id: int,
+    away_team_id: int | str,
     players: pd.DataFrame,
     pitch_dimensions: list = [106.0, 68.0],
 ) -> tuple[pd.DataFrame, dict[str, dict[str | int, IndividualCloseToBallEvent]]]:
-    """Function to load the f27 .xml, the events of the game.
+    """Function to load the f27 .xml, the events of the game. Also accepts an
+    ma13.xml file (Opta's newer event data format), auto-detected from the xml root
+    tag.
     Note: this function does ignore most qualifiers for now.
 
     Args:
-        f24_loc (str): location of the f24.xml file
+        f24_loc (str): location of the f24.xml (or ma13.xml) file
         country (str): country of the game
-        away_team_id (int): id of the away team
+        away_team_id (int | str): id of the away team
         players (pd.DataFrame): dataframe with player information.
         pitch_dimensions (list, optional): dimensions of the pitch.
             Defaults to [106.0, 68.0].
@@ -485,20 +677,24 @@ def _load_event_data(
 
     Returns:
         pd.DataFrame: all events of the game in a pd dataframe
-        dict: dict with "shot_events", "dribble_events", "pass_events", "other_events"
-             as key and a dict with the BaseIndividualCloseToBallEvent instances
+        dict: dict with "shot_events", "dribble_events", "pass_events" as key and a
+             dict with the BaseIndividualCloseToBallEvent instances
     """
 
     dribble_events = {}
     shot_events = {}
     pass_events = {}
-    other_events = {}
 
     with open(f24_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
     with open(f24_loc, "r", encoding=encoding) as file:
         lines = file.read()
-    soup = BeautifulSoup(lines, "xml")
+    root = ET.fromstring(lines)
+
+    if root.tag == "possessionEvents":
+        events = [_ma13_event_to_f24_element(e) for e in root.findall(".//event")]
+    else:
+        events = root.findall(".//Event")
 
     result_dict = {
         "event_id": [],
@@ -518,12 +714,11 @@ def _load_event_data(
         "event_type_id": [],
     }
 
-    events = soup.find_all("Event")
     for i_event, event in enumerate(events):
         result_dict["event_id"].append(i_event)
-        result_dict["original_annotation_id"].append(int(event.attrs["id"]))
-        result_dict["original_event_id"].append(int(event.attrs["event_id"]))
-        event_type_id = int(event.attrs["type_id"])
+        result_dict["original_annotation_id"].append(int(event.get("id")))
+        result_dict["original_event_id"].append(int(event.get("event_id")))
+        event_type_id = int(event.get("type_id"))
         result_dict["event_type_id"].append(event_type_id)
 
         if event_type_id in EVENT_TYPE_IDS.keys():
@@ -531,32 +726,32 @@ def _load_event_data(
 
             # check if goal is a own goal
             if event_type_id == 16:
-                for qualifier in event.find_all("Q"):
+                for qualifier in event.findall("Q"):
                     if (
-                        qualifier.attrs["qualifier_id"] == str(OWN_GOAL_QUALIFIER)
-                        and qualifier.attrs["value"] == "OWN_GOAL"
+                        qualifier.get("qualifier_id") == str(OWN_GOAL_QUALIFIER)
+                        and qualifier.get("value") == "OWN_GOAL"
                     ):
                         event_name = "own goal"
         else:
             event_name = "unknown event"
 
         result_dict["original_event"].append(event_name)
-        result_dict["period_id"].append(int(event.attrs["period_id"]))
-        result_dict["minutes"].append(int(event.attrs["min"]))
-        result_dict["seconds"].append(float(event.attrs["sec"]))
+        result_dict["period_id"].append(int(event.get("period_id")))
+        result_dict["minutes"].append(int(event.get("min")))
+        result_dict["seconds"].append(float(event.get("sec")))
 
-        if "player_id" in event.attrs.keys():
-            result_dict["player_id"].append(int(event.attrs["player_id"]))
+        if event.get("player_id") is not None:
+            result_dict["player_id"].append(_maybe_int(event.get("player_id")))
         else:
             result_dict["player_id"].append(MISSING_INT)
 
-        result_dict["team_id"].append(int(event.attrs["team_id"]))
+        result_dict["team_id"].append(_maybe_int(event.get("team_id")))
         if event_name in ["pass", "take on", "tackle"]:
-            result_dict["is_successful"].append(int(event.attrs["outcome"]))
+            result_dict["is_successful"].append(int(event.get("outcome")))
         else:
             result_dict["is_successful"].append(None)
-        result_dict["start_x"].append(float(event.attrs["x"]))
-        result_dict["start_y"].append(float(event.attrs["y"]))
+        result_dict["start_x"].append(float(event.get("x")))
+        result_dict["start_y"].append(float(event.get("y")))
 
         datetime = _get_valid_opta_datetime(event)
         result_dict["datetime"].append(datetime)
@@ -597,15 +792,6 @@ def _load_event_data(
                 id=i_event,
             )
 
-        if event_name == "tackle":
-            other_events[i_event] = _make_tackle_event_instance(
-                event,
-                away_team_id,
-                pitch_dimensions=pitch_dimensions,
-                players=players,
-                id=i_event,
-            )
-
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
     event_data["databallpy_event"] = (
@@ -632,13 +818,12 @@ def _load_event_data(
         "shot_events": shot_events,
         "pass_events": pass_events,
         "dribble_events": dribble_events,
-        "other_events": other_events,
     }
 
 
 def _make_pass_instance(
-    event: bs4.element.Tag,
-    away_team_id: int,
+    event: ET.Element,
+    away_team_id: int | str,
     players: pd.DataFrame,
     id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
@@ -646,8 +831,8 @@ def _make_pass_instance(
     """Function to create a pass class based on the qualifiers of the event
 
     Args:
-        event (bs4.element.Tag): pass event from the f24.xml
-        away_team_id (int): id of the away team
+        event (ET.Element): pass event from the f24.xml
+        away_team_id (int | str): id of the away team
         players (pd.DataFrame, optional): dataframe with player information.
         id (int): The event id of the pass
         pitch_dimensions (list, optional): size of the pitch in x and y direction.
@@ -657,16 +842,18 @@ def _make_pass_instance(
     Returns:
         PassEvent: Returns a PassEvent instance
     """
+    if not isinstance(event, ET.Element):
+        event = ET.fromstring(str(event))
     on_ball_info = _get_on_ball_event_info(event)
     on_ball_info.update(
         _get_close_to_ball_event_info(event, pitch_dimensions, away_team_id, players, id)
     )
 
-    outcome_str = "successful" if int(event.attrs["outcome"]) else "unsuccessful"
-    outcome_str = "offside" if int(event.attrs["type_id"]) == 2 else outcome_str
+    outcome_str = "successful" if int(event.get("outcome")) else "unsuccessful"
+    outcome_str = "offside" if int(event.get("type_id")) == 2 else outcome_str
 
-    qualifiers = event.find_all("Q")
-    qualifier_ids = [int(q["qualifier_id"]) for q in qualifiers]
+    qualifiers = event.findall("Q")
+    qualifier_ids = [int(q.get("qualifier_id")) for q in qualifiers]
 
     outcome_str = (
         "results_in_shot"
@@ -692,22 +879,19 @@ def _make_pass_instance(
             pass_type = pass_type_option
             break
 
-    if event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)}) and event.find(
-        "Q", attrs={"qualifier_id": str(Y_END_QUALIFIER)}
+    if (
+        event.find(f'Q[@qualifier_id="{X_END_QUALIFIER}"]') is not None
+        and event.find(f'Q[@qualifier_id="{Y_END_QUALIFIER}"]') is not None
     ):
         x_end, y_end = _rescale_opta_dimensions(
-            float(
-                event.find("Q", attrs={"qualifier_id": str(X_END_QUALIFIER)})["value"]
-            ),
-            float(
-                event.find("Q", attrs={"qualifier_id": str(Y_END_QUALIFIER)})["value"]
-            ),
+            float(event.find(f'Q[@qualifier_id="{X_END_QUALIFIER}"]').get("value")),
+            float(event.find(f'Q[@qualifier_id="{Y_END_QUALIFIER}"]').get("value")),
             pitch_dimensions=pitch_dimensions,
         )
     else:
         x_end, y_end = np.nan, np.nan
 
-    if int(event.attrs["team_id"]) == away_team_id:
+    if _maybe_int(event.get("team_id")) == away_team_id:
         x_end *= -1
         y_end *= -1
 
@@ -722,8 +906,8 @@ def _make_pass_instance(
 
 
 def _make_shot_event_instance(
-    event: bs4.element.Tag,
-    away_team_id: int,
+    event: ET.Element,
+    away_team_id: int | str,
     players: pd.DataFrame,
     id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
@@ -731,8 +915,8 @@ def _make_shot_event_instance(
     """Function to create a shot class based on the qualifiers of the event
 
     Args:
-        event (bs4.element.Tag): shot event from the f24.xml
-        away_team_id (int): id of the away team
+        event (ET.Element): shot event from the f24.xml
+        away_team_id (int | str): id of the away team
         players (pd.DataFrame): dataframe with player information.
         id (int): The event id of the shot
         pitch_dimensions (list, optional): size of the pitch in x and y direction.
@@ -743,16 +927,18 @@ def _make_shot_event_instance(
         dict: Returns a dict with the shot data. The key is the id of the event and
         the value is a ShotEvent instance.
     """
-    shot_outcome = SHOT_OUTCOMES[int(event["type_id"])]
+    if not isinstance(event, ET.Element):
+        event = ET.fromstring(str(event))
+    shot_outcome = SHOT_OUTCOMES[int(event.get("type_id"))]
 
     if (
-        event.find("Q", {"qualifier_id": str(SHOT_BLOCKED_QUALIFIER)}) is not None
+        event.find(f'Q[@qualifier_id="{SHOT_BLOCKED_QUALIFIER}"]') is not None
         and shot_outcome != "goal"
     ):
         shot_outcome = "blocked"
     elif (
-        event.find("Q", {"qualifier_id": str(OWN_GOAL_QUALIFIER)}) is not None
-        and event.find("Q", {"qualifier_id": str(OWN_GOAL_QUALIFIER)}).attrs["value"]
+        event.find(f'Q[@qualifier_id="{OWN_GOAL_QUALIFIER}"]') is not None
+        and event.find(f'Q[@qualifier_id="{OWN_GOAL_QUALIFIER}"]').get("value")
         == "OWN_GOAL"
     ):
         shot_outcome = "own_goal"
@@ -761,20 +947,18 @@ def _make_shot_event_instance(
         y_target = (
             7.32
             / 100
-            * float(event.find("Q", {"qualifier_id": str(Y_TARGET_QUALIFIER)})["value"])
+            * float(event.find(f'Q[@qualifier_id="{Y_TARGET_QUALIFIER}"]').get("value"))
             - 3.66
         )
         z_target = (
             2.44
             / 100
-            * float(event.find("Q", {"qualifier_id": str(Z_TARGET_QUALIFIER)})["value"])
+            * float(event.find(f'Q[@qualifier_id="{Z_TARGET_QUALIFIER}"]').get("value"))
         )
     else:
         y_target, z_target = np.nan, np.nan
 
-    first_touch = (
-        event.find("Q", {"qualifier_id": str(FIRST_TOUCH_QUALIFIER)}) is not None
-    )
+    first_touch = event.find(f'Q[@qualifier_id="{FIRST_TOUCH_QUALIFIER}"]') is not None
 
     on_ball_info = _get_on_ball_event_info(event)
     on_ball_info.update(
@@ -793,35 +977,9 @@ def _make_shot_event_instance(
     )
 
 
-def _make_tackle_event_instance(
-    event: bs4.element.Tag,
-    away_team_id: int,
-    players: pd.DataFrame,
-    id: int,
-    pitch_dimensions: list[float, float] = [106.0, 68.0],
-) -> TackleEvent:
-    """Function to create a tackle class based on the qualifiers of the event
-
-    Args:
-        event (bs4.element.Tag): tackle event from the f24.xml
-        away_team_id (int): id of the away team
-        players (pd.DataFrame): dataframe with player information.
-        id (int): The event id of the shot
-        pitch_dimensions (list[float, float], optional): The dimensions of the pitch in
-            x and y direction. Defaults to [106.0, 68.0].
-
-    Returns:
-        TackleEvent: instance of the TackleEvent class
-    """
-    close_to_ball_info = _get_close_to_ball_event_info(
-        event, pitch_dimensions, away_team_id, players, id
-    )
-    return TackleEvent(**close_to_ball_info)
-
-
 def _make_dribble_event_instance(
-    event: bs4.element.Tag,
-    away_team_id: int,
+    event: ET.Element,
+    away_team_id: int | str,
     players: pd.DataFrame,
     id: int,
     pitch_dimensions: list[float, float] = [106.0, 68.0],
@@ -829,8 +987,8 @@ def _make_dribble_event_instance(
     """Function to create a dribble class based on the qualifiers of the event
 
     Args:
-        event (bs4.element.Tag): dribble event from the f24.xml
-        away_team_id (int): id of the away team
+        event (ET.Element): dribble event from the f24.xml
+        away_team_id (int | str): id of the away team
         players (pd.DataFrame): dataframe with player information.
         id (int): The event id of the shot
         pitch_dimensions (list, optional): pitch dimensions in x and y direction.
@@ -839,16 +997,17 @@ def _make_dribble_event_instance(
     Returns:
         DribbleEvent: instance of the DribbleEvent class
     """
-
+    if not isinstance(event, ET.Element):
+        event = ET.fromstring(str(event))
     close_to_ball_info = _get_close_to_ball_event_info(
         event, pitch_dimensions, away_team_id, players, id
     )
 
-    qualifiers = event.find_all("Q")
+    qualifiers = event.findall("Q")
     duel_type_list = [
-        DRIBBLE_DUEL_TYPE_QUALIFIERS[int(q["qualifier_id"])]
+        DRIBBLE_DUEL_TYPE_QUALIFIERS[int(q.get("qualifier_id"))]
         for q in qualifiers
-        if int(q["qualifier_id"]) in DRIBBLE_DUEL_TYPE_QUALIFIERS
+        if int(q.get("qualifier_id")) in DRIBBLE_DUEL_TYPE_QUALIFIERS
     ]
     duel_type = duel_type_list[0] if len(duel_type_list) > 0 else None
 
@@ -865,36 +1024,36 @@ def _make_dribble_event_instance(
     return dribble_event
 
 
-def _get_on_ball_event_info(event: bs4.element.Tag) -> dict:
+def _get_on_ball_event_info(event: ET.Element) -> dict:
     """Function to get the base event data from the event based on
     the OnBallEvent class.
 
     Args:
-        event (bs4.element.Tag): event from the f24.xml
+        event (ET.Element): event from the f24.xml
 
     Returns:
         dict: the body_part, set_piece, and possession_type of the event
     """
-    qualifiers = event.find_all("Q")
-    qualifier_ids = [int(q["qualifier_id"]) for q in qualifiers]
+    qualifiers = event.findall("Q")
+    qualifier_ids = [int(q.get("qualifier_id")) for q in qualifiers]
 
     set_piece_list = [
         SET_PIECE_QUALIFIERS[q] for q in qualifier_ids if q in SET_PIECE_QUALIFIERS
     ]
     set_piece = set_piece_list[0] if len(set_piece_list) > 0 else "no_set_piece"
     possession_type_list = [
-        SHOT_ORIGINS_QUALIFIERS[int(q["qualifier_id"])]
+        SHOT_ORIGINS_QUALIFIERS[int(q.get("qualifier_id"))]
         for q in qualifiers
-        if int(q["qualifier_id"]) in SHOT_ORIGINS_QUALIFIERS
+        if int(q.get("qualifier_id")) in SHOT_ORIGINS_QUALIFIERS
     ]
     possession_type = (
         possession_type_list[0] if len(possession_type_list) > 0 else "open_play"
     )
 
     body_part_list = [
-        BODY_PART_QUALIFIERS[int(q["qualifier_id"])]
+        BODY_PART_QUALIFIERS[int(q.get("qualifier_id"))]
         for q in qualifiers
-        if int(q["qualifier_id"]) in BODY_PART_QUALIFIERS
+        if int(q.get("qualifier_id")) in BODY_PART_QUALIFIERS
     ]
     body_part = body_part_list[0] if len(body_part_list) > 0 else "unspecified"
 
@@ -906,7 +1065,7 @@ def _get_on_ball_event_info(event: bs4.element.Tag) -> dict:
 
 
 def _get_close_to_ball_event_info(
-    event: bs4.element.Tag,
+    event: ET.Element,
     pitch_dimensions: list | tuple,
     away_team_id: int | str,
     players: pd.DataFrame,
@@ -916,10 +1075,10 @@ def _get_close_to_ball_event_info(
     the CloseToBallEvent class.
 
     Args:
-        event (bs4.element.Tag): dribble event from the f24.xml
+        event (ET.Element): dribble event from the f24.xml
         pitch_dimensions (list, optional): pitch dimensions in x and y direction.
             Defaults to [106.0, 68.0].
-        away_team_id (int): id of the away team
+        away_team_id (int | str): id of the away team
         players (pd.DataFrame): dataframe with player information.
         id (int): the identifier of the event
 
@@ -928,24 +1087,24 @@ def _get_close_to_ball_event_info(
         dict: dictionary with the base event data: start_x, start_y, related_event_id
     """
 
-    if event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)}) is not None:
+    if event.find(f'Q[@qualifier_id="{RELATED_EVENT_QUALIFIER}"]') is not None:
         related_event_id = int(
-            event.find("Q", {"qualifier_id": str(RELATED_EVENT_QUALIFIER)})["value"]
+            event.find(f'Q[@qualifier_id="{RELATED_EVENT_QUALIFIER}"]').get("value")
         )
-    elif event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)}) is not None:
+    elif event.find(f'Q[@qualifier_id="{OPPOSITE_RELATED_EVENT_ID}"]') is not None:
         related_event_id = int(
-            event.find("Q", {"qualifier_id": str(OPPOSITE_RELATED_EVENT_ID)})["value"]
+            event.find(f'Q[@qualifier_id="{OPPOSITE_RELATED_EVENT_ID}"]').get("value")
         )
     else:
         related_event_id = MISSING_INT
 
     x_start, y_start = _rescale_opta_dimensions(
-        float(event.attrs["x"]),
-        float(event.attrs["y"]),
+        float(event.get("x")),
+        float(event.get("y")),
         pitch_dimensions=pitch_dimensions,
     )
 
-    if int(event.attrs["team_id"]) == away_team_id:
+    if _maybe_int(event.get("team_id")) == away_team_id:
         x_start *= -1
         y_start *= -1
 
@@ -954,40 +1113,42 @@ def _get_close_to_ball_event_info(
         "start_y": y_start,
         "related_event_id": related_event_id,
         "event_id": id,
-        "period_id": int(event.attrs["period_id"]),
-        "minutes": int(event.attrs["min"]),
-        "seconds": int(event.attrs["sec"]),
+        "period_id": int(event.get("period_id")),
+        "minutes": int(event.get("min")),
+        "seconds": int(event.get("sec")),
         "datetime": _get_valid_opta_datetime(event),
-        "team_id": int(event.attrs["team_id"]),
-        "team_side": "home" if int(event.attrs["team_id"]) != away_team_id else "away",
+        "team_id": _maybe_int(event.get("team_id")),
+        "team_side": (
+            "home" if _maybe_int(event.get("team_id")) != away_team_id else "away"
+        ),
         "pitch_size": pitch_dimensions,
-        "player_id": int(event.attrs["player_id"]),
+        "player_id": _maybe_int(event.get("player_id")),
         "jersey": players.loc[
-            players["id"] == int(event.attrs["player_id"]), "shirt_num"
+            players["id"] == _maybe_int(event.get("player_id")), "shirt_num"
         ].iloc[0],
-        "outcome": bool(int(event.attrs["outcome"])),
+        "outcome": bool(int(event.get("outcome"))),
     }
 
 
-def _get_valid_opta_datetime(event: bs4.element.Tag) -> Timestamp:
+def _get_valid_opta_datetime(event: ET.Element) -> Timestamp:
     """Function that reads in a event element, and returns a
     timestamp in UTC.
 
     Args:
-        event (bs4.element.Tag): the event
+        event (ET.Element): the event
 
     Returns:
         Timestamp: the utc timestamp object of the event
     """
 
-    if "timestamp_utc" in event.attrs.keys():
-        return pd.to_datetime(event.attrs["timestamp_utc"], utc=True)
-    elif event.attrs["timestamp"][-1] == "Z":
-        return pd.to_datetime(event.attrs["timestamp"], utc=True)
+    if event.get("timestamp_utc") is not None:
+        return pd.to_datetime(event.get("timestamp_utc"), utc=True)
+    elif event.get("timestamp")[-1] == "Z":
+        return pd.to_datetime(event.get("timestamp"), utc=True)
     else:
         # opta headquarters is situated in london
         return (
-            pd.to_datetime(event.attrs["timestamp"])
+            pd.to_datetime(event.get("timestamp"))
             .tz_localize("Europe/London")
             .tz_convert("UTC")
         )

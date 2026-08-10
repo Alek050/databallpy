@@ -1,13 +1,13 @@
 import datetime as dt
 import json
 import os
+import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import chardet
 import numpy as np
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
-from lxml import etree
 from tqdm import tqdm
 
 from databallpy.data_parsers import Metadata
@@ -21,7 +21,10 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_periods_to_tracking_data,
     _add_player_tracking_data_to_dict,
     _adjust_start_end_frames,
+    _downcast_tracking_data,
+    _get_frame_selection,
     _get_gametime,
+    _get_period_start_frames,
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
@@ -32,7 +35,12 @@ from databallpy.utils.tz_modification import localize_datetime
 
 @logging_wrapper(__file__)
 def load_tracab_tracking_data(
-    tracab_loc: str, metadata_loc: str, verbose: bool = True
+    tracab_loc: str,
+    metadata_loc: str,
+    verbose: bool = True,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load tracking data and metadata from the tracab format
 
@@ -41,14 +49,30 @@ def load_tracab_tracking_data(
         metadata_loc (str): location of the meta_data.xml file
         verbose (bool): whether to print on progress of loading in the terminal,
         defaults to True
+        period_id (int | list[int], optional): only load the frames of this period,
+            or of these periods. Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the frames between the first
+            and the last frame, inclusive. Defaults to None (load all frames).
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
+
+    Note:
+        The metadata always describes the full game, also when only part of the
+        tracking data is loaded. When `period_id` or `frames` is specified, the
+        start and end frames of the periods are taken from the metadata as is,
+        while they are estimated based on the tracking data for a full load.
     """
 
     metadata = _get_metadata(metadata_loc)
     if tracab_loc.endswith(".dat") or tracab_loc.endswith(".txt"):
-        tracking_data = _get_tracking_data_txt(tracab_loc, verbose)
+        selection = _get_frame_selection(metadata.periods_frames, period_id, frames)
+        tracking_data = _get_tracking_data_txt(
+            tracab_loc,
+            verbose,
+            selection=selection,
+            extra_frames=_get_period_start_frames(metadata.periods_frames),
+        )
         tracking_data["datetime"] = _add_datetime(
             tracking_data["frame"],
             metadata.frame_rate,
@@ -56,12 +80,18 @@ def load_tracab_tracking_data(
         )
     elif tracab_loc.endswith(".xml"):
         tracking_data, periods_frames, frame_rate = _get_tracking_data_xml(
-            tracab_loc, metadata.home_players, metadata.away_players, verbose
+            tracab_loc,
+            metadata.home_players,
+            metadata.away_players,
+            verbose,
+            period_id=period_id,
+            frames=frames,
         )
         metadata.periods_frames = periods_frames
         metadata.frame_rate = int(frame_rate)
+        selection = _get_frame_selection(periods_frames, period_id, frames)
         tracking_data = _insert_missing_rows(
-            tracking_data.reset_index(drop=True), "frame"
+            tracking_data.reset_index(drop=True), "frame", selection=selection
         )
     else:
         message = "Tracab tracking data should be either .txt, .dat, or .xml format."
@@ -72,7 +102,8 @@ def load_tracab_tracking_data(
         "period_id",
         _add_periods_to_tracking_data(tracking_data["frame"], metadata.periods_frames),
     )
-    tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
+    if selection is None:
+        tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
 
     tracking_data["gametime_td"] = _get_gametime(
         tracking_data["frame"], tracking_data["period_id"], metadata
@@ -82,18 +113,24 @@ def load_tracab_tracking_data(
     )
     metadata.periods_changed_playing_direction = changed_periods
 
-    return tracking_data, metadata
+    if selection is not None:
+        tracking_data = tracking_data[
+            tracking_data["frame"].between(*selection)
+        ].reset_index(drop=True)
+
+    return _downcast_tracking_data(tracking_data), metadata
 
 
 @logging_wrapper(__file__)
 def load_sportec_open_tracking_data(
-    game_id: str, verbose: bool
+    game_id: str, verbose: bool, cache_path: Path
 ) -> tuple[pd.DataFrame, Metadata]:
     """Load the tracking data from the sportec open data platform
 
     Args:
         game_id (str): The id of the game
         verbose (bool): Whether to print info about the loading of the data.
+        cache_path (Path): path to cache files.
 
     Returns:
         tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
@@ -103,11 +140,10 @@ def load_sportec_open_tracking_data(
         dataset of synchronized spatiotemporal and event data in elite soccer.
     """
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
-    save_path = os.path.join(os.getcwd(), "datasets", "IDSSE", game_id)
-    os.makedirs(save_path, exist_ok=True)
+    os.makedirs(cache_path, exist_ok=True)
 
     metadata = requests.get(metadata_url)
-    with open(os.path.join(save_path, "metadata_temp.xml"), "wb") as f:
+    with open(cache_path / "metadata_temp.xml", "wb") as f:
         f.write(metadata.content)
 
     if verbose:
@@ -118,24 +154,26 @@ def load_sportec_open_tracking_data(
     )
     total_size = int(response.headers.get("content-length", 0))
 
-    with open(os.path.join(save_path, "tracking_data_temp.xml"), "wb") as file, tqdm(
-        desc="Downloading",
-        total=total_size,
-        unit="B",
-        unit_scale=True,
-        unit_divisor=1024,
-        disable=not verbose,
-    ) as bar:
+    with (
+        open(cache_path / "tracking_data_temp.xml", "wb") as file,
+        tqdm(
+            desc="Downloading",
+            total=total_size,
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            disable=not verbose,
+        ) as bar,
+    ):
         for chunk in response.iter_content(chunk_size=1024):
             if chunk:
                 file.write(chunk)
                 bar.update(len(chunk))
 
     print("Done!", end="\r")
-
     return load_tracab_tracking_data(
-        os.path.join(save_path, "tracking_data_temp.xml"),
-        os.path.join(save_path, "metadata_temp.xml"),
+        str(cache_path / "tracking_data_temp.xml"),
+        str(cache_path / "metadata_temp.xml"),
         verbose=verbose,
     )
 
@@ -146,6 +184,9 @@ def _get_tracking_data_xml(
     home_players: pd.DataFrame,
     away_players: pd.DataFrame,
     verbose: bool,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, int]:
     if verbose:
         print(f"Reading in {tracab_loc}", end="")
@@ -162,7 +203,7 @@ def _get_tracking_data_xml(
     frames_df["start_datetime_td"] = pd.to_datetime(frames_df["start_datetime_td"])
     frames_df["end_datetime_td"] = pd.to_datetime(frames_df["end_datetime_td"])
 
-    context = etree.iterparse(tracab_loc, events=("start", "end"))
+    context = ET.iterparse(tracab_loc, events=("start", "end"))
     event, _ = next(context)
 
     frame_values = []
@@ -173,12 +214,23 @@ def _get_tracking_data_xml(
     for event, elem in context:
         n_elements += 1
         if event == "end" and elem.tag == "FrameSet" and elem.get("TeamId") == "BALL":
-            frames = elem.findall("Frame")
-            frame_values.extend([int(x.get("N")) for x in frames])
+            frame_elements = elem.findall("Frame")
+            frame_values.extend([int(x.get("N")) for x in frame_elements])
             game_section = elem.get("GameSection")
             frame_rate, n_frames_first_half = process_game_section(
-                frames, game_section, frames_df, frame_rate, n_frames_first_half
+                frame_elements, game_section, frames_df, frame_rate, n_frames_first_half
             )
+
+    selection = _get_frame_selection(frames_df, period_id, frames)
+    if selection is not None:
+        first_frame, last_frame = selection
+        extra_frames = _get_period_start_frames(frames_df)
+        frame_values = [
+            x
+            for x in frame_values
+            if first_frame <= x <= last_frame or x in extra_frames
+        ]
+    frame_to_idx = {frame: idx for idx, frame in enumerate(frame_values)}
 
     size_lines = len(frame_values)
     data = {
@@ -191,7 +243,7 @@ def _get_tracking_data_xml(
         "datetime": ["NaT"] * size_lines,
     }
 
-    context = etree.iterparse(tracab_loc, events=("start", "end"))
+    context = ET.iterparse(tracab_loc, events=("start", "end"))
     event, _ = next(context)
 
     if verbose:
@@ -200,7 +252,7 @@ def _get_tracking_data_xml(
     for event, elem in context:
         if not (event == "end" and elem.tag == "FrameSet"):
             continue
-        frames = elem.findall("Frame")
+        frame_elements = elem.findall("Frame")
         player_id = elem.get("PersonId")
         if player_id in home_players["id"].to_list():
             column_id = "home_" + str(
@@ -217,12 +269,10 @@ def _get_tracking_data_xml(
             data[f"{column_id}_x"] = [np.nan] * size_lines
             data[f"{column_id}_y"] = [np.nan] * size_lines
 
-        is_second_half = elem.get("GameSection") == "secondHalf"
-        for frame in frames:
-            if is_second_half:
-                i = n_frames_first_half + int(frame.get("N")) - 100_000
-            else:
-                i = int(frame.get("N")) - 10_000
+        for frame in frame_elements:
+            i = frame_to_idx.get(int(frame.get("N")))
+            if i is None:  # frame is not part of the selection
+                continue
 
             data[f"{column_id}_x"][i] = float(frame.get("X"))
             data[f"{column_id}_y"][i] = float(frame.get("Y"))
@@ -249,7 +299,7 @@ def _get_tracking_data_xml(
     frames_df["end_datetime_td"] = (
         frames_df["end_datetime_td"].dt.tz_localize("UTC").dt.tz_convert("Europe/Berlin")
     )
-    return df, frames_df, frame_rate
+    return _downcast_tracking_data(df), frames_df, frame_rate
 
 
 def process_game_section(
@@ -286,12 +336,22 @@ def process_game_section(
 
 
 @logging_wrapper(__file__)
-def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
+def _get_tracking_data_txt(
+    tracab_loc: str,
+    verbose: bool,
+    *,
+    selection: tuple[int, int] | None = None,
+    extra_frames: set[int] | None = None,
+) -> pd.DataFrame:
     """Function that reads tracking data from .dat file and stores it in a pd.DataFrame
 
     Args:
         tracab_loc (str): location of the tracking_data.dat file
         verbose (bool): whether to print info in terminal
+        selection (tuple[int, int], optional): the first and last frame to load,
+            inclusive. Defaults to None (load all frames).
+        extra_frames (set[int], optional): frames outside of the selection that
+            should be loaded as well. Defaults to None.
 
     Returns:
         pd.DataFrame: contains tracking data
@@ -301,7 +361,17 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         print(f"Reading in {tracab_loc}", end="")
 
     with open(tracab_loc, "r") as file:
-        lines = file.readlines()
+        if selection is None:
+            lines = file.readlines()
+        else:
+            first_frame, last_frame = selection
+            extra_frames = extra_frames if extra_frames is not None else set()
+            lines = [
+                line
+                for line in file
+                if first_frame <= (frame := int(line.split(":", 1)[0])) <= last_frame
+                or frame in extra_frames
+            ]
     if verbose:
         print(" - Completed")
 
@@ -348,8 +418,8 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
 
     mask = df.columns.str.contains("_x|_y|_z")
     df.loc[:, mask] = np.round(df.loc[:, mask] / 100, 3)  # change cm to m
-    df = _insert_missing_rows(df, "frame")
-    return df
+    df = _insert_missing_rows(df, "frame", selection=selection)
+    return _downcast_tracking_data(df)
 
 
 @logging_wrapper(__file__)
@@ -378,11 +448,11 @@ def _get_metadata(metadata_loc: str) -> Metadata:
             lines = file.read()
 
         lines = lines.replace("ï»¿", "")
-        soup = BeautifulSoup(lines, "xml")
+        root = ET.fromstring(lines)
 
-        if soup.find("match") is not None:
-            return _get_tracab_metadata_xml(soup)
-        elif soup.find("General") is not None:
+        if root.find(".//match") is not None:
+            return _get_tracab_metadata_xml(root)
+        elif root.find(".//General") is not None:
             return _get_sportec_metadata(metadata_loc)
         else:
             message = "Unknown type of tracab metadata, please open an issue on GitHub."
@@ -504,14 +574,15 @@ def _get_tracab_metadata_json(metadata: dict) -> Metadata:
 
 
 @logging_wrapper(__file__)
-def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
+def _get_tracab_metadata_xml(root: ET.Element) -> Metadata:
     """This version is used in the Netherlands"""
 
-    game_id = int(soup.find("match")["iId"])
-    pitch_size_x = float(soup.find("match")["fPitchXSizeMeters"])
-    pitch_size_y = float(soup.find("match")["fPitchYSizeMeters"])
-    frame_rate = int(soup.find("match")["iFrameRateFps"])
-    datetime_string = soup.find("match")["dtDate"]
+    match_elem = root.find(".//match")
+    game_id = int(match_elem.get("iId"))
+    pitch_size_x = float(match_elem.get("fPitchXSizeMeters"))
+    pitch_size_y = float(match_elem.get("fPitchYSizeMeters"))
+    frame_rate = int(match_elem.get("iFrameRateFps"))
+    datetime_string = match_elem.get("dtDate")
     date = pd.to_datetime(datetime_string[:10])
 
     frames_dict = {
@@ -521,10 +592,10 @@ def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
         "start_datetime_td": [],
         "end_datetime_td": [],
     }
-    for _, period in enumerate(soup.find_all("period")):
-        frames_dict["period_id"].append(int(period["iId"]))
-        start_frame = int(period["iStartFrame"])
-        end_frame = int(period["iEndFrame"])
+    for _, period in enumerate(root.findall(".//period")):
+        frames_dict["period_id"].append(int(period.get("iId")))
+        start_frame = int(period.get("iStartFrame"))
+        end_frame = int(period.get("iEndFrame"))
 
         if start_frame != 0:
             frames_dict["start_frame"].append(start_frame)
@@ -558,26 +629,26 @@ def _get_tracab_metadata_xml(soup: BeautifulSoup) -> Metadata:
     df_frames["end_datetime_td"] = localize_datetime(
         df_frames["end_datetime_td"], "Netherlands"
     )
-    home_team = soup.find("HomeTeam")
+    home_team = root.find(".//HomeTeam")
     home_team_name = home_team.find("LongName").text
     home_team_id = int(home_team.find("TeamId").text)
     home_players_info = []
-    for player in home_team.find_all("Player"):
+    for player in home_team.findall(".//Player"):
         player_dict = {}
-        for element in player.findChildren():
-            player_dict[element.name] = element.text
+        for element in player:
+            player_dict[element.tag] = element.text
         home_players_info.append(player_dict)
     df_home_players = _get_players_metadata_v1(home_players_info)
 
-    away_team = soup.find("AwayTeam")
+    away_team = root.find(".//AwayTeam")
     away_team_name = away_team.find("LongName").text
     away_team_id = int(away_team.find("TeamId").text)
 
     away_players_info = []
-    for player in away_team.find_all("Player"):
+    for player in away_team.findall(".//Player"):
         player_dict = {}
-        for element in player.findChildren():
-            player_dict[element.name] = element.text
+        for element in player:
+            player_dict[element.tag] = element.text
         away_players_info.append(player_dict)
     df_away_players = _get_players_metadata_v1(away_players_info)
 
@@ -621,8 +692,9 @@ def _get_players_metadata_v1(players_info: list[dict[str, int | float]]) -> pd.D
     }
     for player in players_info:
         player_dict["id"].append(int(player["PlayerId"]))
-        full_name = player["FirstName"] + " " + player["LastName"]
-        if player["FirstName"] == "":
+        first_name = player["FirstName"] or ""
+        full_name = first_name + " " + player["LastName"]
+        if not first_name:
             full_name = full_name.lstrip()
         player_dict["full_name"].append(full_name)
         player_dict["shirt_num"].append(int(player["JerseyNo"]))

@@ -157,5 +157,10 @@ _build/*
 *.lprof
 *.pickle
 *.mp4
+*.xml
 notebooks/*
 synch_validation/*
+*.lnk
+.claude/*
+CLAUDE.md 
+.codegraph

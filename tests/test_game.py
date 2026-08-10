@@ -1,13 +1,23 @@
 import os
 import unittest
 
+import numpy as np
 import pandas as pd
-import pandera as pa
 
+try:
+    import pandera.pandas as pa
+except ModuleNotFoundError:
+    import pandera as pa
+
+try:
+    import pandera.pandas as pa
+except ModuleNotFoundError:
+    import pandera as pa
 from databallpy.game import Game
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
+from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
     DRIBBLE_INSTANCES_OPTA_TRACAB,
     PASS_INSTANCES_OPTA_TRACAB,
@@ -147,7 +157,7 @@ class TestGame(unittest.TestCase):
             tracking_data = self.expected_game_tracab_opta.tracking_data.copy()
             Game(
                 tracking_data=TrackingData(
-                    tracking_data, provider=tracking_data.provider, frame_rate=6.4
+                    tracking_data, provider=tracking_data.provider, frame_rate="6.4"
                 ),
                 event_data=self.expected_game_tracab_opta.event_data,
                 pitch_dimensions=self.expected_game_tracab_opta.pitch_dimensions,
@@ -720,9 +730,13 @@ class TestGame(unittest.TestCase):
             )
 
         # playing direction
-        with self.assertRaises(DataBallPyError):
+        with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "home_34_x"] = 3.0
+            td_changed.rename(
+                columns={"home_34_x": "home_1_x", "home_34_y": "home_1_y"}, inplace=True
+            )
+
             Game(
                 tracking_data=td_changed,
                 event_data=self.expected_game_tracab_opta.event_data,
@@ -744,9 +758,12 @@ class TestGame(unittest.TestCase):
                 dribble_events=self.expected_game_tracab_opta.dribble_events,
             )
 
-        with self.assertRaises(DataBallPyError):
+        with self.assertWarns(DataBallPyWarning):
             td_changed = self.expected_game_tracab_opta.tracking_data.copy()
             td_changed.loc[0, "away_17_x"] = -3.0
+            td_changed.rename(
+                columns={"away_17_x": "away_1_x", "away_17_y": "away_1_y"}, inplace=True
+            )
             Game(
                 tracking_data=td_changed,
                 event_data=self.expected_game_tracab_opta.event_data,
@@ -895,32 +912,14 @@ class TestGame(unittest.TestCase):
         )
         assert game.name == "TeamOne 3 - 1 TeamTwo"
 
-    def test_game_home_players_column_ids(self):
-        with self.assertWarns(DeprecationWarning):
-            assert self.expected_game_tracab_opta.home_players_column_ids() == [
-                "home_34",
-            ]
-
-    def test_game_away_players_column_ids(self):
-        with self.assertWarns(DeprecationWarning):
-            assert self.expected_game_tracab_opta.away_players_column_ids() == [
-                "away_17",
-            ]
-
-    def test_game_tracking_data_provider_depricated(self):
+    def test_game_frame_rate(self):
         game = self.expected_game_tracab_opta.copy()
-        with self.assertWarns(DeprecationWarning):
-            assert game.tracking_data_provider == game.tracking_data.provider
+        assert game.frame_rate == game.tracking_data.frame_rate
 
-    def test_game_frame_rate_depricated(self):
-        game = self.expected_game_tracab_opta.copy()
-        with self.assertWarns(DeprecationWarning):
-            assert game.frame_rate == game.tracking_data.frame_rate
-
-    def test_game_event_data_provider_depricated(self):
-        game = self.expected_game_tracab_opta.copy()
-        with self.assertWarns(DeprecationWarning):
-            assert game.event_data_provider == game.event_data.provider
+        game.tracking_data = TrackingData(
+            game.tracking_data, provider=game.tracking_data.provider, frame_rate=1
+        )
+        assert game.frame_rate == 1
 
     def test_game_get_column_ids(self):
         game = self.expected_game_tracab_opta.copy()
@@ -965,12 +964,31 @@ class TestGame(unittest.TestCase):
         away = game.get_column_ids(team="away", positions=["defender"])
         self.assertSetEqual(set(away), {"away_55", "away_66"})
 
+        game.tracking_data.loc[2, "home_11_x"] = np.nan
+        res_1 = game.get_column_ids(team="home", idx=2)
+        self.assertEqual(set(res_1), {"home_22", "home_33", "home_44"})
+
+        game.tracking_data.loc[2, "home_33_x"] = 52.5
+        game.tracking_data["team_possession"] = "home"
+        res_2 = game.get_column_ids(team="home", idx=2, remove_offside_players=True)
+        self.assertEqual(set(res_2), {"home_22", "home_44"})
+
+        game.home_players.loc[0, "start_frame"] = 50
+        game.home_players.loc[0, "end_frame"] = 40
+
+        res_3 = game.get_column_ids(team="home")
+        self.assertEqual(set(res_3), {"home_11", "home_22", "home_33", "home_44"})
+
         with self.assertRaises(ValueError):
             game.get_column_ids(team="wrong")
         with self.assertRaises(ValueError):
             game.get_column_ids(positions=["striker"])
         with self.assertRaises(TypeError):
             game.get_column_ids(min_minutes_played="fifteen")
+        with self.assertRaises(ValueError):
+            game.get_column_ids(idx=999)
+        with self.assertWarns(UserWarning):
+            game.get_column_ids(remove_offside_players=True)
 
     def test_game_player_column_id_to_full_name(self):
         res_name_home = self.expected_game_tracab_opta.player_column_id_to_full_name(

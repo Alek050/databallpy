@@ -1,5 +1,8 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+from platformdirs import user_cache_dir
 
 from databallpy.utils.constants import MISSING_INT
 
@@ -186,7 +189,6 @@ def _values_are_equal_(input1: any, input2: any) -> bool:
         "ShotEvent",
         "PassEvent",
         "DribbleEvent",
-        "TackleEvent",
         "Game",
         "IndividualCloseToBallEvent",
         "IndividualOnBallEvent",
@@ -241,7 +243,6 @@ def _copy_value_(value: any) -> any:
         "ShotEvent",
         "PassEvent",
         "DribbleEvent",
-        "TackleEvent",
         "Game",
         "IndividualCloseToBallEvent",
         "IndividualOnBallEvent",
@@ -251,3 +252,22 @@ def _copy_value_(value: any) -> any:
 
     else:
         raise NotImplementedError(f"Copying of {type(value)} is not implemented")
+
+
+def resolve_cache_dir(cache_dir: str | Path | None) -> Path:
+    """Function to get caching path
+
+    Args:
+        cache_dir (str | Path | None): input path to use as cache.
+
+    Returns:
+        Path: caching path
+    """
+    if cache_dir is None:
+        path = Path(user_cache_dir("databallpy", "databallpy"))
+    else:
+        path = Path(cache_dir).expanduser().resolve()
+
+    if not path.is_dir():
+        path.mkdir(parents=True, exist_ok=True)
+    return path

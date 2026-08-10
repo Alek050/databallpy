@@ -1,11 +1,12 @@
+import xml.etree.ElementTree as ET
+
 import chardet
 import pandas as pd
-from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.utils.constants import MISSING_INT
 
-SPORTEC_BASE_URL = "https://springernature.figshare.com/ndownloader/files"
+SPORTEC_BASE_URL = "https://ndownloader.figshare.com/files"
 FILE_ID_MAP = {
     "J03WPY": {"metadata": 51643487, "event_data": 51643505, "tracking_data": 51643526},
     "J03WN1": {"metadata": 51643472, "event_data": 51643496, "tracking_data": 51643517},
@@ -82,10 +83,10 @@ def _get_sportec_metadata(metadata_loc: str, only_event_data: bool = False) -> M
         lines = file.read()
 
     lines = lines.replace("ï»¿", "")
-    soup = BeautifulSoup(lines, "xml")
+    root = ET.fromstring(lines)
     teams_info = {}
-    for team in soup.find_all("Team"):
-        players = team.find_all("Player")
+    for team in root.findall(".//Team"):
+        players = team.findall(".//Player")
         player_dict = {
             "id": [""] * len(players),
             "full_name": [""] * len(players),
@@ -96,28 +97,30 @@ def _get_sportec_metadata(metadata_loc: str, only_event_data: bool = False) -> M
             "starter": [None] * len(players),
         }
 
-        for i, player in enumerate(team.find_all("Player")):
-            player_dict["id"][i] = player["PersonId"]
-            player_dict["full_name"][i] = player["FirstName"] + " " + player["LastName"]
-            player_dict["shirt_num"][i] = int(player["ShirtNumber"])
+        for i, player in enumerate(players):
+            player_dict["id"][i] = player.get("PersonId")
+            player_dict["full_name"][i] = (
+                player.get("FirstName") + " " + player.get("LastName")
+            )
+            player_dict["shirt_num"][i] = int(player.get("ShirtNumber"))
             player_dict["position"][i] = DFB_POSITIONS[
                 player.get("PlayingPosition", "Sub")
             ]
-            player_dict["starter"][i] = player["Starting"] == "true"
+            player_dict["starter"][i] = player.get("Starting") == "true"
 
-        team_side = "home" if team["Role"] == "home" else "away"
-        teams_info[f"{team_side}_team_id"] = team["TeamId"]
-        teams_info[f"{team_side}_team_name"] = team["TeamName"]
+        team_side = "home" if team.get("Role") == "home" else "away"
+        teams_info[f"{team_side}_team_id"] = team.get("TeamId")
+        teams_info[f"{team_side}_team_name"] = team.get("TeamName")
         teams_info[f"{team_side}_players"] = pd.DataFrame(player_dict)
         teams_info[f"{team_side}_score"] = int(
-            soup.find("General")["Result"].split(":")[team_side == "away"]
+            root.find(".//General").get("Result").split(":")[team_side == "away"]
         )
         teams_info[f"{team_side}_formation"] = (
-            team["LineUp"].split(" ")[0].replace("-", "")
+            team.get("LineUp").split(" ")[0].replace("-", "")
         )
 
-    pitch_size_x = float(soup.find("Environment")["PitchX"])
-    pitch_size_y = float(soup.find("Environment")["PitchY"])
+    pitch_size_x = float(root.find(".//Environment").get("PitchX"))
+    pitch_size_y = float(root.find(".//Environment").get("PitchY"))
 
     if only_event_data:
         frames_df = pd.DataFrame(
@@ -139,7 +142,7 @@ def _get_sportec_metadata(metadata_loc: str, only_event_data: bool = False) -> M
         )
 
     return Metadata(
-        game_id=soup.find("General")["MatchId"],
+        game_id=root.find(".//General").get("MatchId"),
         pitch_dimensions=[pitch_size_x, pitch_size_y],
         periods_frames=frames_df,
         frame_rate=MISSING_INT,

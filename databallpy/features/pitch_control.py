@@ -1,155 +1,36 @@
+from functools import lru_cache
+
 import numpy as np
 import pandas as pd
-from scipy.spatial import KDTree
-from scipy.stats import multivariate_normal
 
 from databallpy.utils.utils import sigmoid
-from databallpy.utils.warnings import deprecated
 
 
-@deprecated(
-    "The get_approximate_voronoi function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.get_approximate_voronoi() instead."
-)
-def get_approximate_voronoi(
-    tracking_data: pd.Series | pd.DataFrame,
-    pitch_dimensions: list[float, float],
-    n_x_bins: int = 106,
-    n_y_bins: int = 68,
+@lru_cache(maxsize=8)
+def _get_grid(
+    pitch_length: float, pitch_width: float, n_x_bins: int, n_y_bins: int
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Find the nearest player to each cell center in a grid of cells covering the
-    pitch.
+    """Create the (constant) grid of cell centers used for the pitch control surface.
+
+    The result is cached since the grid only depends on the pitch dimensions and the
+    number of bins, and is thus identical for every frame.
 
     Args:
-        tracking_data (pd.Series | pd.DataFrame): The tracking data. If it is a
-            pd.Series, it is assumed that it contains data of a single frame. If it
-            is a pd.DataFrame it is assumed that it contains tracking data of multiple
-            frames.
-        pitch_dimensions (list[float, float]): The dimensions of the pitch.
-        n_x_bins (int, optional): The number of cells in the width (x) direction.
-            Defaults to 106.
-        n_y_bins (int, optional): The number of cells in the height (y) direction.
-            Defaults to 68.
+        pitch_length (float): The length (x) of the pitch in meters.
+        pitch_width (float): The width (y) of the pitch in meters.
+        n_x_bins (int): The number of cells in the width (x) direction.
+        n_y_bins (int): The number of cells in the height (y) direction.
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: The distances to the nearest player for each
-            cell center and the column ids of the nearest player. If tracking_data is
-            a pd.Series, the shape will be (n_y_bins x n_x_bins), otherwise
-            (len(tracking_data) x n_y_bins x n_x_bins).
+        tuple[np.ndarray, np.ndarray]: Grid created with np.meshgrid.
     """
-    pitch_length, pitch_width = pitch_dimensions
-    x_bins = np.linspace(-pitch_length / 2, pitch_length / 2, n_x_bins + 1)
-    y_bins = np.linspace(-pitch_width / 2, pitch_width / 2, n_y_bins + 1)
-    cell_centers_x, cell_centers_y = np.meshgrid(
-        x_bins[:-1] + np.diff(x_bins) / 2, y_bins[:-1] + np.diff(y_bins) / 2
+    x_grid, y_grid = np.meshgrid(
+        np.linspace(-pitch_length / 2, pitch_length / 2, n_x_bins),
+        np.linspace(-pitch_width / 2, pitch_width / 2, n_y_bins),
     )
-
-    if isinstance(tracking_data, pd.Series):
-        tracking_data = tracking_data.to_frame().T
-
-    all_distances = np.empty((len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32)
-    all_assigned_players = np.empty((len(tracking_data), n_y_bins, n_x_bins), dtype="U7")
-    for i, (_, frame) in enumerate(tracking_data.iterrows()):
-        player_column_ids = np.array(
-            [
-                column[:-2]
-                for column in frame.index
-                if column[-2:] in ["_x", "_y"]
-                and not pd.isnull(frame[column])
-                and "ball" not in column
-            ]
-        )
-        player_positions = np.array(
-            [
-                [frame[column + "_x"], frame[column + "_y"]]
-                for column in player_column_ids
-            ]
-        ).astype(np.float64)
-
-        tree = KDTree(player_positions)
-        cell_centers = np.column_stack((cell_centers_x.ravel(), cell_centers_y.ravel()))
-        distances, nearest_player_indices = tree.query(cell_centers)
-
-        all_assigned_players[i] = player_column_ids[nearest_player_indices].reshape(
-            n_y_bins, n_x_bins
-        )
-        all_distances[i] = distances.reshape(n_y_bins, n_x_bins)
-
-    if all_distances.shape[0] == 1:
-        all_distances = all_distances[0]
-        all_assigned_players = all_assigned_players[0]
-
-    return all_distances, all_assigned_players
-
-
-@deprecated(
-    "The get_pitch_control function is deprecated and will removed in version 0.8.0. Please use Game.TrackingData.get_pitch_control() instead."
-)
-def get_pitch_control(
-    tracking_data: pd.DataFrame,
-    pitch_dimensions: list[float, float],
-    n_x_bins: int = 106,
-    n_y_bins: int = 68,
-    start_idx: int | None = None,
-    end_idx: int | None = None,
-) -> np.ndarray:
-    """
-    Calculate the pitch control surface for a given period of time. The pitch control
-    surface is the sum of the team influences of the two teams. The team influence is
-    the sum of the individual player influences of the team. The player influence is
-    calculated using the statistical technique presented in the article "Wide Open
-    Spaces" by Fernandez & Born (2018). It incorporates the position, velocity, and
-    distance to the ball of a given player to determine the influence degree at each
-    location on the field. The bivariate normal distribution is utilized to model the
-    player's influence, and the result is normalized to obtain values within a [0, 1]
-    range.
-    The values are then passed through a sigmoid function to obtain the pitch control
-    values within a [0, 1] range. Values near 1 indicate high pitch control by the home
-    team, while values near 0 indicate high pitch control by the away team.
-
-    Args:
-        tracking_data (pd.DataFrame): tracking data.
-        pitch_dimensions (list[float, float]): The dimensions of the pitch.
-        n_x_bins (int, optional): The number of cells in the width (x) direction.
-            Defaults to 106.
-        n_y_bins (int, optional): The number of cells in the height (y) direction.
-            Defaults to 68.
-        start_idx (int, optional): The starting index of the period. Defaults to None.
-        end_idx (int, optional): The ending index of the period. Defaults to None.
-
-    Returns:
-        np.ndarray: 3d pitch control values across the grid.
-            Size is (len(tracking_data), grid[0].shape[0], grid[0].shape[1]).
-    """
-
-    start_idx = tracking_data.index[0] if start_idx is None else start_idx
-    end_idx = tracking_data.index[-1] if end_idx is None else end_idx
-    tracking_data = tracking_data.loc[start_idx:end_idx]
-
-    pitch_control = np.zeros((len(tracking_data), n_y_bins, n_x_bins), dtype=np.float32)
-
-    # precompute player ball distances
-    col_ids = [
-        x[:-2]
-        for x in tracking_data.columns
-        if ("home" in x or "away" in x) and x[-2:] == "_x"
-    ]
-    player_ball_distances = pd.DataFrame(columns=col_ids, index=tracking_data.index)
-    for col_id in col_ids:
-        player_ball_distances[col_id] = np.linalg.norm(
-            tracking_data[[f"{col_id}_x", f"{col_id}_y"]].values
-            - tracking_data[["ball_x", "ball_y"]].values,
-            axis=1,
-        )
-
-    for i, idx in enumerate(tracking_data.index):
-        pitch_control[i] = get_pitch_control_single_frame(
-            tracking_data.loc[idx],
-            pitch_dimensions,
-            n_x_bins,
-            n_y_bins,
-            player_ball_distances=player_ball_distances.loc[idx],
-        )
-    return np.array(pitch_control)
+    x_grid.flags.writeable = False
+    y_grid.flags.writeable = False
+    return x_grid, y_grid
 
 
 def get_pitch_control_surface_radius(
@@ -316,13 +197,23 @@ def get_player_influence(
     scaling_matrix = calculate_scaling_matrix(np.hypot(vx_val, vy_val), distance_to_ball)
     covariance_matrix = calculate_covariance_matrix(vx_val, vy_val, scaling_matrix)
 
-    grid_size = grid[0].shape
-    positions = np.vstack([grid[0].ravel(), grid[1].ravel()]).T
+    # evaluate the gaussian inline using the closed form inverse of the 2x2 covariance
+    # matrix. The normalisation constant of the gaussian cancels since the influence
+    # values are normalised by their maximum.
+    (var_x, cov_xy), (cov_yx, var_y) = covariance_matrix
+    determinant = var_x * var_y - cov_xy * cov_yx
 
-    distribution = multivariate_normal(mean=mean, cov=covariance_matrix)
-    influence_values = distribution.pdf(positions)
-    influence_values = influence_values / np.max(influence_values)
-    return influence_values.reshape(grid_size[0], grid_size[1])
+    delta_x = grid[0] - mean[0]
+    delta_y = grid[1] - mean[1]
+    exponent = (
+        -0.5
+        * (
+            delta_x * (var_y * delta_x - cov_xy * delta_y)
+            + delta_y * (var_x * delta_y - cov_yx * delta_x)
+        )
+        / determinant
+    )
+    return np.exp(exponent - exponent.max())
 
 
 def get_team_influence(
@@ -407,10 +298,7 @@ def get_pitch_control_single_frame(
             Size of the grid is n_y_bins x n_x_bins.
     """
 
-    grid = np.meshgrid(
-        np.linspace(-pitch_dimensions[0] / 2, pitch_dimensions[0] / 2, n_x_bins),
-        np.linspace(-pitch_dimensions[1] / 2, pitch_dimensions[1] / 2, n_y_bins),
-    )
+    grid = _get_grid(pitch_dimensions[0], pitch_dimensions[1], n_x_bins, n_y_bins)
 
     home_col_ids = [x[:-2] for x in frame.index if "home" in x and x[-2:] == "_x"]
     away_col_ids = [x[:-2] for x in frame.index if "away" in x and x[-2:] == "_x"]

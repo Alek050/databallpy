@@ -1,3 +1,4 @@
+import datetime as dt
 import unittest
 
 import numpy as np
@@ -25,8 +26,9 @@ class TestTzModification(unittest.TestCase):
         pd.testing.assert_series_equal(result, expected_dates)
 
         # unkown characeristic
-        with self.assertRaises(DataBallPyError):
-            utc_to_local_datetime(dates, "Unknown_key")
+
+        res_dates = utc_to_local_datetime(dates, "Unknown_key")
+        assert res_dates.dt.tz == dt.timezone.utc
 
         # should not changes, all are NaT
         dates = pd.Series(np.array(["NaT", "NaT", "NaT"], dtype="datetime64[ns]"))
