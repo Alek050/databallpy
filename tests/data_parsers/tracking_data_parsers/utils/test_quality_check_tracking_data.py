@@ -1,4 +1,5 @@
 import unittest
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -94,6 +95,18 @@ class TestQualityCheckTrackingData(unittest.TestCase):
         with self.assertWarns(DataBallPyWarning):
             _check_player_velocity(
                 self.tracking_data_warning, self.framerate, self.periods
+            )
+
+    def test_check_player_velocity_no_frames_in_periods(self):
+        periods = pd.DataFrame(
+            {"period_id": [1], "start_frame": [100], "end_frame": [110]}
+        )
+        tracking_data = self.tracking_data_warning.copy()
+        tracking_data["frame"] = range(13)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DataBallPyWarning)
+            self.assertIsNone(
+                _check_player_velocity(tracking_data, self.framerate, periods)
             )
 
     def test_max_sequence_invalid_frames(self):
