@@ -188,3 +188,29 @@ class TestInsertMissingRows(unittest.TestCase):
     def test_insert_missing_rows(self):
         output = _insert_missing_rows(self.input, "frame")
         pd.testing.assert_frame_equal(output, self.expected_output)
+
+    def test_insert_missing_rows_with_selection(self):
+        input_df = pd.DataFrame(
+            {
+                "frame": [0, 1, 4, 10],
+                "values_int": [1, 1, 1, 1],
+                "values_float": [1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        expected_output = pd.DataFrame(
+            {
+                "frame": [0, 1, 2, 3, 4, 5, 10],
+                "values_int": [
+                    1,
+                    1,
+                    MISSING_INT,
+                    MISSING_INT,
+                    1,
+                    MISSING_INT,
+                    1,
+                ],
+                "values_float": [1.0, 1.0, np.nan, np.nan, 1.0, np.nan, 1.0],
+            }
+        )
+        output = _insert_missing_rows(input_df, "frame", selection=(1, 5))
+        pd.testing.assert_frame_equal(output, expected_output)

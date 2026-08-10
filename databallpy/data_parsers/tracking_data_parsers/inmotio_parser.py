@@ -11,7 +11,10 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_datetime,
     _add_periods_to_tracking_data,
     _add_player_tracking_data_to_dict,
+    _downcast_tracking_data,
+    _get_frame_selection,
     _get_gametime,
+    _get_period_start_frames,
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
@@ -23,7 +26,12 @@ from databallpy.utils.utils import _to_float, _to_int
 
 @logging_wrapper(__file__)
 def load_inmotio_tracking_data(
-    tracking_data_loc: str, metadata_loc: str, verbose: bool = True
+    tracking_data_loc: str,
+    metadata_loc: str,
+    verbose: bool = True,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load inmotio tracking data.
 
@@ -32,12 +40,20 @@ def load_inmotio_tracking_data(
         metadata_loc (str): location of the metadata .xml file
         verbose (bool, optional): whether to print information about the progress
         in the terminall. Defaults to True.
+        period_id (int | list[int], optional): only load the frames of these
+            period(s). Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the frames between the first
+            and the last frame, inclusive. Defaults to None (load all frames).
 
     Raises:
         TypeError: if tracking_data_loc is not a string
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the game
+
+    Note:
+        The metadata always describes the full game, also when only a part of the
+        tracking data is loaded.
     """
     if not isinstance(tracking_data_loc, str):
         raise TypeError(
@@ -46,8 +62,14 @@ def load_inmotio_tracking_data(
 
     metadata = _get_metadata(metadata_loc)
     td_channels = _get_td_channels(metadata_loc, metadata)
+    selection = _get_frame_selection(metadata.periods_frames, period_id, frames)
     tracking_data = _get_tracking_data(
-        tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose
+        tracking_data_loc,
+        td_channels,
+        metadata.pitch_dimensions,
+        verbose,
+        selection=selection,
+        extra_frames=_get_period_start_frames(metadata.periods_frames),
     )
     first_frame = metadata.periods_frames[metadata.periods_frames["start_frame"] > 0][
         "start_frame"
@@ -72,7 +94,13 @@ def load_inmotio_tracking_data(
     tracking_data["gametime_td"] = _get_gametime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
-    return tracking_data, metadata
+
+    if selection is not None:
+        tracking_data = tracking_data[
+            tracking_data["frame"].between(*selection)
+        ].reset_index(drop=True)
+
+    return _downcast_tracking_data(tracking_data), metadata
 
 
 @logging_wrapper(__file__)
@@ -81,6 +109,9 @@ def _get_tracking_data(
     td_channels: list,
     pitch_dimensions: list,
     verbose: bool = True,
+    *,
+    selection: tuple[int, int] | None = None,
+    extra_frames: set[int] | None = None,
 ) -> pd.DataFrame:
     """Function to load in inmotio format tracking_data
 
@@ -91,6 +122,10 @@ def _get_tracking_data(
         pitch_dimensions (list): x and y dimensions of the pitch in meters
         verbose (bool, optional): whether to print information about the progress in the
         terminal. Defaults to True.
+        selection (tuple[int, int], optional): the first and last frame to load,
+            inclusive. Defaults to None (load all frames).
+        extra_frames (set[int], optional): frames that are loaded even when they
+            fall outside of the selection. Defaults to None.
 
     Returns:
         pd.DataFrame: tracking data of the game in a pd dataframe
@@ -98,7 +133,17 @@ def _get_tracking_data(
     if verbose:
         print(f"Reading in {tracking_data_loc}", end="")
     file = open(tracking_data_loc, "r")
-    lines = file.readlines()
+    if selection is None:
+        lines = file.readlines()
+    else:
+        first_frame, last_frame = selection
+        extra_frames = extra_frames if extra_frames is not None else set()
+        lines = [
+            line
+            for line in file
+            if first_frame <= (frame := _to_int(line.split(":", 1)[0])) <= last_frame
+            or frame in extra_frames
+        ]
     if verbose:
         print(" - Completed")
     file.close()
@@ -146,9 +191,9 @@ def _get_tracking_data(
     for col in [x for x in df.columns if "_y" in x]:
         df[col] = df[col] - (pitch_dimensions[1] / 2)
 
-    df = _insert_missing_rows(df, "frame")
+    df = _insert_missing_rows(df, "frame", selection=selection)
 
-    return df
+    return _downcast_tracking_data(df)
 
 
 def _get_td_channels(metadata_loc: str, metadata: Metadata) -> list:

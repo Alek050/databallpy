@@ -74,6 +74,9 @@ def get_game(
     check_quality: bool = True,
     _check_game_class_: bool = True,
     verbose: bool = True,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> Game:
     """
     Function to get all information of a game given its datasources
@@ -99,9 +102,17 @@ def get_game(
         check_quality (bool, optional): whether you want to check the quality of the
             tracking data. Defaults to True
         verbose (bool, optional): whether or not to print info about progress
+        period_id (int | list[int], optional): only load the tracking data frames of
+            these period(s). Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the tracking data frames between
+            the first and the last frame, inclusive. Defaults to None (load all frames).
 
     Returns:
         (Game): a game object with all information available of the game.
+
+    Note:
+        The metadata, and thus the periods and the event data, always describe the
+        full game, also when only a part of the tracking data is loaded.
     """
     LOGGER.info(
         "Trying to load a new game in get_game();"
@@ -204,6 +215,8 @@ def get_game(
             tracking_metadata_loc=tracking_metadata_loc,
             tracking_data_provider=tracking_data_provider,
             verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
         if not uses_event_data:
             databallpy_events = {}
@@ -417,6 +430,8 @@ def load_tracking_data(
     tracking_metadata_loc: str,
     tracking_data_provider: str,
     verbose: bool = True,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load the tracking data of a game
 
@@ -425,9 +440,17 @@ def load_tracking_data(
         tracking_metadata_loc (str): location of the tracking metadata file
         tracking_data_provider (str): provider of the tracking data
         verbose (bool, optional): whether or not to print info about progress
+        period_id (int | list[int], optional): only load the frames of these
+            period(s). Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the frames between the first
+            and the last frame, inclusive. Defaults to None (load all frames).
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking data and metadata of the game
+
+    Note:
+        The metadata always describes the full game, also when only a part of the
+        tracking data is loaded.
     """
 
     if tracking_data_provider not in ["tracab", "metrica", "inmotio", "sportec", "dfl"]:
@@ -439,19 +462,27 @@ def load_tracking_data(
     # Get tracking data and tracking metadata
     if tracking_data_provider in ["tracab", "sportec", "dfl"]:
         tracking_data, tracking_metadata = load_tracab_tracking_data(
-            tracking_data_loc, tracking_metadata_loc, verbose=verbose
+            tracking_data_loc,
+            tracking_metadata_loc,
+            verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
     elif tracking_data_provider == "metrica":
         tracking_data, tracking_metadata = load_metrica_tracking_data(
             tracking_data_loc=tracking_data_loc,
             metadata_loc=tracking_metadata_loc,
             verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
     elif tracking_data_provider == "inmotio":
         tracking_data, tracking_metadata = load_inmotio_tracking_data(
             tracking_data_loc=tracking_data_loc,
             metadata_loc=tracking_metadata_loc,
             verbose=verbose,
+            period_id=period_id,
+            frames=frames,
         )
     return tracking_data, tracking_metadata
 

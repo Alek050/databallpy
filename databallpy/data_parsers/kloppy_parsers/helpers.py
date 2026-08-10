@@ -7,6 +7,7 @@ import pandas as pd
 
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _adjust_start_end_frames,
+    _downcast_tracking_data,
     _get_gametime,
     _insert_missing_rows,
 )
@@ -369,7 +370,7 @@ def convert_kloppy_tracking_dataset(
     )
 
     return TrackingData(
-        tracking_dataframe,
+        _downcast_tracking_data(tracking_dataframe),
         provider=tracking_dataset.metadata.provider.value,
         frame_rate=tracking_dataset.metadata.frame_rate,
     )

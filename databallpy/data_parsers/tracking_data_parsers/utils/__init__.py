@@ -13,6 +13,13 @@ from databallpy.data_parsers.tracking_data_parsers.utils._add_player_tracking_da
 from databallpy.data_parsers.tracking_data_parsers.utils._adjust_start_end_frames import (
     _adjust_start_end_frames,
 )
+from databallpy.data_parsers.tracking_data_parsers.utils._downcast_tracking_data import (
+    _downcast_tracking_data,
+)
+from databallpy.data_parsers.tracking_data_parsers.utils._get_frame_selection import (
+    _get_frame_selection,
+    _get_period_start_frames,
+)
 from databallpy.data_parsers.tracking_data_parsers.utils._get_gametime import (
     _get_gametime,
 )

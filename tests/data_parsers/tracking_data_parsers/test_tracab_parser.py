@@ -41,6 +41,46 @@ class TestTracabParser(unittest.TestCase):
         assert metadata == MD_TRACAB
         pd.testing.assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
 
+    def test_load_tracab_tracking_data_selection(self):
+        full_td, _ = load_tracab_tracking_data(
+            self.tracking_data_dat_loc, self.metadata_json_loc, verbose=False
+        )
+
+        td, metadata = load_tracab_tracking_data(
+            self.tracking_data_dat_loc,
+            self.metadata_json_loc,
+            verbose=False,
+            period_id=1,
+        )
+        expected_td = full_td[full_td["period_id"] == 1].reset_index(drop=True)
+        pd.testing.assert_frame_equal(td, expected_td)
+        assert metadata == MD_TRACAB
+
+        td, _ = load_tracab_tracking_data(
+            self.tracking_data_dat_loc,
+            self.metadata_json_loc,
+            verbose=False,
+            frames=(1509994, 1509996),
+        )
+        expected_td = full_td[full_td["frame"].between(1509994, 1509996)].reset_index(
+            drop=True
+        )
+        pd.testing.assert_frame_equal(td, expected_td)
+
+    def test_load_tracab_tracking_data_xml_selection(self):
+        full_td, _ = load_tracab_tracking_data(
+            self.td_sportec_loc, self.metadata_sportec_loc, verbose=False
+        )
+
+        td, _ = load_tracab_tracking_data(
+            self.td_sportec_loc,
+            self.metadata_sportec_loc,
+            verbose=False,
+            period_id=2,
+        )
+        expected_td = full_td[full_td["period_id"] == 2].reset_index(drop=True)
+        pd.testing.assert_frame_equal(td, expected_td)
+
     def test_load_tracab_tracking_data_errors(self):
         with self.assertRaises(ValueError):
             load_tracab_tracking_data(

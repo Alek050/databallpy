@@ -17,7 +17,10 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_datetime,
     _add_periods_to_tracking_data,
     _add_player_tracking_data_to_dict,
+    _downcast_tracking_data,
+    _get_frame_selection,
     _get_gametime,
+    _get_period_start_frames,
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
@@ -27,7 +30,12 @@ from databallpy.utils.utils import _to_int
 
 @logging_wrapper(__file__)
 def load_metrica_tracking_data(
-    tracking_data_loc: str, metadata_loc: str, verbose: bool = True
+    tracking_data_loc: str,
+    metadata_loc: str,
+    verbose: bool = True,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load metrica tracking data.
 
@@ -36,12 +44,20 @@ def load_metrica_tracking_data(
         metadata_loc (str): location of the metadata .xml file
         verbose (bool, optional): whether to print information about the progress
         in the terminall. Defaults to True.
+        period_id (int | list[int], optional): only load the frames of these
+            period(s). Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the frames between the first
+            and the last frame, inclusive. Defaults to None (load all frames).
 
     Raises:
         TypeError: if tracking_data_loc is not a string or io.StringIO
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: tracking and metadata of the game
+
+    Note:
+        The metadata always describes the full game, also when only a part of the
+        tracking data is loaded.
     """
 
     if isinstance(tracking_data_loc, str):
@@ -64,8 +80,14 @@ def load_metrica_tracking_data(
     metadata = _get_metadata(metadata_loc)
     td_channels = _get_td_channels(metadata_loc, metadata)
     metadata = _update_metadata(td_channels, metadata)
+    selection = _get_frame_selection(metadata.periods_frames, period_id, frames)
     tracking_data = _get_tracking_data(
-        tracking_data_loc, td_channels, metadata.pitch_dimensions, verbose=verbose
+        tracking_data_loc,
+        td_channels,
+        metadata.pitch_dimensions,
+        verbose=verbose,
+        selection=selection,
+        extra_frames=_get_period_start_frames(metadata.periods_frames),
     )
 
     tracking_data, changed_periods = _normalize_playing_direction_tracking(
@@ -84,7 +106,13 @@ def load_metrica_tracking_data(
     tracking_data["gametime_td"] = _get_gametime(
         tracking_data["frame"], tracking_data["period_id"], metadata
     )
-    return tracking_data, metadata
+
+    if selection is not None:
+        tracking_data = tracking_data[
+            tracking_data["frame"].between(*selection)
+        ].reset_index(drop=True)
+
+    return _downcast_tracking_data(tracking_data), metadata
 
 
 @logging_wrapper(__file__)
@@ -121,6 +149,9 @@ def _get_tracking_data(
     channels: dict,
     pitch_dimensions: list[float, float],
     verbose: bool = True,
+    *,
+    selection: tuple[int, int] | None = None,
+    extra_frames: set[int] | None = None,
 ) -> pd.DataFrame:
     """Function to load the tracking data of metrica.
 
@@ -131,6 +162,10 @@ def _get_tracking_data(
         pitch_dimensions (list): x and y dimensions of the pitch in meters
         verbose (bool, optional): whether to print information about the progress in the
         terminal. Defaults to True.
+        selection (tuple[int, int], optional): the first and last frame to load,
+            inclusive. Defaults to None (load all frames).
+        extra_frames (set[int], optional): frames that are loaded even when they
+            fall outside of the selection. Defaults to None.
 
     Returns:
         pd.DataFrame: tracking data of the game in a pd dataframe
@@ -138,10 +173,10 @@ def _get_tracking_data(
 
     if isinstance(tracking_data_loc, str):
         file = open(tracking_data_loc)
-        lines = file.readlines()
+        lines = _filter_lines(file, selection, extra_frames)
         file.close()
     else:
-        lines = tracking_data_loc.readlines()
+        lines = _filter_lines(tracking_data_loc, selection, extra_frames)
 
     size_lines = len(lines)
     data = {
@@ -187,6 +222,36 @@ def _get_tracking_data(
     for col in [x for x in df.columns if "_y" in x]:
         df[col] = df[col] * pitch_dimensions[1] - (pitch_dimensions[1] / 2)
 
-    df = _insert_missing_rows(df, "frame")
+    df = _insert_missing_rows(df, "frame", selection=selection)
 
-    return df
+    return _downcast_tracking_data(df)
+
+
+def _filter_lines(
+    file: io.TextIOBase,
+    selection: tuple[int, int] | None,
+    extra_frames: set[int] | None,
+) -> list[str]:
+    """Function to read the lines of the tracking data that should be parsed.
+
+    Args:
+        file (io.TextIOBase): the opened tracking data file
+        selection (tuple[int, int] | None): the first and last frame to load,
+            inclusive. None means all frames are loaded.
+        extra_frames (set[int] | None): frames that are loaded even when they fall
+            outside of the selection.
+
+    Returns:
+        list[str]: the lines of the tracking data that should be parsed
+    """
+    if selection is None:
+        return file.readlines()
+
+    first_frame, last_frame = selection
+    extra_frames = extra_frames if extra_frames is not None else set()
+    return [
+        line
+        for line in file
+        if first_frame <= (frame := _to_int(line.split(":", 1)[0])) <= last_frame
+        or frame in extra_frames
+    ]

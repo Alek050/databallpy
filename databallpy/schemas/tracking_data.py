@@ -131,9 +131,11 @@ class TrackingDataSchema(pa.DataFrameModel):
     def before_now(self, series: pa.typing.Series[object]) -> bool:
         return series.dropna().apply(lambda x: x <= pd.Timestamp.now(tz=x.tzinfo)).all()
 
-    ball_x: pa.typing.Series[float] = pa.Field(ge=-62.5, le=62.5, nullable=True)
-    ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True)
-    ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True)
+    ball_x: pa.typing.Series[float] = pa.Field(
+        ge=-62.5, le=62.5, nullable=True, coerce=True
+    )
+    ball_y: pa.typing.Series[float] = pa.Field(ge=-45, le=45, nullable=True, coerce=True)
+    ball_z: pa.typing.Series[float] = pa.Field(ge=-5, le=45, nullable=True, coerce=True)
     ball_status: pa.typing.Series[str] = pa.Field(isin=["alive", "dead"], nullable=True)
     team_possession: pa.typing.Series[str] = pa.Field(nullable=True)
 
@@ -815,18 +817,23 @@ class TrackingData(pd.DataFrame):
         ].iloc[0]
         start_idx = 0
         self["team_possession"] = None
-        for event_id in [x for x in self.event_id if x != MISSING_INT]:
-            event = event_data[event_data.event_id == event_id].iloc[0]
+        events_by_id = (
+            event_data.drop_duplicates(subset="event_id")
+            .set_index("event_id")[["databallpy_event", "team_id", "is_successful"]]
+            .to_dict("index")
+        )
+        event_ids = self["event_id"]
+        for end_idx, event_id in event_ids[event_ids != MISSING_INT].items():
+            event = events_by_id[event_id]
             if (
                 event["databallpy_event"] in on_ball_events
-                and event.team_id != current_team_id
-                and event.is_successful == 1
+                and event["team_id"] != current_team_id
+                and event["is_successful"] == 1
             ):
-                end_idx = self[self.event_id == event_id].index[0]
                 team = "home" if current_team_id == home_team_id else "away"
                 self.loc[start_idx:end_idx, "team_possession"] = team
 
-                current_team_id = event.team_id
+                current_team_id = event["team_id"]
                 start_idx = end_idx
 
         last_team = "home" if current_team_id == home_team_id else "away"
