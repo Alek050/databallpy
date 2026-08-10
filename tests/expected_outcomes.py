@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
+from databallpy.data_parsers.tracking_data_parsers.utils import _downcast_tracking_data
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.constants import MISSING_INT
@@ -84,6 +85,7 @@ TD_TRACAB = TrackingData(
     frame_rate=25,
     provider="tracab",
 )
+_downcast_tracking_data(TD_TRACAB)
 
 
 MD_TRACAB = Metadata(
@@ -739,6 +741,7 @@ TD_METRICA = pd.DataFrame(
         "gametime_td": ["00:00", "00:00", "00:01", "45:00", "45:00", "45:01"],
     }
 )
+_downcast_tracking_data(TD_METRICA)
 
 ED_METRICA = EventData(
     {
@@ -1117,6 +1120,7 @@ TD_INMOTIO = pd.DataFrame(
         "gametime_td": ["", "00:00", "00:00", "Break", "45:00", "45:00"],
     }
 )
+_downcast_tracking_data(TD_INMOTIO)
 
 MD_INMOTIO = Metadata(
     game_id=9999,
@@ -1844,6 +1848,7 @@ TRACAB_SPORTEC_XML_TD = pd.DataFrame(
 TRACAB_SPORTEC_XML_TD["datetime"] = pd.to_datetime(
     TRACAB_SPORTEC_XML_TD["datetime"]
 ).dt.tz_convert("Europe/Berlin")
+_downcast_tracking_data(TRACAB_SPORTEC_XML_TD)
 
 MD_STATSBOMB = Metadata(
     game_id=15946,

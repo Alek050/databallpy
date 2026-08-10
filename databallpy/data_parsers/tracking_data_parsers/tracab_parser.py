@@ -21,7 +21,10 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_periods_to_tracking_data,
     _add_player_tracking_data_to_dict,
     _adjust_start_end_frames,
+    _downcast_tracking_data,
+    _get_frame_selection,
     _get_gametime,
+    _get_period_start_frames,
     _insert_missing_rows,
     _normalize_playing_direction_tracking,
 )
@@ -32,7 +35,12 @@ from databallpy.utils.tz_modification import localize_datetime
 
 @logging_wrapper(__file__)
 def load_tracab_tracking_data(
-    tracab_loc: str, metadata_loc: str, verbose: bool = True
+    tracab_loc: str,
+    metadata_loc: str,
+    verbose: bool = True,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, Metadata]:
     """Function to load tracking data and metadata from the tracab format
 
@@ -41,14 +49,30 @@ def load_tracab_tracking_data(
         metadata_loc (str): location of the meta_data.xml file
         verbose (bool): whether to print on progress of loading in the terminal,
         defaults to True
+        period_id (int | list[int], optional): only load the frames of this period,
+            or of these periods. Defaults to None (load all periods).
+        frames (tuple[int, int], optional): only load the frames between the first
+            and the last frame, inclusive. Defaults to None (load all frames).
 
     Returns:
         Tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
+
+    Note:
+        The metadata always describes the full game, also when only part of the
+        tracking data is loaded. When `period_id` or `frames` is specified, the
+        start and end frames of the periods are taken from the metadata as is,
+        while they are estimated based on the tracking data for a full load.
     """
 
     metadata = _get_metadata(metadata_loc)
     if tracab_loc.endswith(".dat") or tracab_loc.endswith(".txt"):
-        tracking_data = _get_tracking_data_txt(tracab_loc, verbose)
+        selection = _get_frame_selection(metadata.periods_frames, period_id, frames)
+        tracking_data = _get_tracking_data_txt(
+            tracab_loc,
+            verbose,
+            selection=selection,
+            extra_frames=_get_period_start_frames(metadata.periods_frames),
+        )
         tracking_data["datetime"] = _add_datetime(
             tracking_data["frame"],
             metadata.frame_rate,
@@ -56,12 +80,18 @@ def load_tracab_tracking_data(
         )
     elif tracab_loc.endswith(".xml"):
         tracking_data, periods_frames, frame_rate = _get_tracking_data_xml(
-            tracab_loc, metadata.home_players, metadata.away_players, verbose
+            tracab_loc,
+            metadata.home_players,
+            metadata.away_players,
+            verbose,
+            period_id=period_id,
+            frames=frames,
         )
         metadata.periods_frames = periods_frames
         metadata.frame_rate = int(frame_rate)
+        selection = _get_frame_selection(periods_frames, period_id, frames)
         tracking_data = _insert_missing_rows(
-            tracking_data.reset_index(drop=True), "frame"
+            tracking_data.reset_index(drop=True), "frame", selection=selection
         )
     else:
         message = "Tracab tracking data should be either .txt, .dat, or .xml format."
@@ -72,7 +102,8 @@ def load_tracab_tracking_data(
         "period_id",
         _add_periods_to_tracking_data(tracking_data["frame"], metadata.periods_frames),
     )
-    tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
+    if selection is None:
+        tracking_data, metadata = _adjust_start_end_frames(tracking_data, metadata)
 
     tracking_data["gametime_td"] = _get_gametime(
         tracking_data["frame"], tracking_data["period_id"], metadata
@@ -82,7 +113,12 @@ def load_tracab_tracking_data(
     )
     metadata.periods_changed_playing_direction = changed_periods
 
-    return tracking_data, metadata
+    if selection is not None:
+        tracking_data = tracking_data[
+            tracking_data["frame"].between(*selection)
+        ].reset_index(drop=True)
+
+    return _downcast_tracking_data(tracking_data), metadata
 
 
 @logging_wrapper(__file__)
@@ -148,6 +184,9 @@ def _get_tracking_data_xml(
     home_players: pd.DataFrame,
     away_players: pd.DataFrame,
     verbose: bool,
+    *,
+    period_id: int | list[int] | None = None,
+    frames: tuple[int, int] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, int]:
     if verbose:
         print(f"Reading in {tracab_loc}", end="")
@@ -175,12 +214,23 @@ def _get_tracking_data_xml(
     for event, elem in context:
         n_elements += 1
         if event == "end" and elem.tag == "FrameSet" and elem.get("TeamId") == "BALL":
-            frames = elem.findall("Frame")
-            frame_values.extend([int(x.get("N")) for x in frames])
+            frame_elements = elem.findall("Frame")
+            frame_values.extend([int(x.get("N")) for x in frame_elements])
             game_section = elem.get("GameSection")
             frame_rate, n_frames_first_half = process_game_section(
-                frames, game_section, frames_df, frame_rate, n_frames_first_half
+                frame_elements, game_section, frames_df, frame_rate, n_frames_first_half
             )
+
+    selection = _get_frame_selection(frames_df, period_id, frames)
+    if selection is not None:
+        first_frame, last_frame = selection
+        extra_frames = _get_period_start_frames(frames_df)
+        frame_values = [
+            x
+            for x in frame_values
+            if first_frame <= x <= last_frame or x in extra_frames
+        ]
+    frame_to_idx = {frame: idx for idx, frame in enumerate(frame_values)}
 
     size_lines = len(frame_values)
     data = {
@@ -202,7 +252,7 @@ def _get_tracking_data_xml(
     for event, elem in context:
         if not (event == "end" and elem.tag == "FrameSet"):
             continue
-        frames = elem.findall("Frame")
+        frame_elements = elem.findall("Frame")
         player_id = elem.get("PersonId")
         if player_id in home_players["id"].to_list():
             column_id = "home_" + str(
@@ -219,12 +269,10 @@ def _get_tracking_data_xml(
             data[f"{column_id}_x"] = [np.nan] * size_lines
             data[f"{column_id}_y"] = [np.nan] * size_lines
 
-        is_second_half = elem.get("GameSection") == "secondHalf"
-        for frame in frames:
-            if is_second_half:
-                i = n_frames_first_half + int(frame.get("N")) - 100_000
-            else:
-                i = int(frame.get("N")) - 10_000
+        for frame in frame_elements:
+            i = frame_to_idx.get(int(frame.get("N")))
+            if i is None:  # frame is not part of the selection
+                continue
 
             data[f"{column_id}_x"][i] = float(frame.get("X"))
             data[f"{column_id}_y"][i] = float(frame.get("Y"))
@@ -251,7 +299,7 @@ def _get_tracking_data_xml(
     frames_df["end_datetime_td"] = (
         frames_df["end_datetime_td"].dt.tz_localize("UTC").dt.tz_convert("Europe/Berlin")
     )
-    return df, frames_df, frame_rate
+    return _downcast_tracking_data(df), frames_df, frame_rate
 
 
 def process_game_section(
@@ -288,12 +336,22 @@ def process_game_section(
 
 
 @logging_wrapper(__file__)
-def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
+def _get_tracking_data_txt(
+    tracab_loc: str,
+    verbose: bool,
+    *,
+    selection: tuple[int, int] | None = None,
+    extra_frames: set[int] | None = None,
+) -> pd.DataFrame:
     """Function that reads tracking data from .dat file and stores it in a pd.DataFrame
 
     Args:
         tracab_loc (str): location of the tracking_data.dat file
         verbose (bool): whether to print info in terminal
+        selection (tuple[int, int], optional): the first and last frame to load,
+            inclusive. Defaults to None (load all frames).
+        extra_frames (set[int], optional): frames outside of the selection that
+            should be loaded as well. Defaults to None.
 
     Returns:
         pd.DataFrame: contains tracking data
@@ -303,7 +361,17 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
         print(f"Reading in {tracab_loc}", end="")
 
     with open(tracab_loc, "r") as file:
-        lines = file.readlines()
+        if selection is None:
+            lines = file.readlines()
+        else:
+            first_frame, last_frame = selection
+            extra_frames = extra_frames if extra_frames is not None else set()
+            lines = [
+                line
+                for line in file
+                if first_frame <= (frame := int(line.split(":", 1)[0])) <= last_frame
+                or frame in extra_frames
+            ]
     if verbose:
         print(" - Completed")
 
@@ -350,8 +418,8 @@ def _get_tracking_data_txt(tracab_loc: str, verbose: bool) -> pd.DataFrame:
 
     mask = df.columns.str.contains("_x|_y|_z")
     df.loc[:, mask] = np.round(df.loc[:, mask] / 100, 3)  # change cm to m
-    df = _insert_missing_rows(df, "frame")
-    return df
+    df = _insert_missing_rows(df, "frame", selection=selection)
+    return _downcast_tracking_data(df)
 
 
 @logging_wrapper(__file__)

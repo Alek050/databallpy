@@ -1,8 +1,6 @@
-import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.utils.constants import MISSING_INT
 
 
 def _to_gametime(secs: int, max_m: int, start_m: int) -> str:
@@ -51,61 +49,29 @@ def _get_gametime(
         list: for every frame the game time.
     """
     frame_rate = metadata.frame_rate
-    periods_frames = metadata.periods_frames
-
     period_start_dict = dict(
-        zip(periods_frames["period_id"], periods_frames["start_frame"])
-    )
-
-    n_frames_period = dict(
         zip(
-            periods_frames["period_id"],
-            periods_frames["end_frame"] - periods_frames["start_frame"],
+            metadata.periods_frames["period_id"],
+            metadata.periods_frames["start_frame"],
         )
     )
 
-    rel_timestamp = np.array(
-        [
-            x - period_start_dict[p] if p > 0 else MISSING_INT * frame_rate
-            for x, p in zip(frame_num_column.values, period_column.values)
-        ]
-    )
-
-    seconds = rel_timestamp // frame_rate
-    df = pd.DataFrame(
-        {
-            "seconds": seconds,
-            "period_id": period_column.values,
-        }
-    )
     start_m_dict = {1: 0, 2: 45, 3: 90, 4: 105}
     max_m_dict = {1: 45, 2: 90, 3: 105, 4: 120}
 
     gametime_list = []
-    for p in [1, 2, 3, 4]:
-        frame_end_current_p = periods_frames.loc[
-            periods_frames["period_id"] == p, "end_frame"
-        ].iloc[0]
-        frame_start_next_p = periods_frames.loc[
-            periods_frames["period_id"] == p + 1, "start_frame"
-        ].iloc[0]
-        if frame_start_next_p > 0 and frame_end_current_p > 0:
-            n_frames_break = frame_start_next_p - frame_end_current_p - 1
-        else:
-            n_frames_break = 0
-        gametime_list_period = []
-        for seconds in df[df["period_id"] == p]["seconds"].unique():
-            gametime_list_period.extend(
-                [_to_gametime(int(seconds), max_m_dict[p], start_m_dict[p])] * frame_rate
+    game_started = False
+    for frame, period_id in zip(frame_num_column.values, period_column.values):
+        if period_id in start_m_dict:
+            game_started = True
+            seconds = int((frame - period_start_dict[period_id]) // frame_rate)
+            gametime_list.append(
+                _to_gametime(seconds, max_m_dict[period_id], start_m_dict[period_id])
             )
-        gametime_list_period = gametime_list_period[: n_frames_period[p] + 1]
-        gametime_list_period.extend(["Break"] * n_frames_break)
-        gametime_list.extend(gametime_list_period)
+        elif period_id == 5:
+            game_started = True
+            gametime_list.append("Penalty Shootout")
+        else:
+            gametime_list.append("Break" if game_started else None)
 
-    for _ in df[df["period_id"] == 5]["seconds"].unique():
-        gametime_list.extend(["Penalty Shootout"] * frame_rate)
-
-    gametime_list = gametime_list[: len(df)]
-    len_diff = len(frame_num_column) - len(gametime_list)
-    to_add = [None] * len_diff
-    return to_add + gametime_list
+    return gametime_list
