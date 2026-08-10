@@ -11,6 +11,9 @@
 - Fixed `Game.get_frames()` and `Game.get_event_frame()` raising a pandas `KeyError` instead of a `DataBallPyError` when no tracking data is loaded
 - Sped up `TrackingData.add_team_possession()` by replacing the per-event scans of the event data with a single lookup table
 - Added `period_id` and `frames` arguments to `get_game()` and the tracking data loaders to load only a part of the tracking data, and halved the memory usage of the tracking data by storing the coordinates as float32
+- Load the xG parameters once at import instead of reading `xg_params.json` from disk for every `ShotEvent`
+- Sped up pitch control by caching the constant grid, evaluating the player influence gaussian inline instead of constructing a scipy object per player per frame, and building the player ball distances as floats
+- Added `player_columns` and `frame_columns` arguments to `TrackingData.to_long_format()` to limit the columns that are repeated per object, cutting the memory usage of `add_dangerous_accessible_space()`
 - Removed the `TackleEvent` class; tackles remain available as `"tackle"` in the `databallpy_event` column of the event data
 
 ## Version 0.7

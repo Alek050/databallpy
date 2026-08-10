@@ -670,13 +670,17 @@ class TrackingData(pd.DataFrame):
             for x in tracking_data.columns
             if ("home" in x or "away" in x) and x[-2:] == "_x"
         ]
-        player_ball_distances = pd.DataFrame(columns=col_ids, index=tracking_data.index)
-        for col_id in col_ids:
-            player_ball_distances[col_id] = np.linalg.norm(
-                tracking_data[[f"{col_id}_x", f"{col_id}_y"]].values
-                - tracking_data[["ball_x", "ball_y"]].values,
-                axis=1,
-            )
+        ball_xy = tracking_data[["ball_x", "ball_y"]].values
+        player_ball_distances = pd.DataFrame(
+            {
+                col_id: np.linalg.norm(
+                    tracking_data[[f"{col_id}_x", f"{col_id}_y"]].values - ball_xy,
+                    axis=1,
+                )
+                for col_id in col_ids
+            },
+            index=tracking_data.index,
+        )
 
         for i, idx in enumerate(tracking_data.index):
             pitch_control[i] = get_pitch_control_single_frame(
@@ -684,7 +688,7 @@ class TrackingData(pd.DataFrame):
                 pitch_dimensions,
                 n_x_bins,
                 n_y_bins,
-                player_ball_distances=player_ball_distances.loc[idx],
+                player_ball_distances=player_ball_distances.iloc[i],
             )
         return np.array(pitch_control)
 
@@ -883,7 +887,10 @@ class TrackingData(pd.DataFrame):
             .map({True: "home", False: "away"})
         )
 
-        td_long = self[mask].to_long_format()
+        td_long = self[mask].to_long_format(
+            player_columns=["x", "y", "vx", "vy"],
+            frame_columns=["period_id", "player_possession", "team_in_possession"],
+        )
         td_long["team"] = td_long["column_id"].str[:4]
 
         res = accessible_space.interface.get_dangerous_accessible_space(
@@ -913,15 +920,35 @@ class TrackingData(pd.DataFrame):
         )["dangerous_accessible_space"]
         self.drop(columns="team_in_possession", inplace=True)
 
-    def to_long_format(self) -> pd.DataFrame:
+    def to_long_format(
+        self,
+        *,
+        player_columns: list[str] | None = None,
+        frame_columns: list[str] | None = None,
+    ) -> pd.DataFrame:
         """Function that moves from the base format, with a row for every frame,
         to a long format, with a row for every frame/column_id combination
 
         The ball/team information will be added to every row
 
-        returns: pd.DataFrame
+        Args:
+            player_columns (list[str], optional): Object level values to keep, without
+                the object prefix, e.g. ["x", "y", "vx", "vy"]. Defaults to None, all
+                object level values.
+            frame_columns (list[str], optional): Frame level columns to keep, e.g.
+                ["period_id"]. The "frame" column is always included. Defaults to None,
+                all frame level columns.
+
+        Returns:
+            pd.DataFrame: the tracking data in long format.
+
+        Note:
+            Every frame level column is repeated once per object (ball + players), so
+            restricting `frame_columns` and `player_columns` to what is needed
+            downstream greatly reduces the memory usage.
         """
         df_players = []
+        object_columns = []
         player_cols = [
             x[:-2]
             for x in self.columns
@@ -936,6 +963,10 @@ class TrackingData(pd.DataFrame):
                 ]
             else:
                 value_cols = [x.split("_")[2] for x in self.columns if player + "_" in x]
+            object_columns += [player + "_" + x for x in value_cols]
+            if player_columns is not None:
+                value_cols = [x for x in value_cols if x in player_columns]
+
             df_player = self[["frame"] + [player + "_" + x for x in value_cols]].copy()
             df_player.rename(
                 columns={player + "_" + x: x for x in value_cols}, inplace=True
@@ -946,10 +977,17 @@ class TrackingData(pd.DataFrame):
 
         df_long = pd.concat(df_players, axis=0).reset_index(drop=True)
 
-        used_cols = [
-            player + "_" + value
-            for player in player_cols + ["ball"]
-            for value in df_long.columns[2:]
+        unused_cols = [
+            col
+            for col in self.columns
+            if col not in object_columns
+            and col != "frame"
+            and (frame_columns is None or col in frame_columns)
         ]
-        unused_cols = [col for col in self.columns if col not in used_cols]
-        return pd.DataFrame(df_long.merge(self[unused_cols], on="frame"))
+        if len(unused_cols) == 0:
+            return pd.DataFrame(df_long)
+
+        df_unused = pd.concat([self[unused_cols]] * len(df_players), axis=0).reset_index(
+            drop=True
+        )
+        return pd.DataFrame(pd.concat([df_long, df_unused], axis=1))

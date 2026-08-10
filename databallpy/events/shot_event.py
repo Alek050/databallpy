@@ -12,6 +12,10 @@ from databallpy.models.utils import scale_and_predict_logreg
 from databallpy.utils.constants import DATABALLPY_SHOT_OUTCOMES
 from databallpy.utils.utils import _copy_value_, _values_are_equal_
 
+path = os.path.join(os.path.dirname(__file__), "..", "models")
+with open(f"{path}/xg_params.json", "r") as f:
+    XG_PARAMS = json.load(f)
+
 
 @dataclass
 class ShotEvent(IndividualOnBallEvent):
@@ -160,12 +164,8 @@ class ShotEvent(IndividualOnBallEvent):
 
         if self.outcome_str == "own_goal":
             return 0.0
-        path = os.path.join(os.path.dirname(__file__), "..", "models")
         if pd.isnull(self.ball_goal_distance) or pd.isnull(self.shot_angle):
             return np.nan
-
-        with open(f"{path}/xg_params.json", "r") as f:
-            xg_params = json.load(f)
 
         if self.set_piece == "penalty":
             return 0.79
@@ -173,19 +173,19 @@ class ShotEvent(IndividualOnBallEvent):
         elif self.set_piece == "free_kick":
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
-                xg_params["xg_by_free_kick"],
+                XG_PARAMS["xg_by_free_kick"],
             )[0]
 
         elif "foot" not in self.body_part:
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
-                xg_params["xg_by_head"],
+                XG_PARAMS["xg_by_head"],
             )[0]
 
         else:  # take most general model, shot by foot
             return scale_and_predict_logreg(
                 np.array([[self.ball_goal_distance, self.shot_angle]]),
-                xg_params["xg_by_foot"],
+                XG_PARAMS["xg_by_foot"],
             )[0]
 
     def __eq__(self, other: object) -> bool:

@@ -1,10 +1,38 @@
+from functools import lru_cache
+
 import numpy as np
 import pandas as pd
 from scipy.spatial import KDTree
-from scipy.stats import multivariate_normal
 
 from databallpy.utils.utils import sigmoid
 from databallpy.utils.warnings import deprecated
+
+
+@lru_cache(maxsize=8)
+def _get_grid(
+    pitch_length: float, pitch_width: float, n_x_bins: int, n_y_bins: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Create the (constant) grid of cell centers used for the pitch control surface.
+
+    The result is cached since the grid only depends on the pitch dimensions and the
+    number of bins, and is thus identical for every frame.
+
+    Args:
+        pitch_length (float): The length (x) of the pitch in meters.
+        pitch_width (float): The width (y) of the pitch in meters.
+        n_x_bins (int): The number of cells in the width (x) direction.
+        n_y_bins (int): The number of cells in the height (y) direction.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Grid created with np.meshgrid.
+    """
+    x_grid, y_grid = np.meshgrid(
+        np.linspace(-pitch_length / 2, pitch_length / 2, n_x_bins),
+        np.linspace(-pitch_width / 2, pitch_width / 2, n_y_bins),
+    )
+    x_grid.flags.writeable = False
+    y_grid.flags.writeable = False
+    return x_grid, y_grid
 
 
 @deprecated(
@@ -316,13 +344,23 @@ def get_player_influence(
     scaling_matrix = calculate_scaling_matrix(np.hypot(vx_val, vy_val), distance_to_ball)
     covariance_matrix = calculate_covariance_matrix(vx_val, vy_val, scaling_matrix)
 
-    grid_size = grid[0].shape
-    positions = np.vstack([grid[0].ravel(), grid[1].ravel()]).T
+    # evaluate the gaussian inline using the closed form inverse of the 2x2 covariance
+    # matrix. The normalisation constant of the gaussian cancels since the influence
+    # values are normalised by their maximum.
+    (var_x, cov_xy), (cov_yx, var_y) = covariance_matrix
+    determinant = var_x * var_y - cov_xy * cov_yx
 
-    distribution = multivariate_normal(mean=mean, cov=covariance_matrix)
-    influence_values = distribution.pdf(positions)
-    influence_values = influence_values / np.max(influence_values)
-    return influence_values.reshape(grid_size[0], grid_size[1])
+    delta_x = grid[0] - mean[0]
+    delta_y = grid[1] - mean[1]
+    exponent = (
+        -0.5
+        * (
+            delta_x * (var_y * delta_x - cov_xy * delta_y)
+            + delta_y * (var_x * delta_y - cov_yx * delta_x)
+        )
+        / determinant
+    )
+    return np.exp(exponent - exponent.max())
 
 
 def get_team_influence(
@@ -407,10 +445,7 @@ def get_pitch_control_single_frame(
             Size of the grid is n_y_bins x n_x_bins.
     """
 
-    grid = np.meshgrid(
-        np.linspace(-pitch_dimensions[0] / 2, pitch_dimensions[0] / 2, n_x_bins),
-        np.linspace(-pitch_dimensions[1] / 2, pitch_dimensions[1] / 2, n_y_bins),
-    )
+    grid = _get_grid(pitch_dimensions[0], pitch_dimensions[1], n_x_bins, n_y_bins)
 
     home_col_ids = [x[:-2] for x in frame.index if "home" in x and x[-2:] == "_x"]
     away_col_ids = [x[:-2] for x in frame.index if "away" in x and x[-2:] == "_x"]
