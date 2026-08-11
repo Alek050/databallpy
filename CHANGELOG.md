@@ -1,7 +1,7 @@
 # Changelog
 
 ## Version 0.8
-### V0.8.1
+### V0.8.1 (11/08/2026)
 - Fixed `sigmoid()` overflowing on float32 input by clipping the exponent relative to the dtype of the input
 
 ### V0.8.0 (10/08/2026)
