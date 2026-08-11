@@ -111,8 +111,19 @@ def sigmoid(
 
     Returns:
         float | np.ndarray: The sigmoid function value(s) for the input value(s) x
+
+    Note:
+        The input of the exponent is clipped based on the dtype of the input, so that
+        np.exp() does not overflow for lower precision dtypes (e.g. float32).
     """
-    in_exp = np.clip(d * -(x - e), a_min=-700, a_max=700)
+    in_exp = d * -(x - e)
+    dtype = np.asarray(in_exp).dtype
+    if not np.issubdtype(dtype, np.floating):
+        dtype = np.float64
+    max_exp = np.nextafter(
+        np.log(np.finfo(dtype).max).astype(dtype), np.array(0, dtype=dtype)
+    )
+    in_exp = np.clip(in_exp, a_min=-max_exp, a_max=max_exp)
     return a + (b / (1 + c * np.exp(in_exp)))
 
 
