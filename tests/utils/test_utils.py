@@ -1,4 +1,5 @@
 import unittest
+import warnings
 from unittest.mock import patch
 
 import numpy as np
@@ -87,6 +88,30 @@ class TestUtils(unittest.TestCase):
         np.testing.assert_almost_equal(
             sigmoid(np.array([0, 5]), a=1, b=2, c=3, d=4, e=5), np.array([1.0, 1.5])
         )
+
+    def test_sigmoid_no_overflow(self):
+        # clipping should be relative to the dtype of the input
+        for dtype in [np.float16, np.float32, np.float64]:
+            x = np.array([-1000, 0, 1000], dtype=dtype)
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", RuntimeWarning)
+                res = sigmoid(x)
+            self.assertEqual(res.dtype, dtype)
+            np.testing.assert_almost_equal(
+                res, np.array([0.0, 0.5, 1.0], dtype=dtype), decimal=3
+            )
+
+        # python scalars are treated as float64
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            self.assertAlmostEqual(sigmoid(-1000.0), 0.0)
+            self.assertAlmostEqual(sigmoid(1000), 1.0)
+
+        # scaling parameters should not cause an overflow either
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            res = sigmoid(np.array([-500, 500], dtype=np.float32), d=100.0, e=10.0)
+        np.testing.assert_almost_equal(res, np.array([0.0, 1.0], dtype=np.float32))
 
     def test_values_are_equal(self):
         # floats and ints
