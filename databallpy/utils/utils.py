@@ -116,8 +116,10 @@ def sigmoid(
         The input of the exponent is clipped based on the dtype of the input, so that
         np.exp() does not overflow for lower precision dtypes (e.g. float32).
     """
-    in_exp = np.asarray(d * -(x - e))
-    dtype = in_exp.dtype if np.issubdtype(in_exp.dtype, np.floating) else np.float64
+    in_exp = d * -(x - e)
+    dtype = np.asarray(in_exp).dtype
+    if not np.issubdtype(dtype, np.floating):
+        dtype = np.float64
     max_exp = np.nextafter(
         np.log(np.finfo(dtype).max).astype(dtype), np.array(0, dtype=dtype)
     )
