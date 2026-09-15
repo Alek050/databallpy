@@ -1202,23 +1202,76 @@ class TestGame(unittest.TestCase):
 
     def test_get_frames(self):
         game = self.expected_game_tracab_opta.copy()
-        res = game.get_frames(1509993)
-        pd.testing.assert_frame_equal(
-            game.get_frames(1509993), game.get_frames([1509993])
-        )
-        pd.testing.assert_frame_equal(res, game.tracking_data.iloc[0:1])
 
-        res2 = game.get_frames(1509993, playing_direction="possession_oriented")
+        cols = [
+            "ball_x",
+            "ball_y",
+            "home_34_x",
+            "home_34_y",
+            "away_17_x",
+            "away_17_y",
+        ]
+
+        frame_id_home_in_possession = 1509997
+        frame_id_home_out_of_possession = 1509995
+
+        home_ip_home_att_left_to_right = game.tracking_data.iloc[4:5]
+        home_ip_away_att_left_to_right = game.tracking_data[cols].iloc[4:5] * -1
+        home_oop_home_att_left_to_right = game.tracking_data.iloc[2:3]
+        home_oop_away_att_left_to_right = game.tracking_data[cols].iloc[2:3] * -1
+
+        res = game.get_frames(frame_id_home_in_possession)
         pd.testing.assert_frame_equal(
-            game.get_frames(1509993, playing_direction="possession_oriented"),
-            game.get_frames([1509993], playing_direction="possession_oriented"),
+            res[cols],
+            home_ip_home_att_left_to_right[cols],
         )
-        cols = ["ball_x", "ball_y", "home_34_x", "home_34_y", "away_17_x", "away_17_y"]
-        game.tracking_data[cols] = game.tracking_data[cols] * -1
-        pd.testing.assert_frame_equal(res2, game.tracking_data.iloc[0:1])
+
+        res_away = game.get_frames(
+            frame_id_home_in_possession,
+            playing_direction="away_oriented",
+        )
+        pd.testing.assert_frame_equal(
+            res_away[cols],
+            home_ip_away_att_left_to_right[cols],
+        )
+
+        res_oop = game.get_frames(
+            frame_id_home_out_of_possession,
+            playing_direction="out_of_possession_oriented",
+        )
+        pd.testing.assert_frame_equal(
+            res_oop[cols],
+            home_oop_home_att_left_to_right[cols],
+        )
+
+        res_ip = game.get_frames(
+            frame_id_home_out_of_possession,
+            playing_direction="possession_oriented",
+        )
+        pd.testing.assert_frame_equal(
+            res_ip[cols],
+            home_oop_away_att_left_to_right[cols],
+        )
+
+        pd.testing.assert_frame_equal(
+            game.get_frames(frame_id_home_in_possession),
+            home_ip_home_att_left_to_right,
+        )
+        pd.testing.assert_frame_equal(
+            game.get_frames(frame_id_home_out_of_possession),
+            home_oop_home_att_left_to_right,
+        )
+
+        pd.testing.assert_frame_equal(
+            game.get_frames(frame_id_home_in_possession),
+            game.get_frames([frame_id_home_in_possession]),
+        )
 
         with self.assertRaises(ValueError):
-            game.get_frames(1509993, playing_direction="wrong")
+            game.get_frames(
+                frame_id_home_in_possession,
+                playing_direction="wrong",
+            )
 
         with self.assertRaises(ValueError):
             game.get_frames(999)
@@ -1226,7 +1279,7 @@ class TestGame(unittest.TestCase):
     def test_get_event_frame(self):
         game = self.expected_game_tracab_opta.copy()
         pass_event = game.get_event(3)
-        game.tracking_data.loc[0, "event_id"] = pass_event.event_id
+        game.tracking_data.loc[4, "event_id"] = pass_event.event_id
 
         with self.assertRaises(DataBallPyError):
             game.get_event_frame(pass_event.event_id)
@@ -1235,27 +1288,56 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(ValueError):
             game.get_event_frame(999)
 
-        res_team = game.get_event_frame(
-            pass_event.event_id, playing_direction="team_oriented"
-        )
-        pd.testing.assert_frame_equal(res_team, game.tracking_data.iloc[0:1])
+        cols = [
+            "ball_x",
+            "ball_y",
+            "home_34_x",
+            "home_34_y",
+            "away_17_x",
+            "away_17_y",
+        ]
+        expected_home = game.tracking_data.iloc[4:5]
+        expected_away = game.tracking_data[cols].iloc[4:5] * -1
 
-        res_possession = game.get_event_frame(
-            pass_event.event_id, playing_direction="possession_oriented"
+        res_home = game.get_event_frame(
+            pass_event.event_id,
+            playing_direction="home_oriented",
         )
         pd.testing.assert_frame_equal(
-            res_possession, game.tracking_data.iloc[0:1]
-        )  # event team side is home
-
-        game.pass_events.loc[
-            game.pass_events["event_id"] == pass_event["event_id"], "player_id"
-        ] = 450445  # away player id
-        res_possession = game.get_event_frame(
-            pass_event.event_id, playing_direction="possession_oriented"
+            res_home,
+            expected_home,
         )
-        cols = ["ball_x", "ball_y", "home_34_x", "home_34_y", "away_17_x", "away_17_y"]
-        game.tracking_data[cols] = game.tracking_data[cols] * -1
-        pd.testing.assert_frame_equal(res_possession, game.tracking_data.iloc[0:1])
+
+        res_away = game.get_event_frame(
+            pass_event.event_id,
+            playing_direction="away_oriented",
+        )
+        pd.testing.assert_frame_equal(res_away[cols], expected_away)
+
+        res_possession = game.get_event_frame(
+            pass_event.event_id,
+            playing_direction="possession_oriented",
+        )
+        pd.testing.assert_frame_equal(res_possession, expected_home)
+
+        res_out_of_possession = game.get_event_frame(
+            pass_event.event_id,
+            playing_direction="out_of_possession_oriented",
+        )
+        pd.testing.assert_frame_equal(res_out_of_possession[cols], expected_away)
+
+        expected_away = game.tracking_data[cols].iloc[0:1] * -1
+        pass_event = game.get_event(6)
+        game.tracking_data.loc[0, "event_id"] = pass_event.event_id
+        res_possession = game.get_event_frame(
+            pass_event.event_id,
+            playing_direction="possession_oriented",
+        )
+        print()
+        pd.testing.assert_frame_equal(
+            res_possession[cols],
+            expected_away,
+        )
 
         with self.assertRaises(ValueError):
             game.get_event_frame(pass_event.event_id, playing_direction="wrong")
