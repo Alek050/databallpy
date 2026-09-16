@@ -631,10 +631,16 @@ class Game:
             "pass_events",
         ):
             dataframe = getattr(self, dataframe_name)
-            columns = [
+            id_columns = [
                 column
                 for column in dataframe.select_dtypes(include="object")
-                if pd.api.types.infer_dtype(dataframe[column]) == "mixed-integer"
+                if column == "id" or column.endswith("_id")
+            ]
+            columns = [
+                column
+                for column in id_columns
+                if pd.api.types.infer_dtype(dataframe[column])
+                in ("mixed-integer", "mixed")
             ]
             if columns:
                 # Parquet cannot mix string IDs with integer missing-value markers.

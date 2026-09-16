@@ -48,19 +48,30 @@ class TestGameSerialization(unittest.TestCase):
         self._assert_round_trip(game)
 
     def test_saved_game_without_encoding_metadata(self):
-        game = get_game(
-            event_data_loc="tests/test_data/f24_test.xml",
-            event_metadata_loc="tests/test_data/f7_test.xml",
-            event_data_provider="opta",
-        )
+        game = self._get_ma_game()
+        values = ["00123", "-999", MISSING_INT, None, np.int64(42), "42"]
+        game.event_data.loc[game.event_data.index[:6], "player_id"] = values
+
         with tempfile.TemporaryDirectory() as path:
             game.save_game(name="game", path=path, verbose=False)
             metadata_path = os.path.join(path, "game", "metadata.json")
             with open(metadata_path) as file:
                 metadata = json.load(file)
+            # the player_id column must actually have been json-encoded,
+            # otherwise dropping the key below would not exercise the
+            # fallback decode-skip path at all.
+            self.assertEqual(
+                metadata["json_encoded_columns"]["event_data"], ["player_id"]
+            )
             metadata.pop("json_encoded_columns", None)
             with open(metadata_path, "w") as file:
                 json.dump(metadata, file)
 
             saved_game = get_saved_game(name="game", path=path)
-        self.assertEqual(saved_game, game)
+
+        # without the encoding metadata, get_saved_game has no way of knowing
+        # player_id needs decoding, so it is left as raw json strings
+        decoded = saved_game.event_data["player_id"].map(json.loads, na_action="ignore")
+        pd.testing.assert_series_equal(
+            decoded, game.event_data["player_id"], check_names=False
+        )
