@@ -2,6 +2,7 @@
 
 ## Version 0.8
 ### V0.8.2
+- Added `home_oriented`, `away_oriented`, and `out_of_possession_oriented` playing directions to `Game.get_frames()` and `Game.get_event_frame()`, alongside the existing `possession_oriented`; `team_oriented` is now deprecated in favour of `home_oriented`
 - Fixed `Game.save_game()` crashing on id columns mixing string and integer/float values (e.g. Opta MA13/MA2 opaque alphanumeric player IDs alongside legacy numeric or missing-value IDs)
 
 ### V0.8.1 (11/08/2026)
