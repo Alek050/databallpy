@@ -381,37 +381,51 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
     with open(os.path.join(full_path, "metadata.json"), "rb") as f:
         metadata = json.load(f)
 
+    dataframes = {}
+    for dataframe_name in (
+        "tracking_data",
+        "event_data",
+        "periods",
+        "home_players",
+        "away_players",
+        "dribble_events",
+        "shot_events",
+        "pass_events",
+    ):
+        dataframe = pd.read_parquet(os.path.join(full_path, f"{dataframe_name}.parquet"))
+        for column in metadata.get("json_encoded_columns", {}).get(dataframe_name, []):
+            dataframe[column] = dataframe[column].map(json.loads, na_action="ignore")
+        dataframes[dataframe_name] = dataframe
+
     return Game(
         tracking_data=TrackingData(
-            pd.read_parquet(os.path.join(full_path, "tracking_data.parquet")),
+            dataframes["tracking_data"],
             provider=metadata["tracking_data_provider"],
             frame_rate=metadata["tracking_data_frame_rate"],
         ),
         event_data=EventData(
-            pd.read_parquet(os.path.join(full_path, "event_data.parquet")),
+            dataframes["event_data"],
             provider=metadata["event_data_provider"],
         ),
         pitch_dimensions=metadata["pitch_dimensions"],
-        periods=pd.read_parquet(os.path.join(full_path, "periods.parquet")),
+        periods=dataframes["periods"],
         home_team_id=metadata["home_team_id"],
         home_formation=metadata["home_formation"],
         home_score=metadata["home_score"],
         home_team_name=metadata["home_team_name"],
-        home_players=pd.read_parquet(os.path.join(full_path, "home_players.parquet")),
+        home_players=dataframes["home_players"],
         away_team_id=metadata["away_team_id"],
         away_formation=metadata["away_formation"],
         away_score=metadata["away_score"],
         away_team_name=metadata["away_team_name"],
-        away_players=pd.read_parquet(os.path.join(full_path, "away_players.parquet")),
+        away_players=dataframes["away_players"],
         country=metadata["country"],
         allow_synchronise_tracking_and_event_data=metadata[
             "allow_synchronise_tracking_and_event_data"
         ],
-        shot_events=pd.read_parquet(os.path.join(full_path, "shot_events.parquet")),
-        dribble_events=pd.read_parquet(
-            os.path.join(full_path, "dribble_events.parquet")
-        ),
-        pass_events=pd.read_parquet(os.path.join(full_path, "pass_events.parquet")),
+        shot_events=dataframes["shot_events"],
+        dribble_events=dataframes["dribble_events"],
+        pass_events=dataframes["pass_events"],
         _tracking_timestamp_is_precise=metadata["_tracking_timestamp_is_precise"],
         _event_timestamp_is_precise=metadata["_event_timestamp_is_precise"],
         _periods_changed_playing_direction=metadata[
