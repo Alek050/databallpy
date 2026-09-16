@@ -1267,6 +1267,16 @@ class TestGame(unittest.TestCase):
             game.get_frames([frame_id_home_in_possession]),
         )
 
+        with self.assertWarns(DataBallPyWarning):
+            res_team_oriented = game.get_frames(
+                frame_id_home_in_possession,
+                playing_direction="team_oriented",
+            )
+        pd.testing.assert_frame_equal(
+            res_team_oriented,
+            home_ip_home_att_left_to_right,
+        )
+
         with self.assertRaises(ValueError):
             game.get_frames(
                 frame_id_home_in_possession,
@@ -1333,7 +1343,6 @@ class TestGame(unittest.TestCase):
             pass_event.event_id,
             playing_direction="possession_oriented",
         )
-        print()
         pd.testing.assert_frame_equal(
             res_possession[cols],
             expected_away,

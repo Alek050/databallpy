@@ -387,8 +387,10 @@ class Game:
             raise ValueError(f"Frame(s) {unrecognized_frames} not found in the game.")
 
         if playing_direction == "team_oriented":
-            DataBallPyWarning(
-                "'team_oriented' is deprecated and will be removed in a future version. Use 'home_oriented' instead"
+            warnings.warn(
+                "'team_oriented' is deprecated and will be removed in a future "
+                "version. Use 'home_oriented' instead",
+                category=DataBallPyWarning,
             )
             return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
         elif playing_direction == "home_oriented":
@@ -437,7 +439,9 @@ class Game:
             playing_direction (str, optional): The coordinate system of the frame.
                 Defaults to "home_oriented", options are {home_oriented, away_oriented,
                 possession_oriented, out_of_possession_oriented}. For more info on the
-                coordinate systems, see the documentation
+                coordinate systems, see the documentation. Note that "possession_oriented"
+                and "out_of_possession_oriented" are based on which team has possession
+                at this frame, not on which team performed the queried event.
 
         Raises:
             ValueError: if the event with the given event_id is not found in the game
@@ -450,7 +454,7 @@ class Game:
         if not self._is_synchronised:
             raise DataBallPyError(
                 "Tracking and event data are not synchronised yet. Please run the"
-                "synchronise_tracking_and_event_data() method first."
+                " synchronise_tracking_and_event_data() method first."
             )
         event_series = self.get_event(event_id)
         frame_id = self.tracking_data.loc[
