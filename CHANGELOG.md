@@ -1,6 +1,9 @@
 # Changelog
 
 ## Version 0.8
+### V0.8.2
+- Fixed `Game.save_game()` crashing on id columns mixing string and integer/float values (e.g. Opta MA13/MA2 opaque alphanumeric player IDs alongside legacy numeric or missing-value IDs)
+
 ### V0.8.1 (11/08/2026)
 - Fixed `sigmoid()` overflowing on float32 input by clipping the exponent relative to the dtype of the input
 

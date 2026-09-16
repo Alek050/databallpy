@@ -596,7 +596,8 @@ class Game:
     ) -> None:
         """Function to save the current game object. The path name will create a
         folder with different parquet and json files that stores all the information
-        of the match.
+        of the match. Mixed integer/string columns are JSON-encoded in parquet
+        and restored by get_saved_game using the column names in metadata.json.
 
         Args:
             name (str): name of the folder where the match will be saved,
@@ -618,18 +619,45 @@ class Game:
             )
 
         os.makedirs(folder_path, exist_ok=True)
-        self.tracking_data.to_parquet(os.path.join(folder_path, "tracking_data.parquet"))
-        self.event_data.to_parquet(os.path.join(folder_path, "event_data.parquet"))
-        self.periods.to_parquet(os.path.join(folder_path, "periods.parquet"))
-        self.home_players.to_parquet(os.path.join(folder_path, "home_players.parquet"))
-        self.away_players.to_parquet(os.path.join(folder_path, "away_players.parquet"))
-        self.dribble_events.to_parquet(
-            os.path.join(folder_path, "dribble_events.parquet")
-        )
-        self.shot_events.to_parquet(os.path.join(folder_path, "shot_events.parquet"))
-        self.pass_events.to_parquet(os.path.join(folder_path, "pass_events.parquet"))
+        json_encoded_columns = {}
+        for dataframe_name in (
+            "tracking_data",
+            "event_data",
+            "periods",
+            "home_players",
+            "away_players",
+            "dribble_events",
+            "shot_events",
+            "pass_events",
+        ):
+            dataframe = getattr(self, dataframe_name)
+            id_columns = [
+                column
+                for column in dataframe.select_dtypes(include="object")
+                if column == "id" or column.endswith("_id")
+            ]
+            columns = [
+                column
+                for column in id_columns
+                if pd.api.types.infer_dtype(dataframe[column])
+                in ("mixed-integer", "mixed")
+            ]
+            if columns:
+                # Parquet cannot mix string IDs with integer missing-value markers.
+                # JSON preserves both types without changing the in-memory game.
+                dataframe = dataframe.copy()
+                for column in columns:
+                    dataframe[column] = dataframe[column].map(
+                        lambda value: json.dumps(
+                            value.item() if isinstance(value, np.generic) else value
+                        ),
+                        na_action="ignore",
+                    )
+                json_encoded_columns[dataframe_name] = columns
+            dataframe.to_parquet(os.path.join(folder_path, f"{dataframe_name}.parquet"))
 
         metadata_info = {
+            "json_encoded_columns": json_encoded_columns,
             "event_data_provider": self.event_data.provider,
             "tracking_data_provider": self.tracking_data.provider,
             "tracking_data_frame_rate": self.tracking_data.frame_rate,
