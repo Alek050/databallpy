@@ -364,17 +364,16 @@ class Game:
 
     @requires_tracking_data
     def get_frames(
-        self, frames: int | list[int], playing_direction: str = "team_oriented"
+        self, frames: int | list[int], playing_direction: str = "home_oriented"
     ) -> pd.DataFrame:
-        """Function to get the frame of the game with the given frame
+        """Function to get the frames of the game with the given frame indexes
 
         Args:
             frames (int|list[int]): The frames of the game
             playing_direction (str, optional): The coordinate system of the frame.
-                Defaults to "team_oriented", options are {team_oriented,
-                possession_oriented}. For more info on the coordinate systems, see
-                the documentation
-
+                Defaults to "home_oriented", options are {home_oriented, away_oriented,
+                possession_oriented, out_of_possession_oriented}. For more info on the
+                coordinate systems, see the documentation
         Returns:
             pd.DataFrame: The frame of the game with the given frames
         """
@@ -388,9 +387,15 @@ class Game:
             raise ValueError(f"Frame(s) {unrecognized_frames} not found in the game.")
 
         if playing_direction == "team_oriented":
+            warnings.warn(
+                "'team_oriented' is deprecated and will be removed in a future "
+                "version. Use 'home_oriented' instead",
+                category=DataBallPyWarning,
+            )
             return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
-        elif playing_direction == "possession_oriented":
-            # current coordinate system: home from left to right, away right to left
+        elif playing_direction == "home_oriented":
+            return self.tracking_data.loc[self.tracking_data["frame"].isin(frames)]
+        elif playing_direction == "away_oriented":
             suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
             cols_to_swap = [
                 col for col in self.tracking_data.columns if col.endswith(suffixes)
@@ -398,26 +403,45 @@ class Game:
             temp_td = self.tracking_data.loc[
                 self.tracking_data["frame"].isin(frames)
             ].copy()
-            temp_td.loc[
-                self.tracking_data["team_possession"] == "away", cols_to_swap
-            ] *= -1
+            temp_td[cols_to_swap] *= -1
             return temp_td
-
+        elif playing_direction == "possession_oriented":
+            suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+            cols_to_swap = [
+                col for col in self.tracking_data.columns if col.endswith(suffixes)
+            ]
+            temp_td = self.tracking_data.loc[
+                self.tracking_data["frame"].isin(frames)
+            ].copy()
+            temp_td.loc[temp_td["team_possession"] == "away", cols_to_swap] *= -1
+            return temp_td
+        elif playing_direction == "out_of_possession_oriented":
+            suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
+            cols_to_swap = [
+                col for col in self.tracking_data.columns if col.endswith(suffixes)
+            ]
+            temp_td = self.tracking_data.loc[
+                self.tracking_data["frame"].isin(frames)
+            ].copy()
+            temp_td.loc[temp_td["team_possession"] == "home", cols_to_swap] *= -1
+            return temp_td
         else:
             raise ValueError(f"Coordinate system {playing_direction} is not supported.")
 
     @requires_tracking_data
     def get_event_frame(
-        self, event_id: int | str, playing_direction: str = "team_oriented"
+        self, event_id: int | str, playing_direction: str = "home_oriented"
     ) -> pd.DataFrame:
         """Function to get the frame of the event with the given event_id
 
         Args:
             event_id (int | str): The id of the event
             playing_direction (str, optional): The coordinate system of the frame.
-                Defaults to "team_oriented", options are {team_oriented,
-                possession_oriented}. For more info on the coordinate systems, see
-                the databallpy documentation
+                Defaults to "home_oriented", options are {home_oriented, away_oriented,
+                possession_oriented, out_of_possession_oriented}. For more info on the
+                coordinate systems, see the documentation. Note that "possession_oriented"
+                and "out_of_possession_oriented" are based on which team has possession
+                at this frame, not on which team performed the queried event.
 
         Raises:
             ValueError: if the event with the given event_id is not found in the game
@@ -436,22 +460,7 @@ class Game:
         frame_id = self.tracking_data.loc[
             self.tracking_data["event_id"] == event_series.event_id, "frame"
         ].iloc[0]
-        frame = self.get_frames(frame_id, playing_direction="team_oriented")
-        if playing_direction == "team_oriented":
-            return frame
-        elif playing_direction == "possession_oriented":
-            if sum(self.away_players["id"].values == event_series["player_id"]) > 0:
-                suffixes = ("_x", "_y", "_vx", "_vy", "_ax", "_ay")
-                cols_to_swap = [
-                    col for col in self.tracking_data.columns if col.endswith(suffixes)
-                ]
-                frame = self.tracking_data.loc[
-                    self.tracking_data["frame"] == frame_id
-                ].copy()
-                frame.loc[:, cols_to_swap] *= -1
-        else:
-            raise ValueError(f"Coordinate system {playing_direction} is not supported.")
-        return frame
+        return self.get_frames(frame_id, playing_direction=playing_direction)
 
     @requires_tracking_data
     @requires_event_data
