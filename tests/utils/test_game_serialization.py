@@ -7,6 +7,7 @@ from dataclasses import replace
 import numpy as np
 import pandas as pd
 
+from databallpy.game import _serialize_numpy_number
 from databallpy.schemas import TrackingData
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_game import get_game, get_saved_game
@@ -111,6 +112,12 @@ class TestGameSerialization(unittest.TestCase):
             self._get_ma_game(), home_score=np.float32(np.nan), away_score=None
         )
         self._assert_round_trip(game)
+
+    def test_metadata_encoder_rejects_unsupported_values(self):
+        for value in (object(), np.array([1, 2])):
+            with self.subTest(value_type=type(value).__name__):
+                with self.assertRaisesRegex(TypeError, "is not JSON serializable"):
+                    json.dumps({"value": value}, default=_serialize_numpy_number)
 
     def test_saved_game_without_encoding_metadata(self):
         game = self._get_ma_game()
