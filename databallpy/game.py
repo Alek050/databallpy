@@ -36,6 +36,15 @@ from databallpy.utils.warnings import DataBallPyWarning
 LOGGER = create_logger(__file__)
 
 
+def _serialize_numpy_number(value):
+    """Convert NumPy numeric metadata to JSON-compatible Python numbers."""
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        return float(value)
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
 def requires_tracking_data(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -687,7 +696,7 @@ class Game:
             "_periods_changed_playing_direction": self._periods_changed_playing_direction,
         }
         with open(os.path.join(folder_path, "metadata.json"), "w") as f:
-            json.dump(metadata_info, f)
+            json.dump(metadata_info, f, default=_serialize_numpy_number)
 
         if verbose:
             print(f"Game saved in {folder_path}")

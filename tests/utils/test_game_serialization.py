@@ -2,10 +2,12 @@ import json
 import os
 import tempfile
 import unittest
+from dataclasses import replace
 
 import numpy as np
 import pandas as pd
 
+from databallpy.schemas import TrackingData
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.get_game import get_game, get_saved_game
 
@@ -28,6 +30,7 @@ class TestGameSerialization(unittest.TestCase):
         self.assertEqual(saved_game, original)
         pd.testing.assert_frame_equal(saved_game.event_data, original.event_data)
         pd.testing.assert_frame_equal(saved_game.pass_events, original.pass_events)
+        return saved_game
 
     def test_opta_ma_round_trip(self):
         self._assert_round_trip(self._get_ma_game())
@@ -44,6 +47,68 @@ class TestGameSerialization(unittest.TestCase):
         ].astype(object)
         game.pass_events.loc[game.pass_events.index[:2], "receiver_player_id"] = (
             pd.Series(["hplayermaid01", MISSING_INT], dtype=object)
+        )
+        self._assert_round_trip(game)
+
+    def test_pandas_score_round_trip(self):
+        game = self._get_ma_game()
+        # Scores selected from a pandas match summary are NumPy integers.
+        home_score = pd.Series([game.home_score]).iloc[0]
+        game = replace(game, home_score=home_score)
+        self._assert_round_trip(game)
+
+    def test_numpy_integer_metadata_round_trip(self):
+        for dtype in (np.int32, np.int64, np.uint64):
+            with self.subTest(dtype=dtype):
+                game = get_game(
+                    event_data_loc="tests/test_data/f24_test.xml",
+                    event_metadata_loc="tests/test_data/f7_test.xml",
+                    event_data_provider="opta",
+                )
+                game = replace(
+                    game,
+                    home_team_id=dtype(game.home_team_id),
+                    away_team_id=dtype(game.away_team_id),
+                    home_score=dtype(game.home_score),
+                    away_score=dtype(game.away_score),
+                )
+                loaded = self._assert_round_trip(game)
+                for name in ("home_team_id", "away_team_id", "home_score", "away_score"):
+                    self.assertEqual(getattr(loaded, name), int(getattr(game, name)))
+                    self.assertIs(type(getattr(loaded, name)), int)
+
+    def test_numpy_floating_metadata_round_trip(self):
+        for dtype in (np.float16, np.float32, np.float64):
+            for container in (list, tuple):
+                with self.subTest(dtype=dtype, container=container):
+                    game = replace(
+                        self._get_ma_game(),
+                        pitch_dimensions=container([dtype(105.1), dtype(68.1)]),
+                    )
+                    loaded = self._assert_round_trip(game)
+                    self.assertEqual(
+                        loaded.pitch_dimensions,
+                        [float(x) for x in game.pitch_dimensions],
+                    )
+
+    def test_numpy_frame_rate_round_trip(self):
+        for frame_rate in (np.int64(25), np.float32(29.97)):
+            with self.subTest(frame_rate=frame_rate):
+                game = self._get_ma_game()
+                game = replace(
+                    game,
+                    tracking_data=TrackingData(
+                        game.tracking_data,
+                        provider=game.tracking_data.provider,
+                        frame_rate=frame_rate,
+                    ),
+                )
+                loaded = self._assert_round_trip(game)
+                self.assertEqual(loaded.frame_rate, frame_rate)
+
+    def test_numpy_missing_score_round_trip(self):
+        game = replace(
+            self._get_ma_game(), home_score=np.float32(np.nan), away_score=None
         )
         self._assert_round_trip(game)
 
