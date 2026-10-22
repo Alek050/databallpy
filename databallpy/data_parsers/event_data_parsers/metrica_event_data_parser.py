@@ -12,6 +12,7 @@ import requests
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_spadl_columns,
     _normalize_playing_direction_events,
 )
 from databallpy.data_parsers.metrica_metadata_parser import (
@@ -241,6 +242,7 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
         events["original_event"].map(metrica_databallpy_map).replace([np.nan], [None])
     )
     events["is_successful"] = events["is_successful"].astype("boolean")
+    events = _add_spadl_columns(events)
     return events
 
 

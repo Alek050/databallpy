@@ -3,6 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
@@ -352,6 +353,7 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
     ] *= -1
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
+    event_data = _add_spadl_columns(event_data)
 
     for event in {
         **shot_events,

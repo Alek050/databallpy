@@ -7,6 +7,7 @@ import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.events import (
     DribbleEvent,
     IndividualCloseToBallEvent,
@@ -811,6 +812,7 @@ def _load_event_data(
         event_data["is_successful"].astype("Int64").astype("boolean")
     )
     event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
+    event_data = _add_spadl_columns(event_data)
     # reassign the outcome of passes that result in a shot that is scored to 'assist'
     pass_events = _update_pass_outcome(event_data, shot_events, pass_events)
 

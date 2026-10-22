@@ -145,6 +145,9 @@ ED_FIFA = pd.DataFrame(
             "shot",
             "shot",
         ],
+        "action_type": [None] * 7,
+        "action_result": [None] * 7,
+        "action_bodypart": [None] * 7,
     }
 )
 

@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
@@ -401,6 +402,7 @@ def _load_event_data(
 
     event_data.loc[event_data["team_id"] == metadata.away_team_id, ["start_x"]] *= -1
     event_data.loc[event_data["team_id"] == metadata.home_team_id, ["start_y"]] *= -1
+    event_data = _add_spadl_columns(event_data)
 
     id_jersey_map = (
         pd.concat([metadata.home_players, metadata.away_players])[["id", "shirt_num"]]

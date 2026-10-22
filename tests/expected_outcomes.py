@@ -302,6 +302,9 @@ ED_OPTA = EventData(
             "attempt saved",
         ],
         "event_type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 16, 15],
+        "action_type": [None] * 12,
+        "action_result": [None] * 12,
+        "action_bodypart": [None] * 12,
     },
     provider="opta",
 )
@@ -818,6 +821,9 @@ ED_METRICA = EventData(
             9,
         ],
         "td_frame": [1, 3, 5, 7, 7, 7, 10, 10],
+        "action_type": [None] * 8,
+        "action_result": [None] * 8,
+        "action_bodypart": [None] * 8,
         "datetime": [
             pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
             pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
@@ -1270,6 +1276,9 @@ ED_INSTAT = EventData(
         ],
         "event_type_id": [1012, 1011, 2010, 2011],
         "player_name": ["Player 2", "Player 1", "Player 11", None],
+        "action_type": [None] * 4,
+        "action_result": [None] * 4,
+        "action_bodypart": [None] * 4,
     },
     provider="instat",
 )
@@ -1543,6 +1552,9 @@ ED_SCISPORTS = EventData(
             "defensive_duel",
             "foul",
         ],
+        "action_type": [None] * 15,
+        "action_result": [None] * 15,
+        "action_bodypart": [None] * 15,
     },
     provider="scisports",
 )
@@ -1673,6 +1685,9 @@ SPORTEC_EVENT_DATA = EventData(
             "dribbledAround",
             "OtherBallAction",
         ],
+        "action_type": [None] * 6,
+        "action_result": [None] * 6,
+        "action_bodypart": [None] * 6,
     },
     provider="sportec",
 )
@@ -1954,6 +1969,9 @@ ED_STATSBOMB = EventData(
             "Deportivo Alavés",
             "Deportivo Alavés",
         ],
+        "action_type": [None] * 5,
+        "action_result": [None] * 5,
+        "action_bodypart": [None] * 5,
     },
     provider="statsbomb",
 )

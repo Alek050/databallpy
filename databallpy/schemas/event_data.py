@@ -7,7 +7,12 @@ try:
 except ModuleNotFoundError:
     import pandera as pa
 
-from databallpy.utils.constants import DATABALLPY_EVENTS
+from databallpy.utils.constants import (
+    DATABALLPY_EVENTS,
+    SPADL_ACTION_TYPES,
+    SPADL_BODYPARTS,
+    SPADL_RESULTS,
+)
 
 
 class EventDataSchema(pa.DataFrameModel):
@@ -45,6 +50,13 @@ class EventDataSchema(pa.DataFrameModel):
 
     original_event_id: pa.typing.Series[object] = pa.Field(coerce=True)
     original_event: pa.typing.Series[str] = pa.Field(nullable=True)
+
+    # SPADL vocabulary, null for events that are not on-ball actions
+    action_type: pa.typing.Series[str] = pa.Field(nullable=True, isin=SPADL_ACTION_TYPES)
+    action_result: pa.typing.Series[str] = pa.Field(nullable=True, isin=SPADL_RESULTS)
+    action_bodypart: pa.typing.Series[str] = pa.Field(
+        nullable=True, isin=SPADL_BODYPARTS
+    )
 
     # optional
     end_x: Optional[pa.typing.Series[float]] = pa.Field(ge=-60, le=60, nullable=True)

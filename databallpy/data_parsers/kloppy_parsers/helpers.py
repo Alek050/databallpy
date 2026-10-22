@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Tuple, Union
 import numpy as np
 import pandas as pd
 
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _adjust_start_end_frames,
     _downcast_tracking_data,
@@ -483,5 +484,6 @@ def convert_kloppy_event_dataset(
 
     # Because Pandera (when nullable=False) expects 'datetime' to have type datetime64[ns] and not datetime64[ns, UTC], remove UTC component
     event_dataframe["datetime"] = event_dataframe["datetime"].dt.tz_localize(None)
+    event_dataframe = _add_spadl_columns(event_dataframe)
 
     return EventData(event_dataframe, provider=event_dataset.metadata.provider.value)

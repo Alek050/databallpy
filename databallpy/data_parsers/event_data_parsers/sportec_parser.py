@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import requests
 
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.data_parsers.sportec_metadata_parser import (
     _get_sportec_metadata,
@@ -257,6 +258,7 @@ def _get_sportec_event_data(
     ].apply(lambda x: all_players.loc[all_players["id"] == x, "full_name"].iloc[0])
     event_data.insert(6, "player_name", player_name_series)
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
+    event_data = _add_spadl_columns(event_data)
 
     return event_data, databallpy_events
 

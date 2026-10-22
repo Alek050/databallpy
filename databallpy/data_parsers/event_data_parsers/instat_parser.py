@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers import Metadata
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import utc_to_local_datetime
@@ -357,5 +358,6 @@ def _load_event_data(event_data_loc: str, metadata: Metadata) -> pd.DataFrame:
     away_mask = event_data["team_id"] == metadata.away_team_id
     event_data.loc[away_mask, ["start_x", "start_y", "end_x", "end_y"]] *= -1
     event_data["minutes"] = event_data["minutes"].round().astype(int)
+    event_data = _add_spadl_columns(event_data)
 
     return event_data, pitch_dimensions

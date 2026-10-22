@@ -19,6 +19,7 @@ from databallpy.data_parsers.event_data_parsers import (
     load_sportec_open_event_data,
     load_statsbomb_event_data,
 )
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.data_parsers.kloppy_parsers import (
     convert_kloppy_event_dataset,
     convert_kloppy_tracking_dataset,
@@ -396,6 +397,10 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
         for column in metadata.get("json_encoded_columns", {}).get(dataframe_name, []):
             dataframe[column] = dataframe[column].map(json.loads, na_action="ignore")
         dataframes[dataframe_name] = dataframe
+
+    # games saved before the SPADL columns were introduced do not have them yet
+    if len(dataframes["event_data"]) > 0:
+        dataframes["event_data"] = _add_spadl_columns(dataframes["event_data"])
 
     return Game(
         tracking_data=TrackingData(

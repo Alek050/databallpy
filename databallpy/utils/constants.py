@@ -4,6 +4,58 @@ MISSING_INT = -999
 DATABALLPY_EVENTS = ["pass", "shot", "dribble", "tackle", "own_goal"]
 """The databallpy events that are supported."""
 
+SPADL_FIELD_LENGTH = 105.0
+"""The length of the pitch in SPADL (in meters)."""
+
+SPADL_FIELD_WIDTH = 68.0
+"""The width of the pitch in SPADL (in meters)."""
+
+SPADL_ACTION_TYPES = [
+    "pass",
+    "cross",
+    "throw_in",
+    "freekick_crossed",
+    "freekick_short",
+    "corner_crossed",
+    "corner_short",
+    "take_on",
+    "foul",
+    "tackle",
+    "interception",
+    "shot",
+    "shot_penalty",
+    "shot_freekick",
+    "keeper_save",
+    "keeper_claim",
+    "keeper_punch",
+    "keeper_pick_up",
+    "clearance",
+    "bad_touch",
+    "non_action",
+    "dribble",
+    "goalkick",
+]
+"""The SPADL action types, the index in the list is the SPADL type_id. Copied from
+socceraction (Decroos et al., 2019)."""
+
+SPADL_RESULTS = [
+    "fail",
+    "success",
+    "offside",
+    "owngoal",
+    "yellow_card",
+    "red_card",
+]
+"""The SPADL action results, the index in the list is the SPADL result_id. Copied from
+socceraction (Decroos et al., 2019)."""
+
+SPADL_BODYPARTS = ["foot", "head", "other", "head/other", "foot_left", "foot_right"]
+"""The SPADL body parts, the index in the list is the SPADL bodypart_id. Copied from
+socceraction (Decroos et al., 2019)."""
+
+SPADL_COLUMNS = ["action_type", "action_result", "action_bodypart"]
+"""The SPADL vocabulary columns in the event data."""
+
 DATABALLPY_SET_PIECES = [
     "goal_kick",
     "free_kick",

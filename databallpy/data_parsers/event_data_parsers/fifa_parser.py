@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers import Metadata
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.events import (
     IndividualCloseToBallEvent,
     PassEvent,
@@ -416,6 +417,7 @@ def _load_event_data(
 
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
     event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
+    event_data = _add_spadl_columns(event_data)
 
     return event_data, {
         "shot_events": shot_events,
