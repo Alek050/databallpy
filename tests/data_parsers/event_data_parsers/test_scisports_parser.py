@@ -9,12 +9,16 @@ from databallpy.data_parsers.event_data_parsers.scisports_parser import (
     _get_pass_event,
     _get_periods_frames,
     _get_players,
+    _get_scisports_spadl_action,
     _get_shot_event,
     _load_event_data,
     _load_metadata,
+    _update_scisports_spadl_actions,
     load_scisports_event_data,
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.schemas import EventData
+from databallpy.utils.constants import SPADL_ACTION_TYPES, SPADL_RESULTS
 from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import ED_SCISPORTS, MD_SCISPORTS
 
@@ -345,3 +349,230 @@ class TestSciSportsParser(unittest.TestCase):
         players = pd.DataFrame({"id": [102], "shirt_num": [32]})
         result = _get_dribble_event(event, 12, players, 1)
         self.assertEqual(result, expected_dribble)
+
+    def test_get_scisports_spadl_action(self):
+        cases = [
+            ("PASS", "PASS", "SUCCESSFUL", "FEET", ("pass", "success", "foot")),
+            (
+                "PASS",
+                "FREE_KICK",
+                "UNSUCCESSFUL",
+                "FEET",
+                ("freekick_short", "fail", "foot"),
+            ),
+            (
+                "PASS",
+                "OFFSIDE_PASS",
+                "UNSUCCESSFUL",
+                "FEET",
+                ("pass", "offside", "foot"),
+            ),
+            (
+                "PASS",
+                "THROW_IN",
+                "SUCCESSFUL",
+                "HANDS",
+                ("throw_in", "success", "other"),
+            ),
+            (
+                "PASS",
+                "GOALKEEPER_THROW",
+                "SUCCESSFUL",
+                "HANDS",
+                ("pass", "success", "other"),
+            ),
+            (
+                "CROSS",
+                "CORNER_CROSSED",
+                "SUCCESSFUL",
+                "FEET",
+                ("corner_crossed", "success", "foot"),
+            ),
+            ("SHOT", "SHOT", "SUCCESSFUL", "HEAD", ("shot", "success", "head")),
+            (
+                "SHOT",
+                "SHOT_FREE_KICK",
+                "UNSUCCESSFUL",
+                "LEFT_FOOT",
+                ("shot_freekick", "fail", "foot_left"),
+            ),
+            ("DRIBBLE", "CARRY", "UNSUCCESSFUL", "FEET", ("dribble", "success", "foot")),
+            ("DRIBBLE", "TAKE_ON", "UNSUCCESSFUL", "FEET", ("take_on", "fail", "foot")),
+            (
+                "DEFENSIVE_DUEL",
+                "TACKLE",
+                "SUCCESSFUL",
+                "FEET",
+                ("tackle", "success", "foot"),
+            ),
+            (
+                "DEFENSIVE_DUEL",
+                "AIR_CHALLENGE",
+                "SUCCESSFUL",
+                "HEAD",
+                (None, None, None),
+            ),
+            (
+                "INTERCEPTION",
+                "INTERCEPTION",
+                "OTHER",
+                "FEET",
+                ("interception", "success", "foot"),
+            ),
+            (
+                "INTERCEPTION",
+                "RECOVERY",
+                "OTHER",
+                "FEET",
+                ("dribble", "success", "foot"),
+            ),
+            (
+                "INTERCEPTION",
+                "GOALKEEPER_CLAIM",
+                "SUCCESSFUL",
+                "HANDS",
+                ("keeper_claim", "success", "other"),
+            ),
+            (
+                "KEEPER_SAVE",
+                "GOALKEEPER_SAVE",
+                "SUCCESSFUL",
+                "HANDS",
+                ("keeper_save", "success", "other"),
+            ),
+            (
+                "KEEPER_SAVE",
+                "GOALKEEPER_SAVE",
+                "UNSUCCESSFUL",
+                "HANDS",
+                (None, None, None),
+            ),
+            (
+                "CLEARANCE",
+                "CLEARANCE",
+                "OTHER",
+                "HEAD",
+                ("clearance", "success", "head"),
+            ),
+            (
+                "BAD_TOUCH",
+                "BAD_TOUCH",
+                "UNSUCCESSFUL",
+                "FEET",
+                ("bad_touch", "fail", "foot"),
+            ),
+            (
+                "FOUL",
+                "FOUL",
+                "NOT_APPLICABLE",
+                "NOT_APPLICABLE",
+                ("foul", "fail", "foot"),
+            ),
+            ("FOUL", "OFFSIDE", "NOT_APPLICABLE", "NOT_APPLICABLE", (None, None, None)),
+            ("BLOCK", "BLOCKED_SHOT", "SUCCESSFUL", "FEET", (None, None, None)),
+            (
+                "CARD",
+                "YELLOW_CARD",
+                "NOT_APPLICABLE",
+                "NOT_APPLICABLE",
+                (None, None, None),
+            ),
+        ]
+        for base_type, sub_type, result, bodypart, expected in cases:
+            with self.subTest(base_type=base_type, sub_type=sub_type, result=result):
+                event = {
+                    "baseTypeName": base_type,
+                    "subTypeName": sub_type,
+                    "resultName": result,
+                    "resultId": int(result == "SUCCESSFUL"),
+                    "bodyPartName": bodypart,
+                    "foulTypeName": "TACKLE",
+                }
+                self.assertEqual(_get_scisports_spadl_action(event), expected)
+
+        event = {
+            "baseTypeName": "FOUL",
+            "subTypeName": "FOUL",
+            "resultName": "NOT_APPLICABLE",
+            "bodyPartName": "NOT_APPLICABLE",
+            "foulTypeName": "HANDS",
+        }
+        self.assertEqual(_get_scisports_spadl_action(event), ("foul", "fail", "other"))
+
+    def test_update_scisports_spadl_actions(self):
+        event_data = pd.DataFrame(
+            {
+                "period_id": [1] * 7,
+                "player_id": [1, 2, 3, 3, 4, 5, 5],
+                "datetime": pd.to_datetime(
+                    ["2023-01-01 00:00:00"] * 3
+                    + ["2023-01-01 00:00:10"] * 2
+                    + ["2023-01-01 00:05:00"] * 2
+                ),
+                "start_x": [0.0, 0.0, 10.0, 15.0, 15.0, 16.0, 16.0],
+                "start_y": [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                "end_x": [0.0, 0.0, 20.0, 15.0, 15.0, 16.0, 16.0],
+                "end_y": [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                "action_type": ["dribble", None, "pass", None, "dribble", "foul", None],
+                "action_result": [
+                    "success",
+                    None,
+                    "success",
+                    None,
+                    "success",
+                    "fail",
+                    None,
+                ],
+                "action_bodypart": ["foot", None, "foot", None, "foot", "foot", None],
+            }
+        )
+        is_recovery = pd.Series([True, False, False, False, True, False, False])
+        cards = {1: "yellow_card", 3: "red_card", 6: "yellow_card"}
+        res = _update_scisports_spadl_actions(event_data, is_recovery, cards)
+
+        # the first recovery moved the ball to the next pass, the second did not
+        self.assertListEqual(
+            res["action_type"].tolist(),
+            ["dribble", None, "pass", None, None, "foul", None],
+        )
+        self.assertListEqual(res.loc[0, ["end_x", "end_y"]].tolist(), [10.0, 0.0])
+        # only the card of the player with a foul at the same time is used
+        self.assertListEqual(
+            res["action_result"].tolist(),
+            ["success", None, "success", None, None, "yellow_card", None],
+        )
+
+    def test_to_spadl(self):
+        event_data, metadata, _ = load_scisports_event_data(self.json_loc)
+        res = EventData(event_data, provider="scisports").to_spadl(
+            home_team_id=metadata.home_team_id,
+            pitch_dimensions=metadata.pitch_dimensions,
+            coordinate_system="spadl",
+        )
+        res = res[res["original_event_id"].notna()].reset_index(drop=True)
+        self.assertListEqual(
+            [SPADL_ACTION_TYPES[i] for i in res["type_id"]],
+            [
+                "pass",
+                "dribble",
+                "cross",
+                "pass",
+                "shot",
+                "shot_penalty",
+                "tackle",
+                "foul",
+            ],
+        )
+        self.assertListEqual(
+            [SPADL_RESULTS[i] for i in res["result_id"]],
+            [
+                "success",
+                "success",
+                "fail",
+                "success",
+                "fail",
+                "success",
+                "success",
+                "fail",
+            ],
+        )

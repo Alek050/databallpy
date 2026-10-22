@@ -1565,6 +1565,10 @@ ED_SCISPORTS = EventData(
             28.83,
             14.28,
         ],
+        "end_x": [0.0] * 5
+        + [-17.68, 24.01, -35.1, 0.0, -37.7, -53.5, -53.5, 0.0, 12.125, -6.3],
+        "end_y": [0.0] * 5
+        + [2.01, 25.97, -20.8, 0.0, 32.5, -0.2, 3.5, 0.0, 28.83, 14.28],
         "datetime": pd.to_datetime(
             ["2023-01-01 00:00:00.0"] * 5
             + [
@@ -1595,9 +1599,45 @@ ED_SCISPORTS = EventData(
             "defensive_duel",
             "foul",
         ],
-        "action_type": [None] * 15,
-        "action_result": [None] * 15,
-        "action_bodypart": [None] * 15,
+        "action_type": [None] * 5
+        + [
+            "pass",
+            "dribble",
+            "cross",
+            None,
+            "pass",
+            "shot",
+            "shot_penalty",
+            None,
+            "tackle",
+            "foul",
+        ],
+        "action_result": [None] * 5
+        + [
+            "success",
+            "success",
+            "fail",
+            None,
+            "success",
+            "fail",
+            "success",
+            None,
+            "success",
+            "fail",
+        ],
+        "action_bodypart": [None] * 5
+        + [
+            "foot",
+            "foot",
+            "foot",
+            None,
+            "foot",
+            "foot_right",
+            "foot_left",
+            None,
+            "foot",
+            "foot",
+        ],
     },
     provider="scisports",
 )
