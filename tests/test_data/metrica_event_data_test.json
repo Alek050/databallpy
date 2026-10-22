@@ -259,7 +259,7 @@
 			},
 			"subtypes": [
 				{
-					"name": "FOUL",
+					"name": "FAULT",
 					"id": 44
 				},
 				{

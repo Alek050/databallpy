@@ -259,7 +259,7 @@ ED_METRICA_RAW = """{
 			},
 			"subtypes": [
 				{
-					"name": "FOUL",
+					"name": "FAULT",
 					"id": 44
 				},
 				{

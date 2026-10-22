@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import Mock, patch
 
@@ -59,6 +60,38 @@ class TestMetricaEventDataParser(unittest.TestCase):
         ed, cards = _get_event_data(self.ed_loc)
         pd.testing.assert_frame_equal(ed, expected_event_data)
         assert cards == {}
+
+    def test_get_event_data_take_on(self):
+        with open(self.ed_loc, "r", encoding="utf-8") as f:
+            events_json = json.load(f)
+        carry = events_json["data"][2]
+
+        def challenge(team_id, player_id, result):
+            return {
+                **carry,
+                "type": {"name": "CHALLENGE", "id": 9},
+                "subtypes": [{"name": "DRIBBLE"}, {"name": result}],
+                "from": {"name": f"Player {player_id}", "id": f"P{player_id}"},
+                "team": {"name": team_id, "id": team_id},
+                "to": None,
+                "end": {"x": None, "y": None},
+            }
+
+        # the carry is followed by a dribble challenge of the attacker and defender
+        events_json["data"][3:3] = [
+            challenge(carry["team"]["id"], carry["from"]["id"][1:], "WON"),
+            challenge("FIFATMB", "3700", "LOST"),
+        ]
+        ed, _ = _get_event_data(json.dumps(events_json))
+
+        self.assertEqual(ed.loc[2, "original_event"], "carry")
+        self.assertListEqual(
+            ed.loc[3, ["action_type", "action_result", "action_bodypart"]].tolist(),
+            ["take_on", "success", "foot"],
+        )
+        self.assertTrue(
+            ed.loc[4, ["action_type", "action_result", "action_bodypart"]].isna().all()
+        )
 
     @patch(
         "requests.get",
@@ -225,6 +258,21 @@ class TestMetricaEventDataParser(unittest.TestCase):
                 None,
                 (None, None, None),
             ),
+            (
+                event("CHALLENGE", ["DRIBBLE", "WON"]),
+                None,
+                ("take_on", "success", "foot"),
+            ),
+            (
+                event("CHALLENGE", ["DRIBBLE", "LOST"]),
+                None,
+                ("take_on", "fail", "foot"),
+            ),
+            (
+                event("CHALLENGE", ["DRIBBLE", "FAULT", "LOST"]),
+                None,
+                ("foul", "fail", "foot"),
+            ),
             (event("CHALLENGE", ["AERIAL", "WON"]), None, (None, None, None)),
             (event("CHALLENGE", ["GROUND", "LOST"]), None, (None, None, None)),
             (
@@ -360,9 +408,9 @@ class TestMetricaEventDataParser(unittest.TestCase):
         res = res[res["original_event_id"].notna()].reset_index(drop=True)
         self.assertListEqual(
             [SPADL_ACTION_TYPES[i] for i in res["type_id"]],
-            ["pass", "dribble", "shot", "shot", "shot", "tackle"],
+            ["pass", "dribble", "shot", "shot", "shot", "tackle", "foul"],
         )
         self.assertListEqual(
             [SPADL_RESULTS[i] for i in res["result_id"]],
-            ["success", "success", "fail", "success", "success", "fail"],
+            ["success", "success", "fail", "success", "success", "fail", "fail"],
         )

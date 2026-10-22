@@ -195,6 +195,7 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> tuple[pd.DataFrame, di
     check_outcome_last_event = False
     cards = {}
     set_piece = None
+    possession_team = None
 
     in_possession_events = ["pass", "carry", "recovery", "shot"]
     out_of_possession_events = ["fault received", "ball out", "ball lost"]
@@ -272,6 +273,11 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> tuple[pd.DataFrame, di
         action_type, action_result, action_bodypart = _get_metrica_spadl_action(
             event, set_piece_subtypes
         )
+        # only the player in possession takes on, not the defender
+        if action_type == "take_on" and event["team"]["id"] != possession_team:
+            action_type, action_result, action_bodypart = None, None, None
+        if event_name in in_possession_events or event_name == "set piece":
+            possession_team = event["team"]["id"]
         result_dict["action_type"].append(action_type)
         result_dict["action_result"].append(action_result)
         result_dict["action_bodypart"].append(action_bodypart)
@@ -308,8 +314,9 @@ def _get_metrica_spadl_action(
     event: dict, set_piece_subtypes: list[dict] | dict | None
 ) -> tuple[str | None, str | None, str | None]:
     """Function to map a metrica event to the SPADL vocabulary. Ball lost and ball out
-    events with an end location are failed passes, plain ball recoveries are mapped to
-    dribbles and updated in _update_metrica_spadl_actions.
+    events with an end location are failed passes, dribble challenges are take-ons and
+    plain ball recoveries are mapped to dribbles and updated in
+    _update_metrica_spadl_actions.
 
     Args:
         event (dict): event from the metrica json
@@ -367,6 +374,13 @@ def _get_metrica_spadl_action(
         return action_type, result, bodypart
     elif event_type == "CARRY" and has_end_location:
         return "dribble", "success", "foot"
+    elif (
+        event_type == "CHALLENGE"
+        and _has_subtype(event, "DRIBBLE")
+        and not _has_subtype(event, "FAULT")
+    ):
+        # also the defender gets a dribble challenge, removed in _get_event_data
+        return "take_on", "success" if _has_subtype(event, "WON") else "fail", "foot"
     elif event_type == "CHALLENGE" and _has_subtype(event, "LOST"):
         if _has_subtype(event, "FAULT"):
             return "foul", "fail", "foot"
