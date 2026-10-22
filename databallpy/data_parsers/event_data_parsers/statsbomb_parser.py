@@ -981,7 +981,8 @@ def _get_statsbomb_spadl_action(
         return "dribble", "success", "foot"
 
     if event_name == "Own Goal Against":
-        return "bad_touch", "owngoal", "foot"
+        # statsbomb does not give the body part of own goals
+        return "bad_touch", "owngoal", "other"
 
     if event_name == "Miscontrol":
         return "bad_touch", "fail", "foot"

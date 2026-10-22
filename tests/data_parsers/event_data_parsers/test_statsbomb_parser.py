@@ -438,7 +438,7 @@ class TestStatsbombSpadl(unittest.TestCase):
                 ("clearance", "success", "head"),
             ),
             (_statsbomb_event("Carry", {}), ("dribble", "success", "foot")),
-            (_statsbomb_event("Own Goal Against"), ("bad_touch", "owngoal", "foot")),
+            (_statsbomb_event("Own Goal Against"), ("bad_touch", "owngoal", "other")),
             (_statsbomb_event("Miscontrol"), ("bad_touch", "fail", "foot")),
             (_statsbomb_event("Ball Receipt*"), (None, None, None)),
         ]
@@ -522,6 +522,7 @@ class TestStatsbombSpadl(unittest.TestCase):
         # the own goal of the away team ends in the away goal on the right side
         own_goal = event_data.iloc[-1]
         self.assertEqual(own_goal["action_result"], "owngoal")
+        self.assertEqual(own_goal["action_bodypart"], "other")
         self.assertAlmostEqual(own_goal["end_x"], 52.5)
         self.assertAlmostEqual(own_goal["end_y"], 0.0)
 
