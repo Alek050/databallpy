@@ -13,6 +13,7 @@ import pandas as pd
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.fifa_parser import (
     _determine_period_flips,
+    _get_fifa_spadl_action,
     _get_game_score,
     _get_player_info,
     _get_transformed_coordinates,
@@ -23,7 +24,8 @@ from databallpy.data_parsers.event_data_parsers.fifa_parser import (
     load_fifa_event_data,
 )
 from databallpy.events import PassEvent, ShotEvent
-from databallpy.utils.constants import MISSING_INT
+from databallpy.schemas import EventData
+from databallpy.utils.constants import MISSING_INT, SPADL_ACTION_TYPES, SPADL_RESULTS
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "test_data")
 METADATA_LOC = os.path.join(TEST_DATA_DIR, "fifa_metadata_test.json")
@@ -116,6 +118,8 @@ ED_FIFA = pd.DataFrame(
         ),
         "start_x": [0.0, -26.25, 26.25, 26.25, -26.25, 26.25, 26.25],
         "start_y": [0.0, 0.0, -17.0, 0.0, 0.0, 0.0, -17.0],
+        "end_x": [np.nan, 26.25, 0.0, np.nan, np.nan, np.nan, -52.5],
+        "end_y": [np.nan, 0.0, 17.0, np.nan, np.nan, np.nan, 0.0],
         "datetime": [
             _evt_dt(0),
             _evt_dt(5_000),
@@ -145,9 +149,25 @@ ED_FIFA = pd.DataFrame(
             "shot",
             "shot",
         ],
-        "action_type": [None] * 7,
-        "action_result": [None] * 7,
-        "action_bodypart": [None] * 7,
+        "action_type": [None, "pass", "cross", "shot", "shot", "shot", "bad_touch"],
+        "action_result": [
+            None,
+            "success",
+            "success",
+            "fail",
+            "success",
+            "success",
+            "owngoal",
+        ],
+        "action_bodypart": [
+            None,
+            "foot_right",
+            "foot_left",
+            "head",
+            "foot",
+            "foot",
+            "foot",
+        ],
     }
 )
 
@@ -785,6 +805,88 @@ class TestFifaParser(unittest.TestCase):
         home_score, away_score = _get_game_score(event_data, 100, 200)
         self.assertEqual(home_score, 2)
         self.assertEqual(away_score, 3)
+
+    def test_get_fifa_spadl_action(self):
+        def event(name, outcome=None, body_type=None, origin=None):
+            return {
+                "event": name,
+                "outcome": outcome,
+                "body_type": body_type,
+                "origin": origin,
+            }
+
+        complete = "possession_complete"
+        cases = [
+            (event("pass", complete, "right_foot"), ("pass", "success", "foot_right")),
+            (event("pass", "possession_lost"), ("pass", "fail", "foot")),
+            (event("assist", complete, "head"), ("pass", "success", "head")),
+            (event("cross", None, "left_foot"), ("cross", "fail", "foot_left")),
+            (
+                event("pass", complete, origin="freekick"),
+                ("freekick_short", "success", "foot"),
+            ),
+            (
+                event("cross", complete, origin="freekick"),
+                ("freekick_crossed", "success", "foot"),
+            ),
+            (
+                event("pass", complete, origin="corner"),
+                ("corner_short", "success", "foot"),
+            ),
+            (
+                event("cross", complete, origin="corner"),
+                ("corner_crossed", "success", "foot"),
+            ),
+            (
+                event("pass", complete, "hands", origin="throwin"),
+                ("throw_in", "success", "other"),
+            ),
+            (
+                event("pass", complete, origin="goalkick"),
+                ("goalkick", "success", "foot"),
+            ),
+            (event("pass", complete, origin="kickoff"), ("pass", "success", "foot")),
+            (event("attempt_at_goal", "on_target"), ("shot", "fail", "foot")),
+            (event("attempt_at_goal", "complete"), ("shot", "success", "foot")),
+            (event("goal", body_type="body"), ("shot", "success", "other")),
+            (
+                event("goal", origin="penalty"),
+                ("shot_penalty", "success", "foot"),
+            ),
+            (
+                event("attempt_at_goal", "off_target", origin="freekick"),
+                ("shot_freekick", "fail", "foot"),
+            ),
+            (event("own_goal", body_type="feet"), ("bad_touch", "owngoal", "foot")),
+            (event("tackle", "possession_won"), ("tackle", "success", "foot")),
+            (event("tackle", "possession_lost"), ("tackle", "fail", "foot")),
+            (event("kickoff"), (None, None, None)),
+            (event("game_period_start"), (None, None, None)),
+        ]
+        for fifa_event, expected in cases:
+            with self.subTest(event=fifa_event):
+                self.assertEqual(_get_fifa_spadl_action(fifa_event), expected)
+
+    def test_to_spadl(self):
+        event_data, metadata, _ = load_fifa_event_data(
+            self.metadata_loc, self.events_loc
+        )
+        res = EventData(event_data, provider="fifa").to_spadl(
+            home_team_id=metadata.home_team_id,
+            pitch_dimensions=metadata.pitch_dimensions,
+            coordinate_system="spadl",
+        )
+        res = res[res["original_event_id"].notna()].reset_index(drop=True)
+        self.assertListEqual(
+            [SPADL_ACTION_TYPES[i] for i in res["type_id"]],
+            ["pass", "cross", "shot", "shot", "shot", "bad_touch"],
+        )
+        self.assertListEqual(
+            [SPADL_RESULTS[i] for i in res["result_id"]],
+            ["success", "success", "fail", "success", "success", "owngoal"],
+        )
+        # the own goal of the home team ends in the goal on the left
+        self.assertListEqual(res.loc[5, ["end_x", "end_y"]].tolist(), [0.0, 34.0])
 
 
 if __name__ == "__main__":

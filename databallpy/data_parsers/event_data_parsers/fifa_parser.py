@@ -55,6 +55,23 @@ FIFA_LINE_BREAK_TO_PASS_TYPE = {
     "around": "through_ball",
 }
 
+SPADL_BODY_PART_MAPPING = {
+    "right_foot": "foot_right",
+    "left_foot": "foot_left",
+    "head": "head",
+    "hands": "other",
+    "body": "other",
+    "feet": "foot",
+}
+
+SPADL_SET_PIECE_TYPES = {
+    "freekick": "freekick_short",
+    "corner": "corner_short",
+    "throwin": "throw_in",
+    "goalkick": "goalkick",
+    "kickoff": "pass",
+}
+
 
 @logging_wrapper(__file__)
 def load_fifa_event_data(
@@ -305,11 +322,16 @@ def _load_event_data(
         "is_successful": [],
         "start_x": [],
         "start_y": [],
+        "end_x": [],
+        "end_y": [],
         "datetime": [],
         "phase": [],
         "original_event_id": [],
         "original_event": [],
         "original_event_type": [],
+        "action_type": [],
+        "action_result": [],
+        "action_bodypart": [],
     }
 
     for i_event, event in enumerate(events_list):
@@ -379,6 +401,31 @@ def _load_event_data(
         result_dict["start_x"].append(x_start)
         result_dict["start_y"].append(y_start)
 
+        action_type, action_result, action_bodypart = _get_fifa_spadl_action(event)
+        result_dict["action_type"].append(action_type)
+        result_dict["action_result"].append(action_result)
+        result_dict["action_bodypart"].append(action_bodypart)
+        if action_result == "owngoal":
+            # the own goal ends in the own goal of the team, the home team plays
+            # from left to right
+            x_end = (
+                pitch_dimensions[0]
+                / 2.0
+                * (-1 if event["team_id"] == home_team_id else 1)
+            )
+            y_end = 0.0
+        else:
+            x_end, y_end = _get_transformed_coordinates(
+                event.get("x_location_end"),
+                event.get("y_location_end"),
+                pitch_dimensions,
+                period_id,
+                flip_first_half,
+                flip_second_half,
+            )
+        result_dict["end_x"].append(x_end)
+        result_dict["end_y"].append(y_end)
+
         if event_name in ["pass", "cross", "assist"]:
             pass_events[i_event] = _make_pass_instance(
                 event,
@@ -423,6 +470,55 @@ def _load_event_data(
         "shot_events": shot_events,
         "pass_events": pass_events,
     }
+
+
+def _get_fifa_spadl_action(
+    event: dict,
+) -> tuple[str | None, str | None, str | None]:
+    """Function to map a FIFA event to the SPADL vocabulary. The set piece type of
+    passes and shots is taken from the origin of the event, kickoff events themselves
+    are no actions.
+
+    Args:
+        event (dict): event from the FIFA json
+
+    Returns:
+        tuple[str | None, str | None, str | None]: The SPADL action type, result and
+            bodypart, all None for events that are not SPADL actions
+    """
+    event_name = event["event"]
+    outcome = (event.get("outcome") or "").lower()
+    origin = event.get("origin")
+    bodypart = SPADL_BODY_PART_MAPPING.get(event.get("body_type"), "foot")
+
+    if event_name in ["pass", "assist", "cross"]:
+        action_type = "cross" if event_name == "cross" else "pass"
+        if origin in SPADL_SET_PIECE_TYPES:
+            action_type = SPADL_SET_PIECE_TYPES[origin]
+            if action_type in ["freekick_short", "corner_short"] and (
+                event_name == "cross"
+            ):
+                action_type = action_type.replace("short", "crossed")
+            elif action_type == "throw_in":
+                bodypart = "other"
+        result = "success" if "possession_complete" in outcome else "fail"
+        return action_type, result, bodypart
+    elif event_name in ["attempt_at_goal", "goal"]:
+        # NOTE: it is unknown whether a goal is also stored as an attempt_at_goal
+        # with outcome complete, in that case the goal is counted as two shots
+        action_type = "shot"
+        if origin == "penalty":
+            action_type = "shot_penalty"
+        elif origin == "freekick":
+            action_type = "shot_freekick"
+        is_goal = event_name == "goal" or SHOT_OUTCOMES.get(outcome) == "goal"
+        return action_type, "success" if is_goal else "fail", bodypart
+    elif event_name == "own_goal":
+        return "bad_touch", "owngoal", bodypart
+    elif event_name == "tackle":
+        return "tackle", "success" if "possession_won" in outcome else "fail", bodypart
+
+    return None, None, None
 
 
 def _make_pass_instance(
