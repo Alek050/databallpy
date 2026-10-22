@@ -726,9 +726,9 @@ class TestOptaSpadl(unittest.TestCase):
         # the deflected pass still reached a teammate
         self.assertListEqual(res.loc[2, ["end_x", "end_y"]].tolist(), [25.0, 5.0])
         self.assertEqual(res.loc[2, "action_result"], "success")
-        # the first interception is followed by the same team, the last one is not
+        # interception results are fixed in to_spadl
         self.assertEqual(res.loc[0, "action_result"], "success")
-        self.assertEqual(res.loc[6, "action_result"], "fail")
+        self.assertEqual(res.loc[6, "action_result"], "success")
 
     def test_update_opta_spadl_actions_cards(self):
         event_data = pd.DataFrame(

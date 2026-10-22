@@ -1392,8 +1392,8 @@ def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
     """Function to update the SPADL actions with information of the surrounding
     events, as socceraction does for opta data. Ball recoveries become dribbles to the
     start of the next action, passes deflected by a successful ball touch end where
-    the event after the ball touch starts, interceptions fail when the next action
-    is of the other team and cards set the result of the last foul of the same player.
+    the event after the ball touch starts and cards set the result of the last foul of
+    the same player.
 
     Args:
         event_data (pd.DataFrame): The event data in databallpy coordinates, with the
@@ -1438,15 +1438,6 @@ def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
         & (event_data["team_id"] == next_events["team_id"])
     )
     event_data.loc[completed, "action_result"] = "success"
-
-    # interceptions that do not regain possession fail
-    actions = event_data.loc[event_data["action_type"].notna()].sort_values(
-        ["period_id", "minutes", "seconds"], kind="mergesort"
-    )
-    lost = (actions["action_type"] == "interception") & (
-        actions["team_id"] != actions["team_id"].shift(-1)
-    )
-    event_data.loc[lost.index[lost], "action_result"] = "fail"
 
     is_card = event_data["action_type"].isna() & event_data["action_result"].notna()
     cards = event_data.loc[is_card, "action_result"].to_dict()

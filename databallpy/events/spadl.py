@@ -109,6 +109,7 @@ def event_data_to_spadl(
         ["period_id", "time_seconds"], kind="mergesort"
     ).reset_index(drop=True)
     actions = _fix_clearances(actions)
+    actions = _fix_interceptions(actions)
     actions["action_id"] = range(len(actions))
     actions = _add_dribbles(actions)
     actions = SPADLSchema.validate(actions[SPADL_ACTION_COLUMNS])
@@ -228,6 +229,19 @@ def _fix_clearances(actions: pd.DataFrame) -> pd.DataFrame:
     actions.loc[clearance_idx, "end_y"] = next_actions.loc[
         clearance_idx, "start_y"
     ].values
+    return actions
+
+
+def _fix_interceptions(actions: pd.DataFrame) -> pd.DataFrame:
+    """Function to set the result of interceptions to fail when the next action in the
+    same period is of the other team, since the ball was not regained."""
+    next_actions = actions.shift(-1)
+    lost = (
+        (actions["type_id"] == SPADL_ACTION_TYPES.index("interception"))
+        & (next_actions["period_id"] == actions["period_id"])
+        & (next_actions["team_id"] != actions["team_id"])
+    )
+    actions.loc[lost, "result_id"] = SPADL_RESULTS.index("fail")
     return actions
 
 

@@ -187,6 +187,28 @@ class TestToSpadl(unittest.TestCase):
                 )
                 self.assertNotIn(dribble_id, res["type_id"].tolist())
 
+    def test_to_spadl_interception_results(self):
+        interception_id = SPADL_ACTION_TYPES.index("interception")
+        # the event of team 2 at index 3 is followed by the team 1 shot in period 2
+        cases = {
+            "next_same_team": (2, 2, "success", 1),
+            "next_other_team": (0, 2, "success", 0),
+            "already_failed": (2, 2, "fail", 0),
+            "next_other_period": (3, 2, "success", 1),
+        }
+        for name, (idx, team_id, result, expected) in cases.items():
+            with self.subTest(case=name):
+                event_data = self.event_data.copy()
+                event_data.loc[
+                    idx, ["action_type", "action_result", "action_bodypart"]
+                ] = ["interception", result, "foot"]
+                event_data.loc[idx, "team_id"] = team_id
+                res = event_data.to_spadl(
+                    home_team_id=1, pitch_dimensions=PITCH_DIMENSIONS
+                )
+                interception = res.loc[res["type_id"] == interception_id].iloc[0]
+                self.assertEqual(interception["result_id"], expected)
+
     def test_to_spadl_no_actions(self):
         event_data = self.event_data.copy()
         event_data["action_type"] = None
