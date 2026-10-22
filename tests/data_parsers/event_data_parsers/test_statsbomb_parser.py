@@ -209,6 +209,23 @@ class TestStatsbombParser(unittest.TestCase):
         )
         assert expected_outcome == res
 
+        for outcome, expected in [
+            ("Saved Off Target", "miss"),
+            ("Saved to Post", "miss_hit_post"),
+        ]:
+            input["shot"]["outcome"]["name"] = outcome
+            res = _get_shot_event(
+                event=input,
+                id=2,
+                pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
+                periods=MD_STATSBOMB.periods_frames,
+                away_team_id=MD_STATSBOMB.away_team_id,
+                x_multiplier=105 / 120,
+                y_multiplier=68 / 80,
+                cell_offset=0.05,
+            )
+            assert res.outcome_str == expected
+
     def test_get_pass_event(self):
         expected_outcome = PASS_INSTANCES_STATSBOMB[0].copy()
         expected_outcome.start_y *= -1

@@ -4,6 +4,9 @@ MISSING_INT = -999
 DATABALLPY_EVENTS = ["pass", "shot", "dribble", "tackle", "own_goal"]
 """The databallpy events that are supported."""
 
+PERIOD_START_MINUTES = {1: 0, 2: 45, 3: 90, 4: 105, 5: 120}
+"""The minutes at which the periods start."""
+
 SPADL_FIELD_LENGTH = 105.0
 """The length of the pitch in SPADL (in meters)."""
 

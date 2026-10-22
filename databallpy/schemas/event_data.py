@@ -109,8 +109,13 @@ class EventData(pd.DataFrame):
     ) -> pd.DataFrame:
         """Convert the event data to SPADL actions (Decroos et al., 2019).
 
-        Only events with a SPADL ``action_type`` (other than ``non_action``) are
-        converted. Clearances are fixed and dribbles are added as in socceraction.
+        The conversion follows socceraction as closely as possible. Only events
+        with a SPADL ``action_type`` (other than ``non_action``) in periods 1 to 5
+        are converted, actions without a start location, team or player are
+        skipped with a warning. The end location of clearances is set to the start
+        of the next action, interceptions followed by an action of the other team
+        are failed, and dribbles are added between consecutive actions of the same
+        team when the ball moved 3 to 60 meters in less than 10 seconds.
 
         Args:
             home_team_id (int | str): The id of the home team.
@@ -119,17 +124,42 @@ class EventData(pd.DataFrame):
             game_id (int | str | None, optional): The value of the game_id column.
                 Defaults to None.
             playing_direction (str, optional): The playing direction of the actions.
-                Defaults to "home_oriented", options are {home_oriented,
-                away_oriented, possession_oriented, out_of_possession_oriented}.
+                Defaults to "home_oriented", options are:
+
+                - "home_oriented": the home team plays from left to right.
+                - "away_oriented": the away team plays from left to right.
+                - "possession_oriented": the team performing the action plays from
+                  left to right, like ``socceraction.spadl.play_left_to_right``.
+                - "out_of_possession_oriented": the team not performing the action
+                  plays from left to right.
             coordinate_system (str, optional): Defaults to "databallpy", meters on
                 the actual pitch with (0, 0) at the centre spot. With "spadl" the
                 coordinates are rescaled to the 105x68 SPADL field with (0, 0) in
                 the bottom left corner.
 
+        Raises:
+            NotImplementedError: if the event data is from InStat.
+            ValueError: if the playing_direction or coordinate_system is not
+                supported.
+
         Returns:
-            pd.DataFrame: The SPADL actions. The original_event_id and event_id
-                columns link the actions to the event data and are null for added
-                dribbles.
+            pd.DataFrame: The SPADL actions sorted by period and time, with the
+                columns game_id, original_event_id, event_id, action_id, period_id,
+                time_seconds (since the start of the period), team_id, player_id,
+                start_x, start_y, end_x, end_y, type_id, result_id and bodypart_id.
+                The original_event_id and event_id columns link the actions to the
+                event data and are null for added dribbles. The ids map to the
+                names in ``databallpy.utils.constants.SPADL_ACTION_TYPES``,
+                ``SPADL_RESULTS`` and ``SPADL_BODYPARTS``.
+
+        Example:
+            >>> from databallpy import get_open_game
+            >>> game = get_open_game(provider="metrica")
+            >>> actions = game.event_data.to_spadl(
+            ...     home_team_id=game.home_team_id,
+            ...     pitch_dimensions=game.pitch_dimensions,
+            ...     coordinate_system="spadl",
+            ... )
         """
         from databallpy.events.spadl import event_data_to_spadl
 

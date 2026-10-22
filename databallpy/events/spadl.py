@@ -14,6 +14,7 @@ import pandas as pd
 from databallpy.schemas.spadl import SPADLSchema
 from databallpy.utils.constants import (
     MISSING_INT,
+    PERIOD_START_MINUTES,
     SPADL_ACTION_TYPES,
     SPADL_BODYPARTS,
     SPADL_FIELD_LENGTH,
@@ -39,9 +40,6 @@ SPADL_ACTION_COLUMNS = [
     "result_id",
     "bodypart_id",
 ]
-
-# minutes at which the periods start, used to compute the seconds in the period
-PERIOD_START_MINUTES = {1: 0, 2: 45, 3: 90, 4: 105, 5: 120}
 
 PLAYING_DIRECTIONS = [
     "home_oriented",

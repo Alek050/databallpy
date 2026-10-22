@@ -18,15 +18,18 @@ from kloppy.domain import (
     PassQualifier,
     PassResult,
     PassType,
+    Period,
     SecondSpectrumCoordinateSystem,
     SetPieceQualifier,
     SetPieceType,
     ShotResult,
     TakeOnResult,
 )
+from lxml import objectify
 
 from databallpy import get_game_from_kloppy
 from databallpy.data_parsers.kloppy_parsers.helpers import (
+    _get_kloppy_minutes,
     _get_kloppy_spadl_action,
     _get_kloppy_spadl_bodypart,
     _get_kloppy_spadl_card,
@@ -80,6 +83,18 @@ class TestKloppySportec(unittest.TestCase):
         assert isinstance(game.tracking_data, TrackingData)
         assert len(game.event_data) == 29
         assert game.tracking_data.empty
+
+    def test_sportec_event_only_lxml_score(self):
+        """Test that lxml score elements are converted to integers"""
+        score = self.event_dataset.metadata.score
+        self.event_dataset.metadata.score = type(score)(
+            home=objectify.fromstring("<score>2</score>"),
+            away=objectify.fromstring("<score>1</score>"),
+        )
+        game = get_game_from_kloppy(event_dataset=self.event_dataset)
+
+        assert game.home_score == 2 and type(game.home_score) is int
+        assert game.away_score == 1 and type(game.away_score) is int
 
 
 class TestKloppyTracabStatsPerform(unittest.TestCase):
@@ -266,6 +281,21 @@ class TestKloppySpadl(unittest.TestCase):
             _get_kloppy_spadl_bodypart(_build_kloppy_event("build_shot"), "other"),
             "other",
         )
+
+    def test_get_kloppy_minutes(self):
+        for period_id, expected in [(1, 10), (2, 55), (3, 100), (4, 115), (5, 130)]:
+            period = Period(
+                id=period_id,
+                start_timestamp=dt.timedelta(0),
+                end_timestamp=dt.timedelta(minutes=50),
+            )
+            event = _build_kloppy_event(
+                "build_generic",
+                period=period,
+                timestamp=dt.timedelta(minutes=10, seconds=30),
+            )
+            with self.subTest(period_id=period_id):
+                self.assertEqual(_get_kloppy_minutes(event), expected)
 
     def test_get_kloppy_spadl_card(self):
         self.assertEqual(_get_kloppy_spadl_card(CardType.FIRST_YELLOW), "yellow_card")

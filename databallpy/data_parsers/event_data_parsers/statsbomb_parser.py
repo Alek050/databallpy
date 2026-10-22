@@ -534,8 +534,8 @@ def _get_shot_event(
         "Post": "miss_hit_post",
         "Saved": "miss",
         "Wayward": "miss",
-        "Saved Off T": "miss",
-        "Saved To Post": "miss_hit_post",
+        "Saved Off Target": "miss",
+        "Saved to Post": "miss_hit_post",
     }
 
     close_to_ball_event_info = _get_close_to_ball_event_info(

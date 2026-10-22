@@ -40,6 +40,35 @@ So to visualize the second row, could see something like this:
 :align: center
 ```
 
+## SPADL
+
+Every event data provider uses its own vocabulary, which makes it hard to combine data of different providers or to reuse models. The Soccer Player Action Description Language ([SPADL](https://socceraction.readthedocs.io/en/latest/documentation/spadl/spadl.html), Decroos et al., 2019) solves this by describing every on-ball action in the same way: a type (e.g. `pass`, `cross`, `shot`, `dribble`, `tackle`), a result (e.g. `success`, `fail`, `offside`), a body part, and a start and end location. SPADL is used by many models, such as VAEP and xT in [socceraction](https://github.com/ML-KULeuven/socceraction).
+
+DataBallPy maps the events of all providers to the SPADL vocabulary when the event data is loaded, in the `action_type`, `action_result` and `action_bodypart` columns of the event data. Events that are not an on-ball action, like substitutions, have no `action_type`. To get the SPADL actions of a game, use:
+
+```python
+from databallpy import get_open_game
+
+game = get_open_game(provider="metrica")
+actions = game.to_spadl(playing_direction="home_oriented", coordinate_system="spadl")
+```
+
+The output has the same columns and ids as socceraction, and the conversion follows the same rules: clearances end where the next action starts, and dribbles are added between consecutive actions of the same team when the ball moved without an event in between. The `type_id`, `result_id` and `bodypart_id` columns map to the names in `databallpy.utils.constants.SPADL_ACTION_TYPES`, `SPADL_RESULTS` and `SPADL_BODYPARTS`. The `original_event_id` and `event_id` columns link each action to the event data, they are empty for the added dribbles.
+
+The `playing_direction` sets which team plays from left to right:
+- `home_oriented` (default): the home team.
+- `away_oriented`: the away team.
+- `possession_oriented`: the team performing the action, like `socceraction.spadl.play_left_to_right`.
+- `out_of_possession_oriented`: the team not performing the action.
+
+The `coordinate_system` sets the units of the locations:
+- `databallpy` (default): meters on the actual pitch, with (0, 0) at the centre spot.
+- `spadl`: the 105x68 SPADL field, with (0, 0) in the bottom left corner, as used by socceraction.
+
+```{note}
+The mapping to SPADL follows socceraction as closely as possible, but the native parsers of DataBallPy use all information of the provider. Therefore, the actions can differ slightly from socceraction, for instance, the native Metrica parser also maps recoveries and challenges to interceptions and tackles, and skips carries in which the ball did not move. Data loaded with the Kloppy integration is mapped like the socceraction Kloppy converter. SPADL is not supported for InStat data.
+```
+
 ## Use Cases of Event Data
 
 Event data is the most available data type in football analytics. It is used for a wide range of purposes. Mostly, it is used for descriptive analysis which helps to answer the following questions:

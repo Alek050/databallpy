@@ -444,8 +444,9 @@ class Game:
         playing_direction: str = "home_oriented",
         coordinate_system: str = "databallpy",
     ) -> pd.DataFrame:
-        """Function to convert the event data of the game to SPADL actions, see
-        EventData.to_spadl for more info.
+        """Function to convert the event data of the game to SPADL actions (Decroos
+        et al., 2019), using the home team and pitch dimensions of the game. See
+        EventData.to_spadl for more info on the conversion and the output columns.
 
         Args:
             game_id (int | str | None, optional): The value of the game_id column.
@@ -453,11 +454,28 @@ class Game:
             playing_direction (str, optional): The playing direction of the actions.
                 Defaults to "home_oriented", options are {home_oriented,
                 away_oriented, possession_oriented, out_of_possession_oriented}.
+                Possession oriented means the team performing the action plays from
+                left to right, like ``socceraction.spadl.play_left_to_right``.
             coordinate_system (str, optional): The coordinate system of the actions.
-                Defaults to "databallpy", options are {databallpy, spadl}.
+                Defaults to "databallpy", meters on the actual pitch with (0, 0) at
+                the centre spot. With "spadl" the coordinates are rescaled to the
+                105x68 SPADL field with (0, 0) in the bottom left corner.
+
+        Raises:
+            DataBallPyError: if the game has no event data.
+            NotImplementedError: if the event data is from InStat.
+            ValueError: if the playing_direction or coordinate_system is not
+                supported.
 
         Returns:
             pd.DataFrame: The SPADL actions of the game.
+
+        Example:
+            >>> from databallpy import get_open_game
+            >>> game = get_open_game(provider="metrica")
+            >>> actions = game.to_spadl(
+            ...     playing_direction="possession_oriented", coordinate_system="spadl"
+            ... )
         """
         return self.event_data.to_spadl(
             home_team_id=self.home_team_id,

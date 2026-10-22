@@ -54,7 +54,7 @@ class TestMetricaEventDataParser(unittest.TestCase):
         for col in ["end_x", "start_x"]:
             expected_event_data[col] = (expected_event_data[col] + 50) / 100.0
         for col in ["end_y", "start_y"]:
-            expected_event_data[col] = (expected_event_data[col] + 25) / 50.0
+            expected_event_data[col] = (25 - expected_event_data[col]) / 50.0
 
         expected_event_data.drop(["datetime"], axis=1, inplace=True)
         ed, cards = _get_event_data(self.ed_loc)

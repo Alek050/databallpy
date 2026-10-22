@@ -82,7 +82,8 @@ def load_metrica_event_data(
     metadata = _update_metadata(td_channels, metadata)
     event_data, cards = _get_event_data(event_data_loc)
 
-    # rescale the event locations, metrica data is scaled between 0 and 1.
+    # rescale the event locations, metrica data is scaled between 0 and 1 with the
+    # origin in the top left corner, so the y-axis is flipped.
     for col in [x for x in event_data.columns if "_x" in x]:
         event_data[col] = (
             event_data[col] * metadata.pitch_dimensions[0]
@@ -90,8 +91,8 @@ def load_metrica_event_data(
         )
     for col in [x for x in event_data.columns if "_y" in x]:
         event_data[col] = (
-            event_data[col] * metadata.pitch_dimensions[1]
-            - metadata.pitch_dimensions[1] / 2.0
+            metadata.pitch_dimensions[1] / 2.0
+            - event_data[col] * metadata.pitch_dimensions[1]
         )
 
     # add datetime based on frame numbers

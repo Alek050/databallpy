@@ -1033,7 +1033,7 @@ def get_game_from_kloppy(
             MISSING_INT
             if event_dataset.metadata.score is None
             or event_dataset.metadata.score.home is None
-            else event_dataset.metadata.score.home
+            else int(event_dataset.metadata.score.home)
         )
         if uses_event_data
         else MISSING_INT
@@ -1043,7 +1043,7 @@ def get_game_from_kloppy(
             MISSING_INT
             if event_dataset.metadata.score is None
             or event_dataset.metadata.score.away is None
-            else event_dataset.metadata.score.away
+            else int(event_dataset.metadata.score.away)
         )
         if uses_event_data
         else MISSING_INT

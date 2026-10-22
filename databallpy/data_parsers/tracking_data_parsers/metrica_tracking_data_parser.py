@@ -219,8 +219,9 @@ def _get_tracking_data(
     for col in [x for x in df.columns if "_x" in x]:
         df[col] = df[col] * pitch_dimensions[0] - (pitch_dimensions[0] / 2)
 
+    # metrica has the origin in the top left corner, so the y-axis is flipped
     for col in [x for x in df.columns if "_y" in x]:
-        df[col] = df[col] * pitch_dimensions[1] - (pitch_dimensions[1] / 2)
+        df[col] = (pitch_dimensions[1] / 2) - df[col] * pitch_dimensions[1]
 
     df = _insert_missing_rows(df, "frame", selection=selection)
 

@@ -17,7 +17,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _insert_missing_rows,
 )
 from databallpy.schemas import EventData, TrackingData
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import MISSING_INT, PERIOD_START_MINUTES
 
 if TYPE_CHECKING:
     from kloppy.domain import CardType, Event, EventDataset, TrackingDataset
@@ -391,6 +391,21 @@ def _get_kloppy_qualifier_values(event: "Event", qualifier_type: type) -> list:
     ]
 
 
+def _get_kloppy_minutes(event: "Event") -> int:
+    """Function to get the game minute of a kloppy event, the kloppy timestamp is
+    relative to the start of the period.
+
+    Args:
+        event (Event): the kloppy event.
+
+    Returns:
+        int: the game minute of the event.
+    """
+    return int(event.timestamp.total_seconds()) // 60 + PERIOD_START_MINUTES.get(
+        event.period.id, 0
+    )
+
+
 def _get_kloppy_spadl_bodypart(event: "Event", default: str) -> str:
     """Function to map the kloppy body part qualifier to the SPADL vocabulary.
 
@@ -641,8 +656,7 @@ def convert_kloppy_event_dataset(
             else True
             if event.result in is_successful
             else False,
-            minutes=lambda event: (int(event.timestamp.total_seconds()) % 3600 // 60)
-            + (45 if event.period.id == 2 else 15 if event.period.id in [3, 4] else 0),
+            minutes=_get_kloppy_minutes,
             seconds=lambda event: float(event.timestamp.total_seconds()) % 60,
             engine="pandas",
         )
