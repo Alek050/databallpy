@@ -445,7 +445,7 @@ class TestSciSportsParser(unittest.TestCase):
                 "GOALKEEPER_SAVE",
                 "UNSUCCESSFUL",
                 "HANDS",
-                (None, None, None),
+                ("keeper_save", "fail", "other"),
             ),
             (
                 "CLEARANCE",

@@ -438,8 +438,8 @@ def _get_scisports_spadl_action(
     event: dict,
 ) -> tuple[str | None, str | None, str | None]:
     """Function to map a scisports event to the SPADL vocabulary. Only tackles of the
-    defensive duels and successful keeper saves are mapped, ball recoveries are mapped
-    to dribbles and updated in _update_scisports_spadl_actions.
+    defensive duels are mapped, ball recoveries are mapped to dribbles and updated in
+    _update_scisports_spadl_actions.
 
     Args:
         event (dict): event from the scisports json
@@ -475,8 +475,8 @@ def _get_scisports_spadl_action(
         action_type, result = "dribble", "success"
     elif base_type == "INTERCEPTION" and sub_type == "GOALKEEPER_CLAIM":
         action_type, bodypart = "keeper_claim", "other"
-    elif base_type == "KEEPER_SAVE" and successful:
-        action_type, result, bodypart = "keeper_save", "success", "other"
+    elif base_type == "KEEPER_SAVE":
+        action_type, bodypart = "keeper_save", "other"
     elif base_type == "CLEARANCE":
         action_type, result = "clearance", "success"
     elif base_type == "BAD_TOUCH":
