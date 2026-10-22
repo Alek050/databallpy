@@ -1,11 +1,14 @@
 import copy
 import unittest
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.event_data_parsers.opta_parser import (
+    _get_opta_end_location,
+    _get_opta_spadl_action,
     _get_player_info,
     _get_valid_opta_datetime,
     _load_event_data,
@@ -14,10 +17,13 @@ from databallpy.data_parsers.event_data_parsers.opta_parser import (
     _make_pass_instance,
     _make_shot_event_instance,
     _rescale_opta_dimensions,
+    _update_opta_spadl_actions,
     _update_pass_outcome,
     load_opta_event_data,
 )
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.schemas import EventData
+from databallpy.utils.constants import SPADL_ACTION_TYPES, SPADL_RESULTS
 from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import (
@@ -215,13 +221,14 @@ class TestOptaParser(unittest.TestCase):
 
         # away team coordinates are changed later on in the pipeline
         expected_event_data.loc[
-            expected_event_data["team_id"] == 194, ["start_x", "start_y"]
+            expected_event_data["team_id"] == 194,
+            ["start_x", "start_y", "end_x", "end_y"],
         ] *= -1
 
         # scaling of pitch dimension is done later on in the pipeline
-        expected_event_data.loc[:, "start_x"] += 50
-        expected_event_data.loc[:, "start_y"] = (
-            expected_event_data.loc[:, "start_y"] + 25
+        expected_event_data.loc[:, ["start_x", "end_x"]] += 50
+        expected_event_data.loc[:, ["start_y", "end_y"]] = (
+            expected_event_data.loc[:, ["start_y", "end_y"]] + 25
         ) * (100 / 50)
 
         pd.testing.assert_frame_equal(event_data, expected_event_data)
@@ -260,13 +267,14 @@ class TestOptaParser(unittest.TestCase):
 
         # away team coordinates are changed later on in the pipeline
         expected_event_data.loc[
-            expected_event_data["team_id"] == "ateammaid02", ["start_x", "start_y"]
+            expected_event_data["team_id"] == "ateammaid02",
+            ["start_x", "start_y", "end_x", "end_y"],
         ] *= -1
 
         # scaling of pitch dimension is done later on in the pipeline
-        expected_event_data.loc[:, "start_x"] += 50
-        expected_event_data.loc[:, "start_y"] = (
-            expected_event_data.loc[:, "start_y"] + 25
+        expected_event_data.loc[:, ["start_x", "end_x"]] += 50
+        expected_event_data.loc[:, ["start_y", "end_y"]] = (
+            expected_event_data.loc[:, ["start_y", "end_y"]] + 25
         ) * (100 / 50)
 
         pd.testing.assert_frame_equal(event_data, expected_event_data)
@@ -566,3 +574,173 @@ class TestOptaParser(unittest.TestCase):
         event = BeautifulSoup(event_xml, "xml").find("Event")
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)
+
+
+def _opta_event(outcome: int = 1, qualifiers: dict | None = None) -> ET.Element:
+    event = ET.Element("Event", attrib={"outcome": str(outcome)})
+    for qualifier_id, value in (qualifiers or {}).items():
+        attrib = {"qualifier_id": str(qualifier_id)}
+        if value is not None:
+            attrib["value"] = str(value)
+        ET.SubElement(event, "Q", attrib=attrib)
+    return event
+
+
+class TestOptaSpadl(unittest.TestCase):
+    def setUp(self):
+        self.f7_loc = "tests/test_data/f7_test.xml"
+        self.f24_loc = "tests/test_data/f24_test.xml"
+
+    def test_get_opta_spadl_action_passes(self):
+        cases = [
+            ("pass", 1, {}, ("pass", "success", "foot")),
+            ("pass", 0, {107: None}, ("throw_in", "fail", "other")),
+            ("pass", 1, {5: None, 2: None}, ("freekick_crossed", "success", "foot")),
+            ("pass", 1, {5: None, 155: None}, ("freekick_crossed", "success", "foot")),
+            ("pass", 0, {5: None}, ("freekick_short", "fail", "foot")),
+            ("pass", 1, {6: None, 2: None}, ("corner_crossed", "success", "foot")),
+            ("pass", 1, {6: None, 1: None}, ("corner_short", "success", "foot")),
+            ("pass", 1, {2: None, 72: None}, ("cross", "success", "foot_left")),
+            ("pass", 1, {124: None, 20: None}, ("goalkick", "success", "foot_right")),
+            ("pass", 1, {15: None}, ("pass", "success", "head")),
+            ("pass", 1, {168: None}, ("pass", "success", "head")),
+            ("pass", 1, {21: None}, ("pass", "success", "other")),
+            ("offside pass", 0, {}, ("pass", "offside", "foot")),
+            ("pass", 1, {238: None}, (None, None, None)),
+        ]
+        for event_name, outcome, qualifiers, expected in cases:
+            with self.subTest(event_name=event_name, qualifiers=qualifiers):
+                event = _opta_event(outcome, qualifiers)
+                self.assertEqual(_get_opta_spadl_action(event, event_name), expected)
+
+    def test_get_opta_spadl_action_shots(self):
+        cases = [
+            ("goal", {}, ("shot", "success", "foot")),
+            ("goal", {9: None}, ("shot_penalty", "success", "foot")),
+            ("miss", {26: None, 15: None}, ("shot_freekick", "fail", "head")),
+            ("post", {}, ("shot", "fail", "foot")),
+            ("attempt saved", {28: None}, ("shot", "fail", "foot")),
+            ("goal", {28: None}, ("bad_touch", "owngoal", "foot")),
+            ("own goal", {}, ("bad_touch", "owngoal", "foot")),
+        ]
+        for event_name, qualifiers, expected in cases:
+            with self.subTest(event_name=event_name, qualifiers=qualifiers):
+                event = _opta_event(1, qualifiers)
+                self.assertEqual(_get_opta_spadl_action(event, event_name), expected)
+
+    def test_get_opta_spadl_action_other_events(self):
+        cases = [
+            ("take on", 0, {}, ("take_on", "fail", "foot")),
+            ("tackle", 1, {}, ("tackle", "success", "foot")),
+            ("interception", 1, {}, ("interception", "success", "foot")),
+            ("blocked pass", 1, {}, ("interception", "success", "foot")),
+            ("foul", 0, {}, ("foul", "fail", "foot")),
+            ("foul", 1, {}, (None, None, None)),
+            ("save", 1, {}, ("keeper_save", "success", "other")),
+            ("save", 1, {94: None}, (None, None, None)),
+            ("smother", 1, {}, ("keeper_save", "success", "other")),
+            ("claim", 0, {}, ("keeper_claim", "fail", "other")),
+            ("punch", 1, {}, ("keeper_punch", "success", "other")),
+            ("keeper pick-up", 1, {}, ("keeper_pick_up", "success", "other")),
+            ("keeper sweeper", 1, {}, ("clearance", "success", "foot")),
+            ("keeper sweeper", 0, {}, (None, None, None)),
+            ("clearance", 1, {15: None}, ("clearance", "success", "head")),
+            ("ball touch", 0, {}, ("bad_touch", "fail", "foot")),
+            ("ball touch", 1, {}, (None, None, None)),
+            ("ball recovery", 1, {}, ("dribble", "success", "foot")),
+            ("aerial", 1, {}, (None, None, None)),
+        ]
+        for event_name, outcome, qualifiers, expected in cases:
+            with self.subTest(event_name=event_name, outcome=outcome):
+                event = _opta_event(outcome, qualifiers)
+                self.assertEqual(_get_opta_spadl_action(event, event_name), expected)
+
+    def test_get_opta_end_location(self):
+        cases = [
+            ({140: 30.0, 141: 40.0}, False, (30.0, 40.0)),
+            ({146: 80.0, 147: 45.0, 102: 50.0}, False, (80.0, 45.0)),
+            ({102: 54.0, 103: 10.0}, False, (100.0, 54.0)),
+            ({102: 54.0}, True, (0.0, 46.0)),
+            ({140: 30.0}, False, (30.0, np.nan)),
+            ({140: None, 141: "x"}, False, (np.nan, np.nan)),
+            ({}, False, (np.nan, np.nan)),
+        ]
+        for qualifiers, own_goal, expected in cases:
+            with self.subTest(qualifiers=qualifiers, own_goal=own_goal):
+                res = _get_opta_end_location(_opta_event(1, qualifiers), own_goal)
+                np.testing.assert_allclose(res, expected)
+
+    def test_update_opta_spadl_actions(self):
+        event_data = pd.DataFrame(
+            {
+                "original_event": [
+                    "interception",
+                    "ball recovery",
+                    "pass",
+                    "ball touch",
+                    "pass",
+                    "ball recovery",
+                    "interception",
+                ],
+                "team_id": [1, 1, 1, 2, 1, 1, 2],
+                "period_id": [1] * 7,
+                "minutes": [0] * 7,
+                "seconds": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+                "start_x": [0.0, 0.0, 10.0, 15.0, 25.0, 25.0, 26.0],
+                "start_y": [0.0, 0.0, 0.0, 0.0, 5.0, 6.0, 6.0],
+                "end_x": [np.nan, np.nan, 20.0, np.nan, np.nan, np.nan, np.nan],
+                "end_y": [np.nan, np.nan, 0.0, np.nan, np.nan, np.nan, np.nan],
+                "action_type": [
+                    "interception",
+                    "dribble",
+                    "pass",
+                    None,
+                    "pass",
+                    "dribble",
+                    "interception",
+                ],
+                "action_result": [
+                    "success",
+                    "success",
+                    "fail",
+                    None,
+                    "success",
+                    "success",
+                    "success",
+                ],
+                "action_bodypart": ["foot"] * 3 + [None] + ["foot"] * 3,
+            }
+        )
+        res = _update_opta_spadl_actions(event_data)
+
+        # the first recovery moved the ball to the next pass, the second did not
+        self.assertListEqual(
+            res["action_type"].tolist(),
+            ["interception", "dribble", "pass", None, "pass", None, "interception"],
+        )
+        self.assertListEqual(res.loc[1, ["end_x", "end_y"]].tolist(), [10.0, 0.0])
+        # the deflected pass still reached a teammate
+        self.assertListEqual(res.loc[2, ["end_x", "end_y"]].tolist(), [25.0, 5.0])
+        self.assertEqual(res.loc[2, "action_result"], "success")
+        # the first interception is followed by the same team, the last one is not
+        self.assertEqual(res.loc[0, "action_result"], "success")
+        self.assertEqual(res.loc[6, "action_result"], "fail")
+
+    def test_to_spadl(self):
+        event_data, metadata, _ = load_opta_event_data(self.f7_loc, self.f24_loc)
+        # the second half events in the test data have first half minutes
+        event_data.loc[event_data["period_id"] == 2, "minutes"] += 45
+        res = EventData(event_data, provider="opta").to_spadl(
+            home_team_id=metadata.home_team_id,
+            pitch_dimensions=metadata.pitch_dimensions,
+            coordinate_system="spadl",
+        )
+        res = res[res["original_event_id"].notna()].reset_index(drop=True)
+        self.assertListEqual(
+            [SPADL_ACTION_TYPES[i] for i in res["type_id"]],
+            ["pass", "pass", "bad_touch", "bad_touch", "shot", "take_on", "tackle"],
+        )
+        self.assertListEqual(
+            [SPADL_RESULTS[i] for i in res["result_id"]],
+            ["success", "fail", "owngoal", "owngoal", "fail", "fail", "success"],
+        )

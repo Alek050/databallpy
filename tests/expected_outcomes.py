@@ -255,6 +255,35 @@ ED_OPTA = EventData(
             opta_raw_to_scaled(52.8, 50, True),
             opta_raw_to_scaled(52.8, 50, True),
         ],
+        # own goals end in the own goal, so their end location is mirrored
+        "end_x": [
+            np.nan,
+            np.nan,
+            np.nan,
+            opta_raw_to_scaled(29.1, 100, False),
+            opta_raw_to_scaled(70.6, 100, True),
+            opta_raw_to_scaled(41.2, 100, False),
+            opta_raw_to_scaled(71.3, 100, True),
+            np.nan,
+            np.nan,
+            opta_raw_to_scaled(0.0, 100, False),
+            opta_raw_to_scaled(0.0, 100, True),
+            opta_raw_to_scaled(100.0, 100, True),
+        ],
+        "end_y": [
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            opta_raw_to_scaled(57.5, 50, True),
+            opta_raw_to_scaled(65.0, 50, False),
+            opta_raw_to_scaled(24.1, 50, True),
+            np.nan,
+            np.nan,
+            opta_raw_to_scaled(45.7, 50, False),
+            opta_raw_to_scaled(45.7, 50, True),
+            opta_raw_to_scaled(54.3, 50, True),
+        ],
         "datetime": np.array(
             [
                 "2023-01-22T11:28:32.117",
@@ -302,9 +331,16 @@ ED_OPTA = EventData(
             "attempt saved",
         ],
         "event_type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 16, 15],
-        "action_type": [None] * 12,
-        "action_result": [None] * 12,
-        "action_bodypart": [None] * 12,
+        # event 10 is an own goal in spadl since it has the opta own goal qualifier 28
+        "action_type": [None] * 3
+        + ["pass", "pass", None, None, "take_on", "tackle"]
+        + ["bad_touch", "bad_touch", "shot"],
+        "action_result": [None] * 3
+        + ["success", "fail", None, None, "fail", "success"]
+        + ["owngoal", "owngoal", "fail"],
+        "action_bodypart": [None] * 3
+        + ["foot", "foot", None, None, "foot", "foot"]
+        + ["head", "head", "head"],
     },
     provider="opta",
 )
@@ -685,6 +721,13 @@ ED_OPTA_MA13["original_annotation_id"] = [
     9000000011,
     9000000012,
 ]
+# in the ma13 file event 10 has no own goal qualifier and event 11 no goal mouth
+ED_OPTA_MA13.loc[10, ["end_x", "end_y"]] = [
+    opta_raw_to_scaled(100.0, 100, True),
+    opta_raw_to_scaled(54.3, 50, True),
+]
+ED_OPTA_MA13.loc[11, ["end_x", "end_y"]] = np.nan
+ED_OPTA_MA13.loc[10, ["action_type", "action_result"]] = ["shot", "success"]
 ED_OPTA_MA13["team_name"] = ED_OPTA_MA13["team_id"].map(
     {"hteammaid01": "TeamAlpha", "ateammaid02": "TeamBeta"}
 )
