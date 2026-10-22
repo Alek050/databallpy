@@ -65,6 +65,18 @@ class TestTTIConstraint(unittest.TestCase):
                 np.array([10.0, 0.0]),
                 0.1 + 9.9 / 5.0,
             ),
+            (
+                # cosine rounds to 1.0000000000000002, see issue #401
+                "destination_on_line_of_travel",
+                np.array([-34.11000061035156, -5.53000020980835]),
+                np.array([2.524995803833008, -1.0500001907348633]),
+                np.array([-34.11000061035156, -5.53000020980835])
+                + 0.7 * np.array([2.524995803833008, -1.0500001907348633]),
+                0.1
+                + 0.6
+                * np.linalg.norm(np.array([2.524995803833008, -1.0500001907348633]))
+                / 5.0,
+            ),
         ]
         for name, origin, velocity, destination, expected in cases:
             with self.subTest(name=name):
