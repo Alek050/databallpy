@@ -57,7 +57,8 @@ class TTIConstraint(Constraint):
         if denom == 0:
             angle = 0.0
         else:
-            angle = np.arccos(dot_product / denom)
+            # clip to avoid NaN when rounding pushes the cosine outside [-1, 1]
+            angle = np.arccos(np.clip(dot_product / denom, -1.0, 1.0))
         r_reaction = origin + velocity * self.reaction_time
         d = destination - r_reaction
         t = (
