@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
+from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
+    _add_recovery_dribbles,
+    _add_spadl_columns,
+)
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _adjust_start_end_frames,
     _downcast_tracking_data,
@@ -16,7 +20,7 @@ from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.constants import MISSING_INT
 
 if TYPE_CHECKING:
-    from kloppy.domain import EventDataset, TrackingDataset
+    from kloppy.domain import CardType, Event, EventDataset, TrackingDataset
 
 
 def _remove_utc(ts: pd.Timestamp) -> pd.Timestamp:
@@ -377,6 +381,199 @@ def convert_kloppy_tracking_dataset(
     )
 
 
+def _get_kloppy_qualifier_values(event: "Event", qualifier_type: type) -> list:
+    """Function to get all qualifier values of a type, kloppy fails when an event
+    has no qualifiers."""
+    return [
+        qualifier.value
+        for qualifier in event.qualifiers or []
+        if isinstance(qualifier, qualifier_type)
+    ]
+
+
+def _get_kloppy_spadl_bodypart(event: "Event", default: str) -> str:
+    """Function to map the kloppy body part qualifier to the SPADL vocabulary.
+
+    Args:
+        event (kloppy.domain.Event): the kloppy event
+        default (str): the SPADL body part when no body part is given
+
+    Returns:
+        str: the SPADL body part
+    """
+    from kloppy.domain import BodyPart, BodyPartQualifier
+
+    body_part = event.get_qualifier_value(BodyPartQualifier)
+    if body_part is None:
+        return default
+    if body_part == BodyPart.HEAD:
+        return "head"
+    if body_part == BodyPart.HEAD_OTHER:
+        return "head/other"
+    if body_part == BodyPart.LEFT_FOOT:
+        return "foot_left"
+    if body_part == BodyPart.RIGHT_FOOT:
+        return "foot_right"
+    if body_part == BodyPart.DROP_KICK:
+        return "foot"
+    return "other"
+
+
+def _get_kloppy_spadl_card(card_type: "CardType | None") -> str | None:
+    """Function to map a kloppy card type to the SPADL result, second yellow cards
+    are red cards."""
+    from kloppy.domain import CardType
+
+    if card_type == CardType.FIRST_YELLOW:
+        return "yellow_card"
+    if card_type in [CardType.SECOND_YELLOW, CardType.RED]:
+        return "red_card"
+    return None
+
+
+def _get_kloppy_spadl_action(
+    event: "Event",
+) -> tuple[str | None, str | None, str | None]:
+    """Function to map a kloppy event to the SPADL vocabulary. Follows the
+    socceraction conversion of kloppy data, but also maps all keeper save types to
+    keeper saves and second yellow cards to red cards. Ball recoveries are mapped to
+    dribbles, which are updated with the surrounding events afterwards.
+
+    Args:
+        event (kloppy.domain.Event): the kloppy event
+
+    Returns:
+        tuple[str | None, str | None, str | None]: The SPADL action type, result and
+            bodypart, all None for events that are not SPADL actions
+    """
+    from kloppy.domain import (
+        CardQualifier,
+        DuelQualifier,
+        DuelResult,
+        DuelType,
+        EventType,
+        GoalkeeperActionType,
+        GoalkeeperQualifier,
+        InterceptionResult,
+        PassQualifier,
+        PassResult,
+        PassType,
+        SetPieceQualifier,
+        SetPieceType,
+        ShotResult,
+        TakeOnResult,
+    )
+
+    event_type = event.event_type
+    set_piece = event.get_qualifier_value(SetPieceQualifier)
+
+    if event_type == EventType.PASS:
+        if event.result is None:
+            # passes without a result are not part of the play
+            return None, None, None
+        pass_types = _get_kloppy_qualifier_values(event, PassQualifier)
+        is_crossed = any(
+            pass_type in pass_types
+            for pass_type in [
+                PassType.CHIPPED_PASS,
+                PassType.CROSS,
+                PassType.HIGH_PASS,
+                PassType.LONG_BALL,
+            ]
+        )
+        bodypart = _get_kloppy_spadl_bodypart(event, "foot")
+        if set_piece == SetPieceType.FREE_KICK:
+            action_type = "freekick_crossed" if is_crossed else "freekick_short"
+        elif set_piece == SetPieceType.CORNER_KICK:
+            action_type = "corner_crossed" if is_crossed else "corner_short"
+        elif set_piece == SetPieceType.GOAL_KICK:
+            action_type = "goalkick"
+        elif set_piece == SetPieceType.THROW_IN:
+            action_type = "throw_in"
+            bodypart = _get_kloppy_spadl_bodypart(event, "other")
+        elif PassType.CROSS in pass_types:
+            action_type = "cross"
+        else:
+            action_type = "pass"
+
+        if event.result in [PassResult.INCOMPLETE, PassResult.OUT]:
+            result = "fail"
+        elif event.result == PassResult.OFFSIDE:
+            result = "offside"
+        else:
+            result = "success"
+        return action_type, result, bodypart
+
+    if event_type == EventType.SHOT:
+        bodypart = _get_kloppy_spadl_bodypart(event, "foot")
+        if event.result == ShotResult.OWN_GOAL:
+            return "bad_touch", "owngoal", bodypart
+        if set_piece == SetPieceType.FREE_KICK:
+            action_type = "shot_freekick"
+        elif set_piece == SetPieceType.PENALTY:
+            action_type = "shot_penalty"
+        else:
+            action_type = "shot"
+        result = "success" if event.result == ShotResult.GOAL else "fail"
+        return action_type, result, bodypart
+
+    if event_type == EventType.GOALKEEPER:
+        keeper_type = event.get_qualifier_value(GoalkeeperQualifier)
+        if keeper_type in [
+            GoalkeeperActionType.SAVE,
+            GoalkeeperActionType.REFLEX,
+            GoalkeeperActionType.SMOTHER,
+        ]:
+            action_type = "keeper_save"
+        elif keeper_type == GoalkeeperActionType.CLAIM:
+            action_type = "keeper_claim"
+        elif keeper_type == GoalkeeperActionType.PUNCH:
+            action_type = "keeper_punch"
+        elif keeper_type == GoalkeeperActionType.PICK_UP:
+            action_type = "keeper_pick_up"
+        else:
+            return None, None, None
+        return action_type, "success", _get_kloppy_spadl_bodypart(event, "other")
+
+    if event_type == EventType.FOUL_COMMITTED:
+        card = _get_kloppy_spadl_card(event.get_qualifier_value(CardQualifier))
+        return "foul", card or "fail", "foot"
+
+    if event_type == EventType.DUEL:
+        duel_types = _get_kloppy_qualifier_values(event, DuelQualifier)
+        is_tackle = any(
+            duel_type in duel_types
+            for duel_type in [DuelType.GROUND, DuelType.TACKLE, DuelType.SLIDING_TACKLE]
+        )
+        if not is_tackle or DuelType.LOOSE_BALL in duel_types:
+            return None, None, None
+        result = "fail" if event.result == DuelResult.LOST else "success"
+        return "tackle", result, "foot"
+
+    if event_type == EventType.INTERCEPTION:
+        result = (
+            "fail"
+            if event.result in [InterceptionResult.LOST, InterceptionResult.OUT]
+            else "success"
+        )
+        return "interception", result, _get_kloppy_spadl_bodypart(event, "foot")
+
+    if event_type == EventType.TAKE_ON:
+        result = "success" if event.result == TakeOnResult.COMPLETE else "fail"
+        return "take_on", result, "foot"
+
+    if event_type == EventType.CLEARANCE:
+        return "clearance", "success", _get_kloppy_spadl_bodypart(event, "foot")
+
+    if event_type == EventType.MISCONTROL:
+        return "bad_touch", "fail", _get_kloppy_spadl_bodypart(event, "foot")
+
+    if event_type in [EventType.CARRY, EventType.RECOVERY]:
+        return "dribble", "success", "foot"
+
+    return None, None, None
+
+
 def convert_kloppy_event_dataset(
     event_dataset: "EventDataset", periods: pd.DataFrame
 ) -> EventData:
@@ -431,8 +628,14 @@ def convert_kloppy_event_dataset(
             "team_id",
             "coordinates_x",
             "coordinates_y",
+            "end_coordinates_x",
+            "end_coordinates_y",
             "event_type",
             "result",
+            spadl_action=_get_kloppy_spadl_action,
+            card_result=lambda event: _get_kloppy_spadl_card(event.card_type)
+            if event.event_type == EventType.CARD
+            else None,
             is_successful=lambda event: None
             if event.result is None
             else True
@@ -474,6 +677,8 @@ def convert_kloppy_event_dataset(
                 "timestamp": "datetime",
                 "coordinates_x": "start_x",
                 "coordinates_y": "start_y",
+                "end_coordinates_x": "end_x",
+                "end_coordinates_y": "end_y",
                 "event_id": "original_event_id",
                 "index": "event_id",
                 "event_type": "original_event",
@@ -484,6 +689,28 @@ def convert_kloppy_event_dataset(
 
     # Because Pandera (when nullable=False) expects 'datetime' to have type datetime64[ns] and not datetime64[ns, UTC], remove UTC component
     event_dataframe["datetime"] = event_dataframe["datetime"].dt.tz_localize(None)
+
+    spadl_columns = ["action_type", "action_result", "action_bodypart"]
+    event_dataframe[spadl_columns] = pd.DataFrame(
+        event_dataframe.pop("spadl_action").tolist(),
+        index=event_dataframe.index,
+        columns=spadl_columns,
+    )
+    # the own goal ends in the own goal of the team, the home team plays left to right
+    is_own_goal = event_dataframe["action_result"] == "owngoal"
+    goal_x = event_dataset.metadata.pitch_dimensions.pitch_length / 2
+    event_dataframe.loc[is_own_goal, "end_x"] = np.where(
+        event_dataframe.loc[is_own_goal, "team_id"] == home_team.team_id,
+        -goal_x,
+        goal_x,
+    )
+    event_dataframe.loc[is_own_goal, "end_y"] = 0.0
+    event_dataframe = _add_card_results(
+        event_dataframe, event_dataframe.pop("card_result").dropna().to_dict()
+    )
+    event_dataframe = _add_recovery_dribbles(
+        event_dataframe, event_dataframe["original_event"] == EventType.RECOVERY.value
+    )
     event_dataframe = _add_spadl_columns(event_dataframe)
 
     return EventData(event_dataframe, provider=event_dataset.metadata.provider.value)
