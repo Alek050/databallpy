@@ -9,6 +9,7 @@ from pandas._libs.tslibs.timestamps import Timestamp
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
     _add_card_results,
+    _add_recovery_dribbles,
     _add_spadl_columns,
 )
 from databallpy.events import (
@@ -17,7 +18,6 @@ from databallpy.events import (
     PassEvent,
     ShotEvent,
 )
-from databallpy.events.spadl import MIN_DRIBBLE_LENGTH
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import convert_datetime, utc_to_local_datetime
@@ -1402,25 +1402,9 @@ def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The event data with the updated SPADL actions
     """
-    spadl_columns = ["action_type", "action_result", "action_bodypart"]
-
-    # ball recoveries without movement are no actions
-    is_recovery = event_data["original_event"] == "ball recovery"
-    next_start = (
-        event_data.loc[
-            event_data["action_type"].notna() & ~is_recovery, ["start_x", "start_y"]
-        ]
-        .reindex(event_data.index)
-        .shift(-1)
-        .bfill()
+    event_data = _add_recovery_dribbles(
+        event_data, event_data["original_event"] == "ball recovery"
     )
-    moved = (
-        (event_data["start_x"] - next_start["start_x"]).abs() >= MIN_DRIBBLE_LENGTH
-    ) | ((event_data["start_y"] - next_start["start_y"]).abs() >= MIN_DRIBBLE_LENGTH)
-    event_data.loc[is_recovery & ~moved, spadl_columns] = None
-    event_data.loc[is_recovery & moved, ["end_x", "end_y"]] = next_start.loc[
-        is_recovery & moved
-    ].values
 
     # unintentional ball touches are no actions, the ball continues to the next event
     next_events = event_data.shift(-2)

@@ -5,11 +5,11 @@ import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers.utils import (
     _add_card_results,
+    _add_recovery_dribbles,
     _add_spadl_columns,
 )
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
-from databallpy.events.spadl import MIN_DRIBBLE_LENGTH
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 
@@ -508,25 +508,7 @@ def _update_scisports_spadl_actions(
     Returns:
         pd.DataFrame: The event data with the updated SPADL actions
     """
-    spadl_columns = ["action_type", "action_result", "action_bodypart"]
-
-    # ball recoveries without movement are no actions
-    next_start = (
-        event_data.loc[
-            event_data["action_type"].notna() & ~is_recovery, ["start_x", "start_y"]
-        ]
-        .reindex(event_data.index)
-        .shift(-1)
-        .bfill()
-    )
-    moved = (
-        (event_data["start_x"] - next_start["start_x"]).abs() >= MIN_DRIBBLE_LENGTH
-    ) | ((event_data["start_y"] - next_start["start_y"]).abs() >= MIN_DRIBBLE_LENGTH)
-    event_data.loc[is_recovery & ~moved, spadl_columns] = None
-    event_data.loc[is_recovery & moved, ["end_x", "end_y"]] = next_start.loc[
-        is_recovery & moved
-    ].values
-
+    event_data = _add_recovery_dribbles(event_data, is_recovery)
     return _add_card_results(event_data, cards)
 
 
