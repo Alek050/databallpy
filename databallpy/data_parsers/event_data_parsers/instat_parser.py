@@ -10,6 +10,7 @@ from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import utc_to_local_datetime
+from databallpy.utils.warnings import deprecated
 
 INSTAT_DATABALLPY_MAP = {
     "Attacking pass accurate": ["pass", True],
@@ -38,6 +39,10 @@ INSTAT_DATABALLPY_MAP = {
 logging_wrapper(__file__)
 
 
+@deprecated(
+    "InStat event data is deprecated and will be removed in version 0.10.0, since "
+    "InStat Football has been merged into Hudl Wyscout."
+)
 def load_instat_event_data(
     event_data_loc: str, metadata_loc: str
 ) -> tuple[pd.DataFrame, Metadata]:
@@ -46,6 +51,10 @@ def load_instat_event_data(
     (0, 0) being the center. Additionally, the coordinates have been standardized so
     that the home team is represented as playing from left to right for the entire
     game, and the away team is represented as playing from right to left.
+
+    .. deprecated:: 0.8.2
+        InStat event data will be removed in version 0.10.0, since InStat Football
+        has been merged into Hudl Wyscout. SPADL conversion is not supported.
 
     Args:
         event_data_loc (str): location of the event_data.json file

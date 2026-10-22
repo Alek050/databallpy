@@ -133,6 +133,12 @@ class EventData(pd.DataFrame):
         """
         from databallpy.events.spadl import event_data_to_spadl
 
+        if self.provider == "instat":
+            raise NotImplementedError(
+                "SPADL conversion is not supported for InStat event data, since "
+                "InStat is deprecated and will be removed in version 0.10.0."
+            )
+
         return event_data_to_spadl(
             self,
             home_team_id=home_team_id,

@@ -3,6 +3,7 @@
 ## Version 0.8
 ### V0.8.2
 - Added `home_oriented`, `away_oriented`, and `out_of_possession_oriented` playing directions to `Game.get_frames()` and `Game.get_event_frame()`, alongside the existing `possession_oriented`; `team_oriented` is now deprecated in favour of `home_oriented`
+- Deprecated InStat event data (`load_instat_event_data` and `get_game(event_data_provider="instat")`), since InStat Football has been merged into Hudl Wyscout. It will be removed in version 0.10.0 and has no SPADL support
 - Fixed `Game.save_game()` crashing on id columns mixing string and integer/float values (e.g. Opta MA13/MA2 opaque alphanumeric player IDs alongside legacy numeric or missing-value IDs)
 
 ### V0.8.1 (11/08/2026)

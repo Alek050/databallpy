@@ -554,6 +554,12 @@ def load_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
     elif event_data_provider == "instat":
+        warnings.warn(
+            "event_data_provider 'instat' is deprecated and will be removed in "
+            "version 0.10.0, since InStat Football has been merged into Hudl Wyscout.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         event_data, event_metadata, _ = load_instat_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
