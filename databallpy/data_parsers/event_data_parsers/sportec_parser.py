@@ -7,7 +7,10 @@ import numpy as np
 import pandas as pd
 import requests
 
-from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
+from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
+    _add_spadl_columns,
+)
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.data_parsers.sportec_metadata_parser import (
     _get_sportec_metadata,
@@ -177,11 +180,13 @@ def _get_sportec_event_data(
         lines = file.read()
     root = ET.fromstring(lines)
 
-    # fouls have no position, they are kept for the SPADL foul actions
+    # fouls and cautions have no position, they are kept for the SPADL foul actions
     all_events = [
         event
         for event in root.findall(".//Event")
-        if event.get("X-Position") is not None or event.find("Foul") is not None
+        if event.get("X-Position") is not None
+        or event.find("Foul") is not None
+        or event.find("Caution") is not None
     ]
 
     def update_results_dict(res_dict, i, **kwargs):
@@ -302,6 +307,13 @@ def _get_sportec_event_data(
     #     "Europe/Berlin"
     # )
     event_data = event_data.sort_values("datetime").reset_index(drop=True)
+
+    # cautions are no events, but set the result of the SPADL foul actions
+    is_card = event_data["original_event"] == "Caution"
+    event_data = _add_card_results(
+        event_data, event_data.loc[is_card, "action_result"].to_dict()
+    )
+    event_data = event_data.loc[~is_card].reset_index(drop=True)
     event_data = _update_sportec_spadl_passes(event_data)
 
     all_players = pd.concat([metadata.home_players, metadata.away_players])[
@@ -439,6 +451,11 @@ def _get_sportec_spadl_action(
 
     if event.tag == "Foul":
         return "foul", "fail", "foot"
+
+    if event.tag == "Caution":
+        # cautions are no actions, the result is moved to the foul
+        card_result = "yellow_card" if event.get("CardColor") == "yellow" else "red_card"
+        return None, card_result, None
 
     return None, None, None
 

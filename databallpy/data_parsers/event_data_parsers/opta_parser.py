@@ -7,7 +7,10 @@ import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
-from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
+from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
+    _add_spadl_columns,
+)
 from databallpy.events import (
     DribbleEvent,
     IndividualCloseToBallEvent,
@@ -181,6 +184,7 @@ X_BLOCKED_QUALIFIER = 146
 Y_BLOCKED_QUALIFIER = 147
 SPADL_OWN_GOAL_QUALIFIER = 28
 DEFENSIVE_BLOCK_QUALIFIER = 94
+SPADL_CARD_QUALIFIERS = {31: "yellow_card", 32: "red_card", 33: "red_card"}
 
 SPADL_SHOT_EVENTS = ["miss", "post", "attempt saved", "goal", "own goal"]
 SPADL_KEEPER_EVENTS = ["save", "claim", "punch", "keeper pick-up", "smother"]
@@ -1331,6 +1335,13 @@ def _get_opta_spadl_action(
             action_type = "shot"
         return action_type, ("success" if event_name == "goal" else "fail"), bodypart
 
+    if event_name == "card":
+        # cards are no actions, the result is moved to the foul in
+        # _update_opta_spadl_actions
+        for qualifier, card_result in SPADL_CARD_QUALIFIERS.items():
+            if qualifier in qualifiers:
+                return None, card_result, None
+        return None, None, None
     if event_name == "foul" and not outcome:
         return "foul", "fail", bodypart
     if event_name == "save" and DEFENSIVE_BLOCK_QUALIFIER not in qualifiers:
@@ -1381,8 +1392,8 @@ def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
     """Function to update the SPADL actions with information of the surrounding
     events, as socceraction does for opta data. Ball recoveries become dribbles to the
     start of the next action, passes deflected by a successful ball touch end where
-    the event after the ball touch starts, and interceptions fail when the next action
-    is of the other team.
+    the event after the ball touch starts, interceptions fail when the next action
+    is of the other team and cards set the result of the last foul of the same player.
 
     Args:
         event_data (pd.DataFrame): The event data in databallpy coordinates, with the
@@ -1436,4 +1447,8 @@ def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
         actions["team_id"] != actions["team_id"].shift(-1)
     )
     event_data.loc[lost.index[lost], "action_result"] = "fail"
-    return event_data
+
+    is_card = event_data["action_type"].isna() & event_data["action_result"].notna()
+    cards = event_data.loc[is_card, "action_result"].to_dict()
+    event_data.loc[is_card, "action_result"] = None
+    return _add_card_results(event_data, cards)

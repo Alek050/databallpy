@@ -3,7 +3,10 @@ import json
 import numpy as np
 import pandas as pd
 
-from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
+from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
+    _add_spadl_columns,
+)
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.events.spadl import MIN_DRIBBLE_LENGTH
@@ -493,8 +496,8 @@ def _update_scisports_spadl_actions(
 ) -> pd.DataFrame:
     """Function to update the SPADL actions with information of the surrounding
     events. Ball recoveries become dribbles to the start of the next action, or no
-    action when the ball did not move, and cards set the result of the foul of the
-    same player at the same time.
+    action when the ball did not move, and cards set the result of the last foul of
+    the same player.
 
     Args:
         event_data (pd.DataFrame): The event data in databallpy coordinates, with the
@@ -524,19 +527,7 @@ def _update_scisports_spadl_actions(
         is_recovery & moved
     ].values
 
-    # cards are no actions, but the result of the foul of the same player, cards
-    # without a foul within 30 seconds (e.g. for dissent) are ignored
-    for card_idx, card_result in cards.items():
-        fouls = event_data.loc[
-            (event_data["action_type"] == "foul")
-            & (event_data["player_id"] == event_data.loc[card_idx, "player_id"])
-            & (event_data["period_id"] == event_data.loc[card_idx, "period_id"])
-        ]
-        time_diff = (fouls["datetime"] - event_data.loc[card_idx, "datetime"]).abs()
-        if len(fouls) > 0 and time_diff.min() <= pd.Timedelta(seconds=30):
-            event_data.loc[time_diff.idxmin(), "action_result"] = card_result
-
-    return event_data
+    return _add_card_results(event_data, cards)
 
 
 def _get_shot_event(

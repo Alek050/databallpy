@@ -12,6 +12,7 @@ import requests
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
     _add_spadl_columns,
     _normalize_playing_direction_events,
 )
@@ -421,22 +422,7 @@ def _update_metrica_spadl_actions(event_data: pd.DataFrame, cards: dict) -> pd.D
         is_recovery & moved
     ].values
 
-    # cards are no actions, but the result of the last foul of the same player,
-    # metrica cards are given some time after the foul. Cards without a foul in the
-    # previous 60 seconds (e.g. for dissent) are ignored
-    for card_idx, card_result in cards.items():
-        card = event_data.loc[card_idx]
-        fouls = event_data.loc[
-            (event_data["action_type"] == "foul")
-            & (event_data["player_id"] == card["player_id"])
-            & (event_data["period_id"] == card["period_id"])
-            & (event_data["datetime"] <= card["datetime"])
-            & (event_data["datetime"] >= card["datetime"] - pd.Timedelta(seconds=60))
-        ]
-        if len(fouls) > 0:
-            event_data.loc[fouls.index[-1], "action_result"] = card_result
-
-    return event_data
+    return _add_card_results(event_data, cards)
 
 
 def _is_in_subtypes(subtypes: list[dict] | dict, name: str) -> bool:

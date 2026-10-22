@@ -427,6 +427,38 @@ class TestSportecSpadl(unittest.TestCase):
         self.assertEqual(foul["action_type"], "foul")
         self.assertEqual(foul["action_result"], "fail")
 
+    def test_get_sportec_event_data_caution(self):
+        with open(self.ed_loc, "r") as file:
+            lines = file.read()
+        # cautions have no position and set the result of the foul
+        lines = lines.replace(
+            "</PutDataRequest>",
+            '<Event EventId="19" EventTime="2022-11-11T20:11:18.500+01:00" '
+            'MatchId="Match-1"><Foul Fouler="B-2" TeamFouler="Team2" Fouled="A-3" '
+            'TeamFouled="Team1"/></Event>'
+            '<Event EventId="20" EventTime="2022-11-11T20:11:30.000+01:00" '
+            'MatchId="Match-1"><Caution CardColor="yellowRed" Team="Team2" '
+            'Player="B-2"/></Event></PutDataRequest>',
+        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc = os.path.join(tmp_dir, "sportec_caution.xml")
+            with open(loc, "w") as file:
+                file.write(lines)
+            res_ed, _ = _get_sportec_event_data(loc, SPORTEC_METADATA_ED.copy())
+
+        # the caution itself is not kept in the event data
+        self.assertEqual(len(res_ed), 7)
+        foul = res_ed.iloc[-1]
+        self.assertEqual(foul["action_type"], "foul")
+        self.assertEqual(foul["action_result"], "red_card")
+
+    def test_get_sportec_spadl_action_caution(self):
+        for color, result in [("yellow", "yellow_card"), ("red", "red_card")]:
+            event = ET.fromstring(f'<Caution CardColor="{color}" Player="A-1"/>')
+            self.assertEqual(
+                _get_sportec_spadl_action(event, "no_set_piece"), (None, result, None)
+            )
+
     def test_to_spadl(self):
         event_data, metadata, _ = load_sportec_event_data(self.ed_loc, self.md_loc)
         res = EventData(event_data, provider="sportec").to_spadl(

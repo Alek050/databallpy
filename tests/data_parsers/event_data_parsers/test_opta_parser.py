@@ -649,6 +649,10 @@ class TestOptaSpadl(unittest.TestCase):
             ("ball touch", 1, {}, (None, None, None)),
             ("ball recovery", 1, {}, ("dribble", "success", "foot")),
             ("aerial", 1, {}, (None, None, None)),
+            ("card", 1, {31: None}, (None, "yellow_card", None)),
+            ("card", 1, {32: None}, (None, "red_card", None)),
+            ("card", 1, {33: None}, (None, "red_card", None)),
+            ("card", 1, {}, (None, None, None)),
         ]
         for event_name, outcome, qualifiers, expected in cases:
             with self.subTest(event_name=event_name, outcome=outcome):
@@ -725,6 +729,36 @@ class TestOptaSpadl(unittest.TestCase):
         # the first interception is followed by the same team, the last one is not
         self.assertEqual(res.loc[0, "action_result"], "success")
         self.assertEqual(res.loc[6, "action_result"], "fail")
+
+    def test_update_opta_spadl_actions_cards(self):
+        event_data = pd.DataFrame(
+            {
+                "original_event": ["foul", "foul", "card"],
+                "team_id": [1, 2, 1],
+                "player_id": [5, 6, 5],
+                "period_id": [1] * 3,
+                "minutes": [0] * 3,
+                "seconds": [1.0, 1.0, 20.0],
+                "datetime": pd.to_datetime(
+                    [
+                        "2023-01-01 00:00:01",
+                        "2023-01-01 00:00:01",
+                        "2023-01-01 00:00:20",
+                    ]
+                ),
+                "start_x": [0.0, 0.0, 0.0],
+                "start_y": [0.0, 0.0, 0.0],
+                "end_x": [np.nan] * 3,
+                "end_y": [np.nan] * 3,
+                "action_type": ["foul", None, None],
+                "action_result": ["fail", None, "yellow_card"],
+                "action_bodypart": ["foot", None, None],
+            }
+        )
+        res = _update_opta_spadl_actions(event_data)
+
+        # the card is no action, but the result of the foul of the same player
+        self.assertListEqual(res["action_result"].tolist(), ["yellow_card", None, None])
 
     def test_to_spadl(self):
         event_data, metadata, _ = load_opta_event_data(self.f7_loc, self.f24_loc)
