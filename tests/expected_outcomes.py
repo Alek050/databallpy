@@ -1668,6 +1668,9 @@ SPORTEC_EVENT_DATA = EventData(
         "is_successful": [True, False, True, None, True, None],
         "start_x": np.array([52.5, 98.41, 52.5, 63.44, 15.19, 44.28]) - 52.5,
         "start_y": np.array([34.00, 36.55, 34.00, 40.54, 4.39, 12.24]) - 34.0,
+        # completed passes end at the (source) position of the next event
+        "end_x": [-(98.29 - 52.5), np.nan, 63.44 - 52.5, np.nan, np.nan, np.nan],
+        "end_y": [-(38.61 - 34.0), np.nan, 40.54 - 34.0, np.nan, np.nan, np.nan],
         "datetime": [
             "2022-11-11T18:31:12.000+01:00",
             "2022-11-11T18:37:36.200+01:00",
@@ -1685,9 +1688,9 @@ SPORTEC_EVENT_DATA = EventData(
             "dribbledAround",
             "OtherBallAction",
         ],
-        "action_type": [None] * 6,
-        "action_result": [None] * 6,
-        "action_bodypart": [None] * 6,
+        "action_type": ["pass", "shot", "pass", None, "take_on", None],
+        "action_result": ["success", "fail", "success", None, "success", None],
+        "action_bodypart": ["foot", "head", "foot", None, "foot", None],
     },
     provider="sportec",
 )

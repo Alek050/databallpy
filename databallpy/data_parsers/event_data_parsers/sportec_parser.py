@@ -38,6 +38,7 @@ SPORTEC_SHOT_OUTCOMES = {
     "ShotWide": "miss_off_target",
     "ShotWoodWork": "miss_hit_post",
     "OtherShot": "unspecified",
+    "OwnGoal": "own_goal",
 }
 SPORTEC_BODY_PARTS = {
     "head": "head",
@@ -60,6 +61,24 @@ SPORTEC_UNCLEAR_EVENTS = [
     "OtherBallAction",
 ]
 ALL_SPORTEC_EVENTS = SPORTEC_UNCLEAR_EVENTS + list(SPORTEC_ON_BALL_EVENTS_MAP.keys())
+
+SPORTEC_SPADL_BODY_PARTS = {
+    "head": "head",
+    "leftLeg": "foot_left",
+    "rightLeg": "foot_right",
+}
+SPADL_PASS_TYPES = [
+    "pass",
+    "cross",
+    "throw_in",
+    "freekick_crossed",
+    "freekick_short",
+    "corner_crossed",
+    "corner_short",
+    "goalkick",
+]
+# restarts after the ball went out of play, the pass before them failed
+SPADL_OUT_OF_PLAY_RESTARTS = ["throw_in", "goalkick", "corner_crossed", "corner_short"]
 
 
 @logging_wrapper(__file__)
@@ -158,7 +177,12 @@ def _get_sportec_event_data(
         lines = file.read()
     root = ET.fromstring(lines)
 
-    all_events = root.findall(".//Event[@X-Position]")
+    # fouls have no position, they are kept for the SPADL foul actions
+    all_events = [
+        event
+        for event in root.findall(".//Event")
+        if event.get("X-Position") is not None or event.find("Foul") is not None
+    ]
 
     def update_results_dict(res_dict, i, **kwargs):
         for key in res_dict.keys():
@@ -177,9 +201,17 @@ def _get_sportec_event_data(
         "is_successful": [None] * len(all_events),
         "start_x": [np.nan] * len(all_events),
         "start_y": [np.nan] * len(all_events),
+        "end_x": [np.nan] * len(all_events),
+        "end_y": [np.nan] * len(all_events),
         "datetime": ["NaT"] * len(all_events),
         "original_event_id": [MISSING_INT] * len(all_events),
         "original_event": [None] * len(all_events),
+        "action_type": [None] * len(all_events),
+        "action_result": [None] * len(all_events),
+        "action_bodypart": [None] * len(all_events),
+        # start of the event, used for the end location of the previous pass
+        "source_x": [np.nan] * len(all_events),
+        "source_y": [np.nan] * len(all_events),
     }
 
     pitch_center, period_start_times, swap_half = _initialize_search_variables(
@@ -212,12 +244,25 @@ def _get_sportec_event_data(
         kwargs["event_id"] = idx
         kwargs["original_event_id"] = int(event.get("EventId"))
 
-        kwargs["start_x"] = float(event.get("X-Position")) - pitch_center[0]
-        kwargs["start_y"] = float(event.get("Y-Position")) - pitch_center[1]
+        kwargs["start_x"] = float(event.get("X-Position", np.nan)) - pitch_center[0]
+        kwargs["start_y"] = float(event.get("Y-Position", np.nan)) - pitch_center[1]
+        # kept apart from kwargs, which are passed to the databallpy events
+        spadl_kwargs = {
+            "source_x": float(
+                event.get("X-Source-Position", event.get("X-Position", np.nan))
+            )
+            - pitch_center[0],
+            "source_y": float(
+                event.get("Y-Source-Position", event.get("Y-Position", np.nan))
+            )
+            - pitch_center[1],
+        }
 
         if kwargs["period_id"] == swap_half:
             kwargs["start_x"] *= -1
             kwargs["start_y"] *= -1
+            spadl_kwargs["source_x"] *= -1
+            spadl_kwargs["source_y"] *= -1
 
         event = next(
             (e for e in event.iter() if e is not event and e.tag in ALL_SPORTEC_EVENTS),
@@ -225,8 +270,17 @@ def _get_sportec_event_data(
         )
 
         kwargs["original_event"] = event.tag
-        kwargs["player_id"] = event.get("Player", event.get("Winner"))
-        kwargs["team_id"] = event.get("Team", event.get("WinnerTeam"))
+        kwargs["player_id"] = event.get(
+            "Player", event.get("Winner", event.get("Fouler"))
+        )
+        kwargs["team_id"] = event.get(
+            "Team", event.get("WinnerTeam", event.get("TeamFouler"))
+        )
+        (
+            spadl_kwargs["action_type"],
+            spadl_kwargs["action_result"],
+            spadl_kwargs["action_bodypart"],
+        ) = _get_sportec_spadl_action(event, kwargs["set_piece"])
 
         if event.tag == "ShotAtGoal":
             kwargs, shot_event = _handle_shot_event(event, metadata, kwargs)
@@ -241,13 +295,14 @@ def _get_sportec_event_data(
 
         if "outcome" in kwargs.keys():
             kwargs["is_successful"] = kwargs.pop("outcome")
-        result_dict = update_results_dict(result_dict, idx, **kwargs)
+        result_dict = update_results_dict(result_dict, idx, **kwargs, **spadl_kwargs)
 
     event_data = pd.DataFrame(result_dict)
     # event_data["datetime"] = pd.to_datetime(event_data["datetime"]).dt.tz_convert(
     #     "Europe/Berlin"
     # )
     event_data = event_data.sort_values("datetime").reset_index(drop=True)
+    event_data = _update_sportec_spadl_passes(event_data)
 
     all_players = pd.concat([metadata.home_players, metadata.away_players])[
         ["full_name", "id"]
@@ -309,6 +364,107 @@ def _initialize_search_variables(
     )
 
     return pitch_center, period_start_times, swap_period
+
+
+def _get_sportec_spadl_action(
+    event: ET.Element, set_piece: str
+) -> tuple[str | None, str | None, str | None]:
+    """Function to map a sportec event to the SPADL vocabulary. Follows the
+    socceraction conversion of kloppy sportec data, but also maps take ons, tackles,
+    interceptions and crossed set pieces, which are non actions in socceraction.
+
+    Args:
+        event (ET.Element): The sportec event, e.g. Play, ShotAtGoal or TacklingGame
+        set_piece (str): The databallpy set piece of the event
+
+    Returns:
+        tuple[str | None, str | None, str | None]: The SPADL action type, result and
+            bodypart, all None for events that are not SPADL actions
+    """
+    if event.tag == "Play":
+        result = (
+            "success"
+            if event.get("Evaluation") in ["successfullyCompleted", "successful"]
+            else "fail"
+        )
+        first_child = next(iter(event), None)
+        is_cross = first_child is not None and first_child.tag == "Cross"
+        is_crossed = is_cross or event.get("Height") == "high"
+        if set_piece == "throw_in":
+            return "throw_in", result, "other"
+        if set_piece == "goal_kick":
+            return "goalkick", result, "foot"
+        if set_piece == "corner_kick":
+            return ("corner_crossed" if is_crossed else "corner_short"), result, "foot"
+        if set_piece == "free_kick":
+            return (
+                ("freekick_crossed" if is_crossed else "freekick_short"),
+                result,
+                "foot",
+            )
+        return ("cross" if is_cross else "pass"), result, "foot"
+
+    if event.tag in ["ShotAtGoal", "OwnGoal"]:
+        bodypart = SPORTEC_SPADL_BODY_PARTS.get(event.get("TypeOfShot"), "foot")
+        outcome = next(iter(event), event).tag
+        if outcome == "OwnGoal":
+            return "bad_touch", "owngoal", bodypart
+        if set_piece == "free_kick":
+            action_type = "shot_freekick"
+        elif set_piece == "penalty":
+            action_type = "shot_penalty"
+        else:
+            action_type = "shot"
+        return (
+            action_type,
+            ("success" if outcome == "SuccessfulShot" else "fail"),
+            bodypart,
+        )
+
+    if event.tag == "TacklingGame":
+        if event.get("WinnerResult") == "dribbledAround":
+            result = (
+                "success" if event.get("DribbleEvaluation") == "successful" else "fail"
+            )
+            return "take_on", result, "foot"
+        if (
+            event.get("Type") == "ground"
+            and event.get("WinnerRole") == "withoutBallControl"
+        ):
+            return "tackle", "success", "foot"
+        return None, None, None
+
+    if event.tag == "BallClaiming" and event.get("Type") == "InterceptedBall":
+        return "interception", "success", "foot"
+
+    if event.tag == "Foul":
+        return "foul", "fail", "foot"
+
+    return None, None, None
+
+
+def _update_sportec_spadl_passes(event_data: pd.DataFrame) -> pd.DataFrame:
+    """Function to update the SPADL passes with information of the next event, as
+    kloppy does for sportec data. Passes followed by a throw in, goal kick or corner
+    went out of play and failed, completed passes end where the next event starts.
+
+    Args:
+        event_data (pd.DataFrame): The event data sorted by datetime, with the
+            source_x and source_y columns
+
+    Returns:
+        pd.DataFrame: The event data with updated passes, without the source columns
+    """
+    is_pass = event_data["action_type"].isin(SPADL_PASS_TYPES)
+    went_out = is_pass & event_data["action_type"].shift(-1).isin(
+        SPADL_OUT_OF_PLAY_RESTARTS
+    )
+    event_data.loc[went_out, "action_result"] = "fail"
+
+    completed = is_pass & (event_data["action_result"] == "success")
+    event_data.loc[completed, "end_x"] = event_data["source_x"].shift(-1)[completed]
+    event_data.loc[completed, "end_y"] = event_data["source_y"].shift(-1)[completed]
+    return event_data.drop(columns=["source_x", "source_y"])
 
 
 def _handle_tackling_game_event(
