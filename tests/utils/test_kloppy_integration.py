@@ -3,7 +3,7 @@ import unittest
 import warnings
 
 from kloppy import signality, sportec, statsbomb, statsperform, tracab
-from kloppy.domain import SecondSpectrumCoordinateSystem
+from kloppy.domain import EventType, SecondSpectrumCoordinateSystem, ShotResult
 
 from databallpy import get_game_from_kloppy
 from databallpy.game import EventData, Game, TrackingData
@@ -155,6 +155,21 @@ class TestKloppyStatsBombSignality(unittest.TestCase):
         assert isinstance(game.tracking_data, TrackingData)
         assert not game.event_data.empty
         assert not game.tracking_data.empty
+
+    def test_own_goal_event(self):
+        """Test that a kloppy shot with result OWN_GOAL becomes an own_goal event"""
+        shot = next(
+            event
+            for event in self.event_dataset.events
+            if event.event_type == EventType.SHOT
+        )
+        shot.result = ShotResult.OWN_GOAL
+
+        game = get_game_from_kloppy(event_dataset=self.event_dataset)
+
+        event_data = game.event_data
+        own_goals = event_data[event_data["databallpy_event"] == "own_goal"]
+        assert own_goals["original_event_id"].tolist() == [shot.event_id]
 
 
 class TestKloppyEdgeCases(unittest.TestCase):

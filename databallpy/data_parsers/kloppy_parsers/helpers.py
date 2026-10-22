@@ -458,7 +458,7 @@ def convert_kloppy_event_dataset(
                 axis=1,
             ),
             databallpy_event=lambda x: np.where(
-                x["result"] == ShotResult.OWN_GOAL,
+                x["result"] == ShotResult.OWN_GOAL.value,
                 "own_goal",
                 x["event_type"].map(event_map),
             ),

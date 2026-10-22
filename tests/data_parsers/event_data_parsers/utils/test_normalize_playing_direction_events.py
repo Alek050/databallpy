@@ -5,6 +5,7 @@ import pandas as pd
 from databallpy.data_parsers.event_data_parsers.utils import (
     _normalize_playing_direction_events,
 )
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestNormalizePlayingDirection(unittest.TestCase):
@@ -50,4 +51,4 @@ class TestNormalizePlayingDirection(unittest.TestCase):
 
         res_ed = _normalize_playing_direction_events(self.event_data, 33, 12)
 
-        pd.testing.assert_frame_equal(res_ed, expected)
+        assert_frame_equal(res_ed, expected)

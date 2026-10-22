@@ -18,6 +18,7 @@ from tests.expected_outcomes import (
     TD_TRACAB,
     TRACAB_SPORTEC_XML_TD,
 )
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestTracabParser(unittest.TestCase):
@@ -33,13 +34,13 @@ class TestTracabParser(unittest.TestCase):
             self.tracking_data_dat_loc, self.metadata_json_loc, verbose=False
         )
         assert metadata == MD_TRACAB
-        pd.testing.assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
+        assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
 
         tracking_data, metadata = load_tracab_tracking_data(
             self.tracking_data_dat_loc, self.metadata_xml_loc, verbose=False
         )
         assert metadata == MD_TRACAB
-        pd.testing.assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
+        assert_frame_equal(tracking_data, pd.DataFrame(TD_TRACAB))
 
     def test_load_tracab_tracking_data_selection(self):
         full_td, _ = load_tracab_tracking_data(
@@ -53,7 +54,7 @@ class TestTracabParser(unittest.TestCase):
             period_id=1,
         )
         expected_td = full_td[full_td["period_id"] == 1].reset_index(drop=True)
-        pd.testing.assert_frame_equal(td, expected_td)
+        assert_frame_equal(td, expected_td)
         assert metadata == MD_TRACAB
 
         td, _ = load_tracab_tracking_data(
@@ -65,7 +66,7 @@ class TestTracabParser(unittest.TestCase):
         expected_td = full_td[full_td["frame"].between(1509994, 1509996)].reset_index(
             drop=True
         )
-        pd.testing.assert_frame_equal(td, expected_td)
+        assert_frame_equal(td, expected_td)
 
     def test_load_tracab_tracking_data_xml_selection(self):
         full_td, _ = load_tracab_tracking_data(
@@ -79,7 +80,7 @@ class TestTracabParser(unittest.TestCase):
             period_id=2,
         )
         expected_td = full_td[full_td["period_id"] == 2].reset_index(drop=True)
-        pd.testing.assert_frame_equal(td, expected_td)
+        assert_frame_equal(td, expected_td)
 
     def test_load_tracab_tracking_data_errors(self):
         with self.assertRaises(ValueError):
@@ -148,7 +149,7 @@ class TestTracabParser(unittest.TestCase):
         track_dat = track_dat[track_dat["period_id"] != MISSING_INT].reset_index(
             drop=True
         )
-        pd.testing.assert_frame_equal(track_dat, TRACAB_SPORTEC_XML_TD)
+        assert_frame_equal(track_dat, TRACAB_SPORTEC_XML_TD)
 
         exp_metadata = SPORTEC_METADATA_TD.copy()
         exp_metadata.frame_rate = 1.0
@@ -159,7 +160,7 @@ class TestTracabParser(unittest.TestCase):
         expected_td = pd.DataFrame(
             TD_TRACAB.drop(["gametime_td", "period_id", "datetime"], axis=1)
         )
-        pd.testing.assert_frame_equal(tracking_data, expected_td)
+        assert_frame_equal(tracking_data, expected_td)
 
     @patch("databallpy.data_parsers.tracking_data_parsers.tracab_parser.requests.get")
     @patch(
@@ -221,7 +222,7 @@ class TestTracabParser(unittest.TestCase):
         )
 
         # Verify the return value
-        pd.testing.assert_frame_equal(result[0], pd.DataFrame())
+        assert_frame_equal(result[0], pd.DataFrame())
         self.assertEqual(result[1], "mock_metadata")
 
     def test_get_players_metadata(self):
@@ -256,4 +257,4 @@ class TestTracabParser(unittest.TestCase):
             }
         )
         df_players = _get_players_metadata_v1(input_players_info)
-        pd.testing.assert_frame_equal(df_players, expected_df_players)
+        assert_frame_equal(df_players, expected_df_players)

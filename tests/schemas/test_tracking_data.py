@@ -18,6 +18,7 @@ from databallpy.schemas.tracking_data import (
 from databallpy.utils.get_game import get_game
 from databallpy.utils.utils import MISSING_INT
 from databallpy.utils.warnings import DataBallPyWarning
+from tests.pandas_testing import assert_frame_equal, assert_series_equal
 
 
 class TestTrackingDataSchema(unittest.TestCase):
@@ -302,7 +303,7 @@ class TestTrackingData(unittest.TestCase):
             inplace=True,
         )
         output = tracking_data.get_covered_distance(["home_1", "away_2"])
-        pd.testing.assert_frame_equal(output, expected_output_df)
+        assert_frame_equal(output, expected_output_df)
 
         output2 = tracking_data.get_covered_distance(["home_1"], start_idx=5)
         expected_output_df2 = pd.DataFrame(
@@ -311,7 +312,7 @@ class TestTrackingData(unittest.TestCase):
                 "total_distance": [0.0],
             },
         )
-        pd.testing.assert_frame_equal(output2, expected_output_df2)
+        assert_frame_equal(output2, expected_output_df2)
 
     def test_get_total_and_vel_distance(self):
         tracking_data = self.td_covered_distance.copy()
@@ -324,7 +325,7 @@ class TestTrackingData(unittest.TestCase):
             ["home_1", "away_2"],
             velocity_intervals=self.vel_intervals,
         )
-        pd.testing.assert_frame_equal(output, expected_output_df)
+        assert_frame_equal(output, expected_output_df)
 
     def test_get_total_and_vel_and_acc_distance(self):
         tracking_data = self.td_covered_distance.copy()
@@ -333,7 +334,7 @@ class TestTrackingData(unittest.TestCase):
             velocity_intervals=self.vel_intervals,
             acceleration_intervals=self.acc_intervals,
         )
-        pd.testing.assert_frame_equal(output, self.expected_total_distance)
+        assert_frame_equal(output, self.expected_total_distance)
 
     def test_get_covered_distance_wrong_input(self):
         tracking_data = self.td_covered_distance.copy()
@@ -383,7 +384,7 @@ class TestTrackingData(unittest.TestCase):
     def test_add_velocity(self):
         tracking_data = self.td_diff.copy()
         tracking_data.add_velocity(["home_1"], allow_overwrite=True)
-        pd.testing.assert_frame_equal(tracking_data, self.expected_output_vel)
+        assert_frame_equal(tracking_data, self.expected_output_vel)
 
         with self.assertRaises(ValueError):
             tracking_data.add_velocity(["home_1"], filter_type="test")
@@ -396,7 +397,7 @@ class TestTrackingData(unittest.TestCase):
 
         tracking_data = self.td_diff.copy()
         tracking_data.add_acceleration("home_1")
-        pd.testing.assert_frame_equal(tracking_data, self.expected_output_acc)
+        assert_frame_equal(tracking_data, self.expected_output_acc)
 
         with self.assertRaises(ValueError):
             tracking_data.add_acceleration(["home_1"], filter_type="wrong")
@@ -460,7 +461,7 @@ class TestTrackingData(unittest.TestCase):
             provider="test",
             frame_rate=1,
         )
-        pd.testing.assert_frame_equal(tracking_data, expected_output)
+        assert_frame_equal(tracking_data, expected_output)
 
     def test_filter_tracking_data_sg(self):
         tracking_data = TrackingData(
@@ -496,7 +497,7 @@ class TestTrackingData(unittest.TestCase):
             frame_rate=1,
         )
 
-        pd.testing.assert_frame_equal(tracking_data, expected_output)
+        assert_frame_equal(tracking_data, expected_output)
 
     def test_approximate_voronoi(self):
         tracking_data = self.td_pitch_control.copy()
@@ -598,8 +599,9 @@ class TestTrackingData(unittest.TestCase):
         assert "player_possession" not in tracking_data.columns
         tracking_data.add_individual_player_possession()
         assert "player_possession" in tracking_data.columns
-        np.testing.assert_array_equal(
-            tracking_data["player_possession"], expected_possession
+        assert_series_equal(
+            tracking_data["player_possession"],
+            pd.Series(expected_possession, dtype=object, name="player_possession"),
         )
 
         with self.assertRaises(ValueError):
@@ -610,7 +612,7 @@ class TestTrackingData(unittest.TestCase):
     def test_get_pressure_on_player_specified_d_front(self):
         tracking_data = self.td_pressure.copy()
         d_front = calculate_variable_dfront(
-            tracking_data, "home_1", max_d_front=9, pitch_length=100.0
+            self.frame_pressure, "home_1", max_d_front=9, pitch_length=100.0
         )
         z1 = calculate_z(self.frame_pressure, "home_1", "away_1", pitch_length=100.0)
         z2 = calculate_z(self.frame_pressure, "home_1", "away_2", pitch_length=100.0)
@@ -754,7 +756,7 @@ class TestTrackingData(unittest.TestCase):
 
         res_long = td_wide.to_long_format()
 
-        pd.testing.assert_frame_equal(res_long, expected)
+        assert_frame_equal(res_long, expected)
         assert not isinstance(res_long, TrackingData)
 
     def test_dangerous_accessible_space(self):

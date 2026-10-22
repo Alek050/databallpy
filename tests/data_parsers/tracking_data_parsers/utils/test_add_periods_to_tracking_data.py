@@ -1,11 +1,10 @@
 import unittest
 
-import pandas as pd
-
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _add_periods_to_tracking_data,
 )
 from tests.expected_outcomes import MD_METRICA_TD, TD_METRICA
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestAddPeriodsToTrackingData(unittest.TestCase):
@@ -37,4 +36,4 @@ class TestAddPeriodsToTrackingData(unittest.TestCase):
                 "gametime_td",
             ]
         )
-        pd.testing.assert_frame_equal(res, TD_METRICA)
+        assert_frame_equal(res, TD_METRICA)

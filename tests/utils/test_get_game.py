@@ -54,6 +54,7 @@ from tests.expected_outcomes import (
     TD_TRACAB,
     TRACAB_SPORTEC_XML_TD,
 )
+from tests.pandas_testing import assert_frame_equal
 
 from ..mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
 
@@ -776,7 +777,7 @@ class TestGetGame(unittest.TestCase):
     )
     def test_get_open_game(self, _):
         game = get_open_game(provider="metrica", use_cache=False)
-        pd.testing.assert_frame_equal(game.periods, self.expected_game_metrica.periods)
+        assert_frame_equal(game.periods, self.expected_game_metrica.periods)
         expected_game = self.expected_game_metrica.copy()
         expected_game._periods_changed_playing_direction = []
         expected_game.allow_synchronise_tracking_and_event_data = True
@@ -808,10 +809,10 @@ class TestGetGame(unittest.TestCase):
             event_data_provider="scisports",
             _check_game_class_=False,
         )
-        pd.testing.assert_frame_equal(res_game.event_data, ED_SCISPORTS)
-        pd.testing.assert_frame_equal(res_game.periods, MD_SCISPORTS.periods_frames)
-        pd.testing.assert_frame_equal(res_game.home_players, MD_SCISPORTS.home_players)
-        pd.testing.assert_frame_equal(res_game.away_players, MD_SCISPORTS.away_players)
+        assert_frame_equal(res_game.event_data, ED_SCISPORTS)
+        assert_frame_equal(res_game.periods, MD_SCISPORTS.periods_frames)
+        assert_frame_equal(res_game.home_players, MD_SCISPORTS.home_players)
+        assert_frame_equal(res_game.away_players, MD_SCISPORTS.away_players)
 
         self.assertTrue(len(res_game.shot_events) == 2)
         self.assertTrue(len(res_game.pass_events) == 3)

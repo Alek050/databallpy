@@ -6121,4 +6121,4 @@ kloppy = ["kloppy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.15"
-content-hash = "1f2177d8ad4b2e320ee1ddacf41660f31a25f23bd6801ab0820310c9250a0ed7"
+content-hash = "11b8324d9561df5c3daa5e785d9e35b290a975502ccdc8be49b7e8c74dab3b4a"

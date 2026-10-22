@@ -7,6 +7,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils._insert_missing_rows im
     _insert_missing_rows,
 )
 from databallpy.utils.utils import MISSING_INT
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestInsertMissingRows(unittest.TestCase):
@@ -187,7 +188,7 @@ class TestInsertMissingRows(unittest.TestCase):
 
     def test_insert_missing_rows(self):
         output = _insert_missing_rows(self.input, "frame")
-        pd.testing.assert_frame_equal(output, self.expected_output)
+        assert_frame_equal(output, self.expected_output)
 
     def test_insert_missing_rows_with_selection(self):
         input_df = pd.DataFrame(
@@ -213,4 +214,4 @@ class TestInsertMissingRows(unittest.TestCase):
             }
         )
         output = _insert_missing_rows(input_df, "frame", selection=(1, 5))
-        pd.testing.assert_frame_equal(output, expected_output)
+        assert_frame_equal(output, expected_output)

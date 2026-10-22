@@ -15,6 +15,7 @@ from databallpy.utils.utils import (
     resolve_cache_dir,
     sigmoid,
 )
+from tests.pandas_testing import assert_frame_equal, assert_series_equal
 
 
 class TestUtils(unittest.TestCase):
@@ -44,10 +45,10 @@ class TestUtils(unittest.TestCase):
         frame = tracking_data.iloc[0]
         res1 = get_next_possession_frame(tracking_data, frame, "home_2")
 
-        pd.testing.assert_series_equal(res1, tracking_data.iloc[2])
+        assert_series_equal(res1, tracking_data.iloc[2])
 
         res2 = get_next_possession_frame(tracking_data, frame, "home_1")
-        pd.testing.assert_series_equal(res2, tracking_data.iloc[3])
+        assert_series_equal(res2, tracking_data.iloc[3])
 
         frame = tracking_data.iloc[4]
         tracking_data["ball_status"] = [
@@ -59,7 +60,7 @@ class TestUtils(unittest.TestCase):
             "dead",
         ]
         res3 = get_next_possession_frame(tracking_data, frame, "home_2")
-        pd.testing.assert_series_equal(res3, tracking_data.iloc[5])
+        assert_series_equal(res3, tracking_data.iloc[5])
 
         tracking_data["ball_status"] = [
             "dead",
@@ -70,7 +71,7 @@ class TestUtils(unittest.TestCase):
             "alive",
         ]
         res4 = get_next_possession_frame(tracking_data, frame, "home_2")
-        pd.testing.assert_series_equal(res4, tracking_data.iloc[5])
+        assert_series_equal(res4, tracking_data.iloc[5])
 
     def test_sigmoid(self):
         # Test with default parameters
@@ -252,12 +253,12 @@ class TestUtils(unittest.TestCase):
 
         original = pd.Series([1, 2, 3])
         copied = _copy_value_(original)
-        pd.testing.assert_series_equal(copied, original)
+        assert_series_equal(copied, original)
         self.assertIsNot(copied, original)
 
         original = pd.DataFrame({"a": [1, 2, 3]})
         copied = _copy_value_(original)
-        pd.testing.assert_frame_equal(copied, original)
+        assert_frame_equal(copied, original)
         self.assertIsNot(copied, original)
 
         # known classes

@@ -893,6 +893,11 @@ class TrackingData(pd.DataFrame):
         )
         td_long["team"] = td_long["column_id"].str[:4]
 
+        # accessible_space indexes these columns as numpy arrays, which pandas 3
+        # string arrays do not support
+        text_cols = ["column_id", "team", "player_possession", "team_in_possession"]
+        td_long[text_cols] = td_long[text_cols].astype(object)
+
         res = accessible_space.interface.get_dangerous_accessible_space(
             td_long,
             frame_col="frame",

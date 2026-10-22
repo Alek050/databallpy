@@ -18,6 +18,7 @@ from databallpy.utils.anonymise_game import (
 )
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.utils import MISSING_INT
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestAnonymiseGame(unittest.TestCase):
@@ -73,7 +74,7 @@ class TestAnonymiseGame(unittest.TestCase):
         assert len(mock_an_players.call_args_list) == 1
         assert len(called_args_players) == 2
         assert called_args_players[0] == self.game.copy()
-        pd.testing.assert_frame_equal(called_args_players[1], self.keys)
+        assert_frame_equal(called_args_players[1], self.keys)
 
         called_args_teams = mock_an_teams.call_args_list[0][0]
         assert len(mock_an_teams.call_args_list) == 1
@@ -111,7 +112,7 @@ class TestAnonymiseGame(unittest.TestCase):
         keys = add_new_pseudonym(
             self.keys.copy(), key_type="team", name="real team 1", old_id="T222"
         )
-        pd.testing.assert_frame_equal(keys, self.keys)
+        assert_frame_equal(keys, self.keys)
 
     def test_add_new_pseudonym_new_player(self):
         res_keys = add_new_pseudonym(
@@ -218,7 +219,10 @@ class TestAnonymiseGame(unittest.TestCase):
         assert res_keys["pseudonym"].str.startswith("P-").sum() == 6
 
         # test the changes in the game event data
-        assert res_game.event_data["player_id"].str.startswith("P-").all()
+        # events without a player (MISSING_INT) are not mapped to a pseudonym
+        player_ids = res_game.event_data["player_id"].dropna()
+        assert len(player_ids) == 9
+        assert player_ids.str.startswith("P-").all()
         name_mask = (
             res_game.event_data["player_name"].str.startswith("home")
             | res_game.event_data["player_name"].str.startswith("away")

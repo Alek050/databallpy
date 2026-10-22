@@ -5,6 +5,7 @@ import pandas as pd
 from databallpy.data_parsers.tracking_data_parsers.utils._add_datetime import (
     _add_datetime,
 )
+from tests.pandas_testing import assert_series_equal
 
 
 class TestAddDatetime(unittest.TestCase):
@@ -23,11 +24,11 @@ class TestAddDatetime(unittest.TestCase):
         expected = pd.to_datetime("2020-01-01 02:31:00").tz_localize(
             "Europe/Amsterdam"
         ) + pd.to_timedelta(self.frames_no_ts / self.frame_rate, unit="seconds")
-        pd.testing.assert_series_equal(res, expected)
+        assert_series_equal(res, expected)
 
     def test_add_datetime_timestamp(self):
         res = _add_datetime(self.frames_ts, self.frame_rate, self.date_time)
         expected = pd.to_datetime("2020-01-01 00:00:00").tz_localize(
             "Europe/Amsterdam"
         ) + pd.to_timedelta(self.frames_ts / self.frame_rate, unit="seconds")
-        pd.testing.assert_series_equal(res, expected)
+        assert_series_equal(res, expected)

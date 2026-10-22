@@ -10,7 +10,8 @@ import pandas as pd
 from databallpy.game import _serialize_numpy_number
 from databallpy.schemas import TrackingData
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.get_game import get_game, get_saved_game
+from databallpy.utils.get_game import _decode_json_column, get_game, get_saved_game
+from tests.pandas_testing import assert_frame_equal, assert_series_equal
 
 
 class TestGameSerialization(unittest.TestCase):
@@ -29,8 +30,8 @@ class TestGameSerialization(unittest.TestCase):
 
         self.assertEqual(game, original)
         self.assertEqual(saved_game, original)
-        pd.testing.assert_frame_equal(saved_game.event_data, original.event_data)
-        pd.testing.assert_frame_equal(saved_game.pass_events, original.pass_events)
+        assert_frame_equal(saved_game.event_data, original.event_data)
+        assert_frame_equal(saved_game.pass_events, original.pass_events)
         return saved_game
 
     def test_opta_ma_round_trip(self):
@@ -143,7 +144,5 @@ class TestGameSerialization(unittest.TestCase):
 
         # without the encoding metadata, get_saved_game has no way of knowing
         # player_id needs decoding, so it is left as raw json strings
-        decoded = saved_game.event_data["player_id"].map(json.loads, na_action="ignore")
-        pd.testing.assert_series_equal(
-            decoded, game.event_data["player_id"], check_names=False
-        )
+        decoded = _decode_json_column(saved_game.event_data["player_id"])
+        assert_series_equal(decoded, game.event_data["player_id"], check_names=False)

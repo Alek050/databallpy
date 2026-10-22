@@ -127,6 +127,36 @@ def sigmoid(
     return a + (b / (1 + c * np.exp(in_exp)))
 
 
+def _align_dtypes_for_comparison(
+    series1: pd.Series, series2: pd.Series
+) -> tuple[pd.Series, pd.Series]:
+    """Function to align dtypes that hold the same values but differ between pandas
+    versions. Since pandas 3.0, text columns default to the ``str`` dtype instead of
+    ``object``, and datetimes are no longer always stored in nanoseconds.
+
+    Args:
+        series1 (pd.Series): The first series
+        series2 (pd.Series): The second series
+
+    Returns:
+        tuple[pd.Series, pd.Series]: The two series with aligned dtypes
+    """
+    if isinstance(series1.dtype, pd.StringDtype) or isinstance(
+        series2.dtype, pd.StringDtype
+    ):
+        if series1.dtype != series2.dtype:
+            series1 = series1.astype(object).where(series1.notna(), None)
+            series2 = series2.astype(object).where(series2.notna(), None)
+    elif (
+        pd.api.types.is_datetime64_any_dtype(series1)
+        and pd.api.types.is_datetime64_any_dtype(series2)
+        and series1.dtype != series2.dtype
+    ):
+        series1 = series1.dt.as_unit("ns")
+        series2 = series2.dt.as_unit("ns")
+    return series1, series2
+
+
 def _values_are_equal_(input1: any, input2: any) -> bool:
     """Function to check if two values are equal. The function can check if two values
     are equal if they are of the same type. The function can check if two values are
@@ -188,6 +218,7 @@ def _values_are_equal_(input1: any, input2: any) -> bool:
                 return False
             return all(_values_are_equal_(input1[c], input2[c]) for c in input1.columns)
 
+        input1, input2 = _align_dtypes_for_comparison(input1, input2)
         if pd.api.types.is_numeric_dtype(input1.sort_index()):
             return input1.sort_index().round(4).equals(input2.sort_index().round(4))
         else:

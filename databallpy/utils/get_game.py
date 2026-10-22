@@ -394,7 +394,7 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
     ):
         dataframe = pd.read_parquet(os.path.join(full_path, f"{dataframe_name}.parquet"))
         for column in metadata.get("json_encoded_columns", {}).get(dataframe_name, []):
-            dataframe[column] = dataframe[column].map(json.loads, na_action="ignore")
+            dataframe[column] = _decode_json_column(dataframe[column])
         dataframes[dataframe_name] = dataframe
 
     return Game(
@@ -1068,3 +1068,18 @@ def get_game_from_kloppy(
         else False,
         _check_inputs_=check_game_inputs,
     )
+
+
+def _decode_json_column(series: pd.Series) -> pd.Series:
+    """Function to decode a column that was JSON-encoded by Game.save_game. Missing
+    values are returned as None on both pandas 2 and 3; pandas 3 reads the encoded
+    column as a ``str`` column with NaN for missing values.
+
+    Args:
+        series (pd.Series): The JSON-encoded column
+
+    Returns:
+        pd.Series: The decoded column with dtype object
+    """
+    decoded = series.astype(object).map(json.loads, na_action="ignore")
+    return decoded.where(series.notna(), None)
