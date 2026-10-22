@@ -46,6 +46,16 @@ BODY_PART_MAPPING = {
     "Other": "other",
 }
 
+SPADL_KEEPER_SAVES = [
+    "Shot Saved",
+    "Shot Saved Off Target",
+    "Shot Saved to Post",
+    "Penalty Saved",
+    "Penalty Saved to Post",
+    "Saved to Post",
+    "Smother",
+]
+
 
 def load_statsbomb_event_data(
     events_loc: str,
@@ -271,10 +281,21 @@ def _load_event_data(
         36: "Tactical Shift",
     }
 
-    event_mask = [
-        event["type"]["id"] not in events_to_exclude.keys() for event in events_json
+    events_json = [
+        event
+        for event in events_json
+        if event["type"]["id"] not in events_to_exclude.keys()
     ]
-    n = sum(event_mask)
+    # passes that intercept the ball get an extra interception row before the pass,
+    # like socceraction does for SPADL
+    rows = []
+    for event in events_json:
+        if event.get("pass", {}).get("type", {}).get("name") == "Interception":
+            rows.append((event, True))
+        rows.append((event, False))
+    n = len(rows)
+    xy_cell_offset, shot_cell_offset = _get_cell_offsets(events_json)
+
     event_data = {
         "event_id": list(range(0, n)),
         "databallpy_event": [None] * n,
@@ -287,11 +308,16 @@ def _load_event_data(
         "is_successful": [None] * n,
         "start_x": [np.nan] * n,
         "start_y": [np.nan] * n,
+        "end_x": [np.nan] * n,
+        "end_y": [np.nan] * n,
         "datetime": [pd.NaT] * n,
         "original_event": [None] * n,
         "original_event_id": [None] * n,
         "original_outcome": [None] * n,
         "team_name": [None] * n,
+        "action_type": [None] * n,
+        "action_result": [None] * n,
+        "action_bodypart": [None] * n,
     }
 
     databallpy_mapping = {
@@ -307,12 +333,15 @@ def _load_event_data(
     x_multiplier = pitch_dimensions[0] / 120.0
     y_multiplier = pitch_dimensions[1] / 80.0
 
-    for id, event in enumerate(np.array(events_json)[event_mask]):
+    for id, (event, is_interception) in enumerate(rows):
+        cell_offset = (
+            shot_cell_offset if event["type"]["name"] == "Shot" else xy_cell_offset
+        )
         event_data["event_id"][id] = id
         event_data["original_event_id"][id] = event["id"]
         event_data["period_id"][id] = event.get("period", MISSING_INT)
         event_data["minutes"][id] = event.get("minute", MISSING_INT)
-        event_data["seconds"][id] = float(event.get("second", np.nan))
+        event_data["seconds"][id] = _get_seconds(event)
         event_data["player_id"][id] = (
             event["player"]["id"] if "player" in event.keys() else MISSING_INT
         )
@@ -320,15 +349,18 @@ def _load_event_data(
             event["team"]["id"] if "team" in event.keys() else MISSING_INT
         )
         if "location" in event.keys():
-            event_data["start_x"][id] = event["location"][0] * x_multiplier - (
-                pitch_dimensions[0] / 2
-            )
-            event_data["start_y"][id] = event["location"][1] * y_multiplier - (
-                pitch_dimensions[1] / 2
+            event_data["start_x"][id], event_data["start_y"][id] = _location_to_meters(
+                event["location"],
+                cell_offset,
+                pitch_dimensions,
+                x_multiplier,
+                y_multiplier,
             )
         event_data["datetime"][id] = pd.to_datetime(
             metadata.periods_frames["start_datetime_ed"][event["period"] - 1]
-            + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")
+            + pd.to_timedelta(
+                event["minute"] * 60 + event_data["seconds"][id], unit="seconds"
+            )
         )
         event_data["original_event"][id] = event["type"]["name"].lower().replace("*", "")
         event_data["player_name"][id] = (
@@ -337,6 +369,34 @@ def _load_event_data(
         event_data["team_name"][id] = (
             event["team"]["name"] if "team" in event.keys() else None
         )
+
+        if is_interception:
+            event_data["original_event"][id] = "interception"
+            event_data["action_type"][id] = "interception"
+            event_data["action_result"][id] = "success"
+            event_data["action_bodypart"][id] = "foot"
+            continue
+
+        action_type, action_result, action_bodypart = _get_statsbomb_spadl_action(event)
+        event_data["action_type"][id] = action_type
+        event_data["action_result"][id] = action_result
+        event_data["action_bodypart"][id] = action_bodypart
+        if action_result == "owngoal":
+            # the own goal ends in the own goal of the team, which plays left to right
+            event_data["end_x"][id] = -pitch_dimensions[0] / 2
+            event_data["end_y"][id] = 0.0
+        else:
+            for key in ["pass", "shot", "carry"]:
+                if "end_location" in event.get(key, {}):
+                    event_data["end_x"][id], event_data["end_y"][id] = (
+                        _location_to_meters(
+                            event[key]["end_location"],
+                            cell_offset,
+                            pitch_dimensions,
+                            x_multiplier,
+                            y_multiplier,
+                        )
+                    )
 
         event_type_object = (
             event["type"]["name"]
@@ -359,6 +419,7 @@ def _load_event_data(
                     away_team_id=metadata.away_team_id,
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
+                    cell_offset=cell_offset,
                 )
                 event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Goal"
@@ -373,6 +434,7 @@ def _load_event_data(
                     away_team_id=metadata.away_team_id,
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
+                    cell_offset=cell_offset,
                 )
                 event_data["is_successful"][id] = (
                     event[event_type_object].get("outcome") is None
@@ -386,6 +448,7 @@ def _load_event_data(
                     away_team_id=metadata.away_team_id,
                     x_multiplier=x_multiplier,
                     y_multiplier=y_multiplier,
+                    cell_offset=cell_offset,
                 )
                 event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Complete"
@@ -400,8 +463,12 @@ def _load_event_data(
     event_data = pd.DataFrame(event_data)
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
 
-    event_data.loc[event_data["team_id"] == metadata.away_team_id, ["start_x"]] *= -1
-    event_data.loc[event_data["team_id"] == metadata.home_team_id, ["start_y"]] *= -1
+    event_data.loc[
+        event_data["team_id"] == metadata.away_team_id, ["start_x", "end_x"]
+    ] *= -1
+    event_data.loc[
+        event_data["team_id"] == metadata.home_team_id, ["start_y", "end_y"]
+    ] *= -1
     event_data = _add_spadl_columns(event_data)
 
     id_jersey_map = (
@@ -439,6 +506,7 @@ def _get_shot_event(
     away_team_id: int,
     x_multiplier: float,
     y_multiplier: float,
+    cell_offset: float,
 ) -> ShotEvent:
     """This function retrieves the shot event of a specific game.
 
@@ -452,6 +520,8 @@ def _get_shot_event(
             meters. E.g. 105/120 = 0.875.
         y_multiplier (float): The value to multiply the y locations with to get to
             meters. E.g. 68/80 = 0.85.
+        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
+            from the locations to get the center of the cell.
 
     Returns:
         ShotEvent: the shot event
@@ -469,7 +539,14 @@ def _get_shot_event(
     }
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
-        event, id, pitch_dimensions, away_team_id, periods, x_multiplier, y_multiplier
+        event,
+        id,
+        pitch_dimensions,
+        away_team_id,
+        periods,
+        x_multiplier,
+        y_multiplier,
+        cell_offset,
     )
 
     return ShotEvent(
@@ -492,6 +569,7 @@ def _get_pass_event(
     away_team_id: int,
     x_multiplier: float,
     y_multiplier: float,
+    cell_offset: float,
 ) -> PassEvent:
     """This function retrieves the pass event of a specific game.
 
@@ -505,6 +583,8 @@ def _get_pass_event(
             meters. E.g. 105/120 = 0.875.
         y_multiplier (float): The value to multiply the y locations with to get to
             meters. E.g. 68/80 = 0.85.
+        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
+            from the locations to get the center of the cell.
 
     Returns:
         PassEvent: the pass event
@@ -541,16 +621,29 @@ def _get_pass_event(
         related_events = event["related_events"]
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
-        event, id, pitch_dimensions, away_team_id, periods, x_multiplier, y_multiplier
+        event,
+        id,
+        pitch_dimensions,
+        away_team_id,
+        periods,
+        x_multiplier,
+        y_multiplier,
+        cell_offset,
+    )
+
+    end_x, end_y = _location_to_meters(
+        event["pass"]["end_location"],
+        cell_offset,
+        pitch_dimensions,
+        x_multiplier,
+        y_multiplier,
     )
 
     return PassEvent(
         **close_to_ball_event_info,
         related_event_id=related_events,
-        end_x=event["pass"]["end_location"][0] * x_multiplier
-        - (pitch_dimensions[0] / 2),
-        end_y=event["pass"]["end_location"][1] * y_multiplier
-        - (pitch_dimensions[1] / 2),
+        end_x=end_x,
+        end_y=end_y,
         outcome=False if "goal-assist" not in event["pass"].keys() else True,
         body_part=body_part,
         possession_type=possession_type,
@@ -570,6 +663,7 @@ def _get_dribble_event(
     away_team_id: int,
     x_multiplier: float,
     y_multiplier: float,
+    cell_offset: float,
 ) -> DribbleEvent:
     """This function retrieves the dribble event
 
@@ -583,6 +677,8 @@ def _get_dribble_event(
             meters. E.g. 105/120 = 0.875.
         y_multiplier (float): The value to multiply the y locations with to get to
             meters. E.g. 68/80 = 0.85.
+        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
+            from the locations to get the center of the cell.
 
     Returns:
         DribbleEvent: the dribble event
@@ -592,7 +688,14 @@ def _get_dribble_event(
         related_events = event["related_events"]
 
     close_to_ball_event_info = _get_close_to_ball_event_info(
-        event, id, pitch_dimensions, away_team_id, periods, x_multiplier, y_multiplier
+        event,
+        id,
+        pitch_dimensions,
+        away_team_id,
+        periods,
+        x_multiplier,
+        y_multiplier,
+        cell_offset,
     )
 
     return DribbleEvent(
@@ -616,6 +719,7 @@ def _get_close_to_ball_event_info(
     periods: pd.DataFrame,
     x_multiplier: float,
     y_multiplier: float,
+    cell_offset: float,
 ) -> dict:
     """Function to get the base event data from the event based on
     the CloseToBallEvent class.
@@ -631,21 +735,27 @@ def _get_close_to_ball_event_info(
             meters. E.g. 105/120 = 0.875.
         y_multiplier (float): The value to multiply the y locations with to get to
             meters. E.g. 68/80 = 0.85.
+        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
+            from the locations to get the center of the cell.
 
     Returns:
         dict: dictionary with the base event data: start_x, start_y, related_event_id
     """
 
+    start_x, start_y = _location_to_meters(
+        event["location"], cell_offset, pitch_dimensions, x_multiplier, y_multiplier
+    )
+    seconds = _get_seconds(event)
     return {
-        "start_x": event["location"][0] * x_multiplier - (pitch_dimensions[0] / 2),
-        "start_y": event["location"][1] * y_multiplier - (pitch_dimensions[1] / 2),
+        "start_x": start_x,
+        "start_y": start_y,
         "event_id": id,
         "period_id": event["period"],
         "minutes": event["minute"],
-        "seconds": float(event["second"]),
+        "seconds": seconds,
         "datetime": pd.to_datetime(
             periods["start_datetime_ed"][event["period"] - 1]
-            + pd.to_timedelta(event["minute"] * 60 + event["second"], unit="seconds")
+            + pd.to_timedelta(event["minute"] * 60 + seconds, unit="seconds")
         ),
         "team_id": event["team"]["id"],
         "team_side": "away" if event["team"]["id"] == away_team_id else "home",
@@ -653,3 +763,227 @@ def _get_close_to_ball_event_info(
         "player_id": event["player"]["id"],
         "jersey": MISSING_INT,
     }
+
+
+def _get_seconds(event: dict) -> float:
+    """Function to get the seconds of an event, including the milliseconds of the
+    timestamp of the event.
+
+    Args:
+        event (dict): statsbomb event
+
+    Returns:
+        float: the seconds of the event, np.nan if they are missing
+    """
+    if "second" not in event:
+        return np.nan
+    timestamp = event.get("timestamp", "")
+    milliseconds = float("0." + timestamp.split(".")[1]) if "." in timestamp else 0.0
+    return event["second"] + milliseconds
+
+
+def _get_cell_offsets(events: list[dict]) -> tuple[float, float]:
+    """Function to get the offset to the center of the statsbomb cells. Statsbomb
+    locations are cell based, with cells of 1 yard (fidelity version 1) or 0.1 yard
+    (fidelity version 2). Like socceraction, the fidelity version is inferred from
+    the data, separately for shots and for the other events.
+
+    Args:
+        events (list[dict]): the statsbomb events
+
+    Returns:
+        tuple[float, float]: half the cell size in yards of the events that are not
+            shots and of the shots.
+    """
+
+    def is_high_fidelity(is_shot: bool) -> bool:
+        return any(
+            value % 1 != 0
+            for event in events
+            if (event["type"]["name"] == "Shot") == is_shot and "location" in event
+            for value in event["location"]
+        )
+
+    xy_cell_offset = 0.05 if is_high_fidelity(False) else 0.5
+    shot_cell_offset = 0.05 if is_high_fidelity(True) else xy_cell_offset
+    return xy_cell_offset, shot_cell_offset
+
+
+def _location_to_meters(
+    location: list,
+    cell_offset: float,
+    pitch_dimensions: tuple,
+    x_multiplier: float,
+    y_multiplier: float,
+) -> tuple[float, float]:
+    """Function to convert a statsbomb location to meters with (0, 0) being the center
+    of the pitch. The y and z of 3D shot end locations are always detailed to a tenth
+    of a yard.
+
+    Args:
+        location (list): the statsbomb location, [x, y] or [x, y, z] in yards
+        cell_offset (float): half the size of a statsbomb cell in yards.
+        pitch_dimensions (tuple): pitch dimensions in x and y direction.
+        x_multiplier (float): The value to multiply the x locations with to get to
+            meters. E.g. 105/120 = 0.875.
+        y_multiplier (float): The value to multiply the y locations with to get to
+            meters. E.g. 68/80 = 0.85.
+
+    Returns:
+        tuple[float, float]: the x and y location in meters
+    """
+    y_cell_offset = 0.05 if len(location) == 3 else cell_offset
+    return (
+        (location[0] - cell_offset) * x_multiplier - pitch_dimensions[0] / 2,
+        (location[1] - y_cell_offset) * y_multiplier - pitch_dimensions[1] / 2,
+    )
+
+
+def _get_spadl_bodypart(event_object: dict, default: str) -> str:
+    """Function to map the statsbomb body part to the SPADL vocabulary.
+
+    Args:
+        event_object (dict): the event specific information, e.g. event["pass"]
+        default (str): the SPADL body part when no body part is given
+
+    Returns:
+        str: the SPADL body part
+    """
+    body_part = event_object.get("body_part", {}).get("name")
+    if body_part is None:
+        return default
+    if "Head" in body_part:
+        return "head"
+    if body_part == "Left Foot":
+        return "foot_left"
+    if body_part == "Right Foot":
+        return "foot_right"
+    if "Foot" in body_part or body_part == "Drop Kick":
+        return "foot"
+    return "other"
+
+
+def _get_statsbomb_spadl_action(
+    event: dict,
+) -> tuple[str | None, str | None, str | None]:
+    """Function to map a statsbomb event to the SPADL vocabulary. Follows the
+    socceraction conversion of statsbomb data, but also maps all keeper save types to
+    keeper saves, second yellow cards to red cards and keeper sweeper clearances to
+    clearances.
+
+    Args:
+        event (dict): the statsbomb event
+
+    Returns:
+        tuple[str | None, str | None, str | None]: The SPADL action type, result and
+            bodypart, all None for events that are not SPADL actions
+    """
+    event_name = event["type"]["name"]
+
+    if event_name == "Pass":
+        pass_info = event["pass"]
+        pass_type = pass_info.get("type", {}).get("name")
+        is_crossed = pass_info.get("height", {}).get(
+            "name"
+        ) == "High Pass" or pass_info.get("cross", False)
+        bodypart = _get_spadl_bodypart(pass_info, "foot")
+        if pass_type == "Free Kick":
+            action_type = "freekick_crossed" if is_crossed else "freekick_short"
+        elif pass_type == "Corner":
+            action_type = "corner_crossed" if is_crossed else "corner_short"
+        elif pass_type == "Goal Kick":
+            action_type = "goalkick"
+        elif pass_type == "Throw-in":
+            action_type = "throw_in"
+            bodypart = _get_spadl_bodypart(pass_info, "other")
+        elif pass_info.get("cross", False):
+            action_type = "cross"
+        else:
+            action_type = "pass"
+
+        outcome = pass_info.get("outcome", {}).get("name")
+        if outcome in ["Injury Clearance", "Unknown"]:
+            # passes that are not part of the play
+            return None, None, None
+        if outcome in ["Incomplete", "Out"]:
+            result = "fail"
+        elif outcome == "Pass Offside":
+            result = "offside"
+        else:
+            result = "success"
+        return action_type, result, bodypart
+
+    if event_name == "Shot":
+        shot_info = event["shot"]
+        shot_type = shot_info.get("type", {}).get("name")
+        if shot_type == "Free Kick":
+            action_type = "shot_freekick"
+        elif shot_type == "Penalty":
+            action_type = "shot_penalty"
+        else:
+            action_type = "shot"
+        result = (
+            "success" if shot_info.get("outcome", {}).get("name") == "Goal" else "fail"
+        )
+        return action_type, result, _get_spadl_bodypart(shot_info, "foot")
+
+    if event_name == "Goal Keeper":
+        keeper_info = event["goalkeeper"]
+        keeper_type = keeper_info.get("type", {}).get("name")
+        outcome = keeper_info.get("outcome", {}).get("name")
+        if keeper_type in SPADL_KEEPER_SAVES:
+            action_type = "keeper_save"
+        elif keeper_type == "Keeper Sweeper" and outcome == "Clear":
+            action_type = "clearance"
+        elif keeper_type in ["Collected", "Keeper Sweeper"]:
+            action_type = "keeper_claim"
+        elif keeper_type == "Punch":
+            action_type = "keeper_punch"
+        else:
+            return None, None, None
+        result = "fail" if outcome in ["In Play Danger", "No Touch"] else "success"
+        return action_type, result, _get_spadl_bodypart(keeper_info, "other")
+
+    if event_name == "Foul Committed":
+        card = event.get("foul_committed", {}).get("card", {}).get("name", "")
+        if card == "Second Yellow" or "Red" in card:
+            result = "red_card"
+        elif "Yellow" in card:
+            result = "yellow_card"
+        else:
+            result = "fail"
+        return "foul", result, "foot"
+
+    if event_name == "Duel":
+        if event["duel"].get("type", {}).get("name") != "Tackle":
+            return None, None, None
+        outcome = event["duel"].get("outcome", {}).get("name")
+        result = "fail" if outcome in ["Lost In Play", "Lost Out"] else "success"
+        return "tackle", result, "foot"
+
+    if event_name == "Interception":
+        outcome = event.get("interception", {}).get("outcome", {}).get("name")
+        result = "fail" if outcome in ["Lost In Play", "Lost Out"] else "success"
+        return "interception", result, "foot"
+
+    if event_name == "Dribble":
+        outcome = event["dribble"].get("outcome", {}).get("name")
+        return "take_on", "fail" if outcome == "Incomplete" else "success", "foot"
+
+    if event_name == "Clearance":
+        return (
+            "clearance",
+            "success",
+            _get_spadl_bodypart(event.get("clearance", {}), "foot"),
+        )
+
+    if event_name == "Carry":
+        return "dribble", "success", "foot"
+
+    if event_name == "Own Goal Against":
+        return "bad_touch", "owngoal", "foot"
+
+    if event_name == "Miscontrol":
+        return "bad_touch", "fail", "foot"
+
+    return None, None, None
