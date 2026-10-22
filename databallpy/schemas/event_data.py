@@ -98,6 +98,50 @@ class EventData(pd.DataFrame):
     def provider(self, _):
         raise AttributeError("Cannot set provider attribute of event data")
 
+    def to_spadl(
+        self,
+        home_team_id: int | str,
+        pitch_dimensions: list[float],
+        *,
+        game_id: int | str | None = None,
+        playing_direction: str = "home_oriented",
+        coordinate_system: str = "databallpy",
+    ) -> pd.DataFrame:
+        """Convert the event data to SPADL actions (Decroos et al., 2019).
+
+        Only events with a SPADL ``action_type`` (other than ``non_action``) are
+        converted. Clearances are fixed and dribbles are added as in socceraction.
+
+        Args:
+            home_team_id (int | str): The id of the home team.
+            pitch_dimensions (list[float]): The length and width of the pitch in
+                meters.
+            game_id (int | str | None, optional): The value of the game_id column.
+                Defaults to None.
+            playing_direction (str, optional): The playing direction of the actions.
+                Defaults to "home_oriented", options are {home_oriented,
+                away_oriented, possession_oriented, out_of_possession_oriented}.
+            coordinate_system (str, optional): Defaults to "databallpy", meters on
+                the actual pitch with (0, 0) at the centre spot. With "spadl" the
+                coordinates are rescaled to the 105x68 SPADL field with (0, 0) in
+                the bottom left corner.
+
+        Returns:
+            pd.DataFrame: The SPADL actions. The original_event_id and event_id
+                columns link the actions to the event data and are null for added
+                dribbles.
+        """
+        from databallpy.events.spadl import event_data_to_spadl
+
+        return event_data_to_spadl(
+            self,
+            home_team_id=home_team_id,
+            pitch_dimensions=pitch_dimensions,
+            game_id=game_id,
+            playing_direction=playing_direction,
+            coordinate_system=coordinate_system,
+        )
+
     def to_video_analysis_xml(
         self,
         *,

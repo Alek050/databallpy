@@ -437,6 +437,36 @@ class Game:
         else:
             raise ValueError(f"Coordinate system {playing_direction} is not supported.")
 
+    @requires_event_data
+    def to_spadl(
+        self,
+        game_id: int | str | None = None,
+        playing_direction: str = "home_oriented",
+        coordinate_system: str = "databallpy",
+    ) -> pd.DataFrame:
+        """Function to convert the event data of the game to SPADL actions, see
+        EventData.to_spadl for more info.
+
+        Args:
+            game_id (int | str | None, optional): The value of the game_id column.
+                Defaults to None.
+            playing_direction (str, optional): The playing direction of the actions.
+                Defaults to "home_oriented", options are {home_oriented,
+                away_oriented, possession_oriented, out_of_possession_oriented}.
+            coordinate_system (str, optional): The coordinate system of the actions.
+                Defaults to "databallpy", options are {databallpy, spadl}.
+
+        Returns:
+            pd.DataFrame: The SPADL actions of the game.
+        """
+        return self.event_data.to_spadl(
+            home_team_id=self.home_team_id,
+            pitch_dimensions=self.pitch_dimensions,
+            game_id=game_id,
+            playing_direction=playing_direction,
+            coordinate_system=coordinate_system,
+        )
+
     @requires_tracking_data
     def get_event_frame(
         self, event_id: int | str, playing_direction: str = "home_oriented"

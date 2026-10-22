@@ -1,10 +1,13 @@
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - '*' # Pull requests to all branches'
 
 jobs:
   build-and-test:
+    # skip draft pull requests, they run once marked ready for review
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
 
     steps:
