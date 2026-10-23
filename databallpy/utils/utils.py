@@ -157,6 +157,19 @@ def _align_dtypes_for_comparison(
     return series1, series2
 
 
+def _normalise_datetime_units(df: pd.DataFrame) -> None:
+    """Function to cast all datetime columns of a dataframe to nanosecond resolution,
+    in place. Since pandas 3.0, datetimes are no longer always stored in nanoseconds,
+    this keeps the dtypes the same over pandas versions.
+
+    Args:
+        df (pd.DataFrame): The dataframe to normalise
+    """
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].dt.as_unit("ns")
+
+
 def _values_are_equal_(input1: any, input2: any) -> bool:
     """Function to check if two values are equal. The function can check if two values
     are equal if they are of the same type. The function can check if two values are

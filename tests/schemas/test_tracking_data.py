@@ -4,6 +4,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from databallpy.features.pressure import (
     calculate_l,
@@ -759,6 +760,10 @@ class TestTrackingData(unittest.TestCase):
         assert_frame_equal(res_long, expected)
         assert not isinstance(res_long, TrackingData)
 
+    @pytest.mark.xfail(
+        int(pd.__version__.split(".")[0]) >= 3,
+        reason="accessible-space ignores offside players with pandas >= 3",
+    )
     def test_dangerous_accessible_space(self):
         # This test case is adapted from the accessible_space package
         td_das = TrackingData(

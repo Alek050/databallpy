@@ -865,6 +865,14 @@ class TrackingData(pd.DataFrame):
                 "Or install databallpy using `pip install 'databallpy[accessible-space]'`"
             )
 
+        if int(pd.__version__.split(".")[0]) >= 3:
+            warnings.warn(
+                message="With pandas >= 3, accessible-space silently ignores offside "
+                "players, so the dangerous accessible space values can be wrong. Use "
+                "pandas < 3 for reliable results until this is fixed in accessible-space.",
+                category=DataBallPyWarning,
+            )
+
         mask = pd.Series(True, index=self.index) if mask is None else mask
 
         col_ids = [

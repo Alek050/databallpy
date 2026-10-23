@@ -8,6 +8,7 @@ import pandas as pd
 from databallpy.utils.utils import (
     MISSING_INT,
     _copy_value_,
+    _normalise_datetime_units,
     _to_float,
     _to_int,
     _values_are_equal_,
@@ -223,6 +224,24 @@ class TestUtils(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             _values_are_equal_(CustomType(1), CustomType(1))
+
+    def test_normalise_datetime_units(self):
+        df = pd.DataFrame(
+            {
+                "datetime": pd.to_datetime(["2023-01-01 20:00:00"], utc=True).as_unit(
+                    "us"
+                ),
+                "naive": pd.to_datetime(["2023-01-01"]).as_unit("s"),
+                "value": [1.0],
+            }
+        )
+        _normalise_datetime_units(df)
+        self.assertEqual(str(df["datetime"].dtype), "datetime64[ns, UTC]")
+        self.assertEqual(str(df["naive"].dtype), "datetime64[ns]")
+        self.assertEqual(df["value"].dtype, np.float64)
+        self.assertEqual(
+            df["datetime"].iloc[0], pd.Timestamp("2023-01-01 20:00", tz="UTC")
+        )
 
     def test_copy_value(self):
         self.assertEqual(_copy_value_(1.23), 1.23)
