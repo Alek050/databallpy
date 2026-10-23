@@ -12,6 +12,9 @@ import requests
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
+    _add_recovery_dribbles,
+    _add_spadl_columns,
     _normalize_playing_direction_events,
 )
 from databallpy.data_parsers.metrica_metadata_parser import (
@@ -29,6 +32,18 @@ metrica_databallpy_map = {
     "carry": "dribble",
     "shot": "shot",
     "tackle": "tackle",
+}
+
+SPADL_SET_PIECE_TYPES = {
+    "THROW IN": "throw_in",
+    "CORNER KICK": "corner_short",
+    "FREE KICK": "freekick_short",
+    "KICK OFF": "pass",
+}
+
+SPADL_CARD_RESULTS = {
+    "YELLOW": "yellow_card",
+    "RED": "red_card",
 }
 
 
@@ -65,9 +80,10 @@ def load_metrica_event_data(
     metadata = _get_metadata(metadata_loc, is_tracking_data=False, is_event_data=True)
     td_channels = _get_td_channels(metadata_loc, metadata)
     metadata = _update_metadata(td_channels, metadata)
-    event_data = _get_event_data(event_data_loc)
+    event_data, cards = _get_event_data(event_data_loc)
 
-    # rescale the event locations, metrica data is scaled between 0 and 1.
+    # rescale the event locations, metrica data is scaled between 0 and 1 with the
+    # origin in the top left corner, so the y-axis is flipped.
     for col in [x for x in event_data.columns if "_x" in x]:
         event_data[col] = (
             event_data[col] * metadata.pitch_dimensions[0]
@@ -75,8 +91,8 @@ def load_metrica_event_data(
         )
     for col in [x for x in event_data.columns if "_y" in x]:
         event_data[col] = (
-            event_data[col] * metadata.pitch_dimensions[1]
-            - metadata.pitch_dimensions[1] / 2.0
+            metadata.pitch_dimensions[1] / 2.0
+            - event_data[col] * metadata.pitch_dimensions[1]
         )
 
     # add datetime based on frame numbers
@@ -100,6 +116,7 @@ def load_metrica_event_data(
     event_data = _normalize_playing_direction_events(
         event_data, metadata.home_team_id, metadata.away_team_id
     )
+    event_data = _update_metrica_spadl_actions(event_data, cards)
     databallpy_events = _get_databallpy_events(
         event_data,
         metadata.pitch_dimensions,
@@ -128,14 +145,15 @@ def load_metrica_open_event_data() -> tuple[pd.DataFrame, Metadata, dict]:
 
 
 @logging_wrapper(__file__)
-def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
+def _get_event_data(event_data_loc: str | io.StringIO) -> tuple[pd.DataFrame, dict]:
     """Function to load metrica event data
 
     Args:
         event_data_loc (Union[str, io.StringIO]): location of the event data file
 
     Returns:
-        pd.DataFrame: event data
+        tuple[pd.DataFrame, dict]: event data and the index of the card events with
+            their SPADL result
     """
 
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
@@ -170,9 +188,15 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
         "original_event": [],
         "event_type_id": [],
         "td_frame": [],
+        "action_type": [],
+        "action_result": [],
+        "action_bodypart": [],
     }
 
     check_outcome_last_event = False
+    cards = {}
+    set_piece = None
+    possession_team = None
 
     in_possession_events = ["pass", "carry", "recovery", "shot"]
     out_of_possession_events = ["fault received", "ball out", "ball lost"]
@@ -235,13 +259,167 @@ def _get_event_data(event_data_loc: str | io.StringIO) -> pd.DataFrame:
         result_dict["end_y"].append(_to_float(event["end"]["y"]))
         result_dict["td_frame"].append(event["start"]["frame"])
 
+        # set pieces are no actions, but the type of the next action of the same
+        # player in the same frame
+        if (
+            set_piece is not None
+            and set_piece["start"]["frame"] == event["start"]["frame"]
+            and set_piece["from"]["id"] == event["from"]["id"]
+        ):
+            set_piece_subtypes = set_piece["subtypes"]
+        else:
+            set_piece_subtypes = None
+        set_piece = event if event["type"]["name"] == "SET PIECE" else None
+
+        action_type, action_result, action_bodypart = _get_metrica_spadl_action(
+            event, set_piece_subtypes
+        )
+        # only the player in possession takes on, not the defender
+        if action_type == "take_on" and event["team"]["id"] != possession_team:
+            action_type, action_result, action_bodypart = None, None, None
+        if event_name in in_possession_events or event_name == "set piece":
+            possession_team = event["team"]["id"]
+        result_dict["action_type"].append(action_type)
+        result_dict["action_result"].append(action_result)
+        result_dict["action_bodypart"].append(action_bodypart)
+        if event["type"]["name"] == "CARD":
+            for card_type, card_result in SPADL_CARD_RESULTS.items():
+                if _has_subtype(event, card_type):
+                    cards[i_event] = card_result
+
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     events = pd.DataFrame(result_dict)
     events["databallpy_event"] = (
         events["original_event"].map(metrica_databallpy_map).replace([np.nan], [None])
     )
     events["is_successful"] = events["is_successful"].astype("boolean")
-    return events
+    events = _add_spadl_columns(events)
+    return events, cards
+
+
+def _has_subtype(event: dict, name: str) -> bool:
+    """Function to check if an event has a subtype, also for events without subtypes
+
+    Args:
+        event (dict): event from the metrica json
+        name (str): name of the subtype
+
+    Returns:
+        bool: True if the event has the subtype, False otherwise
+    """
+    subtypes = event.get("subtypes")
+    return subtypes is not None and _is_in_subtypes(subtypes, name)
+
+
+def _get_metrica_spadl_action(
+    event: dict, set_piece_subtypes: list[dict] | dict | None
+) -> tuple[str | None, str | None, str | None]:
+    """Function to map a metrica event to the SPADL vocabulary. Ball lost and ball out
+    events with an end location are failed passes, dribble challenges are take-ons and
+    plain ball recoveries are mapped to dribbles and updated in
+    _update_metrica_spadl_actions.
+
+    Args:
+        event (dict): event from the metrica json
+        set_piece_subtypes (list[dict] | dict | None): subtypes of the set piece
+            that started this event, None if the event did not start with a set piece
+
+    Returns:
+        tuple[str | None, str | None, str | None]: The SPADL action type, result and
+            bodypart, all None for events that are not SPADL actions
+    """
+    event_type = event["type"]["name"]
+    bodypart = "head" if _has_subtype(event, "HEAD") else "foot"
+    set_piece = {"subtypes": set_piece_subtypes}
+    has_end_location = event["end"]["x"] is not None and (
+        event["start"]["x"] != event["end"]["x"]
+        or event["start"]["y"] != event["end"]["y"]
+    )
+
+    if event_type == "BALL LOST" and _has_subtype(event, "HAND BALL"):
+        return "foul", "fail", "other"
+    elif event_type == "BALL LOST" and (
+        _has_subtype(event, "THEFT") or _has_subtype(event, "FORCED")
+    ):
+        return "bad_touch", "fail", bodypart
+    elif event_type == "PASS" or (
+        event_type in ["BALL LOST", "BALL OUT"] and has_end_location
+    ):
+        result = "success" if event_type == "PASS" else "fail"
+        if _has_subtype(event, "OFFSIDE"):
+            result = "offside"
+        action_type = "pass"
+        for set_piece_type, spadl_type in SPADL_SET_PIECE_TYPES.items():
+            if _has_subtype(set_piece, set_piece_type):
+                action_type = spadl_type
+        if action_type in ["corner_short", "freekick_short"] and _has_subtype(
+            event, "CROSS"
+        ):
+            action_type = action_type.replace("short", "crossed")
+        elif action_type == "throw_in":
+            bodypart = "other"
+        elif set_piece_subtypes is None and _has_subtype(event, "GOAL KICK"):
+            action_type = "goalkick"
+        elif set_piece_subtypes is None and _has_subtype(event, "CLEARANCE"):
+            action_type, result = "clearance", "success"
+        elif set_piece_subtypes is None and _has_subtype(event, "CROSS"):
+            action_type = "cross"
+        return action_type, result, bodypart
+    elif event_type == "SHOT":
+        action_type = "shot"
+        if _has_subtype(set_piece, "PENALTY"):
+            action_type = "shot_penalty"
+        elif _has_subtype(set_piece, "FREE KICK"):
+            action_type = "shot_freekick"
+        result = "success" if _has_subtype(event, "GOAL") else "fail"
+        return action_type, result, bodypart
+    elif event_type == "CARRY" and has_end_location:
+        return "dribble", "success", "foot"
+    elif (
+        event_type == "CHALLENGE"
+        and _has_subtype(event, "DRIBBLE")
+        and not _has_subtype(event, "FAULT")
+    ):
+        # also the defender gets a dribble challenge, removed in _get_event_data
+        return "take_on", "success" if _has_subtype(event, "WON") else "fail", "foot"
+    elif event_type == "CHALLENGE" and _has_subtype(event, "LOST"):
+        if _has_subtype(event, "FAULT"):
+            return "foul", "fail", "foot"
+        elif _has_subtype(event, "TACKLE"):
+            return "tackle", "fail", "foot"
+    elif event_type == "CHALLENGE" and _has_subtype(event, "TACKLE"):
+        if _has_subtype(event, "WON") and not _has_subtype(event, "FAULT"):
+            return "tackle", "success", "foot"
+    elif event_type == "RECOVERY":
+        if _has_subtype(event, "INTERCEPTION"):
+            return "interception", "success", "foot"
+        elif _has_subtype(event, "SAVED"):
+            return "keeper_save", "success", "other"
+        elif event.get("subtypes") is None:
+            return "dribble", "success", "foot"
+
+    return None, None, None
+
+
+def _update_metrica_spadl_actions(event_data: pd.DataFrame, cards: dict) -> pd.DataFrame:
+    """Function to update the SPADL actions with information of the surrounding
+    events. Plain ball recoveries become dribbles to the start of the next action, or
+    no action when the ball did not move, and cards set the result of the last foul
+    of the same player.
+
+    Args:
+        event_data (pd.DataFrame): The event data in databallpy coordinates, with the
+            home team playing from left to right
+        cards (dict): The index of the card events with their SPADL result
+
+    Returns:
+        pd.DataFrame: The event data with the updated SPADL actions
+    """
+    is_recovery = (event_data["original_event"] == "recovery") & (
+        event_data["action_type"] == "dribble"
+    )
+    event_data = _add_recovery_dribbles(event_data, is_recovery)
+    return _add_card_results(event_data, cards)
 
 
 def _is_in_subtypes(subtypes: list[dict] | dict, name: str) -> bool:

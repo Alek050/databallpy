@@ -20,3 +20,9 @@ def assert_frame_equal(left: pd.DataFrame, right: pd.DataFrame, **kwargs) -> Non
     for col in left.columns.intersection(right.columns):
         left[col], right[col] = _align_dtypes_for_comparison(left[col], right[col])
     pd.testing.assert_frame_equal(left, right, **kwargs)
+
+
+def to_list(series: pd.Series) -> list:
+    """Function to get the values of a series as a list with None for missing
+    values, since pandas 3 stores missing values in text columns as NaN."""
+    return [None if pd.isna(value) else value for value in series]

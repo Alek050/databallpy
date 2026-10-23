@@ -7,6 +7,11 @@ import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 
 from databallpy.data_parsers import Metadata
+from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
+    _add_recovery_dribbles,
+    _add_spadl_columns,
+)
 from databallpy.events import (
     DribbleEvent,
     IndividualCloseToBallEvent,
@@ -175,6 +180,26 @@ SHOT_BLOCKED_QUALIFIER = 82
 OWN_GOAL_QUALIFIER = 280
 RELATED_EVENT_QUALIFIER = 55
 OPPOSITE_RELATED_EVENT_ID = 233  # used for dribbles
+X_BLOCKED_QUALIFIER = 146
+Y_BLOCKED_QUALIFIER = 147
+SPADL_OWN_GOAL_QUALIFIER = 28
+DEFENSIVE_BLOCK_QUALIFIER = 94
+SPADL_CARD_QUALIFIERS = {31: "yellow_card", 32: "red_card", 33: "red_card"}
+
+SPADL_SHOT_EVENTS = ["miss", "post", "attempt saved", "goal", "own goal"]
+SPADL_KEEPER_EVENTS = ["save", "claim", "punch", "keeper pick-up", "smother"]
+SPADL_SINGLE_EVENTS = {
+    "take on": "take_on",
+    "tackle": "tackle",
+    "interception": "interception",
+    "blocked pass": "interception",
+    "claim": "keeper_claim",
+    "punch": "keeper_punch",
+    "keeper pick-up": "keeper_pick_up",
+    "smother": "keeper_save",
+    "clearance": "clearance",
+    "ball recovery": "dribble",  # updated in _update_opta_spadl_actions
+}
 
 
 def _maybe_int(value: str | None) -> int | str | None:
@@ -307,7 +332,9 @@ def load_opta_event_data(
             event_data["player_id"]
         )
 
-        event_data.insert(6, "player_name", None)
+        event_data.insert(
+            event_data.columns.get_loc("player_id") + 1, "player_name", None
+        )
         event_data.loc[home_mask, "player_name"] = event_data.loc[
             home_mask, "player_id"
         ].map(home_players)
@@ -318,18 +345,20 @@ def load_opta_event_data(
 
         # Rescale the x and y coordinates relative to the pitch dimensions
         # The original dimension of the x and y coordinates range from 0 to 100
-        event_data.loc[:, ["start_x"]] = (
-            event_data.loc[:, ["start_x"]] / 100 * pitch_dimensions[0]
+        event_data.loc[:, ["start_x", "end_x"]] = (
+            event_data.loc[:, ["start_x", "end_x"]] / 100 * pitch_dimensions[0]
         ) - (pitch_dimensions[0] / 2.0)
-        event_data.loc[:, ["start_y"]] = (
-            event_data.loc[:, ["start_y"]] / 100 * pitch_dimensions[1]
+        event_data.loc[:, ["start_y", "end_y"]] = (
+            event_data.loc[:, ["start_y", "end_y"]] / 100 * pitch_dimensions[1]
         ) - (pitch_dimensions[1] / 2.0)
 
         # Change direction of play of the away team so it is represented from right to
         # left
         event_data.loc[
-            event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
+            event_data["team_id"] == metadata.away_team_id,
+            ["start_x", "start_y", "end_x", "end_y"],
         ] *= -1
+        event_data = _update_opta_spadl_actions(event_data)
     else:
         event_data = pd.DataFrame()
         databallpy_events = {}
@@ -707,11 +736,16 @@ def _load_event_data(
         "is_successful": [],
         "start_x": [],
         "start_y": [],
+        "end_x": [],
+        "end_y": [],
         "datetime": [],
         "original_event_id": [],
         "original_annotation_id": [],
         "original_event": [],
         "event_type_id": [],
+        "action_type": [],
+        "action_result": [],
+        "action_bodypart": [],
     }
 
     for i_event, event in enumerate(events):
@@ -752,6 +786,16 @@ def _load_event_data(
             result_dict["is_successful"].append(None)
         result_dict["start_x"].append(float(event.get("x")))
         result_dict["start_y"].append(float(event.get("y")))
+
+        action_type, action_result, action_bodypart = _get_opta_spadl_action(
+            event, event_name
+        )
+        result_dict["action_type"].append(action_type)
+        result_dict["action_result"].append(action_result)
+        result_dict["action_bodypart"].append(action_bodypart)
+        end_x, end_y = _get_opta_end_location(event, action_result == "owngoal")
+        result_dict["end_x"].append(end_x)
+        result_dict["end_y"].append(end_y)
 
         datetime = _get_valid_opta_datetime(event)
         result_dict["datetime"].append(datetime)
@@ -811,6 +855,7 @@ def _load_event_data(
         event_data["is_successful"].astype("Int64").astype("boolean")
     )
     event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
+    event_data = _add_spadl_columns(event_data)
     # reassign the outcome of passes that result in a shot that is scored to 'assist'
     pass_events = _update_pass_outcome(event_data, shot_events, pass_events)
 
@@ -1225,3 +1270,162 @@ def _update_pass_outcome(
         pass_events[related_pass["event_id"]].outcome_str = "assist"
 
     return pass_events
+
+
+def _get_opta_spadl_action(
+    event: ET.Element, event_name: str
+) -> tuple[str | None, str | None, str | None]:
+    """Function to map an opta event to the SPADL vocabulary. Follows the socceraction
+    conversion of opta data, but also maps own goals with qualifier 280, smothers and
+    successful keeper sweepers, and does not map shot blocks of outfield players
+    (qualifier 94) to keeper saves.
+
+    Args:
+        event (ET.Element): event from the f24.xml
+        event_name (str): the name of the opta event, e.g. pass or own goal
+
+    Returns:
+        tuple[str | None, str | None, str | None]: The SPADL action type, result and
+            bodypart, all None for events that are not SPADL actions
+    """
+    qualifiers = {int(q.get("qualifier_id")) for q in event.findall("Q")}
+    outcome = event.get("outcome") == "1"
+    if FAIR_PLAY_QUALIFIER in qualifiers:
+        return None, None, None
+
+    result = "success" if outcome else "fail"
+    if qualifiers & {3, 15, 168}:  # head, flick on
+        bodypart = "head"
+    elif 21 in qualifiers:
+        bodypart = "other"
+    elif 20 in qualifiers:
+        bodypart = "foot_right"
+    elif 72 in qualifiers:
+        bodypart = "foot_left"
+    elif 107 in qualifiers or event_name in SPADL_KEEPER_EVENTS:  # throw in
+        bodypart = "other"
+    else:
+        bodypart = "foot"
+
+    if event_name in ["pass", "offside pass"]:
+        is_crossed = bool(qualifiers & {1, 2, 155})  # long ball, cross, chipped
+        if 107 in qualifiers:
+            action_type = "throw_in"
+        elif 5 in qualifiers:
+            action_type = "freekick_crossed" if is_crossed else "freekick_short"
+        elif 6 in qualifiers:
+            action_type = "corner_crossed" if 2 in qualifiers else "corner_short"
+        elif 2 in qualifiers:
+            action_type = "cross"
+        elif 124 in qualifiers:
+            action_type = "goalkick"
+        else:
+            action_type = "pass"
+        result = "offside" if event_name == "offside pass" else result
+        return action_type, result, bodypart
+
+    if event_name in SPADL_SHOT_EVENTS:
+        if event_name == "own goal" or (
+            event_name == "goal" and SPADL_OWN_GOAL_QUALIFIER in qualifiers
+        ):
+            return "bad_touch", "owngoal", bodypart
+        if 9 in qualifiers:
+            action_type = "shot_penalty"
+        elif 26 in qualifiers:
+            action_type = "shot_freekick"
+        else:
+            action_type = "shot"
+        return action_type, ("success" if event_name == "goal" else "fail"), bodypart
+
+    if event_name == "card":
+        # cards are no actions, the result is moved to the foul in
+        # _update_opta_spadl_actions
+        for qualifier, card_result in SPADL_CARD_QUALIFIERS.items():
+            if qualifier in qualifiers:
+                return None, card_result, None
+        return None, None, None
+    if event_name == "foul" and not outcome:
+        return "foul", "fail", bodypart
+    if event_name == "save" and DEFENSIVE_BLOCK_QUALIFIER not in qualifiers:
+        return "keeper_save", result, bodypart
+    if event_name == "keeper sweeper" and outcome:
+        return "clearance", result, bodypart
+    if event_name == "ball touch" and not outcome:
+        return "bad_touch", "fail", bodypart
+    if event_name in SPADL_SINGLE_EVENTS:
+        return SPADL_SINGLE_EVENTS[event_name], result, bodypart
+    return None, None, None
+
+
+def _get_opta_end_location(event: ET.Element, own_goal: bool) -> tuple[float, float]:
+    """Function to get the end location of an opta event in the raw opta coordinates.
+    Follows socceraction: the end of a pass, the location of a blocked shot or the
+    goal mouth for shots that passed the goal line. The end location of own goals is
+    mirrored since the ball ends in the own goal.
+
+    Args:
+        event (ET.Element): event from the f24.xml
+        own_goal (bool): whether the event is an own goal
+
+    Returns:
+        tuple[float, float]: the end x and y, nan when not available
+    """
+    qualifiers = {int(q.get("qualifier_id")): q.get("value") for q in event.findall("Q")}
+
+    def _get_value(qualifier_ids: list[int]) -> float:
+        for qualifier_id in qualifier_ids:
+            if qualifier_id in qualifiers:
+                try:
+                    return float(qualifiers[qualifier_id])
+                except (TypeError, ValueError):
+                    return np.nan
+        return np.nan
+
+    end_x = _get_value([X_END_QUALIFIER, X_BLOCKED_QUALIFIER])
+    if np.isnan(end_x) and Y_TARGET_QUALIFIER in qualifiers:
+        end_x = 100.0
+    end_y = _get_value([Y_END_QUALIFIER, Y_BLOCKED_QUALIFIER, Y_TARGET_QUALIFIER])
+    if own_goal:
+        end_x, end_y = 100.0 - end_x, 100.0 - end_y
+    return end_x, end_y
+
+
+def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
+    """Function to update the SPADL actions with information of the surrounding
+    events, as socceraction does for opta data. Ball recoveries become dribbles to the
+    start of the next action, passes deflected by a successful ball touch end where
+    the event after the ball touch starts and cards set the result of the last foul of
+    the same player.
+
+    Args:
+        event_data (pd.DataFrame): The event data in databallpy coordinates, with the
+            home team playing from left to right
+
+    Returns:
+        pd.DataFrame: The event data with the updated SPADL actions
+    """
+    event_data = _add_recovery_dribbles(
+        event_data, event_data["original_event"] == "ball recovery"
+    )
+
+    # unintentional ball touches are no actions, the ball continues to the next event
+    next_events = event_data.shift(-2)
+    deflected = (
+        event_data["action_type"].notna()
+        & (event_data["original_event"].shift(-1) == "ball touch")
+        & event_data["action_type"].shift(-1).isna()
+    )
+    event_data.loc[deflected, ["end_x", "end_y"]] = next_events.loc[
+        deflected, ["start_x", "start_y"]
+    ].values
+    completed = (
+        deflected
+        & (event_data["action_type"] == "pass")
+        & (event_data["team_id"] == next_events["team_id"])
+    )
+    event_data.loc[completed, "action_result"] = "success"
+
+    is_card = event_data["action_type"].isna() & event_data["action_result"].notna()
+    cards = event_data.loc[is_card, "action_result"].to_dict()
+    event_data.loc[is_card, "action_result"] = None
+    return _add_card_results(event_data, cards)

@@ -19,6 +19,7 @@ from databallpy.data_parsers.event_data_parsers import (
     load_sportec_open_event_data,
     load_statsbomb_event_data,
 )
+from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.data_parsers.kloppy_parsers import (
     convert_kloppy_event_dataset,
     convert_kloppy_tracking_dataset,
@@ -397,6 +398,10 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
             dataframe[column] = _decode_json_column(dataframe[column])
         dataframes[dataframe_name] = dataframe
 
+    # games saved before the SPADL columns were introduced do not have them yet
+    if len(dataframes["event_data"]) > 0:
+        dataframes["event_data"] = _add_spadl_columns(dataframes["event_data"])
+
     return Game(
         tracking_data=TrackingData(
             dataframes["tracking_data"],
@@ -549,6 +554,12 @@ def load_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
     elif event_data_provider == "instat":
+        warnings.warn(
+            "event_data_provider 'instat' is deprecated and will be removed in "
+            "version 0.10.0, since InStat Football has been merged into Hudl Wyscout.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         event_data, event_metadata, _ = load_instat_event_data(
             event_data_loc=event_data_loc, metadata_loc=event_metadata_loc
         )
@@ -1022,7 +1033,7 @@ def get_game_from_kloppy(
             MISSING_INT
             if event_dataset.metadata.score is None
             or event_dataset.metadata.score.home is None
-            else event_dataset.metadata.score.home
+            else int(event_dataset.metadata.score.home)
         )
         if uses_event_data
         else MISSING_INT
@@ -1032,7 +1043,7 @@ def get_game_from_kloppy(
             MISSING_INT
             if event_dataset.metadata.score is None
             or event_dataset.metadata.score.away is None
-            else event_dataset.metadata.score.away
+            else int(event_dataset.metadata.score.away)
         )
         if uses_event_data
         else MISSING_INT

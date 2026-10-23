@@ -8,6 +8,7 @@ from databallpy.data_parsers.event_data_parsers.instat_parser import (
     _update_metadata,
     load_instat_event_data,
 )
+from databallpy.schemas import EventData
 from tests.expected_outcomes import ED_INSTAT, MD_INSTAT
 from tests.pandas_testing import assert_frame_equal
 
@@ -20,11 +21,19 @@ class TestInstatParser(unittest.TestCase):
     def test_load_instat_event_data(self):
         expected_metadata = MD_INSTAT.copy()
         expected_metadata.pitch_dimensions = [100.0, 50.0]
-        event_data, metadata, _ = load_instat_event_data(
-            self.instat_event_data_loc, self.instat_metadata_loc
-        )
+        with self.assertWarns(DeprecationWarning):
+            event_data, metadata, _ = load_instat_event_data(
+                self.instat_event_data_loc, self.instat_metadata_loc
+            )
         assert_frame_equal(event_data, pd.DataFrame(ED_INSTAT))
         assert metadata == expected_metadata
+
+    def test_to_spadl_not_supported(self):
+        with self.assertRaises(NotImplementedError):
+            EventData(ED_INSTAT, provider="instat").to_spadl(
+                home_team_id=MD_INSTAT.home_team_id,
+                pitch_dimensions=[100.0, 50.0],
+            )
 
     def test_load_instat_event_data_errors(self):
         with self.assertRaises(TypeError):

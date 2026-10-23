@@ -9,7 +9,7 @@ import pandas as pd
 
 from databallpy.game import _serialize_numpy_number
 from databallpy.schemas import TrackingData
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import MISSING_INT, SPADL_COLUMNS
 from databallpy.utils.get_game import _decode_json_column, get_game, get_saved_game
 from tests.pandas_testing import assert_frame_equal, assert_series_equal
 
@@ -119,6 +119,23 @@ class TestGameSerialization(unittest.TestCase):
             with self.subTest(value_type=type(value).__name__):
                 with self.assertRaisesRegex(TypeError, "is not JSON serializable"):
                     json.dumps({"value": value}, default=_serialize_numpy_number)
+
+    def test_saved_game_without_spadl_columns(self):
+        game = self._get_ma_game()
+
+        with tempfile.TemporaryDirectory() as path:
+            game.save_game(name="game", path=path, verbose=False)
+            # games saved before the SPADL columns were introduced lack them
+            event_data_path = os.path.join(path, "game", "event_data.parquet")
+            pd.read_parquet(event_data_path).drop(columns=SPADL_COLUMNS).to_parquet(
+                event_data_path
+            )
+
+            saved_game = get_saved_game(name="game", path=path)
+
+        for col in SPADL_COLUMNS:
+            self.assertIn(col, saved_game.event_data.columns)
+            self.assertTrue(saved_game.event_data[col].isna().all())
 
     def test_saved_game_without_encoding_metadata(self):
         game = self._get_ma_game()

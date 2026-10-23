@@ -1,5 +1,7 @@
 import os
+import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -9,13 +11,17 @@ from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.event_data_parsers.sportec_parser import (
     _get_sportec_event_data,
+    _get_sportec_spadl_action,
     _handle_play_event,
     _handle_shot_event,
     _handle_tackling_game_event,
     _initialize_search_variables,
+    _update_sportec_spadl_passes,
     load_sportec_event_data,
     load_sportec_open_event_data,
 )
+from databallpy.schemas import EventData
+from databallpy.utils.constants import SPADL_ACTION_TYPES
 from tests.expected_outcomes import (
     SPORTEC_DATABALLPY_EVENTS,
     SPORTEC_EVENT_DATA,
@@ -240,3 +246,229 @@ class TestSportecParser(unittest.TestCase):
         assert_frame_equal(result[0], pd.DataFrame())
         self.assertEqual(result[1], "mock_metadata")
         self.assertDictEqual(result[2], {"mock_key": {"mock_subkey": "mock_value"}})
+
+
+class TestSportecSpadl(unittest.TestCase):
+    def setUp(self) -> None:
+        self.ed_loc = os.path.join(
+            os.getcwd(), "tests", "test_data", "sportec_ed_test.xml"
+        )
+        self.md_loc = os.path.join(
+            os.getcwd(), "tests", "test_data", "sportec_metadata.xml"
+        )
+
+    def _action(self, xml, set_piece="no_set_piece"):
+        return _get_sportec_spadl_action(ET.fromstring(xml), set_piece)
+
+    def test_get_sportec_spadl_action_play(self):
+        cases = [
+            (
+                '<Play Evaluation="successfullyCompleted"><Pass/></Play>',
+                "no_set_piece",
+                ("pass", "success", "foot"),
+            ),
+            (
+                '<Play Evaluation="successful"><Cross/></Play>',
+                "no_set_piece",
+                ("cross", "success", "foot"),
+            ),
+            (
+                '<Play Evaluation="unsuccessful"><Pass/></Play>',
+                "kick_off",
+                ("pass", "fail", "foot"),
+            ),
+            (
+                '<Play Evaluation="unsuccessful"><Pass/></Play>',
+                "throw_in",
+                ("throw_in", "fail", "other"),
+            ),
+            (
+                '<Play Evaluation="successful"><Pass/></Play>',
+                "goal_kick",
+                ("goalkick", "success", "foot"),
+            ),
+            (
+                '<Play Evaluation="successful"><Cross/></Play>',
+                "corner_kick",
+                ("corner_crossed", "success", "foot"),
+            ),
+            (
+                '<Play Evaluation="successful" Height="flat"><Pass/></Play>',
+                "corner_kick",
+                ("corner_short", "success", "foot"),
+            ),
+            (
+                '<Play Evaluation="successful" Height="high"><Pass/></Play>',
+                "free_kick",
+                ("freekick_crossed", "success", "foot"),
+            ),
+            (
+                '<Play Evaluation="successful"><Pass/></Play>',
+                "free_kick",
+                ("freekick_short", "success", "foot"),
+            ),
+        ]
+        for xml, set_piece, expected in cases:
+            with self.subTest(xml=xml, set_piece=set_piece):
+                self.assertEqual(self._action(xml, set_piece), expected)
+
+    def test_get_sportec_spadl_action_shot(self):
+        cases = [
+            (
+                '<ShotAtGoal TypeOfShot="head"><SuccessfulShot/></ShotAtGoal>',
+                "no_set_piece",
+                ("shot", "success", "head"),
+            ),
+            (
+                '<ShotAtGoal TypeOfShot="leftLeg"><SavedShot/></ShotAtGoal>',
+                "free_kick",
+                ("shot_freekick", "fail", "foot_left"),
+            ),
+            (
+                '<ShotAtGoal TypeOfShot="rightLeg"><ShotWide/></ShotAtGoal>',
+                "penalty",
+                ("shot_penalty", "fail", "foot_right"),
+            ),
+            (
+                "<ShotAtGoal><OwnGoal/></ShotAtGoal>",
+                "no_set_piece",
+                ("bad_touch", "owngoal", "foot"),
+            ),
+        ]
+        for xml, set_piece, expected in cases:
+            with self.subTest(xml=xml, set_piece=set_piece):
+                self.assertEqual(self._action(xml, set_piece), expected)
+
+    def test_get_sportec_spadl_action_other_events(self):
+        cases = [
+            (
+                '<TacklingGame WinnerResult="dribbledAround" '
+                'DribbleEvaluation="successful"/>',
+                ("take_on", "success", "foot"),
+            ),
+            (
+                '<TacklingGame WinnerResult="dribbledAround" '
+                'DribbleEvaluation="unsuccessful"/>',
+                ("take_on", "fail", "foot"),
+            ),
+            (
+                '<TacklingGame WinnerResult="ballcontactSucceeded" Type="ground" '
+                'WinnerRole="withoutBallControl"/>',
+                ("tackle", "success", "foot"),
+            ),
+            (
+                '<TacklingGame WinnerResult="ballcontactSucceeded" Type="air" '
+                'WinnerRole="withoutBallControl"/>',
+                (None, None, None),
+            ),
+            (
+                '<BallClaiming Type="InterceptedBall"/>',
+                ("interception", "success", "foot"),
+            ),
+            ('<BallClaiming Type="BallClaimed"/>', (None, None, None)),
+            ('<Foul Fouler="A-1" TeamFouler="Team1"/>', ("foul", "fail", "foot")),
+            ('<OtherBallAction Player="B-2"/>', (None, None, None)),
+        ]
+        for xml, expected in cases:
+            with self.subTest(xml=xml):
+                self.assertEqual(self._action(xml), expected)
+
+    def test_update_sportec_spadl_passes(self):
+        event_data = pd.DataFrame(
+            {
+                "action_type": ["pass", "pass", "throw_in", "shot", "pass"],
+                "action_result": ["success", "success", "fail", "fail", "success"],
+                "end_x": [np.nan] * 5,
+                "end_y": [np.nan] * 5,
+                "source_x": [0.0, 1.0, 2.0, 3.0, 4.0],
+                "source_y": [0.0, -1.0, -2.0, -3.0, -4.0],
+            }
+        )
+        res = _update_sportec_spadl_passes(event_data.copy())
+
+        self.assertListEqual(
+            list(res.columns), ["action_type", "action_result", "end_x", "end_y"]
+        )
+        # the pass before the throw in went out of play
+        self.assertListEqual(
+            res["action_result"].tolist(),
+            ["success", "fail", "fail", "fail", "success"],
+        )
+        # completed passes end at the start of the next event
+        np.testing.assert_array_equal(
+            res["end_x"], [1.0, np.nan, np.nan, np.nan, np.nan]
+        )
+        np.testing.assert_array_equal(
+            res["end_y"], [-1.0, np.nan, np.nan, np.nan, np.nan]
+        )
+
+    def test_get_sportec_event_data_foul(self):
+        with open(self.ed_loc, "r") as file:
+            lines = file.read()
+        # sportec fouls have no position
+        lines = lines.replace(
+            "</PutDataRequest>",
+            '<Event EventId="19" EventTime="2022-11-11T20:11:18.500+01:00" '
+            'MatchId="Match-1"><Foul Fouler="B-2" TeamFouler="Team2" Fouled="A-3" '
+            'TeamFouled="Team1"/></Event></PutDataRequest>',
+        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc = os.path.join(tmp_dir, "sportec_foul.xml")
+            with open(loc, "w") as file:
+                file.write(lines)
+            res_ed, _ = _get_sportec_event_data(loc, SPORTEC_METADATA_ED.copy())
+
+        self.assertEqual(len(res_ed), 7)
+        foul = res_ed.iloc[-1]
+        self.assertEqual(foul["original_event_id"], 19)
+        self.assertTrue(np.isnan(foul["start_x"]))
+        self.assertTrue(np.isnan(foul["end_x"]))
+        self.assertEqual(foul["player_id"], "B-2")
+        self.assertEqual(foul["team_id"], "Team2")
+        self.assertEqual(foul["action_type"], "foul")
+        self.assertEqual(foul["action_result"], "fail")
+
+    def test_get_sportec_event_data_caution(self):
+        with open(self.ed_loc, "r") as file:
+            lines = file.read()
+        # cautions have no position and set the result of the foul
+        lines = lines.replace(
+            "</PutDataRequest>",
+            '<Event EventId="19" EventTime="2022-11-11T20:11:18.500+01:00" '
+            'MatchId="Match-1"><Foul Fouler="B-2" TeamFouler="Team2" Fouled="A-3" '
+            'TeamFouled="Team1"/></Event>'
+            '<Event EventId="20" EventTime="2022-11-11T20:11:30.000+01:00" '
+            'MatchId="Match-1"><Caution CardColor="yellowRed" Team="Team2" '
+            'Player="B-2"/></Event></PutDataRequest>',
+        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc = os.path.join(tmp_dir, "sportec_caution.xml")
+            with open(loc, "w") as file:
+                file.write(lines)
+            res_ed, _ = _get_sportec_event_data(loc, SPORTEC_METADATA_ED.copy())
+
+        # the caution itself is not kept in the event data
+        self.assertEqual(len(res_ed), 7)
+        foul = res_ed.iloc[-1]
+        self.assertEqual(foul["action_type"], "foul")
+        self.assertEqual(foul["action_result"], "red_card")
+
+    def test_get_sportec_spadl_action_caution(self):
+        for color, result in [("yellow", "yellow_card"), ("red", "red_card")]:
+            event = ET.fromstring(f'<Caution CardColor="{color}" Player="A-1"/>')
+            self.assertEqual(
+                _get_sportec_spadl_action(event, "no_set_piece"), (None, result, None)
+            )
+
+    def test_to_spadl(self):
+        event_data, metadata, _ = load_sportec_event_data(self.ed_loc, self.md_loc)
+        res = EventData(event_data, provider="sportec").to_spadl(
+            home_team_id=metadata.home_team_id,
+            pitch_dimensions=metadata.pitch_dimensions,
+            coordinate_system="spadl",
+        )
+        self.assertListEqual(
+            [SPADL_ACTION_TYPES[i] for i in res["type_id"]],
+            ["pass", "shot", "pass", "take_on"],
+        )
+        self.assertListEqual(res["player_id"].tolist(), ["B-1", "B-3", "A-1", "A-5"])

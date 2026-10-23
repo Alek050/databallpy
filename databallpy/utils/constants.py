@@ -4,6 +4,82 @@ MISSING_INT = -999
 DATABALLPY_EVENTS = ["pass", "shot", "dribble", "tackle", "own_goal"]
 """The databallpy events that are supported."""
 
+PERIOD_START_MINUTES = {1: 0, 2: 45, 3: 90, 4: 105, 5: 120}
+"""The minutes at which the periods start."""
+
+SPADL_FIELD_LENGTH = 105.0
+"""The length of the pitch in SPADL (in meters)."""
+
+SPADL_FIELD_WIDTH = 68.0
+"""The width of the pitch in SPADL (in meters)."""
+
+SPADL_ACTION_TYPES = [
+    "pass",
+    "cross",
+    "throw_in",
+    "freekick_crossed",
+    "freekick_short",
+    "corner_crossed",
+    "corner_short",
+    "take_on",
+    "foul",
+    "tackle",
+    "interception",
+    "shot",
+    "shot_penalty",
+    "shot_freekick",
+    "keeper_save",
+    "keeper_claim",
+    "keeper_punch",
+    "keeper_pick_up",
+    "clearance",
+    "bad_touch",
+    "non_action",
+    "dribble",
+    "goalkick",
+]
+"""The SPADL action types, the index in the list is the SPADL type_id. Copied from
+socceraction (Decroos et al., 2019)."""
+
+SPADL_RESULTS = [
+    "fail",
+    "success",
+    "offside",
+    "owngoal",
+    "yellow_card",
+    "red_card",
+]
+"""The SPADL action results, the index in the list is the SPADL result_id. Copied from
+socceraction (Decroos et al., 2019)."""
+
+SPADL_BODYPARTS = ["foot", "head", "other", "head/other", "foot_left", "foot_right"]
+"""The SPADL body parts, the index in the list is the SPADL bodypart_id. Copied from
+socceraction (Decroos et al., 2019)."""
+
+ATOMIC_SPADL_ACTION_TYPES = [
+    action_type
+    for action_type in SPADL_ACTION_TYPES
+    if action_type
+    not in ["freekick_crossed", "freekick_short", "corner_crossed", "corner_short"]
+] + [
+    "receival",
+    "out",
+    "offside",
+    "goal",
+    "owngoal",
+    "yellow_card",
+    "red_card",
+    "corner",
+    "freekick",
+]
+"""The Atomic-SPADL action types, the index in the list is the Atomic-SPADL type_id.
+Based on socceraction (Decroos et al., 2020), but without the corner and freekick
+types that are simplified to corner and freekick, and with a single interception
+type. Therefore, the type_ids differ from socceraction."""
+
+SPADL_COLUMNS = ["action_type", "action_result", "action_bodypart"]
+"""The SPADL vocabulary columns in the event data."""
+
 DATABALLPY_SET_PIECES = [
     "goal_kick",
     "free_kick",

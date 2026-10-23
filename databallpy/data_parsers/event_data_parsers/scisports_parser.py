@@ -3,6 +3,11 @@ import json
 import numpy as np
 import pandas as pd
 
+from databallpy.data_parsers.event_data_parsers.utils import (
+    _add_card_results,
+    _add_recovery_dribbles,
+    _add_spadl_columns,
+)
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
@@ -14,6 +19,42 @@ BODY_PART_MAPPING = {
     "NOT_APPLICABLE": "unspecified",
     "RIGHT_FOOT": "right_foot",
     "LEFT_FOOT": "left_foot",
+}
+
+SPADL_BODY_PART_MAPPING = {
+    "FEET": "foot",
+    "HEAD": "head",
+    "RIGHT_FOOT": "foot_right",
+    "LEFT_FOOT": "foot_left",
+    "HANDS": "other",
+}
+
+SPADL_PASS_TYPES = {
+    "PASS": "pass",
+    "KICK_OFF": "pass",
+    "OFFSIDE_PASS": "pass",
+    "GOALKEEPER_THROW": "pass",
+    "FREE_KICK": "freekick_short",
+    "FREE_KICK_CROSSED": "freekick_crossed",
+    "CORNER_SHORT": "corner_short",
+    "CORNER_CROSSED": "corner_crossed",
+    "GOAL_KICK": "goalkick",
+    "THROW_IN": "throw_in",
+    "THROW_IN_CROSSED": "throw_in",
+    "CROSS": "cross",
+    "CROSS_CUTBACK": "cross",
+}
+
+SPADL_SHOT_TYPES = {
+    "SHOT_FREE_KICK": "shot_freekick",
+    "SHOT_PENALTY": "shot_penalty",
+    "PENALTY": "shot_penalty",
+}
+
+SPADL_CARD_RESULTS = {
+    "YELLOW_CARD": "yellow_card",
+    "2ND_YELLOW_CARD": "red_card",
+    "RED_CARD": "red_card",
 }
 
 
@@ -269,9 +310,14 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "is_successful": [],
         "start_x": [],
         "start_y": [],
+        "end_x": [],
+        "end_y": [],
         "datetime": [],
         "original_event_id": [],
         "original_event": [],
+        "action_type": [],
+        "action_result": [],
+        "action_bodypart": [],
     }
 
     databallpy_event_mapping = {
@@ -293,6 +339,8 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     ).tz_localize(metadata.periods_frames["start_datetime_ed"].iloc[0].tz)
 
     events_key = _get_events_key(events_json)
+    is_recovery = []
+    cards = {}
     for id, event in enumerate(events_json[events_key]):
         event_data["event_id"].append(id)
         event_data["original_event_id"].append(id)
@@ -309,11 +357,21 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
 
         event_data["start_x"].append(event["startPosXM"])
         event_data["start_y"].append(event["startPosYM"])
+        event_data["end_x"].append(event["endPosXM"])
+        event_data["end_y"].append(event["endPosYM"])
         event_data["datetime"].append(
             date + pd.to_timedelta(event["startTimeMs"], unit="ms")
         )
         event_data["original_event"].append(event["baseTypeName"].lower())
         event_data["player_name"].append(event["playerName"])
+
+        action_type, action_result, action_bodypart = _get_scisports_spadl_action(event)
+        event_data["action_type"].append(action_type)
+        event_data["action_result"].append(action_result)
+        event_data["action_bodypart"].append(action_bodypart)
+        is_recovery.append(event["subTypeName"] == "RECOVERY")
+        if event["subTypeName"] in SPADL_CARD_RESULTS:
+            cards[id] = SPADL_CARD_RESULTS[event["subTypeName"]]
 
         multiplier = [-1, 1][int(event["groupName"].lower() == "home")]
 
@@ -349,9 +407,14 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     event_data["minutes"] = (event_data["seconds"] // 60).astype(np.int64)
     event_data["seconds"] = event_data["seconds"] % 60
     event_data.loc[
-        event_data["team_id"] == metadata.away_team_id, ["start_x", "start_y"]
+        event_data["team_id"] == metadata.away_team_id,
+        ["start_x", "start_y", "end_x", "end_y"],
     ] *= -1
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
+    event_data = _update_scisports_spadl_actions(
+        event_data, pd.Series(is_recovery, index=event_data.index), cards
+    )
+    event_data = _add_spadl_columns(event_data)
 
     for event in {
         **shot_events,
@@ -369,6 +432,84 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "pass_events": pass_events,
         "dribble_events": dribble_events,
     }
+
+
+def _get_scisports_spadl_action(
+    event: dict,
+) -> tuple[str | None, str | None, str | None]:
+    """Function to map a scisports event to the SPADL vocabulary. Only tackles of the
+    defensive duels are mapped, ball recoveries are mapped to dribbles and updated in
+    _update_scisports_spadl_actions.
+
+    Args:
+        event (dict): event from the scisports json
+
+    Returns:
+        tuple[str | None, str | None, str | None]: The SPADL action type, result and
+            bodypart, all None for events that are not SPADL actions
+    """
+    base_type = event["baseTypeName"]
+    sub_type = event["subTypeName"]
+    successful = event["resultName"] == "SUCCESSFUL"
+    result = "success" if successful else "fail"
+    bodypart = SPADL_BODY_PART_MAPPING.get(event["bodyPartName"], "foot")
+
+    if base_type in ["PASS", "CROSS"] and sub_type in SPADL_PASS_TYPES:
+        action_type = SPADL_PASS_TYPES[sub_type]
+        if sub_type == "OFFSIDE_PASS":
+            result = "offside"
+        if action_type == "throw_in" or sub_type == "GOALKEEPER_THROW":
+            bodypart = "other"
+    elif base_type == "SHOT":
+        action_type = SPADL_SHOT_TYPES.get(sub_type, "shot")
+        result = "success" if event["resultId"] == 1 else "fail"
+    elif base_type == "DRIBBLE" and sub_type == "CARRY":
+        action_type, result = "dribble", "success"
+    elif base_type == "DRIBBLE" and sub_type == "TAKE_ON":
+        action_type = "take_on"
+    elif base_type == "DEFENSIVE_DUEL" and sub_type == "TACKLE":
+        action_type = "tackle"
+    elif base_type == "INTERCEPTION" and sub_type == "INTERCEPTION":
+        action_type, result = "interception", "success"
+    elif base_type == "INTERCEPTION" and sub_type == "RECOVERY":
+        action_type, result = "dribble", "success"
+    elif base_type == "INTERCEPTION" and sub_type == "GOALKEEPER_CLAIM":
+        action_type, bodypart = "keeper_claim", "other"
+    elif base_type == "KEEPER_SAVE":
+        action_type, bodypart = "keeper_save", "other"
+    elif base_type == "CLEARANCE":
+        action_type, result = "clearance", "success"
+    elif base_type == "BAD_TOUCH":
+        action_type, result = "bad_touch", "fail"
+    elif base_type == "FOUL" and sub_type == "FOUL":
+        action_type, result = "foul", "fail"
+        if event.get("foulTypeName") == "HANDS":
+            bodypart = "other"
+    else:
+        return None, None, None
+
+    return action_type, result, bodypart
+
+
+def _update_scisports_spadl_actions(
+    event_data: pd.DataFrame, is_recovery: pd.Series, cards: dict
+) -> pd.DataFrame:
+    """Function to update the SPADL actions with information of the surrounding
+    events. Ball recoveries become dribbles to the start of the next action, or no
+    action when the ball did not move, and cards set the result of the last foul of
+    the same player.
+
+    Args:
+        event_data (pd.DataFrame): The event data in databallpy coordinates, with the
+            home team playing from left to right
+        is_recovery (pd.Series): Whether the event is a ball recovery
+        cards (dict): The index of the card events with their SPADL result
+
+    Returns:
+        pd.DataFrame: The event data with the updated SPADL actions
+    """
+    event_data = _add_recovery_dribbles(event_data, is_recovery)
+    return _add_card_results(event_data, cards)
 
 
 def _get_shot_event(
