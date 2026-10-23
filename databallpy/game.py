@@ -601,18 +601,22 @@ class Game:
                 Defaults to 1.0.
             cost_functions (dict, optional): Dictionary containing the cost functions
                 that are used to calculate the similarity between the tracking and event
-                data. The keys of the dictionary are the event types, the values are the
-                cost functions. The cost functions will be called with the tracking data
-                and the event as arguments. The cost functions should return an array
-                containing the cost of the similarity between the tracking data and the
-                event, scaled between 0 and 1. If no cost functions are passed, the
-                default cost functions are used.
+                data. The keys of the dictionary are SPADL action types (e.g. 'cross')
+                or databallpy events ('pass', 'shot', 'dribble', 'tackle', 'own_goal'),
+                the values are the cost functions. A cost function of the action type
+                has priority over the one of the databallpy event. The cost functions
+                will be called with the tracking data and the event as arguments. The
+                cost functions should return an array containing the cost of the
+                similarity between the tracking data and the event, scaled between 0
+                and 1. If no cost functions are passed, the default cost functions are
+                used.
             _optimize (bool, optional): Whether or not to optimize the algorithm. If
                 errors or warnings are raised, try if setting to False works. Defaults
                 to False.
 
-        Currently works for the following databallpy events:
-            'pass', 'shot', 'dribble', and 'tackle'
+        All SPADL action types are synced, except for 'foul' and 'non_action'. Event
+        data without SPADL action types falls back on the databallpy events: 'pass',
+        'shot', 'dribble', 'tackle' and 'own_goal'.
 
         """
         LOGGER.info(f"Trying to synchronise tracking and event data of {self.name}.")

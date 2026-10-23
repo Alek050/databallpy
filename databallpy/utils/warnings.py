@@ -28,7 +28,7 @@ def warn_databallpy_event_deprecation(key) -> None:
     # frame 0 is this function, frame 1 is __getitem__/__getattr__
     frame, stacklevel = sys._getframe(2), 3
     packages = set()
-    while frame is not None and _get_package(frame) in ("pandas", "pandera"):
+    while frame is not None and _get_package(frame) in ("pandas", "pandera", "pyarrow"):
         packages.add(_get_package(frame))
         frame, stacklevel = frame.f_back, stacklevel + 1
     # pandera accesses every column when validating

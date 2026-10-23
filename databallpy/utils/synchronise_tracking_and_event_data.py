@@ -15,6 +15,8 @@ from databallpy.utils.warnings import DataBallPyWarning
 FRAME_UNASSIGNED = 3
 EVENT_FRAME_MATCH = 2
 EVENT_UNASSIGNED = 4
+# actions that are not necessarily a ball contact, and thus can not be synced reliably
+UNSYNCED_ACTION_TYPES = ["foul", "non_action"]
 
 
 @logging_wrapper(__file__)
@@ -41,12 +43,14 @@ def synchronise_tracking_and_event_data(
         away_players (pd.DataFrame): Information about the away_players
         cost_functions (dict, optional): Dictionary containing the cost functions that
             are used to calculate the similarity between the tracking and event data.
-            The keys of the dictionary are the event types, the values are the cost
-            functions. The cost functions will be called with the tracking data and the
-            event as arguments. The cost functions should return an array containing
-            the cost of the similarity between the tracking data and the event, scaled
-            between 0 and 1. If no cost functions are passed, the default cost functions
-            are used.
+            The keys of the dictionary are SPADL action types (e.g. 'cross') or
+            databallpy events ('pass', 'shot', 'dribble', 'tackle', 'own_goal'), the
+            values are the cost functions. A cost function of the action type has
+            priority over the one of the databallpy event. The cost functions will be
+            called with the tracking data and the event as arguments. The cost
+            functions should return an array containing the cost of the similarity
+            between the tracking data and the event, scaled between 0 and 1. If no
+            cost functions are passed, the default cost functions are used.
         n_batches (int, str): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = "smart".
@@ -61,8 +65,11 @@ def synchronise_tracking_and_event_data(
         verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
 
-    Currently works for the following databallpy_events:
-        'pass', 'shot', 'dribble', and 'tackle'
+    All SPADL action types are synced, except for 'foul' and 'non_action'. Passes
+    (incl. crosses, set pieces and goal kicks) and shots have a specific default cost
+    function, all other action types use a general cost function. Event data without
+    SPADL action types falls back on the databallpy events: 'pass', 'shot',
+    'dribble', 'tackle' and 'own_goal'.
 
     Returns:
         tuple: Tuple containing two DataFrames. The first DataFrame contains
@@ -77,10 +84,15 @@ def synchronise_tracking_and_event_data(
             - sync_certainty: the certainty of the synchronisation
     """
 
-    # the databallpy events are based on the SPADL columns, the databallpy_event
-    # column is kept in the batches since custom cost functions might use it.
+    # the databallpy_event column is kept in the batches since it is used to select
+    # the cost function and custom cost functions might use it.
     databallpy_events = get_databallpy_events(event_data)
-    to_sync = databallpy_events.isin(DATABALLPY_EVENTS)
+    if "action_type" in event_data.columns and event_data["action_type"].notna().any():
+        to_sync = event_data["action_type"].notna() & ~event_data["action_type"].isin(
+            UNSYNCED_ACTION_TYPES
+        )
+    else:  # event data without SPADL action types (e.g. Instat)
+        to_sync = databallpy_events.isin(DATABALLPY_EVENTS)
     event_data_to_sync = event_data[to_sync].assign(
         databallpy_event=databallpy_events[to_sync]
     )
@@ -186,11 +198,15 @@ def _create_sim_mat(
     for row in event_batch.itertuples():
         i = row.Index
 
-        if row.databallpy_event == "pass":
+        # a cost function of the action type has priority over the one of the
+        # databallpy event (e.g. 'cross' over 'pass')
+        if isinstance(row.action_type, str) and row.action_type in cost_functions:
+            cost_function = cost_functions[row.action_type]
+        elif row.databallpy_event == "pass":
             cost_function = cost_functions.get("pass", base_pass_cost_function)
         elif row.databallpy_event == "shot":
             cost_function = cost_functions.get("shot", base_shot_cost_function)
-        else:  # dribble and tackle
+        else:  # dribble, tackle, own_goal and all other action types
             cost_function = cost_functions.get(
                 row.databallpy_event, base_general_cost_ball_event
             )
