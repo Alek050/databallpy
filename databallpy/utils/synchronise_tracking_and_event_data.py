@@ -9,7 +9,7 @@ from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
-from databallpy.utils.utils import sigmoid
+from databallpy.utils.utils import get_databallpy_events, sigmoid
 from databallpy.utils.warnings import DataBallPyWarning
 
 FRAME_UNASSIGNED = 3
@@ -67,7 +67,8 @@ def synchronise_tracking_and_event_data(
     Returns:
         tuple: Tuple containing two DataFrames. The first DataFrame contains
             information about the tracking data. The columns are:
-            - databallpy_event: the event type
+            - databallpy_event: the event type (deprecated, use action_type)
+            - action_type: the SPADL action type of the event
             - event_id: the event id
             - sync_certainty: the certainty of the synchronisation
             The second DataFrame contains information about the event data. The
@@ -76,9 +77,15 @@ def synchronise_tracking_and_event_data(
             - sync_certainty: the certainty of the synchronisation
     """
 
-    event_data_to_sync = event_data[
-        event_data["databallpy_event"].isin(DATABALLPY_EVENTS)
-    ]
+    # the databallpy events are based on the SPADL columns, the databallpy_event
+    # column is kept in the batches since custom cost functions might use it.
+    databallpy_events = get_databallpy_events(event_data)
+    to_sync = databallpy_events.isin(DATABALLPY_EVENTS)
+    event_data_to_sync = event_data[to_sync].assign(
+        databallpy_event=databallpy_events[to_sync]
+    )
+    if "action_type" not in event_data_to_sync.columns:
+        event_data_to_sync["action_type"] = None
 
     if n_batches == "smart":
         end_datetimes = create_smart_batches(tracking_data)
@@ -99,7 +106,7 @@ def synchronise_tracking_and_event_data(
     # loop over batches
     extra_tracking_info = pd.DataFrame(
         index=tracking_data.index,
-        columns=["databallpy_event", "event_id", "sync_certainty"],
+        columns=["databallpy_event", "action_type", "event_id", "sync_certainty"],
     )
     extra_event_info = pd.DataFrame(
         index=event_data.index, columns=["tracking_frame", "sync_certainty"]
@@ -133,6 +140,9 @@ def synchronise_tracking_and_event_data(
                 event_index = int(event_batch.loc[event, "index"])
                 tracking_frame = int(tracking_batch.loc[frame, "index"])
                 extra_tracking_info.loc[tracking_frame, "databallpy_event"] = event_type
+                extra_tracking_info.loc[tracking_frame, "action_type"] = event_batch.loc[
+                    event, "action_type"
+                ]
                 extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
                 extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
                     frame, event
@@ -618,6 +628,7 @@ def align_event_data_datetime(
             event_data["datetime"] = event_data["datetime"].dt.tz_convert(None)
 
     start_events = ["pass", "shot"]
+    databallpy_events = get_databallpy_events(event_data)
     for period in tracking_data["period_id"].unique():
         if period == MISSING_INT:
             continue
@@ -625,7 +636,7 @@ def align_event_data_datetime(
         event_data_p = event_data[event_data["period_id"] == period]
 
         datetime_first_event = event_data_p[
-            event_data_p["databallpy_event"].isin(start_events)
+            databallpy_events[event_data_p.index].isin(start_events)
         ].iloc[0]["datetime"]
         datetime_first_tracking_frame = tracking_data_p[
             tracking_data_p["ball_status"] == "alive"

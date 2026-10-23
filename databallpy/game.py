@@ -624,7 +624,7 @@ class Game:
             LOGGER.error(message)
             raise DataBallPyError(message)
 
-        for col in ["sync_certainty", "databallpy_event", "event_id"]:
+        for col in ["sync_certainty", "databallpy_event", "action_type", "event_id"]:
             if col in self.tracking_data.columns:
                 self.tracking_data.drop(columns=[col], inplace=True)
         for col in ["tracking_frame", "sync_certainty"]:
@@ -649,11 +649,11 @@ class Game:
             verbose=verbose,
         )
         # update tracking and event data
+        tracking_info[["databallpy_event", "action_type"]] = tracking_info[
+            ["databallpy_event", "action_type"]
+        ].replace({np.nan: None})
         self.tracking_data = pd.concat([self.tracking_data, tracking_info], axis=1)
         self.event_data = pd.concat([self.event_data, event_info], axis=1)
-        self.tracking_data["databallpy_event"] = self.tracking_data[
-            "databallpy_event"
-        ].replace({np.nan: None})
         self.tracking_data["event_id"] = (
             self.tracking_data["event_id"]
             .infer_objects(copy=False)

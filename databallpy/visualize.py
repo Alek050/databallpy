@@ -13,6 +13,7 @@ from tqdm import tqdm
 from databallpy.game import Game
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.logging import logging_wrapper
+from databallpy.utils.utils import get_databallpy_events
 
 
 def requires_ffmpeg(func):
@@ -282,15 +283,14 @@ def plot_events(
         message = f"'events' should be a list, not a {type(events)}"
         raise TypeError(message)
     if len(events) > 0:
+        databallpy_events = get_databallpy_events(event_data)
         for wrong_event in [
-            event
-            for event in events
-            if event not in event_data["databallpy_event"].unique()
+            event for event in events if event not in databallpy_events.unique()
         ]:
             raise ValueError(
                 f"{wrong_event} is not a valid event in the databallpy_events, "
             )
-        mask = (mask) & (event_data["databallpy_event"].isin(events))
+        mask = (mask) & (databallpy_events.isin(events))
     if outcome is not None:
         if outcome not in [False, True]:
             raise ValueError(
@@ -504,8 +504,12 @@ def plot_tracking_data(
         column_id = game.tracking_data.loc[idx, "player_possession"]
         _, ax = _plot_player_possession(ax, column_id, idx, game, [])
 
-    if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
-        _, ax = _plot_events(ax, td, idx, game, [], contrasting_color)
+    if len(events) > 0:
+        databallpy_events = get_databallpy_events(game.event_data).set_axis(
+            game.event_data["event_id"]
+        )
+        if databallpy_events.get(td.loc[idx, "event_id"]) in events:
+            _, ax = _plot_events(ax, td, idx, game, [], contrasting_color)
     return fig, ax
 
 
@@ -649,6 +653,9 @@ def save_tracking_video(
     )
 
     contrasting_color = pick_bw_for_contrast(to_rgb(pitch_color))
+    databallpy_events = get_databallpy_events(game.event_data).set_axis(
+        game.event_data["event_id"]
+    )
 
     # Generate movie with variable info
     with writer.saving(fig, video_loc, dpi=300):
@@ -697,7 +704,10 @@ def save_tracking_video(
                     ax, column_id, idx, game, variable_fig_objs
                 )
 
-            if len(events) > 0 and td.loc[idx, "databallpy_event"] in events:
+            if (
+                len(events) > 0
+                and databallpy_events.get(td.loc[idx, "event_id"]) in events
+            ):
                 variable_fig_objs, ax = _plot_events(
                     ax, td, idx, game, variable_fig_objs, contrasting_color
                 )
@@ -990,7 +1000,11 @@ def _plot_events(
         game.event_data[game.event_data["event_id"] == td.loc[idx, "event_id"]].iloc[0].T
     )
     player_name = event["player_name"]
-    event_name = event["databallpy_event"]
+    event_name = (
+        event["action_type"]
+        if not pd.isna(event.get("action_type"))
+        else event.get("databallpy_event")
+    )
     text = f"{event_name}: {player_name}"
     if len(text) > 30:
         target = len(text) // 2  # roughly the middle

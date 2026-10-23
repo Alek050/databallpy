@@ -51,7 +51,7 @@ from databallpy.utils.align_player_ids import (
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
-from databallpy.utils.utils import resolve_cache_dir
+from databallpy.utils.utils import get_databallpy_events, resolve_cache_dir
 
 if TYPE_CHECKING:
     from kloppy.domain import EventDataset, TrackingDataset
@@ -1013,6 +1013,7 @@ def get_game_from_kloppy(
         else float(event_dataset.metadata.pitch_dimensions.pitch_width),
     )
 
+    databallpy_events = get_databallpy_events(event_data)
     home_players, away_players = players_from_kloppy(
         event_dataset if uses_event_data else tracking_dataset
     )
@@ -1065,13 +1066,13 @@ def get_game_from_kloppy(
         away_formation=None,
         away_score=away_score,
         country=None,
-        shot_events=event_data[event_data["databallpy_event"] == "shot"]
+        shot_events=event_data[databallpy_events == "shot"]
         if uses_event_data
         else pd.DataFrame(),
-        dribble_events=event_data[event_data["databallpy_event"] == "dribble"]
+        dribble_events=event_data[databallpy_events == "dribble"]
         if uses_event_data
         else pd.DataFrame(),
-        pass_events=event_data[event_data["databallpy_event"] == "pass"]
+        pass_events=event_data[databallpy_events == "pass"]
         if uses_event_data
         else pd.DataFrame(),
         allow_synchronise_tracking_and_event_data=True

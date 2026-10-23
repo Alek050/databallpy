@@ -70,6 +70,22 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             ]
         )
         self.game_to_sync.event_data.loc[8, "databallpy_event"] = "shot"
+        self.game_to_sync.event_data.loc[8, "action_type"] = "shot"
+        self.expected_action_types = [
+            None,
+            "pass",
+            None,
+            "pass",
+            None,
+            None,
+            None,
+            None,
+            "take_on",
+            None,
+            None,
+            "shot",
+            None,
+        ]
         self.event_3_team_side = "home"
         self.event_3_jersey = 2
 
@@ -132,6 +148,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             "shot",
             None,
         ]
+        expected_tracking_data["action_type"] = self.expected_action_types
         expected_tracking_data["event_id"] = [
             MISSING_INT,
             3,
@@ -268,6 +285,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             "shot",
             None,
         ]
+        expected_tracking_data["action_type"] = self.expected_action_types
         expected_tracking_data["event_id"] = [
             MISSING_INT,
             3,
