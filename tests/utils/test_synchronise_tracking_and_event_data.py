@@ -32,6 +32,7 @@ from tests.expected_outcomes import (
     RES_SIM_MAT_MISSING_PLAYER,
     RES_SIM_MAT_NO_PLAYER,
 )
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestSynchroniseTrackingAndEventData(unittest.TestCase):
@@ -187,9 +188,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         game_to_sync = self.game_to_sync.copy()
 
         game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
-        pd.testing.assert_frame_equal(game_to_sync.tracking_data, expected_tracking_data)
+        assert_frame_equal(game_to_sync.tracking_data, expected_tracking_data)
 
-        pd.testing.assert_frame_equal(game_to_sync.event_data, expected_event_data)
+        assert_frame_equal(game_to_sync.event_data, expected_event_data)
 
         game_to_sync = self.game_to_sync.copy()
         game_to_sync.tracking_data.loc[:, "ball_status"] = "dead"
@@ -328,9 +329,9 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
 
-        pd.testing.assert_frame_equal(game_to_sync.tracking_data, expected_tracking_data)
+        assert_frame_equal(game_to_sync.tracking_data, expected_tracking_data)
 
-        pd.testing.assert_frame_equal(game_to_sync.event_data, expected_event_data)
+        assert_frame_equal(game_to_sync.event_data, expected_event_data)
 
     def test_needleman_wunsch(self):
         sim_list = [
@@ -558,7 +559,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             frame_rate=25,
             pitch_dimensions=(106, 68),
         )
-        pd.testing.assert_frame_equal(res_tracking_data, expected_td)
+        assert_frame_equal(res_tracking_data, expected_td)
 
     def test_create_smart_batches(self):
         tracking_data = pd.DataFrame(
@@ -601,7 +602,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         res_event_data = align_event_data_datetime(
             event_data.copy(), tracking_data, offset=1.0
         )
-        pd.testing.assert_frame_equal(res_event_data, expected_event_data)
+        assert_frame_equal(res_event_data, expected_event_data)
 
         ed_no_tz = event_data.copy()
         ed_no_tz["datetime"] = ed_no_tz["datetime"].dt.tz_convert(None)
@@ -613,7 +614,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             ed_no_tz.copy(), tracking_data, offset=1.0
         )
         assert res_event_data["datetime"].dt.tz == tracking_data["datetime"].dt.tz
-        pd.testing.assert_frame_equal(res_event_data, expected_event_data)
+        assert_frame_equal(res_event_data, expected_event_data)
 
         # td not tz aware
         res_event_data = align_event_data_datetime(
@@ -623,7 +624,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_event_data["datetime"] = expected_event_data["datetime"].dt.tz_convert(
             None
         )
-        pd.testing.assert_frame_equal(res_event_data, expected_event_data)
+        assert_frame_equal(res_event_data, expected_event_data)
 
     def test_get_time_difference_cost(self):
         tracking_data = self.game_to_sync.tracking_data.copy()

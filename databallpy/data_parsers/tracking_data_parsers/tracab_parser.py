@@ -200,8 +200,12 @@ def _get_tracking_data_xml(
             "end_datetime_td": ["NaT"] * 5,
         }
     )
-    frames_df["start_datetime_td"] = pd.to_datetime(frames_df["start_datetime_td"])
-    frames_df["end_datetime_td"] = pd.to_datetime(frames_df["end_datetime_td"])
+    frames_df["start_datetime_td"] = pd.to_datetime(
+        frames_df["start_datetime_td"]
+    ).dt.as_unit("ns")
+    frames_df["end_datetime_td"] = pd.to_datetime(
+        frames_df["end_datetime_td"]
+    ).dt.as_unit("ns")
 
     context = ET.iterparse(tracab_loc, events=("start", "end"))
     event, _ = next(context)

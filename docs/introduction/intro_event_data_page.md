@@ -53,7 +53,7 @@ game = get_open_game(provider="metrica")
 actions = game.to_spadl(playing_direction="home_oriented", coordinate_system="spadl")
 ```
 
-The output has the same columns and ids as socceraction, and the conversion follows the same rules: clearances end where the next action starts, and dribbles are added between consecutive actions of the same team when the ball moved without an event in between. The `type_id`, `result_id` and `bodypart_id` columns map to the names in `databallpy.utils.constants.SPADL_ACTION_TYPES`, `SPADL_RESULTS` and `SPADL_BODYPARTS`. The `original_event_id` and `event_id` columns link each action to the event data, they are empty for the added dribbles.
+The output has the same columns and ids as socceraction, and the conversion follows the same rules: clearances end where the next action starts, and dribbles are added between consecutive actions of the same team when the ball moved without an event in between. The `type_id`, `result_id` and `bodypart_id` columns map to the names in `databallpy.utils.constants.SPADL_ACTION_TYPES`, `SPADL_RESULTS` and `SPADL_BODYPARTS`, which are also given in the `type_name`, `result_name` and `bodypart_name` columns. The `original_event_id` and `event_id` columns link each action to the event data, they are empty for the added dribbles.
 
 The `playing_direction` sets which team plays from left to right:
 - `home_oriented` (default): the home team.
@@ -77,7 +77,7 @@ The mapping to SPADL follows socceraction as closely as possible, but the native
 actions = game.to_atomic_spadl(playing_direction="home_oriented", coordinate_system="spadl")
 ```
 
-The `playing_direction` and `coordinate_system` options are the same as for `to_spadl`, in the `databallpy` coordinate system only `x` and `y` are moved to the centre spot. The `type_id` maps to the names in `databallpy.utils.constants.ATOMIC_SPADL_ACTION_TYPES`, the `bodypart_id` to `SPADL_BODYPARTS`.
+The `playing_direction` and `coordinate_system` options are the same as for `to_spadl`, in the `databallpy` coordinate system only `x` and `y` are moved to the centre spot. The `type_id` maps to the names in `databallpy.utils.constants.ATOMIC_SPADL_ACTION_TYPES`, the `bodypart_id` to `SPADL_BODYPARTS`, which are also given in the `type_name` and `bodypart_name` columns. Atomic-SPADL has no result, so there is no `result_name` column.
 
 The conversion follows `socceraction.atomic.spadl.convert_to_atomic`, including the extra dribbles after a receival or interception when the ball moved before the next action, with a few fixes:
 - There is a single `interception` type, socceraction has two with a different id.

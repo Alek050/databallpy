@@ -3,6 +3,7 @@ import unittest
 import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers.utils import _add_card_results
+from tests.pandas_testing import to_list
 
 
 class TestAddCardResults(unittest.TestCase):
@@ -55,6 +56,6 @@ class TestAddCardResults(unittest.TestCase):
         # the card, cards long after the foul, without a foul or before the foul
         # are ignored
         self.assertListEqual(
-            res["action_result"].tolist(),
+            to_list(res["action_result"]),
             ["fail", "yellow_card", None, "fail", None, "success", None, "fail", None],
         )

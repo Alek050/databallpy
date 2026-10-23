@@ -568,8 +568,8 @@ def create_smart_batches(tracking_data: pd.DataFrame) -> list[pd.Timestamp]:
     last_end_dt = None
     end_datetimes = []
     for start_idx, end_idx in zip(start_alive_idxs, end_alive_idxs):
-        start_dt = tracking_data.loc[start_idx]["datetime"]
-        end_dt = tracking_data.loc[end_idx,]["datetime"]
+        start_dt = tracking_data.loc[start_idx, "datetime"]
+        end_dt = tracking_data.loc[end_idx, "datetime"]
 
         if last_end_dt is not None:
             difference = start_dt - last_end_dt

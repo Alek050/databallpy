@@ -20,7 +20,6 @@ from databallpy.events.spadl import (
 from databallpy.schemas.spadl import AtomicSPADLSchema
 from databallpy.utils.constants import (
     ATOMIC_SPADL_ACTION_TYPES,
-    SPADL_ACTION_TYPES,
     SPADL_BODYPARTS,
     SPADL_FIELD_LENGTH,
     SPADL_FIELD_WIDTH,
@@ -42,6 +41,8 @@ ATOMIC_SPADL_ACTION_COLUMNS = [
     "dy",
     "type_id",
     "bodypart_id",
+    "type_name",
+    "bodypart_name",
 ]
 
 PASS_LIKE_TYPES = [
@@ -106,7 +107,6 @@ def event_data_to_atomic_spadl(
     """
     playing_direction = _check_spadl_options(playing_direction, coordinate_system)
     actions = _get_home_oriented_spadl_actions(event_data, pitch_dimensions, game_id)
-    actions["type_name"] = actions["type_id"].map(dict(enumerate(SPADL_ACTION_TYPES)))
 
     actions = _add_from_passes(actions)
     actions = _add_dribbles_after_receivals(actions)
@@ -240,7 +240,7 @@ def _add_from_cards(actions: pd.DataFrame) -> pd.DataFrame:
 
 def _to_atomic_columns(actions: pd.DataFrame) -> pd.DataFrame:
     """Function to convert the start and end locations to a location and
-    displacement and to set the Atomic-SPADL type_id."""
+    displacement and to set the Atomic-SPADL type_id and names."""
     type_names = actions["type_name"].replace(SIMPLIFIED_TYPES)
     return actions.assign(
         x=actions["start_x"],
@@ -248,6 +248,8 @@ def _to_atomic_columns(actions: pd.DataFrame) -> pd.DataFrame:
         dx=actions["end_x"] - actions["start_x"],
         dy=actions["end_y"] - actions["start_y"],
         type_id=type_names.map(ATOMIC_SPADL_ACTION_TYPES.index),
+        type_name=type_names,
+        bodypart_name=actions["bodypart_id"].map(dict(enumerate(SPADL_BODYPARTS))),
     )[ATOMIC_SPADL_ACTION_COLUMNS]
 
 

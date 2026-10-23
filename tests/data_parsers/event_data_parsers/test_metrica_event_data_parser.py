@@ -23,6 +23,7 @@ from tests.expected_outcomes import (
     SHOT_INSTANCES_METRICA,
 )
 from tests.mocks import ED_METRICA_RAW, MD_METRICA_RAW
+from tests.pandas_testing import assert_frame_equal
 
 ED_METRICA = pd.DataFrame(ED_METRICA.copy())
 
@@ -35,7 +36,7 @@ class TestMetricaEventDataParser(unittest.TestCase):
     def test_load_metrica_event_data(self):
         ed, md, dbpe = load_metrica_event_data(self.ed_loc, self.md_loc)
         assert md == MD_METRICA_ED
-        pd.testing.assert_frame_equal(ed, ED_METRICA)
+        assert_frame_equal(ed, ED_METRICA)
         assert dbpe["shot_events"] == SHOT_INSTANCES_METRICA
         assert dbpe["pass_events"] == PASS_INSTANCES_METRICA
         assert dbpe["dribble_events"] == DRIBBLE_INSTANCES_METRICA
@@ -58,7 +59,7 @@ class TestMetricaEventDataParser(unittest.TestCase):
 
         expected_event_data.drop(["datetime"], axis=1, inplace=True)
         ed, cards = _get_event_data(self.ed_loc)
-        pd.testing.assert_frame_equal(ed, expected_event_data)
+        assert_frame_equal(ed, expected_event_data)
         assert cards == {}
 
     def test_get_event_data_take_on(self):
@@ -100,7 +101,7 @@ class TestMetricaEventDataParser(unittest.TestCase):
     def test_load_open_metrica_event_data(self, _):
         ed, md, dbpe = load_metrica_open_event_data()
         assert md == MD_METRICA_ED
-        pd.testing.assert_frame_equal(ed, ED_METRICA)
+        assert_frame_equal(ed, ED_METRICA)
         assert dbpe["shot_events"] == SHOT_INSTANCES_METRICA
         assert dbpe["pass_events"] == PASS_INSTANCES_METRICA
         assert dbpe["dribble_events"] == DRIBBLE_INSTANCES_METRICA

@@ -178,6 +178,15 @@ ED_OPTA = EventData(
             "shot",
             "shot",
         ],
+        "action_type": [None] * 3
+        + ["pass", "pass", None, None, "take_on", "tackle"]
+        + ["bad_touch", "bad_touch", "shot"],
+        "action_result": [None] * 3
+        + ["success", "fail", None, None, "fail", "success"]
+        + ["owngoal", "owngoal", "fail"],
+        "action_bodypart": [None] * 3
+        + ["foot", "foot", None, None, "foot", "foot"]
+        + ["head", "head", "head"],
         "period_id": [-1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1],
         "minutes": [0, 0, 0, 0, 0, 0, 30, 30, 31, 9, 9, 9],
         "seconds": [0.0, 0.0, 0.0, 1.0, 4.0, 6.0, 9.0, 10.0, 10.0, 17.0, 17.0, 17.0],
@@ -332,15 +341,6 @@ ED_OPTA = EventData(
         ],
         "event_type_id": [34, 32, 32, 1, 1, 100, 43, 3, 7, 16, 16, 15],
         # event 10 is an own goal in spadl since it has the opta own goal qualifier 28
-        "action_type": [None] * 3
-        + ["pass", "pass", None, None, "take_on", "tackle"]
-        + ["bad_touch", "bad_touch", "shot"],
-        "action_result": [None] * 3
-        + ["success", "fail", None, None, "fail", "success"]
-        + ["owngoal", "owngoal", "fail"],
-        "action_bodypart": [None] * 3
-        + ["foot", "foot", None, None, "foot", "foot"]
-        + ["head", "head", "head"],
     },
     provider="opta",
 )
@@ -802,6 +802,27 @@ ED_METRICA = EventData(
             "tackle",
             None,
         ],
+        "action_type": [
+            None,
+            "pass",
+            "dribble",
+            "shot",
+            "shot",
+            "shot",
+            "tackle",
+            "foul",
+        ],
+        "action_result": [
+            None,
+            "success",
+            "success",
+            "fail",
+            "success",
+            "success",
+            "fail",
+            "fail",
+        ],
+        "action_bodypart": [None] + ["foot"] * 7,
         "period_id": [1, 1, 2, 2, 2, 2, 2, 2],
         "minutes": [0, 1, 1, 1, 1, 1, 1, 1],
         "seconds": [14.44, 4.22, 15.08, 16.08, 16.08, 16.08, 20.00, 20.00],
@@ -864,27 +885,6 @@ ED_METRICA = EventData(
             9,
         ],
         "td_frame": [1, 3, 5, 7, 7, 7, 10, 10],
-        "action_type": [
-            None,
-            "pass",
-            "dribble",
-            "shot",
-            "shot",
-            "shot",
-            "tackle",
-            "foul",
-        ],
-        "action_result": [
-            None,
-            "success",
-            "success",
-            "fail",
-            "success",
-            "success",
-            "fail",
-            "fail",
-        ],
-        "action_bodypart": [None] + ["foot"] * 7,
         "datetime": [
             pd.to_datetime("2019-02-21T03:30:07.000", utc=True),
             pd.to_datetime("2019-02-21T03:30:08.000", utc=True),
@@ -1312,6 +1312,9 @@ ED_INSTAT = EventData(
     {
         "event_id": [6, 7, 8, 9],
         "databallpy_event": ["pass", "pass", None, None],
+        "action_type": [None] * 4,
+        "action_result": [None] * 4,
+        "action_bodypart": [None] * 4,
         "period_id": [1, 1, 1, 1],
         "minutes": [0, 0, 0, 0],
         "seconds": [5.37, 20.93, 23.64, 28.64],
@@ -1337,9 +1340,6 @@ ED_INSTAT = EventData(
         ],
         "event_type_id": [1012, 1011, 2010, 2011],
         "player_name": ["Player 2", "Player 1", "Player 11", None],
-        "action_type": [None] * 4,
-        "action_result": [None] * 4,
-        "action_bodypart": [None] * 4,
     },
     provider="instat",
 )
@@ -1477,6 +1477,45 @@ ED_SCISPORTS = EventData(
             None,
             "tackle",
             "tackle",
+        ],
+        "action_type": [None] * 5
+        + [
+            "pass",
+            "dribble",
+            "cross",
+            None,
+            "pass",
+            "shot",
+            "shot_penalty",
+            None,
+            "tackle",
+            "foul",
+        ],
+        "action_result": [None] * 5
+        + [
+            "success",
+            "success",
+            "fail",
+            None,
+            "success",
+            "fail",
+            "success",
+            None,
+            "success",
+            "fail",
+        ],
+        "action_bodypart": [None] * 5
+        + [
+            "foot",
+            "foot",
+            "foot",
+            None,
+            "foot",
+            "foot_right",
+            "foot_left",
+            None,
+            "foot",
+            "foot",
         ],
         "period_id": [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2],
         "minutes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 45, 45, 45, 45, 45],
@@ -1617,45 +1656,6 @@ ED_SCISPORTS = EventData(
             "defensive_duel",
             "foul",
         ],
-        "action_type": [None] * 5
-        + [
-            "pass",
-            "dribble",
-            "cross",
-            None,
-            "pass",
-            "shot",
-            "shot_penalty",
-            None,
-            "tackle",
-            "foul",
-        ],
-        "action_result": [None] * 5
-        + [
-            "success",
-            "success",
-            "fail",
-            None,
-            "success",
-            "fail",
-            "success",
-            None,
-            "success",
-            "fail",
-        ],
-        "action_bodypart": [None] * 5
-        + [
-            "foot",
-            "foot",
-            "foot",
-            None,
-            "foot",
-            "foot_right",
-            "foot_left",
-            None,
-            "foot",
-            "foot",
-        ],
     },
     provider="scisports",
 )
@@ -1753,6 +1753,9 @@ SPORTEC_EVENT_DATA = EventData(
     {
         "event_id": [0, 1, 2, 3, 4, 5],
         "databallpy_event": ["pass", "shot", "pass", None, "dribble", None],
+        "action_type": ["pass", "shot", "pass", None, "take_on", None],
+        "action_result": ["success", "fail", "success", None, "success", None],
+        "action_bodypart": ["foot", "head", "foot", None, "foot", None],
         "period_id": [1, 1, 2, 2, 2, 2],
         "minutes": [0, 6, 45, 72, 83, 84],
         "seconds": [0, 24.2, 0, 26.5, 19.6, 9.5],
@@ -1789,9 +1792,6 @@ SPORTEC_EVENT_DATA = EventData(
             "dribbledAround",
             "OtherBallAction",
         ],
-        "action_type": ["pass", "shot", "pass", None, "take_on", None],
-        "action_result": ["success", "fail", "success", None, "success", None],
-        "action_bodypart": ["foot", "head", "foot", None, "foot", None],
     },
     provider="sportec",
 )
@@ -2035,6 +2035,15 @@ ED_STATSBOMB = EventData(
     {
         "event_id": [0, 1, 2, 3, 4],
         "databallpy_event": ["pass", None, "shot", "dribble", "pass"],
+        "action_type": [
+            "corner_crossed",
+            "dribble",
+            "shot",
+            "take_on",
+            "corner_crossed",
+        ],
+        "action_result": ["fail", "success", "fail", "fail", "fail"],
+        "action_bodypart": ["foot_left", "foot", "foot_left", "foot", "foot_left"],
         "period_id": [1, 1, 1, 1, 1],
         "minutes": [0, 0, 5, 7, 0],
         "seconds": [11.63, 45.652, 39.641, 7.446, 11.63],
@@ -2082,15 +2091,6 @@ ED_STATSBOMB = EventData(
             "Deportivo Alavés",
             "Deportivo Alavés",
         ],
-        "action_type": [
-            "corner_crossed",
-            "dribble",
-            "shot",
-            "take_on",
-            "corner_crossed",
-        ],
-        "action_result": ["fail", "success", "fail", "fail", "fail"],
-        "action_bodypart": ["foot_left", "foot", "foot_left", "foot", "foot_left"],
     },
     provider="statsbomb",
 )

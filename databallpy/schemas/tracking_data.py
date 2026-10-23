@@ -865,6 +865,14 @@ class TrackingData(pd.DataFrame):
                 "Or install databallpy using `pip install 'databallpy[accessible-space]'`"
             )
 
+        if int(pd.__version__.split(".")[0]) >= 3:
+            warnings.warn(
+                message="With pandas >= 3, accessible-space silently ignores offside "
+                "players, so the dangerous accessible space values can be wrong. Use "
+                "pandas < 3 for reliable results until this is fixed in accessible-space.",
+                category=DataBallPyWarning,
+            )
+
         mask = pd.Series(True, index=self.index) if mask is None else mask
 
         col_ids = [
@@ -892,6 +900,11 @@ class TrackingData(pd.DataFrame):
             frame_columns=["period_id", "player_possession", "team_in_possession"],
         )
         td_long["team"] = td_long["column_id"].str[:4]
+
+        # accessible_space indexes these columns as numpy arrays, which pandas 3
+        # string arrays do not support
+        text_cols = ["column_id", "team", "player_possession", "team_in_possession"]
+        td_long[text_cols] = td_long[text_cols].astype(object)
 
         res = accessible_space.interface.get_dangerous_accessible_space(
             td_long,

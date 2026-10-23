@@ -29,6 +29,7 @@ from tests.expected_outcomes import (
     PASS_INSTANCES_STATSBOMB,
     SHOT_INSTANCES_STATSBOMB,
 )
+from tests.pandas_testing import assert_frame_equal, to_list
 
 ED_STATSBOMB = pd.DataFrame(ED_STATSBOMB.copy())
 
@@ -87,7 +88,7 @@ class TestStatsbombParser(unittest.TestCase):
         with open(self.lineup_loc, "r", encoding="utf-8") as f:
             input = json.load(f)[0]["lineup"]
         result = _get_player_info(input)
-        pd.testing.assert_frame_equal(expected_outcome, result)
+        assert_frame_equal(expected_outcome, result)
 
     def test_load_event_data(self):
         expected_outcome_event_data = ED_STATSBOMB.copy()
@@ -119,9 +120,7 @@ class TestStatsbombParser(unittest.TestCase):
             assert key in DRIBBLE_INSTANCES_STATSBOMB.keys()
             assert event == DRIBBLE_INSTANCES_STATSBOMB[key]
 
-        pd.testing.assert_frame_equal(
-            outcome_event_data, expected_outcome_event_data, rtol=1e-3
-        )
+        assert_frame_equal(outcome_event_data, expected_outcome_event_data, rtol=1e-3)
         assert outcome_metadata == expected_outcome_metadata
 
     def test_load_statsbomb_event_data(self):
@@ -152,9 +151,7 @@ class TestStatsbombParser(unittest.TestCase):
             assert key in DRIBBLE_INSTANCES_STATSBOMB.keys()
             assert event == DRIBBLE_INSTANCES_STATSBOMB[key]
 
-        pd.testing.assert_frame_equal(
-            expected_outcome_event_data, outcome_event_data, rtol=1e-3
-        )
+        assert_frame_equal(expected_outcome_event_data, outcome_event_data, rtol=1e-3)
         assert expected_outcome_metadata == outcome_metadata
 
     def test_get_close_to_ball_event_info(self):
@@ -524,9 +521,9 @@ class TestStatsbombSpadl(unittest.TestCase):
         self.assertListEqual(event_data["event_id"].tolist(), list(range(7)))
         interception, intercepting_pass = event_data.iloc[0], event_data.iloc[1]
         self.assertEqual(interception["original_event"], "interception")
-        self.assertIsNone(interception["databallpy_event"])
+        self.assertTrue(pd.isna(interception["databallpy_event"]))
         self.assertEqual(
-            interception[["action_type", "action_result", "action_bodypart"]].tolist(),
+            to_list(interception[["action_type", "action_result", "action_bodypart"]]),
             ["interception", "success", "foot"],
         )
         self.assertTrue(pd.isna(interception["end_x"]))

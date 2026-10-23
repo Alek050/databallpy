@@ -8,6 +8,7 @@ import pandas as pd
 from databallpy.utils.utils import (
     MISSING_INT,
     _copy_value_,
+    _normalise_datetime_units,
     _to_float,
     _to_int,
     _values_are_equal_,
@@ -15,6 +16,7 @@ from databallpy.utils.utils import (
     resolve_cache_dir,
     sigmoid,
 )
+from tests.pandas_testing import assert_frame_equal, assert_series_equal
 
 
 class TestUtils(unittest.TestCase):
@@ -44,10 +46,10 @@ class TestUtils(unittest.TestCase):
         frame = tracking_data.iloc[0]
         res1 = get_next_possession_frame(tracking_data, frame, "home_2")
 
-        pd.testing.assert_series_equal(res1, tracking_data.iloc[2])
+        assert_series_equal(res1, tracking_data.iloc[2])
 
         res2 = get_next_possession_frame(tracking_data, frame, "home_1")
-        pd.testing.assert_series_equal(res2, tracking_data.iloc[3])
+        assert_series_equal(res2, tracking_data.iloc[3])
 
         frame = tracking_data.iloc[4]
         tracking_data["ball_status"] = [
@@ -59,7 +61,7 @@ class TestUtils(unittest.TestCase):
             "dead",
         ]
         res3 = get_next_possession_frame(tracking_data, frame, "home_2")
-        pd.testing.assert_series_equal(res3, tracking_data.iloc[5])
+        assert_series_equal(res3, tracking_data.iloc[5])
 
         tracking_data["ball_status"] = [
             "dead",
@@ -70,7 +72,7 @@ class TestUtils(unittest.TestCase):
             "alive",
         ]
         res4 = get_next_possession_frame(tracking_data, frame, "home_2")
-        pd.testing.assert_series_equal(res4, tracking_data.iloc[5])
+        assert_series_equal(res4, tracking_data.iloc[5])
 
     def test_sigmoid(self):
         # Test with default parameters
@@ -223,6 +225,24 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             _values_are_equal_(CustomType(1), CustomType(1))
 
+    def test_normalise_datetime_units(self):
+        df = pd.DataFrame(
+            {
+                "datetime": pd.to_datetime(["2023-01-01 20:00:00"], utc=True).as_unit(
+                    "us"
+                ),
+                "naive": pd.to_datetime(["2023-01-01"]).as_unit("s"),
+                "value": [1.0],
+            }
+        )
+        _normalise_datetime_units(df)
+        self.assertEqual(str(df["datetime"].dtype), "datetime64[ns, UTC]")
+        self.assertEqual(str(df["naive"].dtype), "datetime64[ns]")
+        self.assertEqual(df["value"].dtype, np.float64)
+        self.assertEqual(
+            df["datetime"].iloc[0], pd.Timestamp("2023-01-01 20:00", tz="UTC")
+        )
+
     def test_copy_value(self):
         self.assertEqual(_copy_value_(1.23), 1.23)
         self.assertEqual(_copy_value_(123), 123)
@@ -252,12 +272,12 @@ class TestUtils(unittest.TestCase):
 
         original = pd.Series([1, 2, 3])
         copied = _copy_value_(original)
-        pd.testing.assert_series_equal(copied, original)
+        assert_series_equal(copied, original)
         self.assertIsNot(copied, original)
 
         original = pd.DataFrame({"a": [1, 2, 3]})
         copied = _copy_value_(original)
-        pd.testing.assert_frame_equal(copied, original)
+        assert_frame_equal(copied, original)
         self.assertIsNot(copied, original)
 
         # known classes

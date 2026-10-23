@@ -10,6 +10,7 @@ from databallpy.utils.constants import ATOMIC_SPADL_ACTION_TYPES
 from databallpy.utils.get_game import get_game
 from databallpy.utils.warnings import DataBallPyWarning
 from tests.events.test_spadl import PITCH_DIMENSIONS, _get_event_data
+from tests.pandas_testing import assert_frame_equal
 
 
 def _type_names(actions: pd.DataFrame) -> list[str]:
@@ -58,10 +59,21 @@ class TestToAtomicSpadl(unittest.TestCase):
 
     def test_to_atomic_spadl_spadl_coordinates(self):
         res = self._to_atomic(game_id=99, coordinate_system="spadl")
+        names = [
+            "pass",
+            "receival",
+            "dribble",
+            "pass",
+            "interception",
+            "clearance",
+            "shot",
+        ]
         expected = pd.DataFrame(
             {
                 "game_id": [99] * 7,
-                "original_event_id": ["a", "a", None, "b", "b", "d", "f"],
+                "original_event_id": pd.Series(
+                    ["a", "a", None, "b", "b", "d", "f"], dtype=object
+                ),
                 "event_id": pd.array([0, 0, pd.NA, 1, 1, 3, 5], dtype="Int64"),
                 "action_id": [0, 1, 2, 3, 4, 5, 6],
                 "period_id": [1, 1, 1, 1, 1, 1, 2],
@@ -72,19 +84,10 @@ class TestToAtomicSpadl(unittest.TestCase):
                 "y": [34.0, 34.0, 34.0, 34.0, 47.6, 47.6, 34.0],
                 "dx": [10.5, 0.0, 10.5, 10.5, 0.0, 73.5, 10.5],
                 "dy": [0.0, 0.0, 0.0, 13.6, 0.0, -13.6, 0.0],
-                "type_id": [
-                    ATOMIC_SPADL_ACTION_TYPES.index(name)
-                    for name in [
-                        "pass",
-                        "receival",
-                        "dribble",
-                        "pass",
-                        "interception",
-                        "clearance",
-                        "shot",
-                    ]
-                ],
+                "type_id": [ATOMIC_SPADL_ACTION_TYPES.index(name) for name in names],
                 "bodypart_id": [0, 0, 0, 4, 0, 1, 1],
+                "type_name": names,
+                "bodypart_name": ["foot"] * 3 + ["foot_left", "foot", "head", "head"],
             }
         )
         expected[["game_id", "original_event_id", "team_id", "player_id"]] = expected[
@@ -92,7 +95,7 @@ class TestToAtomicSpadl(unittest.TestCase):
         ].astype(object)
 
         self.assertListEqual(list(res.columns), ATOMIC_SPADL_ACTION_COLUMNS)
-        pd.testing.assert_frame_equal(res, expected, check_dtype=False)
+        assert_frame_equal(res, expected, check_dtype=False)
 
     def test_to_atomic_spadl_databallpy_coordinates(self):
         res = self._to_atomic()
@@ -114,7 +117,7 @@ class TestToAtomicSpadl(unittest.TestCase):
                 res = self._to_atomic(playing_direction=direction)
                 expected = home[cols].copy()
                 expected.loc[to_flip] *= -1
-                pd.testing.assert_frame_equal(res[cols], expected)
+                assert_frame_equal(res[cols], expected)
 
         with self.subTest(direction="away_oriented, spadl coordinates"):
             home = self._to_atomic(coordinate_system="spadl")
@@ -129,7 +132,7 @@ class TestToAtomicSpadl(unittest.TestCase):
     def test_to_atomic_spadl_team_oriented_deprecated(self):
         with self.assertWarns(DataBallPyWarning):
             res = self._to_atomic(playing_direction="team_oriented")
-        pd.testing.assert_frame_equal(res, self._to_atomic())
+        assert_frame_equal(res, self._to_atomic())
 
     def test_to_atomic_spadl_wrong_input(self):
         with self.assertRaises(ValueError):

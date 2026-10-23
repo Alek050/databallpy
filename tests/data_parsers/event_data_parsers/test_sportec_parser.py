@@ -27,6 +27,7 @@ from tests.expected_outcomes import (
     SPORTEC_EVENT_DATA,
     SPORTEC_METADATA_ED,
 )
+from tests.pandas_testing import assert_frame_equal
 
 SPORTEC_EVENT_DATA = pd.DataFrame(SPORTEC_EVENT_DATA.drop(columns=["team_name"]).copy())
 
@@ -58,7 +59,7 @@ class TestSportecParser(unittest.TestCase):
 
         exp_metadata = self.expected_md.copy()
 
-        pd.testing.assert_frame_equal(res_ed, self.expected_ed)
+        assert_frame_equal(res_ed, self.expected_ed)
         self.assertEqual(res_md, exp_metadata)
         for key in self.dbp_events.keys():
             self.assertDictEqual(res_dbp_events[key], self.dbp_events[key])
@@ -67,7 +68,7 @@ class TestSportecParser(unittest.TestCase):
         res_ed, res_dbp_events = _get_sportec_event_data(
             self.ed_loc, self.expected_md.copy()
         )
-        pd.testing.assert_frame_equal(res_ed, self.expected_ed)
+        assert_frame_equal(res_ed, self.expected_ed)
         for key in self.dbp_events.keys():
             self.assertDictEqual(res_dbp_events[key], self.dbp_events[key])
 
@@ -242,7 +243,7 @@ class TestSportecParser(unittest.TestCase):
         )
 
         # Verify the return value
-        pd.testing.assert_frame_equal(result[0], pd.DataFrame())
+        assert_frame_equal(result[0], pd.DataFrame())
         self.assertEqual(result[1], "mock_metadata")
         self.assertDictEqual(result[2], {"mock_key": {"mock_subkey": "mock_value"}})
 

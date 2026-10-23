@@ -6,6 +6,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _normalize_playing_direction_tracking,
 )
 from databallpy.utils.utils import MISSING_INT
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestNormalizePlayingDirection(unittest.TestCase):
@@ -55,5 +56,5 @@ class TestNormalizePlayingDirection(unittest.TestCase):
             self.td, self.periods
         )
 
-        pd.testing.assert_frame_equal(res_td, expected)
+        assert_frame_equal(res_td, expected)
         assert res_periods == [2]

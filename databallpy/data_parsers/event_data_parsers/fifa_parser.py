@@ -158,7 +158,7 @@ def load_fifa_event_data(
         event_data["player_id"]
     )
 
-    event_data.insert(6, "player_name", None)
+    event_data.insert(event_data.columns.get_loc("player_id") + 1, "player_name", None)
     event_data.loc[home_mask, "player_name"] = event_data.loc[
         home_mask, "player_id"
     ].map(home_players)

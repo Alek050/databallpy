@@ -14,6 +14,7 @@ from databallpy.schemas import EventData
 from databallpy.utils.constants import MISSING_INT, SPADL_ACTION_TYPES
 from databallpy.utils.get_game import get_game
 from databallpy.utils.warnings import DataBallPyWarning
+from tests.pandas_testing import assert_frame_equal
 
 PITCH_DIMENSIONS = [100.0, 50.0]
 
@@ -54,7 +55,7 @@ class TestToSpadl(unittest.TestCase):
         expected = pd.DataFrame(
             {
                 "game_id": [99] * 5,
-                "original_event_id": ["a", None, "b", "d", "f"],
+                "original_event_id": pd.Series(["a", None, "b", "d", "f"], dtype=object),
                 "event_id": pd.array([0, pd.NA, 1, 3, 5], dtype="Int64"),
                 "action_id": [0, 1, 2, 3, 4],
                 "period_id": [1, 1, 1, 1, 2],
@@ -69,6 +70,9 @@ class TestToSpadl(unittest.TestCase):
                 "type_id": [0, 21, 0, 18, 11],
                 "result_id": [1, 1, 1, 1, 0],
                 "bodypart_id": [0, 0, 4, 1, 1],
+                "type_name": ["pass", "dribble", "pass", "clearance", "shot"],
+                "result_name": ["success"] * 4 + ["fail"],
+                "bodypart_name": ["foot", "foot", "foot_left", "head", "head"],
             }
         )
         expected[["game_id", "original_event_id", "team_id", "player_id"]] = expected[
@@ -76,7 +80,7 @@ class TestToSpadl(unittest.TestCase):
         ].astype(object)
 
         self.assertListEqual(list(res.columns), SPADL_ACTION_COLUMNS)
-        pd.testing.assert_frame_equal(res, expected, check_dtype=False)
+        assert_frame_equal(res, expected, check_dtype=False)
 
     def test_to_spadl_databallpy_coordinates(self):
         res = self.event_data.to_spadl(home_team_id=1, pitch_dimensions=PITCH_DIMENSIONS)
@@ -89,7 +93,7 @@ class TestToSpadl(unittest.TestCase):
         np.testing.assert_allclose(res["end_x"], [10.0, 20.0, 30.0, 40.0, 50.0])
         np.testing.assert_allclose(res["end_y"], [0.0, 0.0, 10.0, 0.0, 0.0])
         cols = [c for c in SPADL_ACTION_COLUMNS if c[-2:] not in ("_x", "_y")]
-        pd.testing.assert_frame_equal(res[cols], spadl[cols])
+        assert_frame_equal(res[cols], spadl[cols])
         self.assertTrue(res["game_id"].isna().all())
 
     def test_to_spadl_playing_direction(self):
@@ -111,7 +115,7 @@ class TestToSpadl(unittest.TestCase):
                 )
                 expected = home[cols].copy()
                 expected.loc[to_flip] *= -1
-                pd.testing.assert_frame_equal(res[cols], expected)
+                assert_frame_equal(res[cols], expected)
 
     def test_to_spadl_team_oriented_deprecated(self):
         with self.assertWarns(DataBallPyWarning):
@@ -120,7 +124,7 @@ class TestToSpadl(unittest.TestCase):
                 pitch_dimensions=PITCH_DIMENSIONS,
                 playing_direction="team_oriented",
             )
-        pd.testing.assert_frame_equal(
+        assert_frame_equal(
             res,
             self.event_data.to_spadl(home_team_id=1, pitch_dimensions=PITCH_DIMENSIONS),
         )

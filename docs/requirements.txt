@@ -1,4 +1,6 @@
 databallpy[accessible-space,kloppy] @ git+https://github.com/Alek050/databallpy.git@develop
+# accessible-space ignores offside players with pandas >= 3
+pandas<3.0
 jupyter-book
 sphinx-togglebutton
 sphinx-copybutton

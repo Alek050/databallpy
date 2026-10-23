@@ -34,6 +34,9 @@ class SPADLSchema(pa.DataFrameModel):
     type_id: pa.typing.Series[int] = pa.Field(isin=list(range(len(SPADL_ACTION_TYPES))))
     result_id: pa.typing.Series[int] = pa.Field(isin=list(range(len(SPADL_RESULTS))))
     bodypart_id: pa.typing.Series[int] = pa.Field(isin=list(range(len(SPADL_BODYPARTS))))
+    type_name: pa.typing.Series[str] = pa.Field(isin=SPADL_ACTION_TYPES)
+    result_name: pa.typing.Series[str] = pa.Field(isin=SPADL_RESULTS)
+    bodypart_name: pa.typing.Series[str] = pa.Field(isin=SPADL_BODYPARTS)
 
     class Config:
         strict = True
@@ -60,6 +63,8 @@ class AtomicSPADLSchema(pa.DataFrameModel):
         isin=list(range(len(ATOMIC_SPADL_ACTION_TYPES)))
     )
     bodypart_id: pa.typing.Series[int] = pa.Field(isin=list(range(len(SPADL_BODYPARTS))))
+    type_name: pa.typing.Series[str] = pa.Field(isin=ATOMIC_SPADL_ACTION_TYPES)
+    bodypart_name: pa.typing.Series[str] = pa.Field(isin=SPADL_BODYPARTS)
 
     class Config:
         strict = True

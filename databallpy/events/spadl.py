@@ -39,6 +39,9 @@ SPADL_ACTION_COLUMNS = [
     "type_id",
     "result_id",
     "bodypart_id",
+    "type_name",
+    "result_name",
+    "bodypart_name",
 ]
 
 PLAYING_DIRECTIONS = [
@@ -130,7 +133,17 @@ def _get_home_oriented_spadl_actions(
     actions = _fix_interceptions(actions)
     actions["action_id"] = range(len(actions))
     actions = _add_dribbles(actions)
+    actions = _add_names(actions)
     return SPADLSchema.validate(actions[SPADL_ACTION_COLUMNS])
+
+
+def _add_names(actions: pd.DataFrame) -> pd.DataFrame:
+    """Function to add the type, result and bodypart names of the ids."""
+    return actions.assign(
+        type_name=actions["type_id"].map(dict(enumerate(SPADL_ACTION_TYPES))),
+        result_name=actions["result_id"].map(dict(enumerate(SPADL_RESULTS))),
+        bodypart_name=actions["bodypart_id"].map(dict(enumerate(SPADL_BODYPARTS))),
+    )
 
 
 def _get_actions(

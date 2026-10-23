@@ -10,6 +10,7 @@ from databallpy.data_parsers.event_data_parsers.instat_parser import (
 )
 from databallpy.schemas import EventData
 from tests.expected_outcomes import ED_INSTAT, MD_INSTAT
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestInstatParser(unittest.TestCase):
@@ -24,7 +25,7 @@ class TestInstatParser(unittest.TestCase):
             event_data, metadata, _ = load_instat_event_data(
                 self.instat_event_data_loc, self.instat_metadata_loc
             )
-        pd.testing.assert_frame_equal(event_data, pd.DataFrame(ED_INSTAT))
+        assert_frame_equal(event_data, pd.DataFrame(ED_INSTAT))
         assert metadata == expected_metadata
 
     def test_to_spadl_not_supported(self):
@@ -88,5 +89,5 @@ class TestInstatParser(unittest.TestCase):
         )
         expected_event_data = pd.DataFrame(ED_INSTAT)
 
-        pd.testing.assert_frame_equal(event_data, expected_event_data)
+        assert_frame_equal(event_data, expected_event_data)
         assert pitch_dimensions == [100.0, 50.0]
