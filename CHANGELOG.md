@@ -4,8 +4,9 @@
 ### V0.8.2
 - Added `home_oriented`, `away_oriented`, and `out_of_possession_oriented` playing directions to `Game.get_frames()` and `Game.get_event_frame()`, alongside the existing `possession_oriented`; `team_oriented` is now deprecated in favour of `home_oriented`
 - Fixed `Game.save_game()` crashing on id columns mixing string and integer/float values (e.g. Opta MA13/MA2 opaque alphanumeric player IDs alongside legacy numeric or missing-value IDs)
-- Added a `turning_penalty` argument to `TTIConstraint` to choose the time to intercept estimate: `"shaw"` (Laurie Shaw's approximation) or `"pleuler"` (Devin Pleuler's modification, which adds a turning term). The default changes from the previous behavior, which always applied the turning term, to `"shaw"`; pass `turning_penalty="pleuler"` to keep the previous results
+- Added a `turning_penalty` argument to `TTIConstraint` to choose the time to intercept estimate: `"shaw"` (Laurie Shaw's approximation) or `"pleuler"` (Devin Pleuler's modification, which adds a turning term).
 
+  
 ### V0.8.1 (11/08/2026)
 - Fixed `sigmoid()` overflowing on float32 input by clipping the exponent relative to the dtype of the input
 
