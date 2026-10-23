@@ -16,8 +16,10 @@ jobs:
       - name: setup
         uses: actions/checkout@v4
       
-      - name: setup ffmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v3
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
       - name: Install poetry
         uses: snok/install-poetry@v1
