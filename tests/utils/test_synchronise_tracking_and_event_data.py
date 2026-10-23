@@ -70,6 +70,22 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             ]
         )
         self.game_to_sync.event_data.loc[8, "databallpy_event"] = "shot"
+        self.game_to_sync.event_data.loc[8, "action_type"] = "shot"
+        self.expected_action_types = [
+            None,
+            "pass",
+            None,
+            "pass",
+            None,
+            None,
+            None,
+            None,
+            "take_on",
+            None,
+            None,
+            "shot",
+            None,
+        ]
         self.event_3_team_side = "home"
         self.event_3_jersey = 2
 
@@ -132,6 +148,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             "shot",
             None,
         ]
+        expected_tracking_data["action_type"] = self.expected_action_types
         expected_tracking_data["event_id"] = [
             MISSING_INT,
             3,
@@ -196,6 +213,22 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         game_to_sync.tracking_data.loc[:, "ball_status"] = "dead"
         with self.assertRaises(IndexError):
             game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
+    def test_synchronise_tracking_and_event_data_action_types(self):
+        game_to_sync = self.game_to_sync.copy()
+        game_to_sync.event_data.loc[4, "action_type"] = "clearance"
+        game_to_sync.event_data.loc[7, "action_type"] = "foul"
+
+        game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
+        # all action types are synced, except for fouls and non actions
+        tracking_frame = game_to_sync.event_data.loc[4, "tracking_frame"]
+        self.assertNotEqual(tracking_frame, MISSING_INT)
+        td = game_to_sync.tracking_data
+        self.assertEqual(td.loc[tracking_frame, "action_type"], "clearance")
+        self.assertIsNone(td.loc[tracking_frame, "databallpy_event"])
+        self.assertEqual(game_to_sync.event_data.loc[7, "tracking_frame"], MISSING_INT)
+        self.assertNotIn("foul", td["action_type"].values)
 
     def test_synchonise_tracking_and_event_data_error(self):
         with self.assertRaises(KeyError):
@@ -268,6 +301,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             "shot",
             None,
         ]
+        expected_tracking_data["action_type"] = self.expected_action_types
         expected_tracking_data["event_id"] = [
             MISSING_INT,
             3,
@@ -409,6 +443,30 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             away_players=self.game_to_sync.away_players,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+    def test_create_sim_mat_action_type_cost_functions(self):
+        tracking_data = self.game_to_sync.tracking_data.copy().reset_index()
+        event_data = self.game_to_sync.event_data.copy()
+        event_data = event_data[
+            event_data["event_type_id"].isin([1, 3, 7])
+        ].reset_index()
+        n_frames = len(tracking_data)
+        # the cost function of the action type has priority over the databallpy event
+        cost_functions = {
+            "pass": lambda **kwargs: np.full(n_frames, 0.5),
+            "take_on": lambda **kwargs: np.full(n_frames, 0.2),
+            "dribble": lambda **kwargs: np.full(n_frames, 0.9),
+            "shot": lambda **kwargs: np.full(n_frames, 0.0),
+        }
+        res = _create_sim_mat(
+            tracking_batch=tracking_data,
+            event_batch=event_data,
+            home_players=self.game_to_sync.home_players,
+            away_players=self.game_to_sync.away_players,
+            cost_functions=cost_functions,
+        )
+        expected_res = np.repeat([[0.5, 0.5, 0.8, 1.0]], n_frames, axis=0)
+        np.testing.assert_allclose(res, expected_res)
 
     def test_create_sim_mat_missing_player(self):
         expected_res = RES_SIM_MAT_MISSING_PLAYER

@@ -51,7 +51,7 @@ from databallpy.utils.align_player_ids import (
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.game_utils import create_event_attributes_dataframe
 from databallpy.utils.logging import create_logger, logging_wrapper
-from databallpy.utils.utils import resolve_cache_dir
+from databallpy.utils.utils import get_databallpy_events, resolve_cache_dir
 
 if TYPE_CHECKING:
     from kloppy.domain import EventDataset, TrackingDataset
@@ -398,9 +398,25 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
             dataframe[column] = _decode_json_column(dataframe[column])
         dataframes[dataframe_name] = dataframe
 
-    # games saved before the SPADL columns were introduced do not have them yet
-    if len(dataframes["event_data"]) > 0:
-        dataframes["event_data"] = _add_spadl_columns(dataframes["event_data"])
+    # games saved before the SPADL columns were introduced do not have them yet, derive
+    # a coarse action type from the databallpy event
+    event_data = dataframes["event_data"]
+    if len(event_data) > 0:
+        if (
+            "action_type" not in event_data.columns
+            and "databallpy_event" in event_data.columns
+        ):
+            event_data["action_type"] = event_data["databallpy_event"].map(
+                {
+                    "pass": "pass",
+                    "shot": "shot",
+                    "dribble": "take_on",
+                    "tackle": "tackle",
+                }
+            )
+            event_data["action_type"] = event_data["action_type"].astype(object)
+            event_data.loc[event_data["action_type"].isna(), "action_type"] = None
+        dataframes["event_data"] = _add_spadl_columns(event_data)
 
     return Game(
         tracking_data=TrackingData(
@@ -1013,6 +1029,7 @@ def get_game_from_kloppy(
         else float(event_dataset.metadata.pitch_dimensions.pitch_width),
     )
 
+    databallpy_events = get_databallpy_events(event_data)
     home_players, away_players = players_from_kloppy(
         event_dataset if uses_event_data else tracking_dataset
     )
@@ -1065,13 +1082,13 @@ def get_game_from_kloppy(
         away_formation=None,
         away_score=away_score,
         country=None,
-        shot_events=event_data[event_data["databallpy_event"] == "shot"]
+        shot_events=event_data[databallpy_events == "shot"]
         if uses_event_data
         else pd.DataFrame(),
-        dribble_events=event_data[event_data["databallpy_event"] == "dribble"]
+        dribble_events=event_data[databallpy_events == "dribble"]
         if uses_event_data
         else pd.DataFrame(),
-        pass_events=event_data[event_data["databallpy_event"] == "pass"]
+        pass_events=event_data[databallpy_events == "pass"]
         if uses_event_data
         else pd.DataFrame(),
         allow_synchronise_tracking_and_event_data=True

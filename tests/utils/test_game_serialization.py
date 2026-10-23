@@ -135,7 +135,18 @@ class TestGameSerialization(unittest.TestCase):
 
         for col in SPADL_COLUMNS:
             self.assertIn(col, saved_game.event_data.columns)
-            self.assertTrue(saved_game.event_data[col].isna().all())
+        self.assertTrue(saved_game.event_data["action_result"].isna().all())
+        self.assertTrue(saved_game.event_data["action_bodypart"].isna().all())
+
+        # a coarse action type is derived from the databallpy event
+        databallpy_events = game.event_data["databallpy_event"]
+        action_types = saved_game.event_data["action_type"]
+        expected = databallpy_events.map(
+            {"pass": "pass", "shot": "shot", "dribble": "take_on", "tackle": "tackle"}
+        )
+        self.assertTrue(expected.notna().any())
+        self.assertTrue((action_types[expected.notna()] == expected.dropna()).all())
+        self.assertTrue(action_types[expected.isna()].isna().all())
 
     def test_saved_game_without_encoding_metadata(self):
         game = self._get_ma_game()

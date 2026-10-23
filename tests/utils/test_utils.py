@@ -12,6 +12,7 @@ from databallpy.utils.utils import (
     _to_float,
     _to_int,
     _values_are_equal_,
+    get_databallpy_events,
     get_next_possession_frame,
     resolve_cache_dir,
     sigmoid,
@@ -299,6 +300,52 @@ class TestUtils(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             _copy_value_(CustomType(1))
+
+    def test_get_databallpy_events(self):
+        event_data = pd.DataFrame(
+            {
+                "action_type": [
+                    "cross",
+                    "shot_penalty",
+                    "take_on",
+                    "dribble",
+                    "tackle",
+                    "bad_touch",
+                    "foul",
+                ],
+                "action_result": [
+                    "success",
+                    "success",
+                    "fail",
+                    "success",
+                    "success",
+                    "owngoal",
+                    "fail",
+                ],
+                "databallpy_event": [None] * 7,
+            }
+        )
+        expected = pd.Series(
+            ["pass", "shot", "dribble", "dribble", "tackle", "own_goal", None],
+            dtype=object,
+            name="databallpy_event",
+        )
+        assert_series_equal(get_databallpy_events(event_data), expected)
+
+    def test_get_databallpy_events_fallback(self):
+        # event data without SPADL action types, like Instat
+        event_data = pd.DataFrame(
+            {"action_type": [None, None], "databallpy_event": ["pass", np.nan]}
+        )
+        expected = pd.Series(["pass", None], dtype=object, name="databallpy_event")
+        assert_series_equal(get_databallpy_events(event_data), expected)
+        assert_series_equal(
+            get_databallpy_events(event_data.drop(columns="action_type")), expected
+        )
+        assert_series_equal(
+            get_databallpy_events(pd.DataFrame({"event_id": [1, 2]})),
+            pd.Series([None, None], dtype=object, name="databallpy_event"),
+        )
 
 
 def test_resolve_cache_dir_user_cache(tmp_path, monkeypatch):

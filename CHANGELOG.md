@@ -8,6 +8,10 @@
 - Added a `turning_penalty` argument to `TTIConstraint` to choose the time to intercept estimate: `"shaw"` (Laurie Shaw's approximation) or `"pleuler"` (Devin Pleuler's modification, which adds a turning term).
 - Added support for pandas 3 (pandas 2.1+ remains supported, pandas 3 requires python >= 3.11); datetime columns of `Game` objects are now always stored in nanoseconds, so dtypes are the same on pandas 2 and 3, and games saved with either version can be loaded with the other
 - `TrackingData.add_dangerous_accessible_space()` warns on pandas 3, since accessible-space currently ignores offside players there
+- Deprecated the `databallpy_event` column of the event and tracking data in favour of the SPADL columns `action_type`, `action_result` and `action_bodypart`; accessing it now warns and it will be removed in version 0.11.0. Internally (synchronisation, possession, visualisation, `game.shots_df`/`passes_df`/`dribbles_df`) the events are now derived from the SPADL columns, falling back on `databallpy_event` for event data without SPADL (InStat). As a result, carries (SPADL `dribble`) are now treated as dribbles next to take-ons, and own goals are recognised by the `owngoal` action result
+- Synchronisation now syncs all SPADL action types (e.g. crosses, set pieces, interceptions, clearances and keeper actions) instead of only passes, shots, dribbles and tackles; fouls and non actions are not synced. Passes (incl. crosses, set pieces and goal kicks) and shots use their specific cost function, all other actions the general one. `cost_functions` can now also be keyed by action type, which has priority over the databallpy event. Synchronisation also adds the `action_type` column to the tracking data
+- Added an `action_types` argument to `EventData.to_video_analysis_xml()` and changed the default `code_column` to `"action_type"`; the `databallpy_events` argument is deprecated
+- `get_saved_game()` derives a coarse `action_type` (pass, shot, take_on, tackle) from `databallpy_event` for games saved before the SPADL columns were introduced
 
   
 ### V0.8.1 (11/08/2026)

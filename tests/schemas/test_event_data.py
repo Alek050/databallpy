@@ -1,4 +1,5 @@
 import unittest
+import warnings
 
 try:
     import pandera.pandas as pa
@@ -6,12 +7,14 @@ except ModuleNotFoundError:
     import pandera as pa
 
 from databallpy.schemas.event_data import EventData, EventDataSchema
+from databallpy.schemas.tracking_data import TrackingData
 from databallpy.utils.constants import (
     SPADL_ACTION_TYPES,
     SPADL_BODYPARTS,
     SPADL_COLUMNS,
     SPADL_RESULTS,
 )
+from databallpy.utils.warnings import DataBallPyWarning
 from tests.expected_outcomes import ED_OPTA
 
 
@@ -79,3 +82,33 @@ class TestEventData(unittest.TestCase):
 
         new_ed.__setstate__(state)
         self.assertEqual(new_ed.provider, "other_provider")
+
+    def test_databallpy_event_deprecation(self):
+        ed = EventData({"databallpy_event": ["pass"], "action_type": ["pass"]})
+        for access in (
+            lambda: ed["databallpy_event"],
+            lambda: ed.databallpy_event,
+            lambda: ed.loc[:, "databallpy_event"],
+        ):
+            with self.assertWarns(DataBallPyWarning) as cm:
+                access()
+            # the warning should point to the code of the user
+            self.assertEqual(cm.filename, __file__)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            ed["action_type"]
+            ed.action_type
+            EventDataSchema.validate(ED_OPTA)
+
+
+class TestTrackingDataDeprecation(unittest.TestCase):
+    def test_databallpy_event_deprecation(self):
+        td = TrackingData({"databallpy_event": ["pass"], "action_type": ["pass"]})
+        for access in (lambda: td["databallpy_event"], lambda: td.databallpy_event):
+            with self.assertWarns(DataBallPyWarning):
+                access()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            td["action_type"]
