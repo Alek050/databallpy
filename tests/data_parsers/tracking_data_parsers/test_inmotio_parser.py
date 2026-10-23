@@ -1,6 +1,5 @@
 import unittest
 
-import pandas as pd
 from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.tracking_data_parsers.inmotio_parser import (
@@ -14,6 +13,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _normalize_playing_direction_tracking,
 )
 from tests.expected_outcomes import MD_INMOTIO, TD_INMOTIO
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestInmotioParser(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestInmotioParser(unittest.TestCase):
             expected_tracking_data, MD_INMOTIO.periods_frames
         )
         assert metadata == MD_INMOTIO
-        pd.testing.assert_frame_equal(tracking_data, expected_tracking_data, atol=1e-7)
+        assert_frame_equal(tracking_data, expected_tracking_data, atol=1e-7)
 
     def test_load_inmotio_tracking_data_selection(self):
         full_td, _ = load_inmotio_tracking_data(
@@ -42,14 +42,14 @@ class TestInmotioParser(unittest.TestCase):
             self.tracking_data_loc, self.metadata_loc, verbose=False, period_id=2
         )
         expected_td = full_td[full_td["period_id"] == 2].reset_index(drop=True)
-        pd.testing.assert_frame_equal(td, expected_td)
+        assert_frame_equal(td, expected_td)
         assert metadata == MD_INMOTIO
 
         td, _ = load_inmotio_tracking_data(
             self.tracking_data_loc, self.metadata_loc, verbose=False, frames=(3, 5)
         )
         expected_td = full_td[full_td["frame"].between(3, 5)].reset_index(drop=True)
-        pd.testing.assert_frame_equal(td, expected_td)
+        assert_frame_equal(td, expected_td)
 
     def test_load_inmotio_tracking_data_errors(self):
         with self.assertRaises(FileNotFoundError):
@@ -76,7 +76,7 @@ class TestInmotioParser(unittest.TestCase):
             self.tracking_data_loc, self.expected_channels, [100.0, 50.0]
         )
         expected_td = TD_INMOTIO.drop(["gametime_td", "period_id", "datetime"], axis=1)
-        pd.testing.assert_frame_equal(tracking_data, expected_td)
+        assert_frame_equal(tracking_data, expected_td)
 
     def test_get_player_data(self):
         file = open(self.metadata_loc, "r", encoding="UTF-8")
@@ -84,7 +84,7 @@ class TestInmotioParser(unittest.TestCase):
         input = BeautifulSoup(lines, "xml").find_all("Player", {"teamId": "T-0001"})
         file.close()
         df_players = _get_player_data(input)
-        pd.testing.assert_frame_equal(df_players, MD_INMOTIO.home_players)
+        assert_frame_equal(df_players, MD_INMOTIO.home_players)
 
     def test_not_string_error(self):
         with self.assertRaises(TypeError):

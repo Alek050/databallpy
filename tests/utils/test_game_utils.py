@@ -9,6 +9,7 @@ from databallpy.utils.game_utils import (
     player_column_id_to_full_name,
     player_id_to_column_id,
 )
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestMatchUtils(unittest.TestCase):
@@ -76,10 +77,10 @@ class TestMatchUtils(unittest.TestCase):
                 "event_team": ["home", "away"],
             }
         )
-        pd.testing.assert_frame_equal(df, expected_df)
+        assert_frame_equal(df, expected_df)
 
         df = create_event_attributes_dataframe({})
-        pd.testing.assert_frame_equal(df, pd.DataFrame())
+        assert_frame_equal(df, pd.DataFrame())
 
 
 class TestRemoveOffsidePlayers(unittest.TestCase):

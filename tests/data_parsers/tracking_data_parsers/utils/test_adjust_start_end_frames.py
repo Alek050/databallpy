@@ -10,6 +10,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils._adjust_start_end_frame
 )
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.utils import MISSING_INT
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestAdjustStartEndFrames(unittest.TestCase):
@@ -172,7 +173,7 @@ class TestAdjustStartEndFrames(unittest.TestCase):
 
         expected_td = self.td.copy()
         expected_td = expected_td.loc[1:].reset_index(drop=True)
-        pd.testing.assert_frame_equal(res_td, expected_td)
+        assert_frame_equal(res_td, expected_td)
         self.assertEqual(res_md, self.metadata)
 
     def test_adjust_start_end_frames_adjust_invalid_start(self):
@@ -189,7 +190,7 @@ class TestAdjustStartEndFrames(unittest.TestCase):
         expected_md.periods_frames.loc[0, "start_datetime_td"] = pd.to_datetime(
             "2020-01-01 00:00:02", utc=True
         )
-        pd.testing.assert_frame_equal(res_td, expected_td)
+        assert_frame_equal(res_td, expected_td)
         self.assertEqual(res_md, expected_md)
 
     def test_adjust_start_end_frames_adjust_no_frame_start(self):
@@ -206,7 +207,7 @@ class TestAdjustStartEndFrames(unittest.TestCase):
         expected_md.periods_frames.loc[0, "start_datetime_td"] = pd.to_datetime(
             "2020-01-01 00:00:01", utc=True
         )
-        pd.testing.assert_frame_equal(res_td, expected_td)
+        assert_frame_equal(res_td, expected_td)
         self.assertEqual(res_md, expected_md)
 
     def test_adjust_start_end_frames_adjust_end(self):
@@ -222,7 +223,7 @@ class TestAdjustStartEndFrames(unittest.TestCase):
             "2020-01-01 00:00:08", utc=True
         )
 
-        pd.testing.assert_frame_equal(res_td, expected_td)
+        assert_frame_equal(res_td, expected_td)
         self.assertEqual(res_md, expected_md)
 
     def test_find_new_start_frame_no_acc(self):

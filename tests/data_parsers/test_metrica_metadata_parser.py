@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-import pandas as pd
 
 from databallpy.data_parsers.metrica_metadata_parser import (
     _get_metadata,
@@ -9,6 +8,7 @@ from databallpy.data_parsers.metrica_metadata_parser import (
     _update_metadata,
 )
 from tests.expected_outcomes import MD_METRICA_TD, TD_CHANNELS_METRICA
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestMetricaMetadataParser(unittest.TestCase):
@@ -33,7 +33,7 @@ class TestMetricaMetadataParser(unittest.TestCase):
         input_metadata.home_players["starter"] = np.nan
         input_metadata.away_players["starter"] = np.nan
         res = _get_td_channels(self.md_loc, input_metadata)
-        pd.testing.assert_frame_equal(res, self.expected_td_channels)
+        assert_frame_equal(res, self.expected_td_channels)
 
     def test_update_metadata(self):
         input_metadata = self.expected_metadata.copy()

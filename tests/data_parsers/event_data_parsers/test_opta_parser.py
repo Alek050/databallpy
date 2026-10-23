@@ -32,6 +32,7 @@ from tests.expected_outcomes import (
     SHOT_INSTANCES_OPTA,
     SHOT_INSTANCES_OPTA_MA13,
 )
+from tests.pandas_testing import assert_frame_equal
 
 ED_OPTA = pd.DataFrame(ED_OPTA.drop(columns=["team_name"]).copy())
 ED_OPTA_MA13 = pd.DataFrame(ED_OPTA_MA13.drop(columns=["team_name"]).copy())
@@ -53,7 +54,7 @@ class TestOptaParser(unittest.TestCase):
         event_data, metadata, dbp_events = load_opta_event_data(
             self.f7_loc, self.f24_loc, pitch_dimensions=[100.0, 50.0]
         )
-        pd.testing.assert_frame_equal(event_data, ED_OPTA)
+        assert_frame_equal(event_data, ED_OPTA)
         assert metadata == MD_OPTA
 
         # SHOT_INSTANCES_OPTA is scaled to a pitch of [106, 68],
@@ -87,7 +88,7 @@ class TestOptaParser(unittest.TestCase):
         event_data, metadata, dbp_events = load_opta_event_data(
             self.ma2_loc, self.ma13_loc, pitch_dimensions=[100.0, 50.0]
         )
-        pd.testing.assert_frame_equal(event_data, ED_OPTA_MA13)
+        assert_frame_equal(event_data, ED_OPTA_MA13)
         assert metadata == MD_OPTA_MA2
 
         # SHOT_INSTANCES_OPTA_MA13 is scaled to a pitch of [106, 68],
@@ -120,7 +121,7 @@ class TestOptaParser(unittest.TestCase):
             self.f7_loc, "pass", pitch_dimensions=[100.0, 50.0]
         )
         assert metadata == MD_OPTA
-        pd.testing.assert_frame_equal(event_data, pd.DataFrame())
+        assert_frame_equal(event_data, pd.DataFrame())
         assert dbp_events == {}
 
     def test_load_opta_event_data_errors(self):
@@ -200,7 +201,7 @@ class TestOptaParser(unittest.TestCase):
         )
 
         result = _get_player_info(player_data, player_names)
-        pd.testing.assert_frame_equal(result, expected_result)
+        assert_frame_equal(result, expected_result)
 
     def test_load_event_data(self):
         players = pd.concat(
@@ -224,7 +225,7 @@ class TestOptaParser(unittest.TestCase):
             expected_event_data.loc[:, "start_y"] + 25
         ) * (100 / 50)
 
-        pd.testing.assert_frame_equal(event_data, expected_event_data)
+        assert_frame_equal(event_data, expected_event_data)
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():
@@ -269,7 +270,7 @@ class TestOptaParser(unittest.TestCase):
             expected_event_data.loc[:, "start_y"] + 25
         ) * (100 / 50)
 
-        pd.testing.assert_frame_equal(event_data, expected_event_data)
+        assert_frame_equal(event_data, expected_event_data)
 
         assert "shot_events" in dbp_events.keys()
         for key, event in dbp_events["shot_events"].items():

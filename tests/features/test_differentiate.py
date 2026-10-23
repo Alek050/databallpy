@@ -5,6 +5,7 @@ import pandas as pd
 
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.warnings import DataBallPyWarning
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestDifferentiate(unittest.TestCase):
@@ -59,7 +60,7 @@ class TestDifferentiate(unittest.TestCase):
                 ],
             }
         )
-        pd.testing.assert_frame_equal(output1, expected_output)
+        assert_frame_equal(output1, expected_output)
 
         with self.assertWarns(DataBallPyWarning):
             output2 = _differentiate(
@@ -75,7 +76,7 @@ class TestDifferentiate(unittest.TestCase):
                 inplace=False,
                 allow_overwrite=False,
             )
-        pd.testing.assert_frame_equal(output2, input)
+        assert_frame_equal(output2, input)
 
     def test_differentiate_ma_filter(self):
         output = _differentiate(
@@ -107,7 +108,7 @@ class TestDifferentiate(unittest.TestCase):
                 ],
             }
         )
-        pd.testing.assert_frame_equal(output, expected_output)
+        assert_frame_equal(output, expected_output)
 
     def test_differentiate_wrong_input(self):
         with self.assertRaises(KeyError):

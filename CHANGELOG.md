@@ -5,6 +5,8 @@
 - Added `home_oriented`, `away_oriented`, and `out_of_possession_oriented` playing directions to `Game.get_frames()` and `Game.get_event_frame()`, alongside the existing `possession_oriented`; `team_oriented` is now deprecated in favour of `home_oriented`
 - Fixed `Game.save_game()` crashing on id columns mixing string and integer/float values (e.g. Opta MA13/MA2 opaque alphanumeric player IDs alongside legacy numeric or missing-value IDs)
 - Added a `turning_penalty` argument to `TTIConstraint` to choose the time to intercept estimate: `"shaw"` (Laurie Shaw's approximation) or `"pleuler"` (Devin Pleuler's modification, which adds a turning term).
+- Added support for pandas 3 (pandas 2.1+ remains supported, pandas 3 requires python >= 3.11); datetime columns of `Game` objects are now always stored in nanoseconds, so dtypes are the same on pandas 2 and 3, and games saved with either version can be loaded with the other
+- `TrackingData.add_dangerous_accessible_space()` warns on pandas 3, since accessible-space currently ignores offside players there
 
   
 ### V0.8.1 (11/08/2026)

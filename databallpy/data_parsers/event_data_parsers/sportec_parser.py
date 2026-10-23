@@ -82,12 +82,16 @@ def load_sportec_event_data(
     metadata = _get_sportec_metadata(metadata_loc, only_event_data=True)
     event_data, databallpy_events = _get_sportec_event_data(event_data_loc, metadata)
 
-    metadata.periods_frames["start_datetime_ed"] = pd.to_datetime(
-        metadata.periods_frames["start_datetime_ed"]
-    ).dt.tz_localize("Europe/Berlin")
-    metadata.periods_frames["end_datetime_ed"] = pd.to_datetime(
-        metadata.periods_frames["end_datetime_ed"]
-    ).dt.tz_localize("Europe/Berlin")
+    metadata.periods_frames["start_datetime_ed"] = (
+        pd.to_datetime(metadata.periods_frames["start_datetime_ed"])
+        .dt.as_unit("ns")
+        .dt.tz_localize("Europe/Berlin")
+    )
+    metadata.periods_frames["end_datetime_ed"] = (
+        pd.to_datetime(metadata.periods_frames["end_datetime_ed"])
+        .dt.as_unit("ns")
+        .dt.tz_localize("Europe/Berlin")
+    )
 
     metadata.periods_frames.loc[0, "start_datetime_ed"] = event_data.iloc[0]["datetime"]
     metadata.periods_frames.loc[0, "end_datetime_ed"] = event_data.loc[

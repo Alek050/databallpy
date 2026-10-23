@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch
 
-import pandas as pd
-
 from databallpy.data_parsers.tracking_data_parsers.metrica_tracking_data_parser import (
     _get_tracking_data,
     load_metrica_open_tracking_data,
@@ -10,6 +8,7 @@ from databallpy.data_parsers.tracking_data_parsers.metrica_tracking_data_parser 
 )
 from tests.expected_outcomes import MD_METRICA_TD, TD_CHANNELS_METRICA, TD_METRICA
 from tests.mocks import MD_METRICA_RAW, TD_METRICA_RAW
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestMetricaTrackingDataParser(unittest.TestCase):
@@ -23,17 +22,15 @@ class TestMetricaTrackingDataParser(unittest.TestCase):
         res = _get_tracking_data(
             self.td_loc, TD_CHANNELS_METRICA, [100.0, 50.0], verbose=False
         )
-        pd.testing.assert_frame_equal(res, expected)
+        assert_frame_equal(res, expected)
 
     def test_load_metrica_tracking_data(self):
         res_td, res_md = load_metrica_tracking_data(
             self.td_loc, self.md_loc, verbose=False
         )
 
-        pd.testing.assert_frame_equal(res_td, TD_METRICA)
-        pd.testing.assert_frame_equal(
-            res_md.periods_frames, MD_METRICA_TD.periods_frames
-        )
+        assert_frame_equal(res_td, TD_METRICA)
+        assert_frame_equal(res_md.periods_frames, MD_METRICA_TD.periods_frames)
         assert res_md == MD_METRICA_TD
 
         with self.assertRaises(TypeError):
@@ -52,14 +49,14 @@ class TestMetricaTrackingDataParser(unittest.TestCase):
             self.td_loc, self.md_loc, verbose=False, period_id=2
         )
         expected_td = full_td[full_td["period_id"] == 2].reset_index(drop=True)
-        pd.testing.assert_frame_equal(res_td, expected_td)
+        assert_frame_equal(res_td, expected_td)
         assert res_md == MD_METRICA_TD
 
         res_td, _ = load_metrica_tracking_data(
             self.td_loc, self.md_loc, verbose=False, frames=(3, 5)
         )
         expected_td = full_td[full_td["frame"].between(3, 5)].reset_index(drop=True)
-        pd.testing.assert_frame_equal(res_td, expected_td)
+        assert_frame_equal(res_td, expected_td)
 
     @patch(
         "requests.get",
@@ -68,4 +65,4 @@ class TestMetricaTrackingDataParser(unittest.TestCase):
     def test_load_metrica_open_tracking_data(self, _):
         td, md = load_metrica_open_tracking_data()
         assert md == MD_METRICA_TD
-        pd.testing.assert_frame_equal(td, TD_METRICA)
+        assert_frame_equal(td, TD_METRICA)

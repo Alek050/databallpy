@@ -13,6 +13,7 @@ from databallpy.features.player_possession import (
     get_valid_gains,
 )
 from databallpy.schemas import TrackingData
+from tests.pandas_testing import assert_frame_equal
 
 
 class TestPlayerPossession(unittest.TestCase):
@@ -75,7 +76,7 @@ class TestPlayerPossession(unittest.TestCase):
     def test_get_distance_between_ball_and_players(self):
         td = self.tracking_data.copy()
         distances = get_distance_between_ball_and_players(td)
-        pd.testing.assert_frame_equal(distances, self.expected_distances)
+        assert_frame_equal(distances, self.expected_distances)
 
     def test_get_initial_possessions(self):
         distances_df = pd.DataFrame(

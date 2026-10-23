@@ -17,6 +17,7 @@ from databallpy.data_parsers.event_data_parsers.scisports_parser import (
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.utils import MISSING_INT
 from tests.expected_outcomes import ED_SCISPORTS, MD_SCISPORTS
+from tests.pandas_testing import assert_frame_equal
 
 ED_SCISPORTS = pd.DataFrame(ED_SCISPORTS.drop(columns=["team_name"]).copy())
 
@@ -36,7 +37,7 @@ class TestSciSportsParser(unittest.TestCase):
     def test_load_scisports_event_data(self):
         for file in [self.json_loc, self.json_loc_v1]:
             res_ed, res_md, res_dbe = load_scisports_event_data(file)
-            pd.testing.assert_frame_equal(res_ed, self.expected_event_data)
+            assert_frame_equal(res_ed, self.expected_event_data)
             self.assertEqual(res_md, self.expected_metadata)
 
             for key, event in {
@@ -83,20 +84,20 @@ class TestSciSportsParser(unittest.TestCase):
 
     def test_get_players(self):
         result = _get_players(self.json_data, 100)
-        pd.testing.assert_frame_equal(result[0], self.expected_home_players)
-        pd.testing.assert_frame_equal(result[1], self.expected_away_players)
+        assert_frame_equal(result[0], self.expected_home_players)
+        assert_frame_equal(result[1], self.expected_away_players)
 
     def test_get_periods_frames(self):
         result = _get_periods_frames(
             self.json_data, pd.to_datetime("2023-01-01"), "Europe/Amsterdam"
         )
-        pd.testing.assert_frame_equal(result, self.expected_periods)
+        assert_frame_equal(result, self.expected_periods)
 
     def test_load_event_data(self):
         res_event_data, res_databallpy_events = _load_event_data(
             self.json_loc, self.expected_metadata
         )
-        pd.testing.assert_frame_equal(res_event_data, self.expected_event_data)
+        assert_frame_equal(res_event_data, self.expected_event_data)
 
         for key, event in {
             **res_databallpy_events["shot_events"],

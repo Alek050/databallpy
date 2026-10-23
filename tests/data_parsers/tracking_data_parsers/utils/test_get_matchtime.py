@@ -9,6 +9,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils._get_gametime import (
     _to_gametime,
 )
 from databallpy.utils.utils import MISSING_INT
+from tests.pandas_testing import assert_series_equal
 
 
 class TestGetGameTime(unittest.TestCase):
@@ -80,7 +81,7 @@ class TestGetGameTime(unittest.TestCase):
         result_list = _get_gametime(input, period_column, self.metadata)
         result = pd.Series(result_list)
         result = result.rename("gametime")
-        pd.testing.assert_series_equal(expected_result, result)
+        assert_series_equal(expected_result, result)
 
     def test_to_gametime(self):
         test_frames = [12030, 67100, 67600, 52377, 73566, 19500, 22800, 19500, 22800]

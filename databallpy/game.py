@@ -29,6 +29,7 @@ from databallpy.utils.synchronise_tracking_and_event_data import (
 )
 from databallpy.utils.utils import (
     _copy_value_,
+    _normalise_datetime_units,
     _values_are_equal_,
 )
 from databallpy.utils.warnings import DataBallPyWarning
@@ -134,6 +135,9 @@ class Game:
         return "databallpy.game.Game object: " + self.name
 
     def __post_init__(self):
+        for df in [self.tracking_data, self.event_data, self.periods]:
+            if isinstance(df, pd.DataFrame):
+                _normalise_datetime_units(df)
         if self._check_inputs_:
             check_inputs_game_object(self)
 

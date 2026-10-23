@@ -24,6 +24,7 @@ from databallpy.data_parsers.event_data_parsers.fifa_parser import (
 )
 from databallpy.events import PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
+from tests.pandas_testing import assert_frame_equal
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "test_data")
 METADATA_LOC = os.path.join(TEST_DATA_DIR, "fifa_metadata_test.json")
@@ -299,7 +300,7 @@ class TestFifaParser(unittest.TestCase):
         event_data, metadata, dbp_events = load_fifa_event_data(
             self.metadata_loc, self.events_loc
         )
-        pd.testing.assert_frame_equal(event_data, ED_FIFA)
+        assert_frame_equal(event_data, ED_FIFA)
         assert metadata == MD_FIFA
 
         assert "shot_events" in dbp_events
@@ -335,7 +336,7 @@ class TestFifaParser(unittest.TestCase):
             {"player_id": 1002, "player_name": "HOME STRIKER", "player_shirt_number": 9},
         ]
         result = _get_player_info(players_data)
-        pd.testing.assert_frame_equal(result, HOME_PLAYERS_FIFA)
+        assert_frame_equal(result, HOME_PLAYERS_FIFA)
 
     def test_load_event_data(self):
         event_data, dbp_events = _load_event_data(
