@@ -69,6 +69,23 @@ The `coordinate_system` sets the units of the locations:
 The mapping to SPADL follows socceraction as closely as possible, but the native parsers of DataBallPy use all information of the provider. Therefore, the actions can differ slightly from socceraction, for instance, the native Metrica parser also maps recoveries and challenges to interceptions and tackles, and skips carries in which the ball did not move. Data loaded with the Kloppy integration is mapped like the socceraction Kloppy converter. SPADL is not supported for InStat data.
 ```
 
+### Atomic-SPADL
+
+[Atomic-SPADL](https://socceraction.readthedocs.io/en/latest/documentation/spadl/atomic_spadl.html) (Decroos et al., 2020) splits every SPADL action into atomic actions without a result. A pass is followed by a `receival`, `interception`, `out` or `offside`, a shot by a `goal` or `out`, and a foul with a card by a `yellow_card` or `red_card`. Instead of a start and end location, every atomic action has a location (`x`, `y`) and a displacement (`dx`, `dy`). To get the Atomic-SPADL actions of a game, use:
+
+```python
+actions = game.to_atomic_spadl(playing_direction="home_oriented", coordinate_system="spadl")
+```
+
+The `playing_direction` and `coordinate_system` options are the same as for `to_spadl`, in the `databallpy` coordinate system only `x` and `y` are moved to the centre spot. The `type_id` maps to the names in `databallpy.utils.constants.ATOMIC_SPADL_ACTION_TYPES`, the `bodypart_id` to `SPADL_BODYPARTS`.
+
+The conversion follows `socceraction.atomic.spadl.convert_to_atomic`, including the extra dribbles after a receival or interception when the ball moved before the next action, with a few fixes:
+- There is a single `interception` type, socceraction has two with a different id.
+- `corner_crossed`, `corner_short`, `freekick_crossed` and `freekick_short` are not in the vocabulary, since they are always simplified to `corner` and `freekick`. Therefore, the type ids differ from socceraction.
+- A pass followed by a corner of the other team is `out`, not an interception.
+- `shot_freekick` is kept as a shot type, socceraction simplifies it to `freekick`.
+- No dribble is added from an `out` to the throw in that follows it.
+
 ## Use Cases of Event Data
 
 Event data is the most available data type in football analytics. It is used for a wide range of purposes. Mostly, it is used for descriptive analysis which helps to answer the following questions:

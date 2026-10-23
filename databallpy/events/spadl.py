@@ -84,6 +84,17 @@ def event_data_to_spadl(
         pd.DataFrame: The SPADL actions. The original_event_id and event_id columns
             link the actions to the event data and are null for added dribbles.
     """
+    playing_direction = _check_spadl_options(playing_direction, coordinate_system)
+    actions = _get_home_oriented_spadl_actions(event_data, pitch_dimensions, game_id)
+    actions = _apply_playing_direction(actions, home_team_id, playing_direction)
+    if coordinate_system == "databallpy":
+        actions = _spadl_to_databallpy_coordinates(actions, pitch_dimensions)
+    return actions
+
+
+def _check_spadl_options(playing_direction: str, coordinate_system: str) -> str:
+    """Function to check the playing direction and coordinate system of the SPADL
+    conversion, returns the playing direction with deprecated options replaced."""
     if playing_direction == "team_oriented":
         warnings.warn(
             "'team_oriented' is deprecated and will be removed in a future "
@@ -101,7 +112,16 @@ def event_data_to_spadl(
             f"Coordinate system {coordinate_system} is not supported, options are "
             f"{COORDINATE_SYSTEMS}."
         )
+    return playing_direction
 
+
+def _get_home_oriented_spadl_actions(
+    event_data: pd.DataFrame,
+    pitch_dimensions: list[float],
+    game_id: int | str | None,
+) -> pd.DataFrame:
+    """Function to get the validated SPADL actions in the SPADL coordinate system,
+    with the home team playing from left to right."""
     actions = _get_actions(event_data, pitch_dimensions, game_id)
     actions = actions.sort_values(
         ["period_id", "time_seconds"], kind="mergesort"
@@ -110,12 +130,7 @@ def event_data_to_spadl(
     actions = _fix_interceptions(actions)
     actions["action_id"] = range(len(actions))
     actions = _add_dribbles(actions)
-    actions = SPADLSchema.validate(actions[SPADL_ACTION_COLUMNS])
-
-    actions = _apply_playing_direction(actions, home_team_id, playing_direction)
-    if coordinate_system == "databallpy":
-        actions = _spadl_to_databallpy_coordinates(actions, pitch_dimensions)
-    return actions
+    return SPADLSchema.validate(actions[SPADL_ACTION_COLUMNS])
 
 
 def _get_actions(

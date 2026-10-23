@@ -178,6 +178,98 @@ class EventData(pd.DataFrame):
             coordinate_system=coordinate_system,
         )
 
+    def to_atomic_spadl(
+        self,
+        home_team_id: int | str,
+        pitch_dimensions: list[float],
+        *,
+        game_id: int | str | None = None,
+        playing_direction: str = "home_oriented",
+        coordinate_system: str = "databallpy",
+    ) -> pd.DataFrame:
+        """Convert the event data to Atomic-SPADL actions (Decroos et al., 2020).
+
+        The event data is first converted to SPADL actions, see ``to_spadl``.
+        Atomic-SPADL actions have no result, instead extra actions are added at the
+        end location of the actions:
+
+        - after pass-like actions (passes, crosses, throw-ins, freekicks, corners,
+          clearances and goalkicks): a receival when the next action is of the
+          same team, an interception when it is of the other team, an out when
+          the next action is a throw-in, or a corner or goalkick of the other
+          team, and an offside after offside passes. Nothing is added when the
+          next action is an interception, tackle or keeper action.
+        - after added receivals and interceptions: a dribble when the ball moved
+          3 to 60 meters in less than 10 seconds before the next action.
+        - after shots: a goal for scored shots and an out when the shot is
+          followed by a corner or goalkick. An owngoal is added after own goals.
+        - after fouls with a card: a yellow_card or red_card.
+
+        Corners and freekicks are simplified to corner and freekick, shot_freekick
+        is kept. The conversion follows socceraction, except that there is a single
+        interception type, the simplified corner and freekick types are not in the
+        vocabulary, a pass followed by a corner of the other team is out instead of
+        an interception, and shot_freekick is not simplified to freekick.
+        Therefore, the type_ids differ from socceraction.
+
+        Args:
+            home_team_id (int | str): The id of the home team.
+            pitch_dimensions (list[float]): The length and width of the pitch in
+                meters.
+            game_id (int | str | None, optional): The value of the game_id column.
+                Defaults to None.
+            playing_direction (str, optional): The playing direction of the actions.
+                Defaults to "home_oriented", options are {home_oriented,
+                away_oriented, possession_oriented, out_of_possession_oriented}, see
+                ``to_spadl``.
+            coordinate_system (str, optional): Defaults to "databallpy", meters on
+                the actual pitch with (0, 0) at the centre spot. With "spadl" the
+                coordinates are rescaled to the 105x68 SPADL field with (0, 0) in
+                the bottom left corner.
+
+        Raises:
+            NotImplementedError: if the event data is from InStat.
+            ValueError: if the playing_direction or coordinate_system is not
+                supported.
+
+        Returns:
+            pd.DataFrame: The Atomic-SPADL actions sorted by period and time, with
+                the columns game_id, original_event_id, event_id, action_id,
+                period_id, time_seconds (since the start of the period), team_id,
+                player_id, x, y, dx, dy, type_id and bodypart_id. The x and y
+                columns are the location of the action and dx and dy the
+                displacement of the ball. The original_event_id and event_id
+                columns link the actions to the event data and are null for added
+                dribbles. The ids map to the names in
+                ``databallpy.utils.constants.ATOMIC_SPADL_ACTION_TYPES`` and
+                ``SPADL_BODYPARTS``.
+
+        Example:
+            >>> from databallpy import get_open_game
+            >>> game = get_open_game(provider="metrica")
+            >>> actions = game.event_data.to_atomic_spadl(
+            ...     home_team_id=game.home_team_id,
+            ...     pitch_dimensions=game.pitch_dimensions,
+            ...     coordinate_system="spadl",
+            ... )
+        """
+        from databallpy.events.atomic_spadl import event_data_to_atomic_spadl
+
+        if self.provider == "instat":
+            raise NotImplementedError(
+                "Atomic-SPADL conversion is not supported for InStat event data, "
+                "since InStat is deprecated and will be removed in version 0.10.0."
+            )
+
+        return event_data_to_atomic_spadl(
+            self,
+            home_team_id=home_team_id,
+            pitch_dimensions=pitch_dimensions,
+            game_id=game_id,
+            playing_direction=playing_direction,
+            coordinate_system=coordinate_system,
+        )
+
     def to_video_analysis_xml(
         self,
         *,

@@ -26,6 +26,13 @@ are the indices in these lists.
 .. autodata:: databallpy.utils.constants.SPADL_BODYPARTS
     :no-index:
 
+The ids of the Atomic-SPADL actions returned by `EventData.to_atomic_spadl` and
+`Game.to_atomic_spadl` are the indices in this list, the body parts are the same as
+in SPADL.
+
+.. autodata:: databallpy.utils.constants.ATOMIC_SPADL_ACTION_TYPES
+    :no-index:
+
 
 XML Export
 ----------
