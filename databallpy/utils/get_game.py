@@ -398,9 +398,25 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
             dataframe[column] = _decode_json_column(dataframe[column])
         dataframes[dataframe_name] = dataframe
 
-    # games saved before the SPADL columns were introduced do not have them yet
-    if len(dataframes["event_data"]) > 0:
-        dataframes["event_data"] = _add_spadl_columns(dataframes["event_data"])
+    # games saved before the SPADL columns were introduced do not have them yet, derive
+    # a coarse action type from the databallpy event
+    event_data = dataframes["event_data"]
+    if len(event_data) > 0:
+        if (
+            "action_type" not in event_data.columns
+            and "databallpy_event" in event_data.columns
+        ):
+            event_data["action_type"] = event_data["databallpy_event"].map(
+                {
+                    "pass": "pass",
+                    "shot": "shot",
+                    "dribble": "take_on",
+                    "tackle": "tackle",
+                }
+            )
+            event_data["action_type"] = event_data["action_type"].astype(object)
+            event_data.loc[event_data["action_type"].isna(), "action_type"] = None
+        dataframes["event_data"] = _add_spadl_columns(event_data)
 
     return Game(
         tracking_data=TrackingData(
