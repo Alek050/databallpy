@@ -8,6 +8,7 @@ import pandas as pd
 from databallpy.utils.errors import DataBallPyError
 from databallpy.utils.get_game import get_game
 from databallpy.visualize import (
+    _get_events_mask,
     _plot_player_positions,
     _pre_check_plot_td_inputs,
     diff_frames,
@@ -121,6 +122,29 @@ class TestVisualize(unittest.TestCase):
         # Check plot elements
         self.assertEqual(ax.get_title(), "My Test Plot3")
         self.assertEqual(len(ax.collections), 4)
+
+    def test_get_events_mask(self):
+        event_data = pd.DataFrame(
+            {
+                "action_type": ["pass", "cross", "clearance", "foul", None],
+                "action_result": ["success", "fail", "success", "fail", None],
+            }
+        )
+        np.testing.assert_array_equal(
+            _get_events_mask(event_data, ["pass"]).values,
+            [True, True, False, False, False],
+        )
+        np.testing.assert_array_equal(
+            _get_events_mask(event_data, ["cross", "clearance"]).values,
+            [False, True, True, False, False],
+        )
+
+    def test_plot_events_action_types(self):
+        game = self.game.copy()
+        action_types = game.event_data["action_type"].dropna().unique().tolist()
+        fig, ax = plot_events(game, events=action_types)
+        self.assertIsInstance(fig, plt.Figure)
+        self.assertIsInstance(ax, plt.Axes)
 
     def test_plot_events_wrong_input(self):
         with self.assertRaises(TypeError):

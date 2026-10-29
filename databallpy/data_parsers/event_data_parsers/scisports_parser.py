@@ -5,8 +5,8 @@ import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers.utils import (
     _add_card_results,
-    _add_recovery_dribbles,
     _add_spadl_columns,
+    _set_recoveries_to_non_action,
 )
 from databallpy.data_parsers.metadata import Metadata
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
@@ -438,8 +438,8 @@ def _get_scisports_spadl_action(
     event: dict,
 ) -> tuple[str | None, str | None, str | None]:
     """Function to map a scisports event to the SPADL vocabulary. Only tackles of the
-    defensive duels are mapped, ball recoveries are mapped to dribbles and updated in
-    _update_scisports_spadl_actions.
+    defensive duels are mapped, ball recoveries are mapped to dribbles and set to non
+    actions in _update_scisports_spadl_actions.
 
     Args:
         event (dict): event from the scisports json
@@ -495,9 +495,8 @@ def _update_scisports_spadl_actions(
     event_data: pd.DataFrame, is_recovery: pd.Series, cards: dict
 ) -> pd.DataFrame:
     """Function to update the SPADL actions with information of the surrounding
-    events. Ball recoveries become dribbles to the start of the next action, or no
-    action when the ball did not move, and cards set the result of the last foul of
-    the same player.
+    events. Ball recoveries become non actions and cards set the result of the last
+    foul of the same player.
 
     Args:
         event_data (pd.DataFrame): The event data in databallpy coordinates, with the
@@ -508,7 +507,7 @@ def _update_scisports_spadl_actions(
     Returns:
         pd.DataFrame: The event data with the updated SPADL actions
     """
-    event_data = _add_recovery_dribbles(event_data, is_recovery)
+    event_data = _set_recoveries_to_non_action(event_data, is_recovery)
     return _add_card_results(event_data, cards)
 
 

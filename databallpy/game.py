@@ -601,18 +601,31 @@ class Game:
                 Defaults to 1.0.
             cost_functions (dict, optional): Dictionary containing the cost functions
                 that are used to calculate the similarity between the tracking and event
-                data. The keys of the dictionary are the event types, the values are the
-                cost functions. The cost functions will be called with the tracking data
-                and the event as arguments. The cost functions should return an array
-                containing the cost of the similarity between the tracking data and the
-                event, scaled between 0 and 1. If no cost functions are passed, the
-                default cost functions are used.
+                data. The keys of the dictionary are SPADL action types (e.g. 'cross')
+                or databallpy events ('pass', 'shot', 'dribble', 'tackle', 'own_goal'),
+                the values are the cost functions. A cost function of the action type
+                has priority over the one of the databallpy event. The cost functions
+                will be called with the tracking data and the event as arguments. The
+                cost functions should return an array containing the cost of the
+                similarity between the tracking data and the event, scaled between 0
+                and 1. If no cost functions are passed, the default cost functions are
+                used.
             _optimize (bool, optional): Whether or not to optimize the algorithm. If
                 errors or warnings are raised, try if setting to False works. Defaults
                 to False.
 
-        Currently works for the following databallpy events:
-            'pass', 'shot', 'dribble', and 'tackle'
+        All SPADL action types are synced, except for 'foul' and 'non_action'. By
+        default, release actions (passes, clearances and bad touches) and shots are
+        synced to the moment the ball leaves the player, arrival actions (dribbles,
+        take ons, interceptions and keeper actions) to the moment the ball arrives at
+        the player, and other actions with a general cost function. Event data without
+        SPADL action types falls back on the databallpy events: 'pass', 'shot',
+        'dribble', 'tackle' and 'own_goal'.
+
+        Adds the tracking_frame, sync_certainty, tracking_start_x and
+        tracking_start_y columns to the event data. tracking_start_x/y are the ball
+        location in the synced frame, the start_x/y columns keep the location of the
+        event data provider.
 
         """
         LOGGER.info(f"Trying to synchronise tracking and event data of {self.name}.")
@@ -624,10 +637,15 @@ class Game:
             LOGGER.error(message)
             raise DataBallPyError(message)
 
-        for col in ["sync_certainty", "databallpy_event", "event_id"]:
+        for col in ["sync_certainty", "databallpy_event", "action_type", "event_id"]:
             if col in self.tracking_data.columns:
                 self.tracking_data.drop(columns=[col], inplace=True)
-        for col in ["tracking_frame", "sync_certainty"]:
+        for col in [
+            "tracking_frame",
+            "sync_certainty",
+            "tracking_start_x",
+            "tracking_start_y",
+        ]:
             if col in self.event_data.columns:
                 self.event_data.drop(columns=[col], inplace=True)
 
@@ -649,11 +667,11 @@ class Game:
             verbose=verbose,
         )
         # update tracking and event data
+        tracking_info[["databallpy_event", "action_type"]] = tracking_info[
+            ["databallpy_event", "action_type"]
+        ].replace({np.nan: None})
         self.tracking_data = pd.concat([self.tracking_data, tracking_info], axis=1)
         self.event_data = pd.concat([self.event_data, event_info], axis=1)
-        self.tracking_data["databallpy_event"] = self.tracking_data[
-            "databallpy_event"
-        ].replace({np.nan: None})
         self.tracking_data["event_id"] = (
             self.tracking_data["event_id"]
             .infer_objects(copy=False)
@@ -672,6 +690,15 @@ class Game:
         self.event_data["sync_certainty"] = self.event_data[
             "sync_certainty"
         ].infer_objects()
+
+        # the ball location at the synced frame, separate from the event data location
+        is_synced = self.event_data["tracking_frame"] != MISSING_INT
+        synced_frames = self.event_data.loc[is_synced, "tracking_frame"]
+        for col in ["x", "y"]:
+            self.event_data[f"tracking_start_{col}"] = np.nan
+            self.event_data.loc[is_synced, f"tracking_start_{col}"] = (
+                self.tracking_data.loc[synced_frames, f"ball_{col}"].values
+            )
 
         # remove columns that are not needed anymore (added for synchronisation)
         self.tracking_data.drop(

@@ -9,8 +9,8 @@ from pandas._libs.tslibs.timestamps import Timestamp
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
     _add_card_results,
-    _add_recovery_dribbles,
     _add_spadl_columns,
+    _set_recoveries_to_non_action,
 )
 from databallpy.events import (
     DribbleEvent,
@@ -198,7 +198,7 @@ SPADL_SINGLE_EVENTS = {
     "keeper pick-up": "keeper_pick_up",
     "smother": "keeper_save",
     "clearance": "clearance",
-    "ball recovery": "dribble",  # updated in _update_opta_spadl_actions
+    "ball recovery": "non_action",  # updated in _update_opta_spadl_actions
 }
 
 
@@ -1392,10 +1392,9 @@ def _get_opta_end_location(event: ET.Element, own_goal: bool) -> tuple[float, fl
 
 def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
     """Function to update the SPADL actions with information of the surrounding
-    events, as socceraction does for opta data. Ball recoveries become dribbles to the
-    start of the next action, passes deflected by a successful ball touch end where
-    the event after the ball touch starts and cards set the result of the last foul of
-    the same player.
+    events, as socceraction does for opta data. Ball recoveries become non actions,
+    passes deflected by a successful ball touch end where the event after the ball
+    touch starts and cards set the result of the last foul of the same player.
 
     Args:
         event_data (pd.DataFrame): The event data in databallpy coordinates, with the
@@ -1404,7 +1403,7 @@ def _update_opta_spadl_actions(event_data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The event data with the updated SPADL actions
     """
-    event_data = _add_recovery_dribbles(
+    event_data = _set_recoveries_to_non_action(
         event_data, event_data["original_event"] == "ball recovery"
     )
 

@@ -386,11 +386,10 @@ class TestMetricaEventDataParser(unittest.TestCase):
             event_data.copy(), {6: "yellow_card", 8: "red_card"}
         )
 
-        # recovery that moved the ball becomes a dribble to the next action
-        self.assertEqual(res.loc[0, "action_type"], "dribble")
-        self.assertEqual(res.loc[0, ["end_x", "end_y"]].tolist(), [10.0, 0.0])
-        # recovery without movement is no action
-        self.assertTrue(res.loc[2, ["action_type", "action_result"]].isna().all())
+        # recoveries are no actions, the carries are added in to_spadl
+        for idx in [0, 2]:
+            self.assertEqual(res.loc[idx, "action_type"], "non_action")
+            self.assertTrue(res.loc[idx, ["action_result", "end_x"]].isna().all())
         # card after the foul of the same player sets the result
         self.assertEqual(res.loc[4, "action_result"], "yellow_card")
         # card more than 60 seconds after the foul is ignored

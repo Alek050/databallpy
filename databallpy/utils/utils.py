@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from platformdirs import user_cache_dir
 
-from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.constants import MISSING_INT, SPADL_TO_DATABALLPY_EVENTS
 
 
 def _to_int(value) -> int:
@@ -326,3 +326,35 @@ def resolve_cache_dir(cache_dir: str | Path | None) -> Path:
     if not path.is_dir():
         path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def get_databallpy_events(event_data: pd.DataFrame) -> pd.Series:
+    """Function to get the databallpy event (pass, shot, dribble, tackle or own_goal)
+    of every event based on the SPADL columns. Event data without SPADL action types
+    (e.g. Instat) falls back on the deprecated databallpy_event column.
+
+    Args:
+        event_data (pd.DataFrame): the event data
+
+    Returns:
+        pd.Series: the databallpy event of every event, None if the event is not a
+            databallpy event.
+    """
+    if "action_type" not in event_data.columns or event_data["action_type"].isna().all():
+        if "databallpy_event" not in event_data.columns:
+            return pd.Series(
+                [None] * len(event_data),
+                index=event_data.index,
+                dtype=object,
+                name="databallpy_event",
+            )
+        databallpy_events = event_data["databallpy_event"].astype(object)
+    else:
+        databallpy_events = (
+            event_data["action_type"].map(SPADL_TO_DATABALLPY_EVENTS).astype(object)
+        )
+        if "action_result" in event_data.columns:
+            databallpy_events[event_data["action_result"] == "owngoal"] = "own_goal"
+    return databallpy_events.where(databallpy_events.notna(), None).rename(
+        "databallpy_event"
+    )

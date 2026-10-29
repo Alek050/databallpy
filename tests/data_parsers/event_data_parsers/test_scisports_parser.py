@@ -531,16 +531,15 @@ class TestSciSportsParser(unittest.TestCase):
         cards = {1: "yellow_card", 3: "red_card", 6: "yellow_card"}
         res = _update_scisports_spadl_actions(event_data, is_recovery, cards)
 
-        # the first recovery moved the ball to the next pass, the second did not
+        # ball recoveries are no actions, the carries are added in to_spadl
         self.assertListEqual(
             to_list(res["action_type"]),
-            ["dribble", None, "pass", None, None, "foul", None],
+            ["non_action", None, "pass", None, "non_action", "foul", None],
         )
-        self.assertListEqual(res.loc[0, ["end_x", "end_y"]].tolist(), [10.0, 0.0])
         # only the card of the player with a foul at the same time is used
         self.assertListEqual(
             to_list(res["action_result"]),
-            ["success", None, "success", None, None, "yellow_card", None],
+            [None, None, "success", None, None, "yellow_card", None],
         )
 
     def test_to_spadl(self):

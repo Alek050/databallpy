@@ -13,9 +13,9 @@ import requests
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import (
     _add_card_results,
-    _add_recovery_dribbles,
     _add_spadl_columns,
     _normalize_playing_direction_events,
+    _set_recoveries_to_non_action,
 )
 from databallpy.data_parsers.metrica_metadata_parser import (
     _get_metadata,
@@ -316,7 +316,7 @@ def _get_metrica_spadl_action(
 ) -> tuple[str | None, str | None, str | None]:
     """Function to map a metrica event to the SPADL vocabulary. Ball lost and ball out
     events with an end location are failed passes, dribble challenges are take-ons and
-    plain ball recoveries are mapped to dribbles and updated in
+    plain ball recoveries are mapped to dribbles and set to non actions in
     _update_metrica_spadl_actions.
 
     Args:
@@ -403,9 +403,8 @@ def _get_metrica_spadl_action(
 
 def _update_metrica_spadl_actions(event_data: pd.DataFrame, cards: dict) -> pd.DataFrame:
     """Function to update the SPADL actions with information of the surrounding
-    events. Plain ball recoveries become dribbles to the start of the next action, or
-    no action when the ball did not move, and cards set the result of the last foul
-    of the same player.
+    events. Plain ball recoveries become non actions and cards set the result of the
+    last foul of the same player.
 
     Args:
         event_data (pd.DataFrame): The event data in databallpy coordinates, with the
@@ -418,7 +417,7 @@ def _update_metrica_spadl_actions(event_data: pd.DataFrame, cards: dict) -> pd.D
     is_recovery = (event_data["original_event"] == "recovery") & (
         event_data["action_type"] == "dribble"
     )
-    event_data = _add_recovery_dribbles(event_data, is_recovery)
+    event_data = _set_recoveries_to_non_action(event_data, is_recovery)
     return _add_card_results(event_data, cards)
 
 
