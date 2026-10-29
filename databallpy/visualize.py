@@ -255,8 +255,9 @@ def plot_events(
 
     Args:
         game (Game): All information about a game
-        events (list, optional): Filter of events you want to plot, if empty,
-            all events are plotted. Defaults to [].
+        events (list, optional): Filter of SPADL action types (e.g. 'clearance')
+            and/or databallpy events (e.g. 'pass') you want to plot, if empty, all
+            events are plotted. Defaults to [].
         outcome (bool, optional): Filter if the event should have a succesfull
             outcome (True) or not (False), if None, all outcomes are included.
             Defaults to None.
@@ -283,14 +284,15 @@ def plot_events(
         message = f"'events' should be a list, not a {type(events)}"
         raise TypeError(message)
     if len(events) > 0:
-        databallpy_events = get_databallpy_events(event_data)
-        for wrong_event in [
-            event for event in events if event not in databallpy_events.unique()
-        ]:
+        valid_events = set(get_databallpy_events(event_data).unique())
+        if "action_type" in event_data.columns:
+            valid_events |= set(event_data["action_type"].unique())
+        for wrong_event in [event for event in events if event not in valid_events]:
             raise ValueError(
-                f"{wrong_event} is not a valid event in the databallpy_events, "
+                f"{wrong_event} is not a valid action type or databallpy event in "
+                "the event data"
             )
-        mask = (mask) & (databallpy_events.isin(events))
+        mask = (mask) & _get_events_mask(event_data, events)
     if outcome is not None:
         if outcome not in [False, True]:
             raise ValueError(
@@ -415,7 +417,8 @@ def plot_tracking_data(
         fig (plt.figure, optional): The figure to plot on. Defaults to None.
         ax (plt.axes, optional): The axes to plot on. Defaults to None.
         title (str, optional): The title of the plot. Defaults to None.
-        events (list, optional): The databallpy events to plot. Defaults to [].
+        events (list, optional): The SPADL action types (e.g. 'clearance') and/or
+            databallpy events (e.g. 'pass') to plot. Defaults to [].
         variable_of_interest (any, optional): The variable you want to plot.
             Defaults to None.
         add_player_possession (bool, optional): Whether to add a circle around the
@@ -505,10 +508,10 @@ def plot_tracking_data(
         _, ax = _plot_player_possession(ax, column_id, idx, game, [])
 
     if len(events) > 0:
-        databallpy_events = get_databallpy_events(game.event_data).set_axis(
-            game.event_data["event_id"]
-        )
-        if databallpy_events.get(td.loc[idx, "event_id"]) in events:
+        event_ids = game.event_data.loc[
+            _get_events_mask(game.event_data, events), "event_id"
+        ].values
+        if td.loc[idx, "event_id"] in event_ids:
             _, ax = _plot_events(ax, td, idx, game, [], contrasting_color)
     return fig, ax
 
@@ -570,7 +573,8 @@ def save_tracking_video(
         title (str, optional): Title of the clip. Defaults to "test_clip".
         team_colors (list, optional): Colors of the home and away team. Defaults to
             ["green", "red"].
-        events (list, optional): What events should be plotted as well. Defaults to [].
+        events (list, optional): The SPADL action types (e.g. 'clearance') and/or
+            databallpy events (e.g. 'pass') to plot as well. Defaults to [].
         variable_of_interest (pd.Series | list, optional): Variable you want to have
             plotted in the clip, this is a pd.Series that should have the same index
             (start_idx:end_idx) as the tracking data that will be plotted. Defaults to
@@ -653,8 +657,8 @@ def save_tracking_video(
     )
 
     contrasting_color = pick_bw_for_contrast(to_rgb(pitch_color))
-    databallpy_events = get_databallpy_events(game.event_data).set_axis(
-        game.event_data["event_id"]
+    event_ids = set(
+        game.event_data.loc[_get_events_mask(game.event_data, events), "event_id"]
     )
 
     # Generate movie with variable info
@@ -704,10 +708,7 @@ def save_tracking_video(
                     ax, column_id, idx, game, variable_fig_objs
                 )
 
-            if (
-                len(events) > 0
-                and databallpy_events.get(td.loc[idx, "event_id"]) in events
-            ):
+            if td.loc[idx, "event_id"] in event_ids:
                 variable_fig_objs, ax = _plot_events(
                     ax, td, idx, game, variable_fig_objs, contrasting_color
                 )
@@ -985,6 +986,15 @@ def _plot_player_possession(
         variable_fig_objs.append(fig_obj)
 
     return variable_fig_objs, ax
+
+
+def _get_events_mask(event_data: pd.DataFrame, events: list[str]) -> pd.Series:
+    """Helper function to select the events that match either the SPADL action type
+    (e.g. 'clearance') or the databallpy event (e.g. 'pass')."""
+    mask = get_databallpy_events(event_data).isin(events)
+    if "action_type" in event_data.columns:
+        mask = mask | event_data["action_type"].isin(events)
+    return mask
 
 
 def _plot_events(
