@@ -7,8 +7,8 @@ import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers.utils import (
     _add_card_results,
-    _add_recovery_dribbles,
     _add_spadl_columns,
+    _set_recoveries_to_non_action,
 )
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _adjust_start_end_frames,
@@ -452,7 +452,7 @@ def _get_kloppy_spadl_action(
     """Function to map a kloppy event to the SPADL vocabulary. Follows the
     socceraction conversion of kloppy data, but also maps all keeper save types to
     keeper saves and second yellow cards to red cards. Ball recoveries are mapped to
-    dribbles, which are updated with the surrounding events afterwards.
+    dribbles, which are set to non actions afterwards.
 
     Args:
         event (kloppy.domain.Event): the kloppy event
@@ -722,7 +722,7 @@ def convert_kloppy_event_dataset(
     event_dataframe = _add_card_results(
         event_dataframe, event_dataframe.pop("card_result").dropna().to_dict()
     )
-    event_dataframe = _add_recovery_dribbles(
+    event_dataframe = _set_recoveries_to_non_action(
         event_dataframe, event_dataframe["original_event"] == EventType.RECOVERY.value
     )
     event_dataframe = _add_spadl_columns(event_dataframe)

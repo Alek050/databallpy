@@ -266,6 +266,40 @@ class TestAddCarriesToEventData(unittest.TestCase):
         expected["event_id"] = [0, 2, 3, 4, 5, 6]
         assert_frame_equal(originals, expected)
 
+    def test_add_carries_to_event_data_after_recovery(self):
+        recovery = self.event_data.iloc[[1]].copy()
+        recovery[["event_id", "seconds", "start_x", "end_x"]] = [1, 12.0, 15.0, np.nan]
+        recovery["datetime"] = pd.to_datetime("2023-01-01 12:00:12", utc=True)
+        recovery[["action_type", "action_result", "action_bodypart"]] = [
+            "non_action",
+            None,
+            None,
+        ]
+        recovery["original_event"] = "ball recovery"
+        event_data = self.event_data.copy()
+        event_data["event_id"] = [0, 2, 3, 4, 5, 6]
+        event_data = pd.concat(
+            [event_data.iloc[:1], recovery, event_data.iloc[1:]], ignore_index=True
+        )
+
+        res, _ = add_carries_to_event_data(event_data, PITCH_DIMENSIONS)
+
+        # the carry follows the recovery in time, but runs from the end of the
+        # previous pass to the start of the next pass, like in to_spadl
+        self.assertListEqual(
+            res["original_event"].iloc[:4].tolist(),
+            ["event", "ball recovery", "carry", "event"],
+        )
+        carry = res.iloc[2]
+        self.assertEqual(carry["seconds"], 13.0)
+        self.assertEqual(
+            carry["datetime"], pd.to_datetime("2023-01-01 12:00:13", utc=True)
+        )
+        np.testing.assert_allclose(
+            carry[["start_x", "start_y", "end_x", "end_y"]].astype(float),
+            [10.0, 0.0, 20.0, 0.0],
+        )
+
     def test_add_carries_to_event_data_to_spadl(self):
         before = self.event_data.to_spadl(
             home_team_id=1, pitch_dimensions=PITCH_DIMENSIONS

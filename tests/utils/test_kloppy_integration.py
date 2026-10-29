@@ -149,9 +149,9 @@ class TestKloppyTracabStatsPerform(unittest.TestCase):
         assert isinstance(game.event_data, EventData)
         assert isinstance(game.tracking_data, TrackingData)
         assert game.tracking_data.empty
-        # 1643 events and 278 added carries
-        assert len(game.event_data) == 1921
-        assert (game.event_data["original_event"] == "carry").sum() == 278
+        # 1643 events and 285 added carries
+        assert len(game.event_data) == 1928
+        assert (game.event_data["original_event"] == "carry").sum() == 285
 
 
 class TestKloppyStatsBombSignality(unittest.TestCase):
@@ -507,7 +507,7 @@ class TestKloppySpadl(unittest.TestCase):
             actions = game.to_spadl()
         event_data = game.event_data
 
-        assert len(actions) == 18
+        assert len(actions) == 17
         # the away player scores an own goal in the right goal
         own_goal = event_data[event_data["action_result"] == "owngoal"].iloc[0]
         assert own_goal["original_event"] == "SHOT"
@@ -520,13 +520,10 @@ class TestKloppySpadl(unittest.TestCase):
             .isna()
             .all()
         )
-        # the recovery is a dribble to the start of the next action
+        # the recovery is no action
         recovery_idx = event_data.index[event_data["original_event"] == "RECOVERY"][0]
-        assert event_data.loc[recovery_idx, "action_type"] == "dribble"
-        assert (
-            event_data.loc[recovery_idx, ["end_x", "end_y"]].tolist()
-            == event_data.loc[recovery_idx + 1, ["start_x", "start_y"]].tolist()
-        )
+        assert event_data.loc[recovery_idx, "action_type"] == "non_action"
+        assert event_data.loc[recovery_idx, "event_id"] not in actions["event_id"].values
 
     def test_statsbomb_spadl(self):
         event_dataset = statsbomb.load(
@@ -541,10 +538,10 @@ class TestKloppySpadl(unittest.TestCase):
         fouls = event_data[event_data["action_type"] == "foul"]
         assert (fouls["action_result"] == "yellow_card").sum() == 7
         assert (fouls["action_result"] == "red_card").sum() == 1
-        recoveries = event_data[event_data["original_event"] == "RECOVERY"]
-        dribbles = recoveries[recoveries["action_type"] == "dribble"]
-        assert len(dribbles) > 0
-        assert dribbles[["end_x", "end_y"]].notna().all().all()
+        # recoveries are no actions, the carry after them is a separate event
+        is_recovery = event_data["original_event"] == "RECOVERY"
+        assert (event_data.loc[is_recovery, "action_type"] == "non_action").all()
+        assert (event_data["original_event"].shift(-1)[is_recovery] == "carry").any()
 
 
 if __name__ == "__main__":

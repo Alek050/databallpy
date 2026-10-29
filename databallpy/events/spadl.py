@@ -373,15 +373,16 @@ def add_carries_to_event_data(
     if not is_carry.any():
         return event_data, identity
 
-    prev_ids = actions["event_id"].shift(1)[is_carry].astype(int).values
     next_ids = actions["event_id"].shift(-1)[is_carry].astype(int).values
     coordinates = _spadl_to_databallpy_coordinates(
         actions.loc[is_carry, ["start_x", "start_y", "end_x", "end_y"]].copy(),
         pitch_dimensions,
     )
 
+    # the carry is timed between the event just before it (the previous action or
+    # an event without action, like a ball recovery) and the next action
     positions = pd.Series(np.arange(len(event_data)), index=event_data["event_id"])
-    prev = event_data.iloc[positions[prev_ids].values].reset_index(drop=True)
+    prev = event_data.iloc[positions[next_ids].values - 1].reset_index(drop=True)
     nex = event_data.iloc[positions[next_ids].values].reset_index(drop=True)
     carries = nex.copy()
 
