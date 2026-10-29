@@ -117,6 +117,28 @@ class TestToSpadl(unittest.TestCase):
                 expected.loc[to_flip] *= -1
                 assert_frame_equal(res[cols], expected)
 
+    def test_to_spadl_missing_end_locations(self):
+        event_data = self.event_data.copy()
+        # a pass and a shot without an end location, and a tackle without one
+        event_data.loc[0, ["end_x", "end_y"]] = np.nan
+        event_data.loc[5, ["end_x", "end_y"]] = np.nan
+        event_data.loc[2, ["action_type", "action_result", "action_bodypart"]] = [
+            "tackle",
+            "success",
+            "foot",
+        ]
+
+        res = event_data.to_spadl(home_team_id=1, pitch_dimensions=PITCH_DIMENSIONS)
+
+        # the pass ends at the start of the next action, so no carry is added
+        self.assertListEqual(
+            res["type_name"].tolist(), ["pass", "pass", "tackle", "clearance", "shot"]
+        )
+        np.testing.assert_allclose(res["end_x"], [20.0, 30.0, 0.0, 40.0, 40.0])
+        np.testing.assert_allclose(res["end_y"], [0.0, 10.0, 0.0, 0.0, 0.0])
+        # the event data is not changed
+        self.assertTrue(event_data.loc[0, ["end_x", "end_y"]].isna().all())
+
     def test_to_spadl_team_oriented_deprecated(self):
         with self.assertWarns(DataBallPyWarning):
             res = self.event_data.to_spadl(

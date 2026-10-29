@@ -105,6 +105,17 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         self.event_3_team_side = "home"
         self.event_3_jersey = 2
 
+    @staticmethod
+    def _add_expected_tracking_start(expected_event_data, expected_tracking_data):
+        # the ball location in the synced frame
+        synced = expected_event_data["tracking_frame"] != MISSING_INT
+        frames = expected_event_data.loc[synced, "tracking_frame"]
+        for col in ["x", "y"]:
+            expected_event_data[f"tracking_start_{col}"] = np.nan
+            expected_event_data.loc[synced, f"tracking_start_{col}"] = (
+                expected_tracking_data.loc[frames, f"ball_{col}"].values
+            )
+
     def test_synchronise_tracking_and_event_data_normal_condition(self):
         expected_event_data = self.game_to_sync.event_data.copy()
         expected_tracking_data = self.game_to_sync.tracking_data.copy()
@@ -218,6 +229,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             0.391775,
             0.503890,
         ]
+        self._add_expected_tracking_start(expected_event_data, expected_tracking_data)
         game_to_sync = self.game_to_sync.copy()
 
         game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
@@ -383,6 +395,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             0.391775,
             0.503890,
         ]
+        self._add_expected_tracking_start(expected_event_data, expected_tracking_data)
         expected_event_data["datetime"] += pd.to_timedelta(1, unit="hours")
         game_to_sync = self.game_to_sync.copy()
         game_to_sync._tracking_timestamp_is_precise = True

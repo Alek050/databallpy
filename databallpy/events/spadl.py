@@ -58,6 +58,24 @@ MIN_DRIBBLE_LENGTH = 3.0
 MAX_DRIBBLE_LENGTH = 60.0
 MAX_DRIBBLE_DURATION = 10.0
 
+# actions that move the ball away from the player, without an end location they end
+# where the next action starts
+BALL_MOVING_ACTION_TYPES = [
+    "pass",
+    "cross",
+    "throw_in",
+    "freekick_crossed",
+    "freekick_short",
+    "corner_crossed",
+    "corner_short",
+    "goalkick",
+    "shot",
+    "shot_penalty",
+    "shot_freekick",
+    "bad_touch",
+    "keeper_punch",
+]
+
 
 def event_data_to_spadl(
     event_data: pd.DataFrame,
@@ -131,6 +149,7 @@ def _get_home_oriented_spadl_actions(
     actions = actions.sort_values(
         ["period_id", "time_seconds"], kind="mergesort"
     ).reset_index(drop=True)
+    actions = _fix_missing_end_locations(actions)
     actions = _fix_clearances(actions)
     actions = _fix_interceptions(actions)
     actions["action_id"] = range(len(actions))
@@ -184,12 +203,14 @@ def _get_actions(
     start_x, start_y = _databallpy_to_spadl(
         events["start_x"], events["start_y"], pitch_dimensions
     )
-    # actions without an end location end where they start
-    end_x, end_y = _databallpy_to_spadl(
-        events.get("end_x", events["start_x"]).fillna(events["start_x"]),
-        events.get("end_y", events["start_y"]).fillna(events["start_y"]),
-        pitch_dimensions,
-    )
+    # actions without an end location end where they start, except for actions that
+    # move the ball, their end location is filled in by _fix_missing_end_locations
+    end_x = events.get("end_x", pd.Series(np.nan, index=events.index))
+    end_y = events.get("end_y", pd.Series(np.nan, index=events.index))
+    moves_ball = events["action_type"].isin(BALL_MOVING_ACTION_TYPES)
+    end_x = end_x.where(end_x.notna() | moves_ball, events["start_x"])
+    end_y = end_y.where(end_y.notna() | moves_ball, events["start_y"])
+    end_x, end_y = _databallpy_to_spadl(end_x, end_y, pitch_dimensions)
 
     return pd.DataFrame(
         {
@@ -242,6 +263,21 @@ def _spadl_to_databallpy_coordinates(
         actions[col] = (actions[col] / SPADL_FIELD_LENGTH - 0.5) * length
     for col in ["start_y", "end_y"]:
         actions[col] = (actions[col] / SPADL_FIELD_WIDTH - 0.5) * width
+    return actions
+
+
+def _fix_missing_end_locations(actions: pd.DataFrame) -> pd.DataFrame:
+    """Function to set the missing end location of actions that move the ball (e.g.
+    passes of providers without end locations) to the start location of the next
+    action in the same period, or to their start location if there is none. This way
+    no dribble is added between the action and the next action, since it is unknown
+    whether the ball was carried."""
+    next_actions = actions.shift(-1)
+    missing = actions["end_x"].isna() | actions["end_y"].isna()
+    has_next = next_actions["period_id"] == actions["period_id"]
+    for col in ["x", "y"]:
+        fill = next_actions[f"start_{col}"].where(has_next, actions[f"start_{col}"])
+        actions.loc[missing, f"end_{col}"] = fill[missing]
     return actions
 
 

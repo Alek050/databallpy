@@ -15,6 +15,8 @@
 - The `events` argument of `plot_events()`, `plot_tracking_data()` and `save_tracking_video()` now also accepts SPADL action types (e.g. `"clearance"`, `"cross"`) next to databallpy events
 - `get_game()`, `get_open_game()` and `get_game_from_kloppy()` now add the carries (SPADL `dribble`) between consecutive actions of the same team as events to the event data (`original_event` `"carry"`), so they are also synchronised and visualised. All `event_id`s are renumbered in time order (also in `pass_events`, `shot_events` and `dribble_events`), and `to_spadl()` links the carries to their `event_id`. Saved and cached games are not changed
 - Ball recoveries (Opta, SciSports, Metrica and kloppy) are now SPADL `non_action`s instead of dribbles to the next action, as in socceraction. The carry around a recovery runs from the end of the previous action to the start of the next action and is placed after the recovery in the event data
+- `to_spadl()` sets the missing end location of actions that move the ball (passes, shots, bad touches and keeper punches, e.g. Sportec failed passes) to the start location of the next action, instead of to their own start location. This prevents carries from the passer to the receiver being added for providers without end locations. The event data itself is not changed
+- `Game.synchronise_tracking_and_event_data()` adds `tracking_start_x` and `tracking_start_y` to the event data: the ball location in the synced frame. `start_x`/`start_y` keep the location of the event data provider
 
   
 ### V0.8.1 (11/08/2026)

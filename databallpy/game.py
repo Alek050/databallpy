@@ -622,6 +622,11 @@ class Game:
         SPADL action types falls back on the databallpy events: 'pass', 'shot',
         'dribble', 'tackle' and 'own_goal'.
 
+        Adds the tracking_frame, sync_certainty, tracking_start_x and
+        tracking_start_y columns to the event data. tracking_start_x/y are the ball
+        location in the synced frame, the start_x/y columns keep the location of the
+        event data provider.
+
         """
         LOGGER.info(f"Trying to synchronise tracking and event data of {self.name}.")
         if not self.allow_synchronise_tracking_and_event_data:
@@ -635,7 +640,12 @@ class Game:
         for col in ["sync_certainty", "databallpy_event", "action_type", "event_id"]:
             if col in self.tracking_data.columns:
                 self.tracking_data.drop(columns=[col], inplace=True)
-        for col in ["tracking_frame", "sync_certainty"]:
+        for col in [
+            "tracking_frame",
+            "sync_certainty",
+            "tracking_start_x",
+            "tracking_start_y",
+        ]:
             if col in self.event_data.columns:
                 self.event_data.drop(columns=[col], inplace=True)
 
@@ -680,6 +690,15 @@ class Game:
         self.event_data["sync_certainty"] = self.event_data[
             "sync_certainty"
         ].infer_objects()
+
+        # the ball location at the synced frame, separate from the event data location
+        is_synced = self.event_data["tracking_frame"] != MISSING_INT
+        synced_frames = self.event_data.loc[is_synced, "tracking_frame"]
+        for col in ["x", "y"]:
+            self.event_data[f"tracking_start_{col}"] = np.nan
+            self.event_data.loc[is_synced, f"tracking_start_{col}"] = (
+                self.tracking_data.loc[synced_frames, f"ball_{col}"].values
+            )
 
         # remove columns that are not needed anymore (added for synchronisation)
         self.tracking_data.drop(

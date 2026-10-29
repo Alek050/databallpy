@@ -534,7 +534,8 @@ class TestKloppySpadl(unittest.TestCase):
         actions = game.to_spadl()
         event_data = game.event_data
 
-        assert len(actions) == 2388
+        # miscontrols have no end location, so no carry is added after them
+        assert len(actions) == 2387
         fouls = event_data[event_data["action_type"] == "foul"]
         assert (fouls["action_result"] == "yellow_card").sum() == 7
         assert (fouls["action_result"] == "red_card").sum() == 1
