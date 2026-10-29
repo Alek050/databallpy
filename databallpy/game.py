@@ -614,9 +614,13 @@ class Game:
                 errors or warnings are raised, try if setting to False works. Defaults
                 to False.
 
-        All SPADL action types are synced, except for 'foul' and 'non_action'. Event
-        data without SPADL action types falls back on the databallpy events: 'pass',
-        'shot', 'dribble', 'tackle' and 'own_goal'.
+        All SPADL action types are synced, except for 'foul' and 'non_action'. By
+        default, release actions (passes, clearances and bad touches) and shots are
+        synced to the moment the ball leaves the player, arrival actions (dribbles,
+        take ons, interceptions and keeper actions) to the moment the ball arrives at
+        the player, and other actions with a general cost function. Event data without
+        SPADL action types falls back on the databallpy events: 'pass', 'shot',
+        'dribble', 'tackle' and 'own_goal'.
 
         """
         LOGGER.info(f"Trying to synchronise tracking and event data of {self.name}.")
