@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
+from databallpy.schemas import EventData
 from databallpy.utils.get_game import get_game
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
@@ -48,6 +49,17 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         )
         self.game_to_sync.allow_synchronise_tracking_and_event_data = True
         self.game_to_sync._tracking_timestamp_is_precise = False
+        self.game_with_carry = self.game_to_sync.copy()
+
+        # the expected outcomes below are based on the events without the carry
+        # that get_game adds between the two passes
+        event_data = self.game_to_sync.event_data
+        is_carry = event_data["original_event"] == "carry"
+        self.assertEqual(is_carry.sum(), 1)
+        self.game_to_sync.event_data = EventData(
+            event_data[~is_carry].reset_index(drop=True), provider=event_data.provider
+        )
+        self.game_to_sync.event_data["event_id"] = range(len(event_data) - 1)
 
         self.game_to_sync.tracking_data["ball_acceleration"] = np.array(
             [180.0, 180.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150.0, 0]
@@ -229,6 +241,18 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         self.assertIsNone(td.loc[tracking_frame, "databallpy_event"])
         self.assertEqual(game_to_sync.event_data.loc[7, "tracking_frame"], MISSING_INT)
         self.assertNotIn("foul", td["action_type"].values)
+
+    def test_synchronise_tracking_and_event_data_carry(self):
+        game_to_sync = self.game_with_carry.copy()
+        game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
+        event_data = game_to_sync.event_data
+        carry = event_data[event_data["original_event"] == "carry"].iloc[0]
+        self.assertEqual(carry["action_type"], "dribble")
+        self.assertNotEqual(carry["tracking_frame"], MISSING_INT)
+        td = game_to_sync.tracking_data
+        self.assertEqual(td.loc[carry["tracking_frame"], "event_id"], carry["event_id"])
+        self.assertEqual(td.loc[carry["tracking_frame"], "action_type"], "dribble")
 
     def test_synchonise_tracking_and_event_data_error(self):
         with self.assertRaises(KeyError):

@@ -13,6 +13,7 @@
 - Added an `action_types` argument to `EventData.to_video_analysis_xml()` and changed the default `code_column` to `"action_type"`; the `databallpy_events` argument is deprecated
 - `get_saved_game()` derives a coarse `action_type` (pass, shot, take_on, tackle) from `databallpy_event` for games saved before the SPADL columns were introduced
 - The `events` argument of `plot_events()`, `plot_tracking_data()` and `save_tracking_video()` now also accepts SPADL action types (e.g. `"clearance"`, `"cross"`) next to databallpy events
+- `get_game()`, `get_open_game()` and `get_game_from_kloppy()` now add the carries (SPADL `dribble`) between consecutive actions of the same team as events to the event data (`original_event` `"carry"`), so they are also synchronised and visualised. All `event_id`s are renumbered in time order (also in `pass_events`, `shot_events` and `dribble_events`), and `to_spadl()` links the carries to their `event_id`. Saved and cached games are not changed
 
   
 ### V0.8.1 (11/08/2026)

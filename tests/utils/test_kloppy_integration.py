@@ -62,7 +62,9 @@ class TestKloppySportec(unittest.TestCase):
         assert isinstance(game, Game)
         assert isinstance(game.event_data, EventData)
         assert isinstance(game.tracking_data, TrackingData)
-        assert len(game.event_data) == 29
+        # 29 events and 2 added carries
+        assert len(game.event_data) == 31
+        assert (game.event_data["original_event"] == "carry").sum() == 2
         assert len(game.tracking_data) == 90100
 
     def test_sportec_tracking_only(self):
@@ -82,7 +84,7 @@ class TestKloppySportec(unittest.TestCase):
         assert isinstance(game, Game)
         assert isinstance(game.event_data, EventData)
         assert isinstance(game.tracking_data, TrackingData)
-        assert len(game.event_data) == 29
+        assert len(game.event_data) == 31
         assert game.tracking_data.empty
 
     def test_sportec_event_only_lxml_score(self):
@@ -147,7 +149,9 @@ class TestKloppyTracabStatsPerform(unittest.TestCase):
         assert isinstance(game.event_data, EventData)
         assert isinstance(game.tracking_data, TrackingData)
         assert game.tracking_data.empty
-        assert len(game.event_data) == 1643
+        # 1643 events and 278 added carries
+        assert len(game.event_data) == 1921
+        assert (game.event_data["original_event"] == "carry").sum() == 278
 
 
 class TestKloppyStatsBombSignality(unittest.TestCase):

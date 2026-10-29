@@ -809,7 +809,15 @@ class TestGetGame(unittest.TestCase):
             event_data_provider="scisports",
             _check_game_class_=False,
         )
-        assert_frame_equal(res_game.event_data, ED_SCISPORTS)
+        # get_game adds a carry between the shot and the penalty
+        event_data = res_game.event_data
+        is_carry = event_data["original_event"] == "carry"
+        self.assertEqual(event_data.loc[is_carry, "event_id"].tolist(), [11])
+        self.assertEqual(event_data.loc[is_carry, "action_type"].tolist(), ["dribble"])
+        event_data = event_data[~is_carry].reset_index(drop=True)
+        event_data["event_id"] = range(len(event_data))
+        assert_frame_equal(event_data, ED_SCISPORTS)
+        self.assertEqual(res_game.shot_events["event_id"].tolist(), [10, 12])
         assert_frame_equal(res_game.periods, MD_SCISPORTS.periods_frames)
         assert_frame_equal(res_game.home_players, MD_SCISPORTS.home_players)
         assert_frame_equal(res_game.away_players, MD_SCISPORTS.away_players)

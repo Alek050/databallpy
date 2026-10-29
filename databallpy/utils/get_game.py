@@ -37,6 +37,7 @@ from databallpy.data_parsers.tracking_data_parsers.utils import (
     _quality_check_tracking_data,
 )
 from databallpy.events import IndividualCloseToBallEvent, PassEvent
+from databallpy.events.spadl import add_carries_to_event_data
 from databallpy.game import Game
 from databallpy.schemas import (
     EventData,
@@ -281,6 +282,13 @@ def get_game(
     )
 
     if uses_event_data:
+        event_data = _add_carries(
+            event_data,
+            tracking_metadata.pitch_dimensions
+            if uses_tracking_data
+            else event_metadata.pitch_dimensions,
+            [shot_events, pass_events, dribble_events],
+        )
         home_players = event_metadata.home_players
         away_players = event_metadata.away_players
     else:
@@ -688,6 +696,12 @@ def get_open_game(
         else pd.DataFrame()
     )
 
+    event_data = _add_carries(
+        event_data,
+        metadata.pitch_dimensions,
+        [shot_events, pass_events, dribble_events],
+    )
+
     game = Game(
         tracking_data=TrackingData(
             tracking_data, provider=provider, frame_rate=metadata.frame_rate
@@ -717,6 +731,22 @@ def get_open_game(
 
     game.save_game(str(cache_path), verbose=False, allow_overwrite=True)
     return game
+
+
+def _add_carries(
+    event_data: pd.DataFrame,
+    pitch_dimensions: list[float],
+    event_dfs: list[pd.DataFrame],
+) -> pd.DataFrame:
+    """Helper function to add the SPADL carries to the event data and update the
+    event ids of the shot, pass and dribble events dataframes in place."""
+    if len(event_data) == 0:
+        return event_data
+    event_data, event_id_map = add_carries_to_event_data(event_data, pitch_dimensions)
+    for df in event_dfs:
+        if "event_id" in df.columns:
+            df["event_id"] = df["event_id"].map(event_id_map)
+    return event_data
 
 
 def try_cache(provider: str, game_id: str) -> Game | None:
@@ -1029,6 +1059,11 @@ def get_game_from_kloppy(
         else float(event_dataset.metadata.pitch_dimensions.pitch_width),
     )
 
+    if uses_event_data:
+        event_data = EventData(
+            _add_carries(event_data, pitch_dimensions, []),
+            provider=event_data.provider,
+        )
     databallpy_events = get_databallpy_events(event_data)
     home_players, away_players = players_from_kloppy(
         event_dataset if uses_event_data else tracking_dataset
