@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.event_data_parsers.sportec_parser import (
     _get_sportec_event_data,
@@ -44,7 +43,7 @@ class TestSportecParser(unittest.TestCase):
         )
         with open(self.ed_loc, "r") as file:
             lines = file.read()
-        self.soup = BeautifulSoup(lines, "xml")
+        self.root = ET.fromstring(lines)
         self.dbp_events = SPORTEC_DATABALLPY_EVENTS
 
     def test_load_sportec_event_data(self):
@@ -74,7 +73,7 @@ class TestSportecParser(unittest.TestCase):
 
     def test_initialize_search_variables(self):
         pitch_center, period_start_times, swap_period = _initialize_search_variables(
-            self.soup, self.expected_md.home_team_id
+            self.root, self.expected_md.home_team_id
         )
 
         self.assertListEqual(pitch_center, [52.5, 34.0])
@@ -87,7 +86,7 @@ class TestSportecParser(unittest.TestCase):
         self.assertEqual(swap_period, 1)
 
     def test_handle_shot_event(self):
-        event = self.soup.find("Event", {"EventId": "13"}).find_next()
+        event = self.root.find('.//Event[@EventId="13"]')[0]
         base_kwargs = {
             "set_piece": "no_set_piece",
             "datetime": pd.to_datetime("2022-11-11T18:37:36.200+01:00"),
@@ -121,7 +120,7 @@ class TestSportecParser(unittest.TestCase):
         self.assertEqual(dbp_shot_event, self.dbp_events["shot_events"][1])
 
     def test_handle_play_event(self):
-        event = self.soup.find("Event", {"EventId": "12"}).find_next().find_next()
+        event = self.root.find('.//Event[@EventId="12"]')[0][0]
         base_kwargs = {
             "set_piece": "kick_off",
             "datetime": pd.to_datetime("2022-11-11T18:31:12.000+01:00"),
@@ -159,7 +158,7 @@ class TestSportecParser(unittest.TestCase):
         self.assertEqual(dbp_play_event, self.dbp_events["pass_events"][0])
 
     def test_tackling_game_event(self):
-        event = self.soup.find("Event", {"EventId": "17"}).find_next()
+        event = self.root.find('.//Event[@EventId="17"]')[0]
         base_kwargs = {
             "set_piece": "no_set_piece",
             "datetime": pd.to_datetime("2022-11-11T20:09:28.600+01:00"),

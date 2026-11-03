@@ -253,6 +253,10 @@ class TestAddCarriesToEventData(unittest.TestCase):
         )
         self.event_data["is_successful"] = pd.array([True] * 6, dtype="boolean")
         self.event_data["original_event"] = "event"
+        # the event data schema coerces the original event ids to object
+        self.event_data["original_event_id"] = self.event_data[
+            "original_event_id"
+        ].astype(object)
 
     def test_add_carries_to_event_data(self):
         res, event_id_map = add_carries_to_event_data(self.event_data, PITCH_DIMENSIONS)

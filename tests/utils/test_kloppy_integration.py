@@ -51,6 +51,7 @@ class TestKloppySportec(unittest.TestCase):
         self.tracking_dataset = sportec.load_tracking(
             meta_data="tests/test_data/from_kloppy/sportec_meta.xml",
             raw_data="tests/test_data/from_kloppy/sportec_positional.xml",
+            only_alive=False,
         )
 
     def test_sportec_both_datasets(self):
@@ -65,7 +66,7 @@ class TestKloppySportec(unittest.TestCase):
         # 29 events and 2 added carries
         assert len(game.event_data) == 31
         assert (game.event_data["original_event"] == "carry").sum() == 2
-        assert len(game.tracking_data) == 90100
+        assert len(game.tracking_data) == 90101
 
     def test_sportec_tracking_only(self):
         """Test loading Sportec with only tracking data"""
@@ -75,7 +76,7 @@ class TestKloppySportec(unittest.TestCase):
         assert isinstance(game.event_data, EventData)
         assert isinstance(game.tracking_data, TrackingData)
         assert game.event_data.empty
-        assert len(game.tracking_data) == 90100
+        assert len(game.tracking_data) == 90101
 
     def test_sportec_event_only(self):
         """Test loading Sportec with only event data"""
@@ -111,6 +112,7 @@ class TestKloppyTracabStatsPerform(unittest.TestCase):
         self.tracking_dataset = tracab.load(
             meta_data="tests/test_data/from_kloppy/tracab_meta.xml",
             raw_data="tests/test_data/from_kloppy/tracab_raw.json",
+            only_alive=False,
         )
 
     def test_tracab_tracking_only_with_warning(self):
@@ -124,7 +126,7 @@ class TestKloppyTracabStatsPerform(unittest.TestCase):
             assert isinstance(game.event_data, EventData)
             assert isinstance(game.tracking_data, TrackingData)
             assert game.event_data.empty
-            assert len(game.tracking_data) == 2
+            assert len(game.tracking_data) == 169426
 
             # Check that DataBallPyWarning was raised
             databallpy_warnings = [
@@ -229,6 +231,7 @@ class TestKloppyEdgeCases(unittest.TestCase):
         self.tracking_dataset = sportec.load_tracking(
             meta_data="tests/test_data/from_kloppy/sportec_meta.xml",
             raw_data="tests/test_data/from_kloppy/sportec_positional.xml",
+            only_alive=False,
         )
 
     def test_no_datasets_provided(self):

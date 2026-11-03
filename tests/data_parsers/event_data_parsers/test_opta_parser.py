@@ -4,7 +4,6 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.event_data_parsers.opta_parser import (
     _get_opta_end_location,
@@ -312,7 +311,7 @@ class TestOptaParser(unittest.TestCase):
             </Event>
             """
 
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
 
         expected_output = ShotEvent(
             event_id=22,
@@ -361,7 +360,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356071" qualifier_id="56" value="Back"/>
             </Event>
         """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
 
         players = pd.DataFrame(
             {
@@ -409,7 +408,7 @@ class TestOptaParser(unittest.TestCase):
             <Q id="3" qualifier_id="157"/>
         </Event>"""
 
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         players = players = pd.DataFrame(
             {"id": [1], "full_name": ["Player 1"], "team_id": [1], "shirt_num": [4]}
         )
@@ -534,7 +533,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356079" qualifier_id="20"/>
             </Event>
             """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)
 
@@ -553,7 +552,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356079" qualifier_id="20"/>
             </Event>
             """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T19:02:07.364", utc=True)
 
@@ -572,7 +571,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356079" qualifier_id="20"/>
             </Event>
             """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)
 
