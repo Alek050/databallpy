@@ -92,6 +92,12 @@ game = get_open_game()
 # align the events with the tracking data
 game.synchronise_tracking_and_event_data()
 
+# all tracking data df with synced events
+game.tracking_data
+
+# all event data df with synced tracking frames
+game.event_data
+
 # all actions as a SPADL dataframe
 actions = game.to_spadl()
 ```
@@ -116,9 +122,11 @@ The timestamps and locations of event data rarely match the tracking data. DataB
 
 After `game.synchronise_tracking_and_event_data()` the event data has a `tracking_frame`, a `sync_certainty` and the ball location in that frame (`tracking_start_x`, `tracking_start_y`), while `start_x`/`start_y` keep the provider's location. Before and after synchronisation:
 
-https://user-images.githubusercontent.com/49450063/224564808-fa71735f-5510-464d-8499-9044227a02e8.mp4
 
-https://user-images.githubusercontent.com/49450063/224564913-4091faf7-f6ef-4429-b132-7f93ce5e1d91.mp4
+
+https://github.com/user-attachments/assets/2599af1f-a3cd-47b5-8204-af6290a7c4f3
+
+
 
 See the [synchronisation page][synchronisation-url] for how it works and how to use your own cost functions.
 
