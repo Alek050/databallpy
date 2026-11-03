@@ -1,7 +1,7 @@
 import json
 import os
 import warnings
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from functools import wraps
 
 import numpy as np
@@ -16,6 +16,11 @@ from databallpy.schemas import (
 )
 from databallpy.utils.constants import DATABALLPY_POSITIONS, MISSING_INT
 from databallpy.utils.errors import DataBallPyError
+from databallpy.utils.event_extras import (
+    EVENT_TYPES,
+    get_event_extras_from_dataframe,
+    get_event_type_dataframe,
+)
 from databallpy.utils.game_utils import (
     _remove_offside_players,
     player_column_id_to_full_name,
@@ -95,11 +100,18 @@ class Game:
         away_score (int): Number of goals scored over the game by the away team.
         away_formation (str): Indication of the formation of the away team.
         country (str): The country where the game was played.
-        shot_events (pd.DataFrame): A df with all th shot events.
-        dribble_events (pd.DataFrame): A df with all the dribble events.
-        pass_events (pd.DataFrame): A df with all the pass events.
+        shot_extras (pd.DataFrame): The extra information of the shot events, joined
+            with the event data on the event_id in ``game.shot_events``.
+        dribble_extras (pd.DataFrame): The extra information of the dribble events,
+            joined with the event data on the event_id in ``game.dribble_events``.
+        pass_extras (pd.DataFrame): The extra information of the pass events, joined
+            with the event data on the event_id in ``game.pass_events``.
         allow_synchronise_tracking_and_event_data (bool): If True, the tracking and
         event data can be synchronised. If False, it can not. Default = False.
+
+    Note:
+        Passing ``shot_events``, ``dribble_events`` or ``pass_events`` is deprecated
+        and will be removed in v0.11.0, pass the extras instead.
     """
 
     tracking_data: TrackingData
@@ -117,9 +129,9 @@ class Game:
     away_score: int
     away_formation: str
     country: str | None
-    shot_events: pd.DataFrame
-    dribble_events: pd.DataFrame
-    pass_events: pd.DataFrame
+    shot_extras: pd.DataFrame = field(default_factory=pd.DataFrame)
+    dribble_extras: pd.DataFrame = field(default_factory=pd.DataFrame)
+    pass_extras: pd.DataFrame = field(default_factory=pd.DataFrame)
     allow_synchronise_tracking_and_event_data: bool = False
     # to save the preprocessing status
     _is_synchronised: bool = False
@@ -140,6 +152,35 @@ class Game:
                 _normalise_datetime_units(df)
         if self._check_inputs_:
             check_inputs_game_object(self)
+
+    def _get_event_type_dataframe(self, event_type: str) -> pd.DataFrame:
+        return get_event_type_dataframe(
+            self.event_data,
+            getattr(self, f"{event_type}_extras"),
+            event_type,
+            self.home_team_id,
+            pd.concat([self.home_players, self.away_players], ignore_index=True),
+            self.pitch_dimensions,
+        )
+
+    @property
+    def shot_events(self) -> pd.DataFrame:
+        """The shot events of the game: the event data of the shots joined with the
+        extra information of the shots, the expected threat, and the distance and
+        angle to goal and the expected goals of the shots."""
+        return self._get_event_type_dataframe("shot")
+
+    @property
+    def dribble_events(self) -> pd.DataFrame:
+        """The dribble events of the game: the event data of the dribbles joined with
+        the extra information of the dribbles and the expected threat."""
+        return self._get_event_type_dataframe("dribble")
+
+    @property
+    def pass_events(self) -> pd.DataFrame:
+        """The pass events of the game: the event data of the passes joined with the
+        extra information of the passes and the expected threat."""
+        return self._get_event_type_dataframe("pass")
 
     @property
     def frame_rate(self) -> float:
@@ -362,15 +403,12 @@ class Game:
             pd.Series: The event with the given event_id
         """
 
-        if event_id in self.pass_events["event_id"].values:
-            return self.pass_events[self.pass_events["event_id"] == event_id].iloc[0]
-        elif event_id in self.shot_events["event_id"].values:
-            return self.shot_events[self.shot_events["event_id"] == event_id].iloc[0]
-        elif event_id in self.dribble_events["event_id"].values:
-            return self.dribble_events[self.dribble_events["event_id"] == event_id].iloc[
-                0
-            ]
-        elif event_id in self.event_data["event_id"].values:
+        for event_type in ["pass", "shot", "dribble"]:
+            extras = getattr(self, f"{event_type}_extras")
+            if "event_id" in extras.columns and event_id in extras["event_id"].values:
+                events = self._get_event_type_dataframe(event_type)
+                return events[events["event_id"] == event_id].iloc[0]
+        if event_id in self.event_data["event_id"].values:
             return self.event_data[self.event_data["event_id"] == event_id].iloc[0]
         else:
             raise ValueError(f"Event with id {event_id} not found in the game.")
@@ -772,9 +810,9 @@ class Game:
             "periods",
             "home_players",
             "away_players",
-            "dribble_events",
-            "shot_events",
-            "pass_events",
+            "dribble_extras",
+            "shot_extras",
+            "pass_extras",
         ):
             dataframe = getattr(self, dataframe_name)
             id_columns = [
@@ -828,6 +866,32 @@ class Game:
 
         if verbose:
             print(f"Game saved in {folder_path}")
+
+
+_dataclass_init = Game.__init__
+
+
+@wraps(_dataclass_init)
+def _init_with_deprecated_event_kwargs(self, *args, **kwargs):
+    """Accept the deprecated ``shot_events``, ``dribble_events`` and ``pass_events``
+    keyword arguments and convert them to the extra information of the events."""
+    for event_type in EVENT_TYPES:
+        if f"{event_type}_events" not in kwargs:
+            continue
+        event_df = kwargs.pop(f"{event_type}_events")
+        warnings.warn(
+            f"Passing `{event_type}_events` to Game is deprecated and will be removed "
+            f"in v0.11.0, pass `{event_type}_extras` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(event_df, pd.DataFrame):
+            event_df = get_event_extras_from_dataframe(event_df, event_type)
+        kwargs.setdefault(f"{event_type}_extras", event_df)
+    _dataclass_init(self, *args, **kwargs)
+
+
+Game.__init__ = _init_with_deprecated_event_kwargs
 
 
 @logging_wrapper(__file__)
@@ -1008,15 +1072,12 @@ def check_inputs_game_object(game: Game):
                 category=DataBallPyWarning,
             )
 
-    # check databallpy_events
-    databallpy_events = [game.dribble_events, game.shot_events, game.pass_events]
-    for event_df, event_name in zip(
-        databallpy_events,
-        ["dribble", "shot", "pass"],
-    ):
-        if not isinstance(event_df, pd.DataFrame):
+    # check the extra information of the shot, pass and dribble events
+    for event_type in EVENT_TYPES:
+        extras = getattr(game, f"{event_type}_extras")
+        if not isinstance(extras, pd.DataFrame):
             raise TypeError(
-                f"{event_name}_events should be a dataframe, not a {type(event_df)}"
+                f"{event_type}_extras should be a dataframe, not a {type(extras)}"
             )
 
     # country

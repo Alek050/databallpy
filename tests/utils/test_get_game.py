@@ -3,6 +3,7 @@ import os
 import unittest
 from unittest.mock import Mock, patch
 
+import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers import (
@@ -15,15 +16,18 @@ from databallpy.data_parsers.tracking_data_parsers import (
     load_metrica_tracking_data,
     load_tracab_tracking_data,
 )
+from databallpy.features.expected_values import get_xt
 from databallpy.game import Game
 from databallpy.schemas import EventData, TrackingData
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.event_extras import get_event_extras_from_dataframe
 from databallpy.utils.get_game import (
     get_game,
     get_open_game,
     get_saved_game,
 )
 from databallpy.utils.utils import resolve_cache_dir
+from tests.event_extras_testing import to_event_extras
 from tests.expected_outcomes import (
     DRIBBLE_EVENTS_METRICA,
     DRIBBLE_EVENTS_OPTA,
@@ -44,7 +48,6 @@ from tests.expected_outcomes import (
     SHOT_EVENTS_OPTA,
     SHOT_EVENTS_OPTA_TRACAB,
     SHOT_EVENTS_STATSBOMB,
-    SPORTEC_DATABALLPY_EVENTS,
     SPORTEC_DRIBBLE_EVENTS,
     SPORTEC_EVENT_DATA,
     SPORTEC_METADATA_ED,
@@ -57,6 +60,32 @@ from tests.expected_outcomes import (
 from tests.pandas_testing import assert_frame_equal
 
 from ..mocks import ED_METRICA_RAW, MD_METRICA_RAW, TD_METRICA_RAW
+
+
+def _extras_kwargs(
+    shot_events: pd.DataFrame, pass_events: pd.DataFrame, dribble_events: pd.DataFrame
+) -> dict[str, pd.DataFrame]:
+    """Get the extras keyword arguments of the Game from the event dataframes."""
+    return {
+        "shot_extras": get_event_extras_from_dataframe(shot_events, "shot"),
+        "pass_extras": get_event_extras_from_dataframe(pass_events, "pass"),
+        "dribble_extras": get_event_extras_from_dataframe(dribble_events, "dribble"),
+    }
+
+
+def _assert_xt_and_add_to_expected(
+    game: Game, expected_game: Game, *event_dfs: pd.DataFrame
+) -> None:
+    """Assert that the xt in the event data matches the xt of the event dataframes,
+    and add the xt column of the event data to the expected game."""
+    xt = game.event_data.set_index("event_id")["xt"]
+    for df in event_dfs:
+        np.testing.assert_allclose(
+            xt.loc[df["event_id"]].to_numpy(dtype=float),
+            df["xt"].to_numpy(dtype=float),
+            atol=1e-4,
+        )
+    expected_game.event_data["xt"] = game.event_data["xt"].to_numpy()
 
 
 class TestGetGame(unittest.TestCase):
@@ -81,10 +110,9 @@ class TestGetGame(unittest.TestCase):
         )
 
         self.corrected_ed = EventData(self.ed_opta.copy(), provider="opta")
-        self.corrected_ed["start_x"] *= (
-            100.0 / 106.0
-        )  # pitch dimensions of td and ed metadata
-        self.corrected_ed["start_y"] *= 50.0 / 68.0
+        # pitch dimensions of td and ed metadata
+        self.corrected_ed[["start_x", "end_x"]] *= 100.0 / 106.0
+        self.corrected_ed[["start_y", "end_y"]] *= 50.0 / 68.0
 
         self.expected_periods_tracab_opta = pd.DataFrame(
             {
@@ -190,9 +218,11 @@ class TestGetGame(unittest.TestCase):
             away_team_name=self.md_opta.away_team_name,
             away_players=self.expected_away_players_tracab_opta,
             country=self.md_opta.country,
-            shot_events=SHOT_EVENTS_OPTA_TRACAB.copy(),
-            dribble_events=DRIBBLE_EVENTS_OPTA_TRACAB.copy(),
-            pass_events=PASS_EVENTS_OPTA_TRACAB.copy(),
+            **_extras_kwargs(
+                SHOT_EVENTS_OPTA_TRACAB,
+                PASS_EVENTS_OPTA_TRACAB,
+                DRIBBLE_EVENTS_OPTA_TRACAB,
+            ),
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
@@ -245,9 +275,9 @@ class TestGetGame(unittest.TestCase):
             away_team_name=self.md_metrica.away_team_name,
             away_players=self.md_metrica.away_players,
             country=self.md_metrica.country,
-            pass_events=PASS_EVENTS_METRICA,
-            shot_events=SHOT_EVENTS_METRICA,
-            dribble_events=DRIBBLE_EVENTS_METRICA,
+            **_extras_kwargs(
+                SHOT_EVENTS_METRICA, PASS_EVENTS_METRICA, DRIBBLE_EVENTS_METRICA
+            ),
             _tracking_timestamp_is_precise=True,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
@@ -365,9 +395,7 @@ class TestGetGame(unittest.TestCase):
             away_score=self.md_instat.away_score,
             away_team_name=self.md_instat.away_team_name,
             away_players=self.expected_away_players_inmotio_instat,
-            shot_events=pd.DataFrame(),
-            pass_events=pd.DataFrame(),
-            dribble_events=pd.DataFrame(),
+            **_extras_kwargs(pd.DataFrame(), pd.DataFrame(), pd.DataFrame()),
             country=self.md_instat.country,
             _tracking_timestamp_is_precise=False,
             _periods_changed_playing_direction=[],
@@ -407,9 +435,7 @@ class TestGetGame(unittest.TestCase):
             away_team_name=MD_TRACAB.away_team_name,
             away_players=MD_TRACAB.away_players,
             country=MD_TRACAB.country,
-            pass_events=pd.DataFrame(),
-            shot_events=pd.DataFrame(),
-            dribble_events=pd.DataFrame(),
+            **_extras_kwargs(pd.DataFrame(), pd.DataFrame(), pd.DataFrame()),
             _tracking_timestamp_is_precise=True,
             _periods_changed_playing_direction=[],
         )
@@ -457,6 +483,13 @@ class TestGetGame(unittest.TestCase):
             event_data_provider=self.ed_provider,
             check_quality=True,
         )
+        _assert_xt_and_add_to_expected(
+            game,
+            self.expected_game_tracab_opta,
+            SHOT_EVENTS_OPTA_TRACAB,
+            PASS_EVENTS_OPTA_TRACAB,
+            DRIBBLE_EVENTS_OPTA_TRACAB,
+        )
         assert game == self.expected_game_tracab_opta
 
     def test_get_game_no_valid_input(self):
@@ -494,12 +527,13 @@ class TestGetGame(unittest.TestCase):
             away_team_name=MD_OPTA.away_team_name,
             away_players=MD_OPTA.away_players,
             country=MD_OPTA.country,
-            shot_events=SHOT_EVENTS_OPTA,
-            dribble_events=DRIBBLE_EVENTS_OPTA,
-            pass_events=PASS_EVENTS_OPTA,
+            **_extras_kwargs(SHOT_EVENTS_OPTA, PASS_EVENTS_OPTA, DRIBBLE_EVENTS_OPTA),
             _event_timestamp_is_precise=True,
         )
 
+        _assert_xt_and_add_to_expected(
+            game, expected_game_opta, SHOT_EVENTS_OPTA, PASS_EVENTS_OPTA
+        )
         assert game == expected_game_opta
 
     def test_get_game_team_name_column_populated(self):
@@ -548,12 +582,13 @@ class TestGetGame(unittest.TestCase):
             away_team_name=MD_OPTA.away_team_name,
             away_players=MD_OPTA.away_players,
             country=MD_OPTA.country,
-            shot_events=SHOT_EVENTS_OPTA,
-            dribble_events=DRIBBLE_EVENTS_OPTA,
-            pass_events=PASS_EVENTS_OPTA,
+            **_extras_kwargs(SHOT_EVENTS_OPTA, PASS_EVENTS_OPTA, DRIBBLE_EVENTS_OPTA),
             _event_timestamp_is_precise=True,
         )
 
+        _assert_xt_and_add_to_expected(
+            game, expected_game_statsperform, SHOT_EVENTS_OPTA, PASS_EVENTS_OPTA
+        )
         assert game == expected_game_statsperform
         assert game.event_data.provider == "statsperform"
 
@@ -603,6 +638,9 @@ class TestGetGame(unittest.TestCase):
         expected_game.home_players.loc[:, "id"] = [100, 200]
         expected_game.event_data.loc[[0, 1], "player_id"] = [200, 100]
 
+        _assert_xt_and_add_to_expected(
+            game_instat_inmotio_unaligned_input, expected_game
+        )
         assert game_instat_inmotio_unaligned_input == expected_game
 
     def test_get_game_inmotio_instat(self):
@@ -616,6 +654,9 @@ class TestGetGame(unittest.TestCase):
             check_quality=False,
         )
 
+        _assert_xt_and_add_to_expected(
+            game_instat_inmotio, self.expected_game_inmotio_instat
+        )
         assert game_instat_inmotio == self.expected_game_inmotio_instat
 
     def test_get_game_metrica_data(self):
@@ -627,6 +668,13 @@ class TestGetGame(unittest.TestCase):
             event_metadata_loc=self.md_metrica_loc,
             event_data_provider="metrica",
             check_quality=False,
+        )
+        _assert_xt_and_add_to_expected(
+            res,
+            self.expected_game_metrica,
+            SHOT_EVENTS_METRICA,
+            PASS_EVENTS_METRICA,
+            DRIBBLE_EVENTS_METRICA,
         )
         assert res == self.expected_game_metrica
 
@@ -649,9 +697,9 @@ class TestGetGame(unittest.TestCase):
             country=SPORTEC_METADATA_ED.country,
             _event_timestamp_is_precise=True,
             _periods_changed_playing_direction=None,
-            pass_events=SPORTEC_PASS_EVENTS,
-            shot_events=SPORTEC_SHOT_EVENTS,
-            dribble_events=SPORTEC_DRIBBLE_EVENTS,
+            **_extras_kwargs(
+                SPORTEC_SHOT_EVENTS, SPORTEC_PASS_EVENTS, SPORTEC_DRIBBLE_EVENTS
+            ),
         )
         res = get_game(
             event_data_loc=self.sportec_event_loc,
@@ -659,6 +707,13 @@ class TestGetGame(unittest.TestCase):
             event_data_provider="sportec",
         )
 
+        _assert_xt_and_add_to_expected(
+            res,
+            expected_game_sportec,
+            SPORTEC_SHOT_EVENTS,
+            SPORTEC_PASS_EVENTS,
+            SPORTEC_DRIBBLE_EVENTS,
+        )
         self.assertEqual(res, expected_game_sportec)
 
     def test_get_game_statsbomb(self):
@@ -680,9 +735,9 @@ class TestGetGame(unittest.TestCase):
             country=MD_STATSBOMB.country,
             _tracking_timestamp_is_precise=False,
             _periods_changed_playing_direction=None,
-            shot_events=SHOT_EVENTS_STATSBOMB,
-            pass_events=PASS_EVENTS_STATSBOMB,
-            dribble_events=DRIBBLE_EVENTS_STATSBOMB,
+            **_extras_kwargs(
+                SHOT_EVENTS_STATSBOMB, PASS_EVENTS_STATSBOMB, DRIBBLE_EVENTS_STATSBOMB
+            ),
         )
 
         res = get_game(
@@ -690,6 +745,13 @@ class TestGetGame(unittest.TestCase):
             event_match_loc=self.statsbomb_match_loc,
             event_lineup_loc=self.statsbomb_lineup_loc,
             event_data_provider="statsbomb",
+        )
+        _assert_xt_and_add_to_expected(
+            res,
+            expected_game_statsbomb,
+            SHOT_EVENTS_STATSBOMB,
+            PASS_EVENTS_STATSBOMB,
+            DRIBBLE_EVENTS_STATSBOMB,
         )
         self.assertEqual(res, expected_game_statsbomb)
 
@@ -712,7 +774,9 @@ class TestGetGame(unittest.TestCase):
         mock_event_data.return_value = (
             SPORTEC_EVENT_DATA,
             SPORTEC_METADATA_ED,
-            SPORTEC_DATABALLPY_EVENTS,
+            to_event_extras(
+                SPORTEC_SHOT_EVENTS, SPORTEC_PASS_EVENTS, SPORTEC_DRIBBLE_EVENTS
+            ),
         )
         mock_os_remove.return_value = "removed"
         mock_save_game.return_value = None
@@ -750,12 +814,19 @@ class TestGetGame(unittest.TestCase):
             _event_timestamp_is_precise=True,
             _tracking_timestamp_is_precise=True,
             _periods_changed_playing_direction=[1],
-            pass_events=SPORTEC_PASS_EVENTS,
-            shot_events=SPORTEC_SHOT_EVENTS,
-            dribble_events=SPORTEC_DRIBBLE_EVENTS,
+            **_extras_kwargs(
+                SPORTEC_SHOT_EVENTS, SPORTEC_PASS_EVENTS, SPORTEC_DRIBBLE_EVENTS
+            ),
             allow_synchronise_tracking_and_event_data=True,
         )
 
+        _assert_xt_and_add_to_expected(
+            game,
+            expected_game_sportec,
+            SPORTEC_SHOT_EVENTS,
+            SPORTEC_PASS_EVENTS,
+            SPORTEC_DRIBBLE_EVENTS,
+        )
         self.assertEqual(game, expected_game_sportec)
         self.assertEqual(mock_os_remove.call_count, 4)
 
@@ -781,6 +852,13 @@ class TestGetGame(unittest.TestCase):
         expected_game = self.expected_game_metrica.copy()
         expected_game._periods_changed_playing_direction = []
         expected_game.allow_synchronise_tracking_and_event_data = True
+        _assert_xt_and_add_to_expected(
+            game,
+            expected_game,
+            SHOT_EVENTS_METRICA,
+            PASS_EVENTS_METRICA,
+            DRIBBLE_EVENTS_METRICA,
+        )
         assert game == expected_game
 
         with self.assertRaises(ValueError):
@@ -788,6 +866,7 @@ class TestGetGame(unittest.TestCase):
 
     def test_get_saved_game(self):
         expected_game = self.expected_game_metrica
+        expected_game.event_data["xt"] = np.arange(len(expected_game.event_data)) / 100
         expected_game.save_game(
             name="test_game", path="tests/test_data", allow_overwrite=True
         )
@@ -798,6 +877,40 @@ class TestGetGame(unittest.TestCase):
         for file in os.listdir(os.path.join("tests", "test_data", "test_game")):
             os.remove(os.path.join("tests", "test_data", "test_game", file))
         os.rmdir(os.path.join("tests", "test_data", "test_game"))
+
+    def test_get_saved_game_old_format(self):
+        # games saved before v0.8.2 have no xt column and save the event type
+        # dataframes (like shot_events) instead of the extra information
+        expected_game = self.expected_game_metrica
+        expected_game.event_data["xt"] = get_xt(
+            expected_game.event_data, expected_game.home_team_id
+        )
+        expected_game.save_game(
+            name="test_game_old", path="tests/test_data", allow_overwrite=True
+        )
+        folder = os.path.join("tests", "test_data", "test_game_old")
+        event_data = pd.read_parquet(os.path.join(folder, "event_data.parquet"))
+        event_data.drop(columns=["xt"]).to_parquet(
+            os.path.join(folder, "event_data.parquet")
+        )
+        for event_type in ["shot", "pass", "dribble"]:
+            os.remove(os.path.join(folder, f"{event_type}_extras.parquet"))
+            getattr(expected_game, f"{event_type}_events").to_parquet(
+                os.path.join(folder, f"{event_type}_events.parquet")
+            )
+
+        try:
+            saved_game = get_saved_game(name="test_game_old", path="tests/test_data")
+            assert_frame_equal(saved_game.event_data, expected_game.event_data)
+            for event_type in ["shot", "pass", "dribble"]:
+                assert_frame_equal(
+                    getattr(saved_game, f"{event_type}_events"),
+                    getattr(expected_game, f"{event_type}_events"),
+                )
+        finally:
+            for file in os.listdir(folder):
+                os.remove(os.path.join(folder, file))
+            os.rmdir(folder)
 
     def test_get_saved_game_errors(self):
         with self.assertRaises(ValueError):
@@ -816,7 +929,7 @@ class TestGetGame(unittest.TestCase):
         self.assertEqual(event_data.loc[is_carry, "action_type"].tolist(), ["dribble"])
         event_data = event_data[~is_carry].reset_index(drop=True)
         event_data["event_id"] = range(len(event_data))
-        assert_frame_equal(event_data, ED_SCISPORTS)
+        assert_frame_equal(event_data.drop(columns=["xt"]), ED_SCISPORTS)
         self.assertEqual(res_game.shot_events["event_id"].tolist(), [10, 12])
         assert_frame_equal(res_game.periods, MD_SCISPORTS.periods_frames)
         assert_frame_equal(res_game.home_players, MD_SCISPORTS.home_players)

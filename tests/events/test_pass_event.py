@@ -1,3 +1,4 @@
+import dataclasses
 import random
 import unittest
 
@@ -33,6 +34,10 @@ class TestPassEvent(unittest.TestCase):
             end_y=1.0,
             pass_type="pull_back",
         )
+
+    def test_pass_event_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            dataclasses.replace(self.pass_event)
 
     def test_pass_event_copy__eq__(self):
         self.assertEqual(self.pass_event, self.pass_event.copy())

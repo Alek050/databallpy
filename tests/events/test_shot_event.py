@@ -1,3 +1,4 @@
+import dataclasses
 import random
 import unittest
 
@@ -48,6 +49,10 @@ class TestShotEvent(unittest.TestCase):
                 "event_id": 2512690515,
             }
         )
+
+    def test_shot_event_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            dataclasses.replace(self.shot_event)
 
     def test_shot_event_post_init(self):
         # super call

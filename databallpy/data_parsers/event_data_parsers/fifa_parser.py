@@ -5,12 +5,8 @@ import pandas as pd
 
 from databallpy.data_parsers import Metadata
 from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
-from databallpy.events import (
-    IndividualCloseToBallEvent,
-    PassEvent,
-    ShotEvent,
-)
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.event_extras import create_all_event_extras
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.tz_modification import utc_to_local_datetime
 
@@ -78,9 +74,7 @@ def load_fifa_event_data(
     metadata_loc: str,
     events_loc: str,
     pitch_dimensions: list = [105.0, 68.0],
-) -> tuple[
-    pd.DataFrame, Metadata, dict[str, dict[str | int, IndividualCloseToBallEvent]]
-]:
+) -> tuple[pd.DataFrame, Metadata, dict[str, pd.DataFrame]]:
     """This function retrieves the metadata and event data of a FIFA match. The x
     and y coordinates provided have been scaled to the dimensions of the pitch, with
     (0, 0) being the center. Additionally, the coordinates have been standardized so
@@ -94,7 +88,7 @@ def load_fifa_event_data(
 
     Returns:
         Tuple[pd.DataFrame, Metadata, dict]: the event data of the game, the metadata,
-        and the databallpy_events.
+        and the extra information of the shot and pass events.
     """
     if not isinstance(metadata_loc, str):
         raise TypeError(f"metadata_loc should be a string, not a {type(metadata_loc)}")
@@ -110,9 +104,6 @@ def load_fifa_event_data(
         )
 
     metadata = _load_metadata(metadata_loc, pitch_dimensions=pitch_dimensions)
-    all_players = pd.concat(
-        [metadata.home_players, metadata.away_players], ignore_index=True
-    )
     kickoff_time = metadata.periods_frames.loc[
         metadata.periods_frames["period_id"] == 1, "start_datetime_ed"
     ].iloc[0]
@@ -124,17 +115,12 @@ def load_fifa_event_data(
         metadata.home_team_id,
         metadata.away_team_id,
         pitch_dimensions=pitch_dimensions,
-        players=all_players,
         kickoff_time=kickoff_time_utc,
     )
 
     event_data["datetime"] = utc_to_local_datetime(
         event_data["datetime"], metadata.country
     )
-
-    for event_type_dict in databallpy_events.values():
-        for event in event_type_dict.values():
-            event.datetime = utc_to_local_datetime(event.datetime, metadata.country)
 
     home_score, away_score = _get_game_score(
         event_data,
@@ -278,25 +264,23 @@ def _load_event_data(
     events_loc: str,
     home_team_id: int,
     away_team_id: int,
-    players: pd.DataFrame,
     pitch_dimensions: list = [105.0, 68.0],
     kickoff_time: pd.Timestamp = None,
-) -> tuple[pd.DataFrame, dict[str, dict[str | int, IndividualCloseToBallEvent]]]:
+) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     """Function to load FIFA event data from a newline-delimited JSON file.
 
     Args:
         events_loc (str): location of the events JSON file.
         home_team_id (int): id of the home team.
         away_team_id (int): id of the away team.
-        players (pd.DataFrame): dataframe with player information.
         pitch_dimensions (list, optional): dimensions of the pitch.
             Defaults to [105.0, 68.0].
         kickoff_time (pd.Timestamp): kickoff time of the match.
 
     Returns:
         pd.DataFrame: all events of the game in a pd.DataFrame.
-        dict: dict with "shot_events", "pass_events" as keys,
-              each mapping event_id → databallpy event instance.
+        dict: dict with "shot_events", "pass_events" and "dribble_events" as keys,
+              each with a dataframe with the extra information of the events.
     """
     shot_events = {}
     pass_events = {}
@@ -427,32 +411,10 @@ def _load_event_data(
         result_dict["end_y"].append(y_end)
 
         if event_name in ["pass", "cross", "assist"]:
-            pass_events[i_event] = _make_pass_instance(
-                event,
-                home_team_id,
-                away_team_id,
-                pitch_dimensions=pitch_dimensions,
-                players=players,
-                id=i_event,
-                period_id=period_id,
-                flip_first_half=flip_first_half,
-                flip_second_half=flip_second_half,
-                kickoff_time=kickoff_time,
-            )
+            pass_events[i_event] = _get_pass_extras(event)
 
         if event_name in ["attempt_at_goal", "goal", "own_goal"]:
-            shot_events[i_event] = _make_shot_event_instance(
-                event,
-                home_team_id,
-                away_team_id,
-                pitch_dimensions=pitch_dimensions,
-                players=players,
-                id=i_event,
-                period_id=period_id,
-                flip_first_half=flip_first_half,
-                flip_second_half=flip_second_half,
-                kickoff_time=kickoff_time,
-            )
+            shot_events[i_event] = _get_shot_extras(event)
 
     result_dict["databallpy_event"] = [None] * len(result_dict["event_id"])
     event_data = pd.DataFrame(result_dict)
@@ -466,10 +428,12 @@ def _load_event_data(
     event_data.loc[event_data["period_id"] > 5, "period_id"] = -1
     event_data = _add_spadl_columns(event_data)
 
-    return event_data, {
-        "shot_events": shot_events,
-        "pass_events": pass_events,
-    }
+    return event_data, create_all_event_extras(
+        {
+            "shot_events": shot_events,
+            "pass_events": pass_events,
+        }
+    )
 
 
 def _get_fifa_spadl_action(
@@ -521,98 +485,41 @@ def _get_fifa_spadl_action(
     return None, None, None
 
 
-def _make_pass_instance(
-    event: dict,
-    home_team_id: int,
-    away_team_id: int,
-    players: pd.DataFrame,
-    pitch_dimensions: list = [105.0, 68.0],
-    id: int = None,
-    period_id: int = None,
-    flip_first_half: bool = False,
-    flip_second_half: bool = False,
-    kickoff_time: pd.Timestamp = None,
-) -> PassEvent:
-    """Function to create a PassEvent instance from FIFA event data."""
-    on_ball_info = _get_on_ball_event_info(event)
-    on_ball_info.update(
-        _get_close_to_ball_event_info(
-            event,
-            pitch_dimensions,
-            home_team_id,
-            away_team_id,
-            players,
-            id,
-            period_id,
-            flip_first_half,
-            flip_second_half,
-            kickoff_time,
-        )
-    )
+def _get_pass_extras(event: dict) -> dict:
+    """Function to get the extra information of a pass event from FIFA event data.
 
-    outcome_str = (
-        "successful"
-        if (event.get("outcome") or "").lower() == "possession_complete"
-        else "unsuccessful"
-    )
+    Args:
+        event (dict): event from FIFA data.
+
+    Returns:
+        dict: the extra information of the pass event.
+    """
+    extras = _get_on_ball_event_info(event)
+    extras["related_event_id"] = MISSING_INT
+    extras["outcome"] = (event.get("outcome") or "").lower() == "possession_complete"
+    extras["outcome_str"] = "successful" if extras["outcome"] else "unsuccessful"
 
     event_name = event.get("event", "")
     if event_name == "cross":
-        pass_type = "cross"
+        extras["pass_type"] = "cross"
     else:
         line_break = event.get("line_break_direction")
-        pass_type = FIFA_LINE_BREAK_TO_PASS_TYPE.get(line_break, "unspecified")
+        extras["pass_type"] = FIFA_LINE_BREAK_TO_PASS_TYPE.get(line_break, "unspecified")
 
-    x_end_raw = event.get("x_location_end")
-    y_end_raw = event.get("y_location_end")
-    x_end, y_end = _get_transformed_coordinates(
-        x_end_raw,
-        y_end_raw,
-        pitch_dimensions,
-        period_id,
-        flip_first_half,
-        flip_second_half,
-    )
-
-    return PassEvent(
-        **on_ball_info,
-        _xt=-1.0,
-        outcome_str=outcome_str,
-        end_x=x_end,
-        end_y=y_end,
-        pass_type=pass_type,
-    )
+    return extras
 
 
-def _make_shot_event_instance(
-    event: dict,
-    home_team_id: int,
-    away_team_id: int,
-    players: pd.DataFrame,
-    pitch_dimensions: list = [105.0, 68.0],
-    id: int = None,
-    period_id: int = None,
-    flip_first_half: bool = False,
-    flip_second_half: bool = False,
-    kickoff_time: pd.Timestamp = None,
-) -> ShotEvent:
-    """Function to create a ShotEvent instance from FIFA event data."""
-    on_ball_info = _get_on_ball_event_info(event)
-    on_ball_info.update(
-        _get_close_to_ball_event_info(
-            event,
-            pitch_dimensions,
-            home_team_id,
-            away_team_id,
-            players,
-            id,
-            period_id,
-            flip_first_half,
-            flip_second_half,
-            kickoff_time,
-        )
-    )
-    on_ball_info.pop("outcome")
+def _get_shot_extras(event: dict) -> dict:
+    """Function to get the extra information of a shot event from FIFA event data.
+
+    Args:
+        event (dict): event from FIFA data.
+
+    Returns:
+        dict: the extra information of the shot event.
+    """
+    extras = _get_on_ball_event_info(event)
+    extras["related_event_id"] = MISSING_INT
 
     event_name = (event.get("event") or "").lower()
     if event_name == "own_goal":
@@ -623,17 +530,13 @@ def _make_shot_event_instance(
         raw_outcome = (event.get("outcome") or "").lower()
         shot_outcome = SHOT_OUTCOMES.get(raw_outcome, "miss_off_target")
 
-    return ShotEvent(
-        **on_ball_info,
-        _xt=-1.0,
-        outcome=shot_outcome == "goal",
-        outcome_str=shot_outcome,
-    )
+    extras["outcome"] = shot_outcome == "goal"
+    extras["outcome_str"] = shot_outcome
+    return extras
 
 
 def _get_on_ball_event_info(event: dict) -> dict:
-    """Function to get the on-ball event data from the event based on
-    the IndividualOnBallEvent class.
+    """Function to get the on-ball event information of an event.
 
     Args:
         event (dict): event from FIFA data.
@@ -653,82 +556,6 @@ def _get_on_ball_event_info(event: dict) -> dict:
         "body_part": body_part,
         "set_piece": set_piece,
         "possession_type": "open_play",
-    }
-
-
-def _get_close_to_ball_event_info(
-    event: dict,
-    pitch_dimensions: list,
-    home_team_id: int,
-    away_team_id: int,
-    players: pd.DataFrame,
-    id: int,
-    period_id: int,
-    flip_first_half: bool,
-    flip_second_half: bool,
-    kickoff_time: pd.Timestamp = None,
-) -> dict:
-    """Function to get the base event data from the event based on
-    the CloseToBallEvent class.
-
-    Args:
-        event (dict): event from FIFA data.
-        pitch_dimensions (list): pitch dimensions in x and y direction.
-        home_team_id (int): id of the home team.
-        away_team_id (int): id of the away team.
-        players (pd.DataFrame): dataframe with player information.
-        id (int): event id.
-        period_id (int): period id.
-        flip_first_half (bool): whether to flip first half coordinates.
-        flip_second_half (bool): whether to flip second half coordinates.
-        kickoff_time (pd.Timestamp, optional): kickoff time of the match.
-
-    Returns:
-        dict: dictionary with the base event data.
-    """
-    x_raw = (
-        event.get("x_location_start")
-        if event.get("x_location_start") is not None
-        else event.get("x")
-    )
-    y_raw = (
-        event.get("y_location_start")
-        if event.get("y_location_start") is not None
-        else event.get("y")
-    )
-
-    x_start, y_start = _get_transformed_coordinates(
-        x_raw, y_raw, pitch_dimensions, period_id, flip_first_half, flip_second_half
-    )
-
-    total_seconds = event.get("match_time_in_ms", 0) / 1000.0
-    minutes = int(total_seconds // 60)
-    seconds = int(total_seconds % 60)
-
-    if kickoff_time is not None:
-        event_datetime = kickoff_time + pd.to_timedelta(total_seconds, unit="s")
-    else:
-        event_datetime = pd.NaT
-
-    player_id = event.get("from_player_id")
-    jersey_row = players.loc[players["id"] == player_id, "shirt_num"]
-    jersey = jersey_row.iloc[0] if len(jersey_row) > 0 else MISSING_INT
-
-    return {
-        "start_x": x_start,
-        "start_y": y_start,
-        "related_event_id": MISSING_INT,
-        "event_id": id,
-        "period_id": period_id,
-        "minutes": minutes,
-        "seconds": seconds,
-        "datetime": event_datetime,
-        "team_id": event.get("team_id"),
-        "team_side": "home" if event.get("team_id") != away_team_id else "away",
-        "pitch_size": pitch_dimensions,
-        "player_id": player_id,
-        "jersey": jersey,
-        "outcome": (event.get("outcome") or "").lower() == "possession_complete",
     }
 
 

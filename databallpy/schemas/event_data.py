@@ -74,6 +74,7 @@ class EventDataSchema(pa.DataFrameModel):
     to_player_name: Optional[pa.typing.Series[str]] = pa.Field(nullable=True)
     event_type_id: Optional[pa.typing.Series[int]] = pa.Field(ge=-1)
     team_name: Optional[pa.typing.Series[str]] = pa.Field(nullable=True)
+    xt: Optional[pa.typing.Series[float]] = pa.Field(nullable=True)
 
 
 class EventData(pd.DataFrame):

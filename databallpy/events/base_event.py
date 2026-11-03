@@ -1,4 +1,5 @@
 import os
+import warnings
 from dataclasses import dataclass, fields
 
 import numpy as np
@@ -11,6 +12,13 @@ from databallpy.utils.constants import (
     DATBALLPY_BODY_PARTS,
 )
 from databallpy.utils.utils import _copy_value_, _values_are_equal_
+
+EVENT_CLASSES_DEPRECATION = (
+    "The event classes (ShotEvent, PassEvent, DribbleEvent, IndividualOnBallEvent and "
+    "IndividualCloseToBallEvent) are deprecated and will be removed in v0.11.0. Use "
+    "the dataframes game.shot_events, game.pass_events and game.dribble_events "
+    "instead."
+)
 
 path = os.path.join(os.path.dirname(__file__), "..", "models")
 FREE_KICK_XT = np.load(f"{path}/free_kick_xT.npy")
@@ -81,6 +89,7 @@ class IndividualCloseToBallEvent:
         ]
 
     def __post_init__(self):
+        warnings.warn(EVENT_CLASSES_DEPRECATION, DeprecationWarning, stacklevel=3)
         self._validate_inputs_close_to_ball_event()
 
     def copy(self):
@@ -218,6 +227,7 @@ class IndividualOnBallEvent(IndividualCloseToBallEvent):
     _xt: float
 
     def __post_init__(self):
+        warnings.warn(EVENT_CLASSES_DEPRECATION, DeprecationWarning, stacklevel=4)
         self._validate_inputs_close_to_ball_event()
         self._validate_inputs_on_ball_event()
         self._xt = self.xt

@@ -1,6 +1,7 @@
 import pandas as pd
 
 from databallpy.events import DribbleEvent, PassEvent, ShotEvent
+from databallpy.utils.warnings import deprecated
 
 
 def _remove_offside_players(
@@ -101,6 +102,10 @@ def player_id_to_column_id(
         raise ValueError(f"{player_id} is not in either one of the teams")
 
 
+@deprecated(
+    "create_event_attributes_dataframe is deprecated and will be removed in v0.11.0. "
+    "Use game.shot_events, game.pass_events and game.dribble_events instead."
+)
 def create_event_attributes_dataframe(
     events: dict[str | int, ShotEvent | PassEvent | DribbleEvent],
 ) -> pd.DataFrame:

@@ -21,10 +21,17 @@ from databallpy.data_parsers.event_data_parsers.sportec_parser import (
 )
 from databallpy.schemas import EventData
 from databallpy.utils.constants import SPADL_ACTION_TYPES
+from tests.event_extras_testing import (
+    assert_event_extras,
+    assert_event_extras_equal,
+    to_event_extras,
+)
 from tests.expected_outcomes import (
-    SPORTEC_DATABALLPY_EVENTS,
+    SPORTEC_DRIBBLE_EVENTS,
     SPORTEC_EVENT_DATA,
     SPORTEC_METADATA_ED,
+    SPORTEC_PASS_EVENTS,
+    SPORTEC_SHOT_EVENTS,
 )
 from tests.pandas_testing import assert_frame_equal
 
@@ -44,7 +51,9 @@ class TestSportecParser(unittest.TestCase):
         with open(self.ed_loc, "r") as file:
             lines = file.read()
         self.root = ET.fromstring(lines)
-        self.dbp_events = SPORTEC_DATABALLPY_EVENTS
+        self.dbp_events = to_event_extras(
+            SPORTEC_SHOT_EVENTS, SPORTEC_PASS_EVENTS, SPORTEC_DRIBBLE_EVENTS
+        )
 
     def test_load_sportec_event_data(self):
         with self.assertRaises(FileNotFoundError):
@@ -60,16 +69,16 @@ class TestSportecParser(unittest.TestCase):
 
         assert_frame_equal(res_ed, self.expected_ed)
         self.assertEqual(res_md, exp_metadata)
-        for key in self.dbp_events.keys():
-            self.assertDictEqual(res_dbp_events[key], self.dbp_events[key])
+        assert_event_extras(res_dbp_events, res_ed)
+        assert_event_extras_equal(res_dbp_events, self.dbp_events)
 
     def test_get_sportec_event_data(self):
         res_ed, res_dbp_events = _get_sportec_event_data(
             self.ed_loc, self.expected_md.copy()
         )
         assert_frame_equal(res_ed, self.expected_ed)
-        for key in self.dbp_events.keys():
-            self.assertDictEqual(res_dbp_events[key], self.dbp_events[key])
+        assert_event_extras(res_dbp_events, res_ed)
+        assert_event_extras_equal(res_dbp_events, self.dbp_events)
 
     def test_initialize_search_variables(self):
         pitch_center, period_start_times, swap_period = _initialize_search_variables(
@@ -100,14 +109,9 @@ class TestSportecParser(unittest.TestCase):
             "player_id": "B-3",
             "team_id": "Team2",
         }
-        res_kwargs, dbp_shot_event = _handle_shot_event(
-            event, self.expected_md, base_kwargs
-        )
+        res_kwargs = _handle_shot_event(event, base_kwargs.copy())
 
         expected_kwargs = base_kwargs.copy()
-        expected_kwargs["team_side"] = "away"
-        expected_kwargs["pitch_size"] = [105.0, 68.0]
-        expected_kwargs["jersey"] = 5
         expected_kwargs["original_event"] = "SavedShot"
         expected_kwargs["databallpy_event"] = "shot"
         expected_kwargs["related_event_id"] = None
@@ -117,7 +121,6 @@ class TestSportecParser(unittest.TestCase):
         expected_kwargs["outcome_str"] = "miss_on_target"
 
         self.assertDictEqual(res_kwargs, expected_kwargs)
-        self.assertEqual(dbp_shot_event, self.dbp_events["shot_events"][1])
 
     def test_handle_play_event(self):
         event = self.root.find('.//Event[@EventId="12"]')[0][0]
@@ -134,14 +137,9 @@ class TestSportecParser(unittest.TestCase):
             "player_id": "B-1",
             "team_id": "Team2",
         }
-        res_kwargs, dbp_play_event = _handle_play_event(
-            event, self.expected_md, base_kwargs
-        )
+        res_kwargs = _handle_play_event(event, base_kwargs.copy())
 
         expected_kwargs = base_kwargs.copy()
-        expected_kwargs["team_side"] = "away"
-        expected_kwargs["pitch_size"] = [105.0, 68.0]
-        expected_kwargs["jersey"] = 28
         expected_kwargs["original_event"] = "Pass"
         expected_kwargs["databallpy_event"] = "pass"
         expected_kwargs["related_event_id"] = None
@@ -149,13 +147,10 @@ class TestSportecParser(unittest.TestCase):
         expected_kwargs["possession_type"] = "unspecified"
         expected_kwargs["outcome"] = True
         expected_kwargs["outcome_str"] = "unspecified"
-        expected_kwargs["end_x"] = np.nan
-        expected_kwargs["end_y"] = np.nan
         expected_kwargs["pass_type"] = "unspecified"
         expected_kwargs["receiver_player_id"] = "B-3"
 
         self.assertDictEqual(res_kwargs, expected_kwargs)
-        self.assertEqual(dbp_play_event, self.dbp_events["pass_events"][0])
 
     def test_tackling_game_event(self):
         event = self.root.find('.//Event[@EventId="17"]')[0]
@@ -172,17 +167,13 @@ class TestSportecParser(unittest.TestCase):
             "player_id": "A-5",
             "team_id": "Team1",
         }
-        res_kwargs, dbp_dribble_event = _handle_tackling_game_event(
-            event, self.expected_md, base_kwargs
-        )
+        res_kwargs = _handle_tackling_game_event(event, base_kwargs.copy())
 
         expected_kwargs = base_kwargs.copy()
-        expected_kwargs["team_side"] = "home"
-        expected_kwargs["pitch_size"] = [105.0, 68.0]
-        expected_kwargs["jersey"] = 1
         expected_kwargs["original_event"] = "dribbledAround"
         expected_kwargs["databallpy_event"] = "dribble"
         expected_kwargs["outcome"] = True
+        expected_kwargs["body_part"] = "foot"
         expected_kwargs["possession_type"] = "open_play"
         expected_kwargs["duel_type"] = "unspecified"
         expected_kwargs["with_opponent"] = True
@@ -190,7 +181,6 @@ class TestSportecParser(unittest.TestCase):
         expected_kwargs["databallpy_event"] = "dribble"
 
         self.assertDictEqual(res_kwargs, expected_kwargs)
-        self.assertEqual(dbp_dribble_event, self.dbp_events["dribble_events"][4])
 
     @patch("databallpy.data_parsers.event_data_parsers.sportec_parser.requests.get")
     @patch("databallpy.data_parsers.event_data_parsers.sportec_parser.os.makedirs")

@@ -1,3 +1,4 @@
+import dataclasses
 import unittest
 
 import pandas as pd
@@ -29,6 +30,10 @@ class TestDribbleEvent(unittest.TestCase):
             duel_type="offensive",
             with_opponent=False,
         )
+
+    def test_dribble_event_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            dataclasses.replace(self.dribble_event)
 
     def test_post_init(self):
         # super() call CloseToBallEvent
