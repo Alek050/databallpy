@@ -145,7 +145,7 @@ def get_shot_features(
         shots["action_bodypart"].fillna("").astype(str).str.contains("foot").to_numpy()
     )
     # bodypart is missing when the provider does not specify it, use the foot model
-    is_foot |= shots["action_bodypart"].isna().to_numpy()
+    is_foot = is_foot | shots["action_bodypart"].isna().to_numpy()
 
     if len(shots) > 0:
         xg_free_kick = scale_and_predict_logreg(features, XG_PARAMS["xg_by_free_kick"])
