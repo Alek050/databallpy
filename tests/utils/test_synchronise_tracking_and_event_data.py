@@ -5,22 +5,27 @@ import numpy as np
 import pandas as pd
 
 from databallpy.features.angle import get_smallest_angle
+from databallpy.schemas import EventData
 from databallpy.utils.get_game import get_game
 from databallpy.utils.synchronise_tracking_and_event_data import (
     _create_sim_mat,
+    _get_cost_function,
     _needleman_wunsch,
     _validate_cost,
     _validate_sigmoid_kwargs,
     align_event_data_datetime,
+    base_arrival_cost_function,
     base_general_cost_ball_event,
     base_pass_cost_function,
     base_shot_cost_function,
     combine_cost_functions,
     create_smart_batches,
     get_ball_acceleration_cost,
+    get_ball_deceleration_cost,
     get_ball_goal_angle_cost,
     get_distance_ball_event_cost,
     get_distance_ball_player_cost,
+    get_player_ball_distance_decrease_cost,
     get_player_ball_distance_increase_cost,
     get_time_difference_cost,
     pre_compute_synchronisation_variables,
@@ -48,6 +53,17 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         )
         self.game_to_sync.allow_synchronise_tracking_and_event_data = True
         self.game_to_sync._tracking_timestamp_is_precise = False
+        self.game_with_carry = self.game_to_sync.copy()
+
+        # the expected outcomes below are based on the events without the carry
+        # that get_game adds between the two passes
+        event_data = self.game_to_sync.event_data
+        is_carry = event_data["original_event"] == "carry"
+        self.assertEqual(is_carry.sum(), 1)
+        self.game_to_sync.event_data = EventData(
+            event_data[~is_carry].reset_index(drop=True), provider=event_data.provider
+        )
+        self.game_to_sync.event_data["event_id"] = range(len(event_data) - 1)
 
         self.game_to_sync.tracking_data["ball_acceleration"] = np.array(
             [180.0, 180.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150.0, 0]
@@ -70,8 +86,35 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             ]
         )
         self.game_to_sync.event_data.loc[8, "databallpy_event"] = "shot"
+        self.game_to_sync.event_data.loc[8, "action_type"] = "shot"
+        self.expected_action_types = [
+            None,
+            "pass",
+            None,
+            "pass",
+            None,
+            None,
+            None,
+            None,
+            None,
+            "take_on",
+            None,
+            "shot",
+            None,
+        ]
         self.event_3_team_side = "home"
         self.event_3_jersey = 2
+
+    @staticmethod
+    def _add_expected_tracking_start(expected_event_data, expected_tracking_data):
+        # the ball location in the synced frame
+        synced = expected_event_data["tracking_frame"] != MISSING_INT
+        frames = expected_event_data.loc[synced, "tracking_frame"]
+        for col in ["x", "y"]:
+            expected_event_data[f"tracking_start_{col}"] = np.nan
+            expected_event_data.loc[synced, f"tracking_start_{col}"] = (
+                expected_tracking_data.loc[frames, f"ball_{col}"].values
+            )
 
     def test_synchronise_tracking_and_event_data_normal_condition(self):
         expected_event_data = self.game_to_sync.event_data.copy()
@@ -126,12 +169,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             None,
             None,
             None,
-            "dribble",
             None,
+            "dribble",
             None,
             "shot",
             None,
         ]
+        expected_tracking_data["action_type"] = self.expected_action_types
         expected_tracking_data["event_id"] = [
             MISSING_INT,
             3,
@@ -141,8 +185,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
-            7,
             MISSING_INT,
+            7,
             MISSING_INT,
             8,
             MISSING_INT,
@@ -156,8 +200,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             np.nan,
             np.nan,
             np.nan,
-            0.331058,
             np.nan,
+            0.391775,
             np.nan,
             0.503890,
             np.nan,
@@ -171,7 +215,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             3,
             MISSING_INT,
             MISSING_INT,
-            8,
+            9,
             11,
         ]
         expected_event_data.loc[:, "sync_certainty"] = [
@@ -182,9 +226,10 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             0.634676,
             np.nan,
             np.nan,
-            0.331058,
+            0.391775,
             0.503890,
         ]
+        self._add_expected_tracking_start(expected_event_data, expected_tracking_data)
         game_to_sync = self.game_to_sync.copy()
 
         game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
@@ -196,6 +241,34 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         game_to_sync.tracking_data.loc[:, "ball_status"] = "dead"
         with self.assertRaises(IndexError):
             game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
+    def test_synchronise_tracking_and_event_data_action_types(self):
+        game_to_sync = self.game_to_sync.copy()
+        game_to_sync.event_data.loc[4, "action_type"] = "clearance"
+        game_to_sync.event_data.loc[7, "action_type"] = "foul"
+
+        game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
+        # all action types are synced, except for fouls and non actions
+        tracking_frame = game_to_sync.event_data.loc[4, "tracking_frame"]
+        self.assertNotEqual(tracking_frame, MISSING_INT)
+        td = game_to_sync.tracking_data
+        self.assertEqual(td.loc[tracking_frame, "action_type"], "clearance")
+        self.assertIsNone(td.loc[tracking_frame, "databallpy_event"])
+        self.assertEqual(game_to_sync.event_data.loc[7, "tracking_frame"], MISSING_INT)
+        self.assertNotIn("foul", td["action_type"].values)
+
+    def test_synchronise_tracking_and_event_data_carry(self):
+        game_to_sync = self.game_with_carry.copy()
+        game_to_sync.synchronise_tracking_and_event_data(n_batches=2, offset=0)
+
+        event_data = game_to_sync.event_data
+        carry = event_data[event_data["original_event"] == "carry"].iloc[0]
+        self.assertEqual(carry["action_type"], "dribble")
+        self.assertNotEqual(carry["tracking_frame"], MISSING_INT)
+        td = game_to_sync.tracking_data
+        self.assertEqual(td.loc[carry["tracking_frame"], "event_id"], carry["event_id"])
+        self.assertEqual(td.loc[carry["tracking_frame"], "action_type"], "dribble")
 
     def test_synchonise_tracking_and_event_data_error(self):
         with self.assertRaises(KeyError):
@@ -262,12 +335,13 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             None,
             None,
             None,
-            "dribble",
             None,
+            "dribble",
             None,
             "shot",
             None,
         ]
+        expected_tracking_data["action_type"] = self.expected_action_types
         expected_tracking_data["event_id"] = [
             MISSING_INT,
             3,
@@ -277,8 +351,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             MISSING_INT,
             MISSING_INT,
             MISSING_INT,
-            7,
             MISSING_INT,
+            7,
             MISSING_INT,
             8,
             MISSING_INT,
@@ -292,8 +366,8 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             np.nan,
             np.nan,
             np.nan,
-            0.331058,
             np.nan,
+            0.391775,
             np.nan,
             0.503890,
             np.nan,
@@ -307,7 +381,7 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             3,
             MISSING_INT,
             MISSING_INT,
-            8,
+            9,
             11,
         ]
         expected_event_data.loc[:, "sync_certainty"] = [
@@ -318,9 +392,10 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             0.634676,
             np.nan,
             np.nan,
-            0.331058,
+            0.391775,
             0.503890,
         ]
+        self._add_expected_tracking_start(expected_event_data, expected_tracking_data)
         expected_event_data["datetime"] += pd.to_timedelta(1, unit="hours")
         game_to_sync = self.game_to_sync.copy()
         game_to_sync._tracking_timestamp_is_precise = True
@@ -409,6 +484,30 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             away_players=self.game_to_sync.away_players,
         )
         np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+    def test_create_sim_mat_action_type_cost_functions(self):
+        tracking_data = self.game_to_sync.tracking_data.copy().reset_index()
+        event_data = self.game_to_sync.event_data.copy()
+        event_data = event_data[
+            event_data["event_type_id"].isin([1, 3, 7])
+        ].reset_index()
+        n_frames = len(tracking_data)
+        # the cost function of the action type has priority over the databallpy event
+        cost_functions = {
+            "pass": lambda **kwargs: np.full(n_frames, 0.5),
+            "take_on": lambda **kwargs: np.full(n_frames, 0.2),
+            "dribble": lambda **kwargs: np.full(n_frames, 0.9),
+            "shot": lambda **kwargs: np.full(n_frames, 0.0),
+        }
+        res = _create_sim_mat(
+            tracking_batch=tracking_data,
+            event_batch=event_data,
+            home_players=self.game_to_sync.home_players,
+            away_players=self.game_to_sync.away_players,
+            cost_functions=cost_functions,
+        )
+        expected_res = np.repeat([[0.5, 0.5, 0.8, 1.0]], n_frames, axis=0)
+        np.testing.assert_allclose(res, expected_res)
 
     def test_create_sim_mat_missing_player(self):
         expected_res = RES_SIM_MAT_MISSING_PLAYER
@@ -716,6 +815,117 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         expected_res2 = sigmoid(np.gradient(player_ball_diff), d=2)
 
         np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_get_ball_deceleration_cost(self):
+        tracking_data = pd.DataFrame(
+            {
+                "datetime": pd.to_datetime(
+                    ["2023-01-01 00:00:00.0", "2023-01-01 00:00:00.5"]
+                    + ["2023-01-01 00:00:01.0"]
+                ),
+                "ball_x": [0.0, 5.0, 6.0],
+                "ball_y": [0.0, 0.0, 0.0],
+                "ball_velocity": [10.0, 6.0, 2.0],
+            }
+        )
+        # velocity drops 4 m/s every 0.5 s: deceleration of 8 m/s^2
+        res = get_ball_deceleration_cost(tracking_data)
+        expected_res = sigmoid(-np.array([8.0, 8.0, 8.0]), d=0.2, e=-25.0)
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        res2 = get_ball_deceleration_cost(tracking_data, d=2, e=3)
+        expected_res2 = sigmoid(np.array([8.0, 8.0, 8.0]), d=2, e=3)
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+        # without ball_velocity, the velocity is derived from the ball location
+        res3 = get_ball_deceleration_cost(tracking_data.drop(columns="ball_velocity"))
+        velocity = np.gradient(np.array([0.0, 5.0, 6.0]), np.array([0.0, 0.5, 1.0]))
+        deceleration = -np.gradient(velocity, np.array([0.0, 0.5, 1.0]))
+        np.testing.assert_allclose(
+            res3, sigmoid(-deceleration, d=0.2, e=-25.0), rtol=1e-05
+        )
+
+        res4 = get_ball_deceleration_cost(tracking_data.iloc[:1])
+        self.assertTrue(np.isnan(res4).all())
+
+    def test_get_player_ball_distance_decrease_cost(self):
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        player_ball_diff = np.sqrt(
+            (tracking_data["home_2_x"] - tracking_data["ball_x"]) ** 2
+            + (tracking_data["home_2_y"] - tracking_data["ball_y"]) ** 2
+        )
+
+        res = get_player_ball_distance_decrease_cost(
+            tracking_data, self.event_3_team_side, self.event_3_jersey
+        )
+        expected_res = sigmoid(np.gradient(player_ball_diff), d=8.0)
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+        res2 = get_player_ball_distance_decrease_cost(
+            tracking_data, self.event_3_team_side, self.event_3_jersey, d=2
+        )
+        expected_res2 = sigmoid(np.gradient(player_ball_diff), d=2)
+        np.testing.assert_allclose(res2, expected_res2, rtol=1e-05)
+
+    def test_base_arrival_cost_function(self):
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        event = self.game_to_sync.get_event(3)
+
+        res = base_arrival_cost_function(
+            tracking_data, event, self.event_3_team_side, self.event_3_jersey
+        )
+
+        expected_res = combine_cost_functions(
+            [
+                get_time_difference_cost(tracking_data, event),
+                get_distance_ball_event_cost(tracking_data, event),
+                get_distance_ball_player_cost(
+                    tracking_data, self.event_3_team_side, self.event_3_jersey
+                ),
+                get_ball_deceleration_cost(tracking_data),
+                get_player_ball_distance_decrease_cost(
+                    tracking_data, self.event_3_team_side, self.event_3_jersey
+                ),
+            ]
+        )
+        np.testing.assert_allclose(res, expected_res, rtol=1e-05)
+
+    def test_get_cost_function(self):
+        def custom(**kwargs):
+            pass
+
+        def custom2(**kwargs):
+            pass
+
+        cases = [
+            # default by action type
+            ("cross", "pass", {}, base_pass_cost_function),
+            ("clearance", None, {}, base_pass_cost_function),
+            ("bad_touch", None, {}, base_pass_cost_function),
+            ("shot_penalty", "shot", {}, base_shot_cost_function),
+            ("dribble", "dribble", {}, base_arrival_cost_function),
+            ("take_on", "dribble", {}, base_arrival_cost_function),
+            ("interception", None, {}, base_arrival_cost_function),
+            ("keeper_save", None, {}, base_arrival_cost_function),
+            ("tackle", "tackle", {}, base_general_cost_ball_event),
+            ("pass", "own_goal", {}, base_general_cost_ball_event),
+            # default by databallpy event, without action types
+            (None, "pass", {}, base_pass_cost_function),
+            (None, "shot", {}, base_shot_cost_function),
+            (None, "dribble", {}, base_arrival_cost_function),
+            (None, "tackle", {}, base_general_cost_ball_event),
+            # custom cost functions, action type over databallpy event
+            ("cross", "pass", {"pass": custom}, custom),
+            ("cross", "pass", {"pass": custom, "cross": custom2}, custom2),
+            ("pass", "own_goal", {"own_goal": custom}, custom),
+            (None, "dribble", {"dribble": custom}, custom),
+        ]
+        for action_type, databallpy_event, cost_functions, expected in cases:
+            with self.subTest(action_type=action_type, event=databallpy_event):
+                self.assertIs(
+                    _get_cost_function(action_type, databallpy_event, cost_functions),
+                    expected,
+                )
 
     def test_get_ball_goal_angle_cost(self):
         tracking_data = pd.DataFrame(

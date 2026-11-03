@@ -35,7 +35,11 @@ from databallpy.features.pressure import (
 )
 from databallpy.utils.constants import MISSING_INT
 from databallpy.utils.logging import create_logger, logging_wrapper
-from databallpy.utils.warnings import DataBallPyWarning
+from databallpy.utils.utils import get_databallpy_events
+from databallpy.utils.warnings import (
+    DataBallPyWarning,
+    warn_databallpy_event_deprecation,
+)
 
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
@@ -177,6 +181,14 @@ class TrackingData(pd.DataFrame):
         self.__dict__.update(state)
         self._provider = state.get("_provider", "unspecified")
         self._frame_rate = state.get("_frame_rate", MISSING_INT)
+
+    def __getitem__(self, key):
+        warn_databallpy_event_deprecation(key)
+        return super().__getitem__(key)
+
+    def __getattr__(self, name):
+        warn_databallpy_event_deprecation(name)
+        return super().__getattr__(name)
 
     @property
     def _constructor(self):
@@ -812,13 +824,13 @@ class TrackingData(pd.DataFrame):
             )
 
         on_ball_events = ["pass", "dribble", "shot"]
-        current_team_id = event_data.loc[
-            ~pd.isnull(event_data["databallpy_event"]), "team_id"
-        ].iloc[0]
+        databallpy_events = get_databallpy_events(event_data)
+        current_team_id = event_data.loc[databallpy_events.notna(), "team_id"].iloc[0]
         start_idx = 0
         self["team_possession"] = None
         events_by_id = (
-            event_data.drop_duplicates(subset="event_id")
+            event_data.assign(databallpy_event=databallpy_events)
+            .drop_duplicates(subset="event_id")
             .set_index("event_id")[["databallpy_event", "team_id", "is_successful"]]
             .to_dict("index")
         )

@@ -7,6 +7,7 @@ import pandas as pd
 
 from databallpy import Event, LabelDict, events_to_xml
 from databallpy.schemas.event_data import EventData
+from databallpy.utils.warnings import DataBallPyWarning
 
 _T0 = pd.Timestamp("2023-01-14 12:00:00", tz="UTC")
 
@@ -41,6 +42,9 @@ def make_event_data():
         ],
         "original_event_id": [100, 200, 300, 400],
         "original_event": ["pass", "shot", "pass", "tackle"],
+        "action_type": ["pass", "shot", "cross", None],
+        "action_result": ["success", "fail", "success", None],
+        "action_bodypart": ["foot", "head", "foot", None],
     }
     return EventData(data)
 
@@ -94,14 +98,51 @@ class TestEventDataToXml(unittest.TestCase):
         instances = root.findall(".//instance")
         self.assertEqual(len(instances), 2)
 
-    def test_to_xml_databallpy_events_filter(self):
+    def test_to_xml_action_types_filter(self):
         xml_str = self.ed.to_video_analysis_xml(
-            databallpy_events=["shot"], tag_period_starts=False
+            action_types=["cross"], tag_period_starts=False
         )
         root = self._parse(xml_str)
         instances = root.findall(".//instance")
         self.assertEqual(len(instances), 1)
-        self.assertEqual(instances[0].find("code").text, "shot")
+        self.assertEqual(instances[0].find("code").text, "cross")
+
+    def test_to_xml_unknown_action_types_warns(self):
+        with self.assertWarns(UserWarning):
+            self.ed.to_video_analysis_xml(action_types=["unknown_action"])
+
+    def test_to_xml_databallpy_events_filter(self):
+        with self.assertWarns(DataBallPyWarning):
+            xml_str = self.ed.to_video_analysis_xml(
+                databallpy_events=["pass"], tag_period_starts=False
+            )
+        root = self._parse(xml_str)
+        instances = root.findall(".//instance")
+        # the cross is a databallpy pass as well
+        self.assertEqual(len(instances), 2)
+        codes = self._instance_codes(root)
+        self.assertEqual(sorted(codes), ["cross", "pass"])
+
+    def test_to_xml_databallpy_event_code_column_warns(self):
+        with self.assertWarns(DataBallPyWarning):
+            xml_str = self.ed.to_video_analysis_xml(
+                code_column="databallpy_event", tag_period_starts=False
+            )
+        root = self._parse(xml_str)
+        codes = self._instance_codes(root)
+        self.assertEqual(codes, ["pass", "shot", "pass", "tackle"])
+
+    def test_to_xml_action_type_label(self):
+        xml_str = self.ed.to_video_analysis_xml(
+            code_column="original_event", tag_period_starts=False
+        )
+        root = self._parse(xml_str)
+        action_type_labels = [
+            el.find("text").text
+            for el in root.findall(".//instance/label")
+            if el.find("group").text == "Action Type"
+        ]
+        self.assertEqual(action_type_labels, ["pass", "shot", "cross"])
 
     def test_to_xml_is_successful_filter(self):
         xml_str = self.ed.to_video_analysis_xml(
@@ -169,8 +210,8 @@ class TestEventDataToXml(unittest.TestCase):
         self.assertIn("p1", ids)
         self.assertIn("p2", ids)
 
-    def test_to_xml_null_databallpy_event_falls_back_to_original(self):
-        """Row 4 has null databallpy_event; code should fall back to original_event."""
+    def test_to_xml_null_action_type_falls_back_to_original(self):
+        """Row 4 has null action_type; code should fall back to original_event."""
         xml_str = self.ed.to_video_analysis_xml(
             player_id=20, is_successful=None, tag_period_starts=False
         )
@@ -196,8 +237,11 @@ class TestEventDataToXml(unittest.TestCase):
             self.ed.to_video_analysis_xml(min_minute=50, max_minute=40)
 
     def test_to_xml_unknown_databallpy_events_warns(self):
-        with self.assertWarns(UserWarning):
+        with self.assertWarns(UserWarning) as cm:
             self.ed.to_video_analysis_xml(databallpy_events=["unknown_event"])
+        self.assertTrue(
+            any("Unknown databallpy_events" in str(w.message) for w in cm.warnings)
+        )
 
     def test_to_xml_custom_code_column(self):
         xml_str = self.ed.to_video_analysis_xml(

@@ -4,7 +4,6 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 import pandas as pd
-from bs4 import BeautifulSoup
 
 from databallpy.data_parsers.event_data_parsers.opta_parser import (
     _get_opta_end_location,
@@ -312,7 +311,7 @@ class TestOptaParser(unittest.TestCase):
             </Event>
             """
 
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
 
         expected_output = ShotEvent(
             event_id=22,
@@ -361,7 +360,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356071" qualifier_id="56" value="Back"/>
             </Event>
         """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
 
         players = pd.DataFrame(
             {
@@ -409,7 +408,7 @@ class TestOptaParser(unittest.TestCase):
             <Q id="3" qualifier_id="157"/>
         </Event>"""
 
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         players = players = pd.DataFrame(
             {"id": [1], "full_name": ["Player 1"], "team_id": [1], "shirt_num": [4]}
         )
@@ -534,7 +533,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356079" qualifier_id="20"/>
             </Event>
             """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)
 
@@ -553,7 +552,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356079" qualifier_id="20"/>
             </Event>
             """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T19:02:07.364", utc=True)
 
@@ -572,7 +571,7 @@ class TestOptaParser(unittest.TestCase):
                 <Q id="4170356079" qualifier_id="20"/>
             </Event>
             """
-        event = BeautifulSoup(event_xml, "xml").find("Event")
+        event = ET.fromstring(event_xml.strip())
         res_dt = _get_valid_opta_datetime(event)
         assert res_dt == pd.to_datetime("2023-04-07T18:02:07.364", utc=True)
 
@@ -648,7 +647,7 @@ class TestOptaSpadl(unittest.TestCase):
             ("clearance", 1, {15: None}, ("clearance", "success", "head")),
             ("ball touch", 0, {}, ("bad_touch", "fail", "foot")),
             ("ball touch", 1, {}, (None, None, None)),
-            ("ball recovery", 1, {}, ("dribble", "success", "foot")),
+            ("ball recovery", 1, {}, ("non_action", "success", "foot")),
             ("aerial", 1, {}, (None, None, None)),
             ("card", 1, {31: None}, (None, "yellow_card", None)),
             ("card", 1, {32: None}, (None, "red_card", None)),
@@ -718,12 +717,20 @@ class TestOptaSpadl(unittest.TestCase):
         )
         res = _update_opta_spadl_actions(event_data)
 
-        # the first recovery moved the ball to the next pass, the second did not
+        # ball recoveries are no actions, the carries are added in to_spadl
         self.assertListEqual(
             to_list(res["action_type"]),
-            ["interception", "dribble", "pass", None, "pass", None, "interception"],
+            [
+                "interception",
+                "non_action",
+                "pass",
+                None,
+                "pass",
+                "non_action",
+                "interception",
+            ],
         )
-        self.assertListEqual(res.loc[1, ["end_x", "end_y"]].tolist(), [10.0, 0.0])
+        self.assertTrue(res.loc[[1, 5], "end_x"].isna().all())
         # the deflected pass still reached a teammate
         self.assertListEqual(res.loc[2, ["end_x", "end_y"]].tolist(), [25.0, 5.0])
         self.assertEqual(res.loc[2, "action_result"], "success")

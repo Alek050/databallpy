@@ -80,6 +80,25 @@ type. Therefore, the type_ids differ from socceraction."""
 SPADL_COLUMNS = ["action_type", "action_result", "action_bodypart"]
 """The SPADL vocabulary columns in the event data."""
 
+SPADL_TO_DATABALLPY_EVENTS = {
+    "pass": "pass",
+    "cross": "pass",
+    "throw_in": "pass",
+    "freekick_crossed": "pass",
+    "freekick_short": "pass",
+    "corner_crossed": "pass",
+    "corner_short": "pass",
+    "goalkick": "pass",
+    "shot": "shot",
+    "shot_penalty": "shot",
+    "shot_freekick": "shot",
+    "take_on": "dribble",
+    "dribble": "dribble",
+    "tackle": "tackle",
+}
+"""The databallpy event of the SPADL action types. Actions with an owngoal result are
+always an own_goal."""
+
 DATABALLPY_SET_PIECES = [
     "goal_kick",
     "free_kick",

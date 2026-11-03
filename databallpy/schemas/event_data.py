@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 import pandas as pd
@@ -12,6 +13,12 @@ from databallpy.utils.constants import (
     SPADL_ACTION_TYPES,
     SPADL_BODYPARTS,
     SPADL_RESULTS,
+)
+from databallpy.utils.utils import get_databallpy_events
+from databallpy.utils.warnings import (
+    DATABALLPY_EVENT_DEPRECATION,
+    DataBallPyWarning,
+    warn_databallpy_event_deprecation,
 )
 
 
@@ -82,6 +89,14 @@ class EventData(pd.DataFrame):
     def __setstate__(self, state):
         self.__dict__.update(state)
         self._provider = state.get("_provider", "unspecified")
+
+    def __getitem__(self, key):
+        warn_databallpy_event_deprecation(key)
+        return super().__getitem__(key)
+
+    def __getattr__(self, name):
+        warn_databallpy_event_deprecation(name)
+        return super().__getattr__(name)
 
     @property
     def _constructor(self):
@@ -278,12 +293,13 @@ class EventData(pd.DataFrame):
         player_id: int | str | list[int | str] | None = None,
         min_minute: int | None = None,
         max_minute: int | None = None,
-        databallpy_events: list[str] | None = None,
+        action_types: list[str] | None = None,
         original_events: list[str] | None = None,
         is_successful: bool | None = None,
         before_seconds: float = 3.0,
         after_seconds: float = 3.0,
-        code_column: str = "databallpy_event",
+        code_column: str = "action_type",
+        databallpy_events: list[str] | None = None,
         tag_period_starts: bool = True,
         time_decimals: int = 2,
     ) -> str:
@@ -303,8 +319,8 @@ class EventData(pd.DataFrame):
             Include only events at or after this minute.
         max_minute : int, optional
             Include only events at or before this minute.
-        databallpy_events : list[str], optional
-            Filter to specific databallpy event types.
+        action_types : list[str], optional
+            Filter to specific SPADL action types.
         original_events : list[str], optional
             Filter to specific original event types.
         is_successful : bool, optional
@@ -314,11 +330,14 @@ class EventData(pd.DataFrame):
         after_seconds : float
             Seconds after the event to end the clip (default 3.0).
         code_column : str
-            Column to use as the event code (default "databallpy_event").
+            Column to use as the event code (default "action_type").
         tag_period_starts : bool
             Whether to add period start markers (default True).
         time_decimals : int
             Decimal places for time values (default 2).
+        databallpy_events : list[str], optional
+            Deprecated, use ``action_types`` instead. Filter to specific databallpy
+            event types (pass, shot, dribble, tackle and own_goal).
 
         Returns
         -------
@@ -328,6 +347,12 @@ class EventData(pd.DataFrame):
         """
         from databallpy.utils.constants import DATABALLPY_EVENTS
         from databallpy.utils.to_xml import Event, LabelDict, events_to_xml
+
+        databallpy_event_values = get_databallpy_events(self)
+        if code_column == "databallpy_event":
+            warnings.warn(
+                DATABALLPY_EVENT_DEPRECATION, category=DataBallPyWarning, stacklevel=2
+            )
 
         # --- Validation ---
         if before_seconds < 0:
@@ -343,11 +368,23 @@ class EventData(pd.DataFrame):
             raise ValueError(
                 f"min_minute ({min_minute}) must be <= max_minute ({max_minute})"
             )
+        if action_types is not None:
+            unknown = [e for e in action_types if e not in SPADL_ACTION_TYPES]
+            if unknown:
+                warnings.warn(
+                    f"Unknown action_types values: {unknown}. "
+                    f"Valid values are: {SPADL_ACTION_TYPES}",
+                    UserWarning,
+                )
         if databallpy_events is not None:
+            warnings.warn(
+                "'databallpy_events' is deprecated and will be removed in v0.11.0. "
+                "Use 'action_types' instead.",
+                category=DataBallPyWarning,
+                stacklevel=2,
+            )
             unknown = [e for e in databallpy_events if e not in DATABALLPY_EVENTS]
             if unknown:
-                import warnings
-
                 warnings.warn(
                     f"Unknown databallpy_events values: {unknown}. "
                     f"Valid values are: {DATABALLPY_EVENTS}",
@@ -367,8 +404,10 @@ class EventData(pd.DataFrame):
             mask &= self["minutes"] >= min_minute
         if max_minute is not None:
             mask &= self["minutes"] <= max_minute
+        if action_types is not None:
+            mask &= self["action_type"].isin(action_types)
         if databallpy_events is not None:
-            mask &= self["databallpy_event"].isin(databallpy_events)
+            mask &= databallpy_event_values.isin(databallpy_events)
         if original_events is not None:
             mask &= self["original_event"].isin(original_events)
         if is_successful is not None:
@@ -379,7 +418,7 @@ class EventData(pd.DataFrame):
         # --- Time computation ---
         # All times are absolute match seconds so that H2 follows H1 on the
         start_datetime = self.loc[
-            (self["period_id"] == 1) & (self["databallpy_event"].isin(["pass", "shot"])),
+            (self["period_id"] == 1) & (databallpy_event_values.isin(["pass", "shot"])),
             "datetime",
         ].min()
 
@@ -395,7 +434,7 @@ class EventData(pd.DataFrame):
                     continue
                 period_start_datetime = self.loc[
                     (self["period_id"] == pid)
-                    & (self["databallpy_event"].isin(["pass", "shot"])),
+                    & (databallpy_event_values.isin(["pass", "shot"])),
                     "datetime",
                 ].min()
                 pid_t = (period_start_datetime - start_datetime).total_seconds()
@@ -436,13 +475,9 @@ class EventData(pd.DataFrame):
             )
             if not pd.isna(team_display):
                 labels.append(LabelDict(group="Team", name=str(team_display)))
-            if code_column != "databallpy_event" and not pd.isna(
-                row.get("databallpy_event")
-            ):
+            if code_column != "action_type" and not pd.isna(row.get("action_type")):
                 labels.append(
-                    LabelDict(
-                        group="Databallpy Event", name=str(row["databallpy_event"])
-                    )
+                    LabelDict(group="Action Type", name=str(row["action_type"]))
                 )
             if code_column != "original_event" and not pd.isna(
                 row.get("original_event")

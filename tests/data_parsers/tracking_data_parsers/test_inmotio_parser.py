@@ -1,6 +1,5 @@
 import unittest
-
-from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 
 from databallpy.data_parsers.tracking_data_parsers.inmotio_parser import (
     _get_metadata,
@@ -81,7 +80,7 @@ class TestInmotioParser(unittest.TestCase):
     def test_get_player_data(self):
         file = open(self.metadata_loc, "r", encoding="UTF-8")
         lines = file.read()
-        input = BeautifulSoup(lines, "xml").find_all("Player", {"teamId": "T-0001"})
+        input = ET.fromstring(lines).findall('.//Player[@teamId="T-0001"]')
         file.close()
         df_players = _get_player_data(input)
         assert_frame_equal(df_players, MD_INMOTIO.home_players)

@@ -9,12 +9,39 @@ from databallpy.features import get_smallest_angle
 from databallpy.features.differentiate import _differentiate
 from databallpy.utils.constants import DATABALLPY_EVENTS, MISSING_INT
 from databallpy.utils.logging import logging_wrapper
-from databallpy.utils.utils import sigmoid
+from databallpy.utils.utils import get_databallpy_events, sigmoid
 from databallpy.utils.warnings import DataBallPyWarning
 
 FRAME_UNASSIGNED = 3
 EVENT_FRAME_MATCH = 2
 EVENT_UNASSIGNED = 4
+# actions that are not necessarily a ball contact, and thus can not be synced reliably
+UNSYNCED_ACTION_TYPES = ["foul", "non_action"]
+# actions where the ball leaves the player, synced at the moment of release
+RELEASE_ACTION_TYPES = [
+    "pass",
+    "cross",
+    "throw_in",
+    "freekick_crossed",
+    "freekick_short",
+    "corner_crossed",
+    "corner_short",
+    "goalkick",
+    "clearance",
+    "bad_touch",
+]
+SHOT_ACTION_TYPES = ["shot", "shot_penalty", "shot_freekick"]
+# actions that start when the ball arrives at the player, synced at the moment of
+# arrival/control
+ARRIVAL_ACTION_TYPES = [
+    "dribble",
+    "take_on",
+    "interception",
+    "keeper_save",
+    "keeper_claim",
+    "keeper_punch",
+    "keeper_pick_up",
+]
 
 
 @logging_wrapper(__file__)
@@ -41,12 +68,14 @@ def synchronise_tracking_and_event_data(
         away_players (pd.DataFrame): Information about the away_players
         cost_functions (dict, optional): Dictionary containing the cost functions that
             are used to calculate the similarity between the tracking and event data.
-            The keys of the dictionary are the event types, the values are the cost
-            functions. The cost functions will be called with the tracking data and the
-            event as arguments. The cost functions should return an array containing
-            the cost of the similarity between the tracking data and the event, scaled
-            between 0 and 1. If no cost functions are passed, the default cost functions
-            are used.
+            The keys of the dictionary are SPADL action types (e.g. 'cross') or
+            databallpy events ('pass', 'shot', 'dribble', 'tackle', 'own_goal'), the
+            values are the cost functions. A cost function of the action type has
+            priority over the one of the databallpy event. The cost functions will be
+            called with the tracking data and the event as arguments. The cost
+            functions should return an array containing the cost of the similarity
+            between the tracking data and the event, scaled between 0 and 1. If no
+            cost functions are passed, the default cost functions are used.
         n_batches (int, str): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = "smart".
@@ -61,13 +90,23 @@ def synchronise_tracking_and_event_data(
         verbose (bool, optional): Wheter or not to print info about the progress
             in the terminal. Defaults to True.
 
-    Currently works for the following databallpy_events:
-        'pass', 'shot', 'dribble', and 'tackle'
+    All SPADL action types are synced, except for 'foul' and 'non_action'. The default
+    cost function depends on the moment the action describes:
+    - release (passes incl. crosses, set pieces and goal kicks, clearances and bad
+      touches): the moment the ball leaves the player, see base_pass_cost_function.
+    - shots: the moment the ball leaves the player towards the goal, see
+      base_shot_cost_function.
+    - arrival (dribbles, take ons, interceptions and keeper actions): the moment the
+      ball arrives at the player, see base_arrival_cost_function.
+    - contact (tackles) and own goals: see base_general_cost_ball_event.
+    Event data without SPADL action types falls back on the databallpy events:
+    'pass', 'shot', 'dribble' (arrival), 'tackle' and 'own_goal'.
 
     Returns:
         tuple: Tuple containing two DataFrames. The first DataFrame contains
             information about the tracking data. The columns are:
-            - databallpy_event: the event type
+            - databallpy_event: the event type (deprecated, use action_type)
+            - action_type: the SPADL action type of the event
             - event_id: the event id
             - sync_certainty: the certainty of the synchronisation
             The second DataFrame contains information about the event data. The
@@ -76,9 +115,20 @@ def synchronise_tracking_and_event_data(
             - sync_certainty: the certainty of the synchronisation
     """
 
-    event_data_to_sync = event_data[
-        event_data["databallpy_event"].isin(DATABALLPY_EVENTS)
-    ]
+    # the databallpy_event column is kept in the batches since it is used to select
+    # the cost function and custom cost functions might use it.
+    databallpy_events = get_databallpy_events(event_data)
+    if "action_type" in event_data.columns and event_data["action_type"].notna().any():
+        to_sync = event_data["action_type"].notna() & ~event_data["action_type"].isin(
+            UNSYNCED_ACTION_TYPES
+        )
+    else:  # event data without SPADL action types (e.g. Instat)
+        to_sync = databallpy_events.isin(DATABALLPY_EVENTS)
+    event_data_to_sync = event_data[to_sync].assign(
+        databallpy_event=databallpy_events[to_sync]
+    )
+    if "action_type" not in event_data_to_sync.columns:
+        event_data_to_sync["action_type"] = None
 
     if n_batches == "smart":
         end_datetimes = create_smart_batches(tracking_data)
@@ -99,7 +149,7 @@ def synchronise_tracking_and_event_data(
     # loop over batches
     extra_tracking_info = pd.DataFrame(
         index=tracking_data.index,
-        columns=["databallpy_event", "event_id", "sync_certainty"],
+        columns=["databallpy_event", "action_type", "event_id", "sync_certainty"],
     )
     extra_event_info = pd.DataFrame(
         index=event_data.index, columns=["tracking_frame", "sync_certainty"]
@@ -133,6 +183,9 @@ def synchronise_tracking_and_event_data(
                 event_index = int(event_batch.loc[event, "index"])
                 tracking_frame = int(tracking_batch.loc[frame, "index"])
                 extra_tracking_info.loc[tracking_frame, "databallpy_event"] = event_type
+                extra_tracking_info.loc[tracking_frame, "action_type"] = event_batch.loc[
+                    event, "action_type"
+                ]
                 extra_tracking_info.loc[tracking_frame, "event_id"] = event_id
                 extra_tracking_info.loc[tracking_frame, "sync_certainty"] = sim_mat[
                     frame, event
@@ -176,14 +229,9 @@ def _create_sim_mat(
     for row in event_batch.itertuples():
         i = row.Index
 
-        if row.databallpy_event == "pass":
-            cost_function = cost_functions.get("pass", base_pass_cost_function)
-        elif row.databallpy_event == "shot":
-            cost_function = cost_functions.get("shot", base_shot_cost_function)
-        else:  # dribble and tackle
-            cost_function = cost_functions.get(
-                row.databallpy_event, base_general_cost_ball_event
-            )
+        cost_function = _get_cost_function(
+            row.action_type, row.databallpy_event, cost_functions
+        )
 
         for side, players_df in zip(["home", "away"], [home_players, away_players]):
             if row.player_id in players_df["id"].values:
@@ -216,6 +264,45 @@ def _create_sim_mat(
     sim_mat = -sim_mat + 1  # low cost is better similarity
 
     return sim_mat
+
+
+def _get_cost_function(
+    action_type: str | None, databallpy_event: str | None, cost_functions: dict
+) -> callable:
+    """Function that selects the cost function of an event. Custom cost functions of
+    the action type have priority over custom cost functions of the databallpy event
+    (e.g. 'cross' over 'pass'). Without a custom cost function, the default cost
+    function of the action type is used, falling back on the default cost function of
+    the databallpy event for event data without action types.
+
+    Args:
+        action_type (str | None): The SPADL action type of the event
+        databallpy_event (str | None): The databallpy event of the event
+        cost_functions (dict): Dictionary containing the custom cost functions
+
+    Returns:
+        callable: The cost function of the event
+    """
+    if isinstance(action_type, str) and action_type in cost_functions:
+        return cost_functions[action_type]
+    if databallpy_event in cost_functions:
+        return cost_functions[databallpy_event]
+    if databallpy_event == "own_goal":
+        return base_general_cost_ball_event
+    if action_type in RELEASE_ACTION_TYPES:
+        return base_pass_cost_function
+    if action_type in SHOT_ACTION_TYPES:
+        return base_shot_cost_function
+    if action_type in ARRIVAL_ACTION_TYPES:
+        return base_arrival_cost_function
+    if isinstance(action_type, str):  # contact actions, e.g. tackle
+        return base_general_cost_ball_event
+    # event data without action types (e.g. Instat)
+    return {
+        "pass": base_pass_cost_function,
+        "shot": base_shot_cost_function,
+        "dribble": base_arrival_cost_function,
+    }.get(databallpy_event, base_general_cost_ball_event)
 
 
 @logging_wrapper(__file__)
@@ -618,6 +705,7 @@ def align_event_data_datetime(
             event_data["datetime"] = event_data["datetime"].dt.tz_convert(None)
 
     start_events = ["pass", "shot"]
+    databallpy_events = get_databallpy_events(event_data)
     for period in tracking_data["period_id"].unique():
         if period == MISSING_INT:
             continue
@@ -625,7 +713,7 @@ def align_event_data_datetime(
         event_data_p = event_data[event_data["period_id"] == period]
 
         datetime_first_event = event_data_p[
-            event_data_p["databallpy_event"].isin(start_events)
+            databallpy_events[event_data_p.index].isin(start_events)
         ].iloc[0]["datetime"]
         datetime_first_tracking_frame = tracking_data_p[
             tracking_data_p["ball_status"] == "alive"
@@ -810,6 +898,84 @@ def get_player_ball_distance_increase_cost(
     if len(kwargs) > 0:
         return sigmoid(np.gradient(player_ball_diff), **kwargs)
     return sigmoid(np.gradient(player_ball_diff), d=-8.0)
+
+
+def get_ball_deceleration_cost(
+    tracking_data: pd.DataFrame, **kwargs: dict
+) -> np.ndarray[float]:
+    """Function that calculates the cost of the ball deceleration in the tracking data.
+    When a player receives or controls the ball, the ball speed should decrease. The
+    deceleration is the negative time derivative of the ball velocity. The cost is
+    calculated using a sigmoid function. The sigmoid function is used to give a lower
+    cost to higher ball decelerations. The sigmoid function is defined as:
+    a + b / (1 + c * np.exp(d * -(x - e))). The default values are a=0.0, b=1.0, c=1.0,
+    d=1.0, e=0.0. The default values can be changed by passing them as keyword
+    arguments. If no keyword arguments are passed, the default values are used, except
+    for d and e, which are set to 0.2 and -25.0. In this case the deceleration is also
+    passed by multiplying it with -1. This will not be done if keyword arguments are
+    passed.
+
+    Args:
+        tracking_data (pd.DataFrame): Tracking data of the game
+        **kwargs: Keyword arguments that can be passed to the sigmoid function
+
+    Returns:
+        np.ndarray[float]: array containing the cost of the ball deceleration
+    """
+    _validate_sigmoid_kwargs(kwargs)
+    if len(tracking_data) < 2:
+        return np.full(len(tracking_data), np.nan)
+    seconds = (
+        (tracking_data["datetime"] - tracking_data["datetime"].iloc[0])
+        / pd.Timedelta(seconds=1)
+    ).values
+    if "ball_velocity" in tracking_data.columns:
+        velocity = tracking_data["ball_velocity"].values.astype(float)
+    else:
+        velocity = np.hypot(
+            np.gradient(tracking_data["ball_x"].values, seconds),
+            np.gradient(tracking_data["ball_y"].values, seconds),
+        )
+    deceleration = -np.gradient(velocity, seconds)
+    if len(kwargs) > 0:
+        return sigmoid(deceleration, **kwargs)
+    return sigmoid(-deceleration, d=0.2, e=-25.0)
+
+
+def get_player_ball_distance_decrease_cost(
+    tracking_data: pd.DataFrame,
+    team_side: str,
+    jersey: str,
+    **kwargs: dict,
+) -> np.ndarray[float]:
+    """Function that calculates the cost of the decrease in distance between the player
+    and the ball. When receiving or controlling the ball, the distance between the
+    player and the ball should decrease. The cost is calculated using a sigmoid
+    function. The sigmoid function is used to give a lower cost to larger decreases in
+    distance. The sigmoid function is defined as: a + b / (1 + c * np.exp(d * -(x - e))).
+    The default values are a=0.0, b=1.0, c=1.0, d=1.0, e=0.0. The default values can be
+    changed by passing them as keyword arguments. If no keyword arguments are passed,
+    the default values are used, except for d, which is set to 8.0.
+
+    Args:
+        tracking_data (pd.DataFrame): Tracking data of the game
+        team_side (str): Either home or away, the side of the player performing the event
+        jersey (int): The shirt number of the player performing the event
+        **kwargs: Keyword arguments that can be passed to the sigmoid function
+
+    Returns:
+        np.ndarray[float]: array containing the cost of the decrease in distance between
+        the player and the ball
+    """
+    _validate_sigmoid_kwargs(kwargs)
+    col_id = f"{team_side}_{jersey}"
+    player_ball_diff = np.hypot(
+        tracking_data["ball_x"].values - tracking_data[f"{col_id}" + "_x"].values,
+        tracking_data["ball_y"].values - tracking_data[f"{col_id}" + "_y"].values,
+    )
+    if len(kwargs) > 0:
+        return sigmoid(np.gradient(player_ball_diff), **kwargs)
+    return sigmoid(np.gradient(player_ball_diff), d=8.0)
 
 
 def get_ball_goal_angle_cost(
@@ -1040,6 +1206,61 @@ def base_general_cost_ball_event(
 
     return combine_cost_functions(
         [time_diff_cost, distance_ball_event_cost, distance_ball_player_cost]
+    )
+
+
+def base_arrival_cost_function(
+    tracking_data: pd.DataFrame,
+    event: pd.Series,
+    team_side: str,
+    jersey: int,
+    time_diff: np.ndarray | None = None,
+    ball_event_distance: np.ndarray | None = None,
+) -> np.ndarray[float]:
+    """Function that calculates the total cost of an event that starts when the ball
+    arrives at the player (e.g. a dribble, take on or interception) compared to each
+    frame. The base arrival cost function includes:
+    1. Time difference between the tracking and event data datetime
+    2. Distance between the ball and the event location
+    3. Distance between the ball and the player in the tracking data
+    4. Ball deceleration
+    5. The decrease in distance between the player and the ball
+
+    Args:
+        tracking_data (pd.DataFrame): Tracking data of the game
+        event (pd.Series): Event that needs to be synced
+        team_side (str): Either home or away, the side of the player performing the event
+        jersey (int): The shirt number of the player performing the event
+        time_diff (np.ndarray[float], optional): Array containing the time difference
+            between the tracking and event data datetime
+        ball_event_distance (np.ndarray[float], optional): Array containing the distance
+            between the ball and the event location
+
+    Returns:
+        np.ndarray[float]: array containing the total cost of the event compared to each
+            frame
+    """
+
+    time_diff_cost = get_time_difference_cost(tracking_data, event, time_diff=time_diff)
+    distance_ball_event_cost = get_distance_ball_event_cost(
+        tracking_data, event, ball_event_distance=ball_event_distance
+    )
+    distance_ball_player_cost = get_distance_ball_player_cost(
+        tracking_data, team_side, jersey
+    )
+    ball_deceleration_cost = get_ball_deceleration_cost(tracking_data)
+    player_ball_diff_cost = get_player_ball_distance_decrease_cost(
+        tracking_data, team_side, jersey
+    )
+
+    return combine_cost_functions(
+        [
+            time_diff_cost,
+            distance_ball_event_cost,
+            distance_ball_player_cost,
+            ball_deceleration_cost,
+            player_ball_diff_cost,
+        ]
     )
 
 
