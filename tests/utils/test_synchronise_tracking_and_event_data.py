@@ -678,7 +678,10 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
 
         tracking_data["datetime"] = pd.to_datetime(tracking_data["datetime"])
 
-        expected_res = pd.to_datetime(["2023-01-22 16:00:25", "2023-01-22 17:00:50"])
+        # the last batch ends right after the last tracking frame
+        expected_res = pd.to_datetime(
+            ["2023-01-22 16:00:25.000", "2023-01-22 16:00:50.001"]
+        )
 
         res = create_smart_batches(tracking_data)
         assert all(res == expected_res)
@@ -722,6 +725,55 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
         assert res_event_data["datetime"].dt.tz == td_no_tz["datetime"].dt.tz
         expected_event_data["datetime"] = expected_event_data["datetime"].dt.tz_convert(
             None
+        )
+        assert_frame_equal(res_event_data, expected_event_data)
+
+    def test_align_event_data_datetime_partial_period(self):
+        event_data = self.game_to_sync.event_data.copy()
+        start_dt = event_data.loc[0, "datetime"]
+        event_data["datetime"] = start_dt + pd.to_timedelta(1, unit="hours")
+        tracking_data = self.game_to_sync.tracking_data.copy()
+        tracking_data["datetime"] = [
+            start_dt + pd.to_timedelta(x, unit="seconds") for x in range(13)
+        ]
+        tracking_data.loc[tracking_data.index[-1], "period_id"] = MISSING_INT
+
+        # only a part of the period is loaded, the period started 10 seconds earlier
+        period_start = start_dt - pd.to_timedelta(10, unit="seconds")
+        periods = pd.DataFrame(
+            {
+                "period_id": [1, 2],
+                "start_frame": [tracking_data["frame"].iloc[0] - 250, MISSING_INT],
+                "start_datetime_td": [period_start, pd.NaT],
+            }
+        )
+
+        expected_event_data = event_data.copy()
+        expected_event_data.loc[1:, "datetime"] = period_start + pd.to_timedelta(
+            1, unit="seconds"
+        )
+        res_event_data = align_event_data_datetime(
+            event_data.copy(), tracking_data, offset=1.0, periods=periods
+        )
+        assert_frame_equal(res_event_data, expected_event_data)
+
+        # period start without timezone
+        periods_no_tz = periods.copy()
+        periods_no_tz["start_datetime_td"] = periods_no_tz[
+            "start_datetime_td"
+        ].dt.tz_convert(None)
+        res_event_data = align_event_data_datetime(
+            event_data.copy(), tracking_data, offset=1.0, periods=periods_no_tz
+        )
+        assert_frame_equal(res_event_data, expected_event_data)
+
+        # the whole period is loaded, align on the first tracking frame
+        periods["start_frame"] = [tracking_data["frame"].iloc[0], MISSING_INT]
+        expected_event_data.loc[1:, "datetime"] = start_dt + pd.to_timedelta(
+            1, unit="seconds"
+        )
+        res_event_data = align_event_data_datetime(
+            event_data.copy(), tracking_data, offset=1.0, periods=periods
         )
         assert_frame_equal(res_event_data, expected_event_data)
 

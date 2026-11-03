@@ -16,7 +16,9 @@
 - `get_game()`, `get_open_game()` and `get_game_from_kloppy()` now add the carries (SPADL `dribble`) between consecutive actions of the same team as events to the event data (`original_event` `"carry"`), so they are also synchronised and visualised. All `event_id`s are renumbered in time order (also in `pass_events`, `shot_events` and `dribble_events`), and `to_spadl()` links the carries to their `event_id`. Saved and cached games are not changed
 - Ball recoveries (Opta, SciSports, Metrica and kloppy) are now SPADL `non_action`s instead of dribbles to the next action, as in socceraction. The carry around a recovery runs from the end of the previous action to the start of the next action and is placed after the recovery in the event data
 - `to_spadl()` sets the missing end location of actions that move the ball (passes, shots, bad touches and keeper punches, e.g. Sportec failed passes) to the start location of the next action, instead of to their own start location. This prevents carries from the passer to the receiver being added for providers without end locations. The event data itself is not changed
+- Reduced the memory use of the Sportec/Tracab XML tracking data parser by freeing the parsed frames, a full game peaked at several GB and now fits in about 1 GB
 - `Game.synchronise_tracking_and_event_data()` adds `tracking_start_x` and `tracking_start_y` to the event data: the ball location in the synced frame. `start_x`/`start_y` keep the location of the event data provider
+- Fixed synchronisation of games where only a part of the tracking data is loaded (`frames`/`period_id`): the event datetimes are aligned on the period start in the metadata instead of on the first loaded tracking frame, and events after the last tracking frame are no longer forced onto the last frames
 
   
 ### V0.8.1 (11/08/2026)

@@ -143,7 +143,7 @@ def load_sportec_open_event_data(
             metadata, and the databallpy events dictionary.
 
     Reference:
-        Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
+        Bassek, M., Weber, H., Rein, R., & Memmert, D. (2025). An integrated
         dataset of synchronized spatiotemporal and event data in elite soccer.
 
     """

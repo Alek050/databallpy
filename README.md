@@ -13,30 +13,35 @@
 [cicd-url]: https://github.com/Alek050/databallpy/actions/workflows/linters_and_tests.yml
 [codecov-image]: https://codecov.io/gh/Alek050/databallpy/branch/develop/graph/badge.svg?token=MBI3380I0H
 [codecov-url]: https://codecov.io/gh/Alek050/databallpy
+[joss-image]: https://joss.theoj.org/papers/10.21105/joss.10223/status.svg
+[joss-url]: https://doi.org/10.21105/joss.10223
 
+[getting-started-url]: https://databallpy.readthedocs.io/en/main/getting_started/installation_page.html
+[loading-game-url]: https://databallpy.readthedocs.io/en/main/getting_started/loading_in_a_game_page.html
+[kloppy-integration-url]: https://databallpy.readthedocs.io/en/main/getting_started/loading_in_a_game_page.html#databallpy-kloppy-integration
 [filter-data-url]: https://databallpy.readthedocs.io/en/main/getting_started/preprocessing_options.html#filtering-data
 [velocity-acc-url]: https://databallpy.readthedocs.io/en/main/getting_started/preprocessing_options.html#adding-velocity-and-acceleration
 [synchronisation-url]: https://databallpy.readthedocs.io/en/main/getting_started/synchronisation_page.html
+[visualizations-url]: https://databallpy.readthedocs.io/en/main/getting_started/visualizations_page.html
 [covered-distance-url]: https://databallpy.readthedocs.io/en/main/features/covered_distance_page.html
 [pressure-url]: https://databallpy.readthedocs.io/en/main/features/pressure_page.html
 [team-possession-url]: https://databallpy.readthedocs.io/en/main/features/team_and_player_possession.html#team-possession
-[individual_possession-url]: https://databallpy.readthedocs.io/en/main/features/team_and_player_possession.html#individual-player-possession-vidal-codina-et-al-2022
-[Expected-Goals-url]: https://databallpy.readthedocs.io/en/main/features/simple_xG_models.html
-[Expected-Threat-url]: https://databallpy.readthedocs.io/en/main/features/xT_models.html
-[Voronoi-url]: https://databallpy.readthedocs.io/en/main/features/space_occupation.html#voronoi-model
-[Guassian-space-occupation-url]: https://databallpy.readthedocs.io/en/main/features/space_occupation.html#gaussian-model-fernandez-born-2018
+[individual-possession-url]: https://databallpy.readthedocs.io/en/main/features/team_and_player_possession.html#individual-player-possession-vidal-codina-et-al-2022
+[expected-goals-url]: https://databallpy.readthedocs.io/en/main/features/simple_xG_models.html
+[expected-threat-url]: https://databallpy.readthedocs.io/en/main/features/xT_models.html
+[voronoi-url]: https://databallpy.readthedocs.io/en/main/features/space_occupation.html#voronoi-model
+[gaussian-space-occupation-url]: https://databallpy.readthedocs.io/en/main/features/space_occupation.html#gaussian-model-fernandez-born-2018
 [dangerous-accessible-space-url]: https://databallpy.readthedocs.io/en/main/features/dangerous_accessible_space.html
-[visualizations-url]: https://databallpy.readthedocs.io/en/main/getting_started/visualizations_page.html
+[video-xml-url]: https://databallpy.readthedocs.io/en/main/features/video_analysis_xml_export.html
 [optimization-url]: https://databallpy.readthedocs.io/en/main/features/optimization.html
 
-[floodlight-url]:https://github.com/floodlight-sports/floodlight
-[kloppy-url]:https://github.com/PySport/kloppy
+[kloppy-url]: https://github.com/PySport/kloppy
+[floodlight-url]: https://github.com/floodlight-sports/floodlight
+[socceraction-url]: https://github.com/ML-KULeuven/socceraction
+[spadl-url]: https://socceraction.readthedocs.io/en/latest/documentation/spadl/spadl.html
+[accessible-space-url]: https://github.com/jonas-bischofberger/accessible-space
 [soccer-sync-url]: https://kwiatkowski.io/sync.soccer
-[example-url]: https://databallpy.readthedocs.io/en/main/example.html
-[getting-started-url]: https://databallpy.readthedocs.io/en/main/getting_started/installation_page.html
-
-[joss-image]: https://joss.theoj.org/papers/10.21105/joss.10223/status.svg
-[joss-url]: https://doi.org/10.21105/joss.10223
+[open-data-url]: https://www.nature.com/articles/s41597-025-04505-y
 
 [![Latest Version][version-image]][version-url]
 [![Python Version][python-image]][python-url]
@@ -48,182 +53,118 @@
 
 # DataBallPy
 
-A package for loading, synchronizing, and analyzing your soccer event- and tracking data.
+Load, synchronise and analyse your soccer event and tracking data.
 
-This package is developed to create a standardized way to analyse soccer games using both event- and tracking data. Other packages, like [kloppy][kloppy-url] and [floodlight][floodlight-url], already standardize the import of data sources. The current package goes a step further in combining different data streams from the same game. In this case, the `Game` object combines information from the event and tracking data. The main current feature is the smart synchronization of the tracking and event data. We utilize the Needleman-Wunch algorithm, inspired by [this article][soccer-sync-url], to align the tracking and even data, while ensuring the order of the events, something that is not done when only using (different) cost functions.
+DataBallPy combines the event and tracking data of a game in a single `Game` object. It parses the data of many providers into one standardised format, synchronises the events with the tracking data, describes all events in the [SPADL][spadl-url] vocabulary and offers (scientific) soccer metrics that can be computed in a few lines of code. The package is described in [Oonk, Grob & Kempe (2026), Journal of Open Source Software][joss-url].
 
-## Final goal for DataBallPy
-
-Although reading in and synchronising data is already very helpfull to get started with your analysis, it's only the first step. Even after this first step, getting your first 'simple' metrics out of the data might be more difficult than anticipated. Therefore, the primary end goal for this package is to create a space where (scientific) soccer metrics are implemented and can be used in a few lines. We even plan to go further and show clear notebooks (to combine text and code) with visualizations for all the features we implement. This way, you will not only get easy access to the features/metrics, but also understand exactly how it is calculated. We hope this will inspire others (both developers and scientist) to further improve the current features, and come up with valuable new ones. If you are interested in some of the features we implemented, see our [official documentation][docs-url].
-
-## Changelog V0.7.3 (14/04/2026)
-
-- New parser for Fifa event data ([ouyang1030](https://github.com/ouyang1030))
-- Added API docs for TrackingData and different data parsers
-- Added support for python 3.14
-- Removed `bs4` as dependency
-- Added functionality to export events to XML for video analysis purposes
-- Fixed bug in donwload open data from IDSSE dataset
-- Integration between Kloppy and Databallpy ([UnravelSports](https://github.com/UnravelSports) & [migvidal5](https://github.com/migvidal5))
-- Allow for more null values in `Game`
-- Loser rules regarding tz aware datetime columns in `TrackingData` and `EventData`
-- Removed depricated functions `home_players_column_ids` and `away_players_column_ids`, please use `game.get_column_ids(team="home")` instead.
+Every feature comes with a notebook in the [documentation][docs-url] that explains how it is computed, so you know exactly what you get and can build on it.
 
 ## Installation
-Choose either of both commands. If you would like to use Kloppy as data parser, use the second one, else the first one would do.
 
 ```bash
-$ pip install databallpy
-$ pip install 'databallpy[kloppy]'
+pip install databallpy
 ```
 
-## Usage
+Optional extras:
 
-The package is centered around the `Game` object. A `Game` has tracking data, event data metadata about the game.
-For a more elaborate example, see the [Getting Started][getting-started-url].
+```bash
+pip install 'databallpy[kloppy]'             # load any kloppy-supported provider
+pip install 'databallpy[accessible-space]'   # Dangerous Accessible Space
+```
+
+## Quick start
 
 ```python
 from databallpy import get_game, get_open_game
 
 game = get_game(
-  tracking_data_loc="../data/tracking_data.dat",
-  tracking_metadata_loc="../data/tracking_metadata.xml",
-  tracking_data_provider="tracab",
-  event_data_loc="../data/event_data_f24.xml",
-  event_metadata_loc="../data/event_metadata_f7.xml",
-  event_data_provider="opta",
+    tracking_data_loc="../data/tracking_data.dat",
+    tracking_metadata_loc="../data/tracking_metadata.xml",
+    tracking_data_provider="tracab",
+    event_data_loc="../data/event_data_f24.xml",
+    event_metadata_loc="../data/event_metadata_f7.xml",
+    event_data_provider="opta",
 )
 
-# or get the open game provided by the DFL (Sportec Solutions)
+# or load one of the open DFL games
 game = get_open_game()
+
+# align the events with the tracking data
+game.synchronise_tracking_and_event_data()
+
+# all actions as a SPADL dataframe
+actions = game.to_spadl()
 ```
 
-> [!note]
-> The current internal supported tracking data providers are:
-> - Tracab (including Sportec Solutions from the DFL)
-> - Metrica
-> - Inmotio
-> 
-> The accepted variables for the `tracking_data_provider` are `["tracab", "metrica", "inmotio", "dfl", "sportec"]`
-> 
-> The current internal supported event data provider are:
-> - Opta (also accepts `"statsperform"`, since StatsPerform acquired Opta - both values behave identically, and Opta's newer MA2/MA13 files are auto-detected alongside the legacy F7/F24 files)
-> - Metrica
-> - Instat
-> - SciSports
-> - Sportec Solutions (from the DFL)
-> - Statsbomb
-> - Fifa
-> 
-> The accepted variables for the `event_data_provider` are `["opta", "statsperform", "metrica", "instat", "scisports", "dfl", "sportec", "statsbomb","fifa"]`
->
-> If you wish to use a different provider that is not listed here, please open an issue [here](https://github.com/Alek050/databallpy/issues)
+See [Getting Started][getting-started-url] and [Loading in a game][loading-game-url] for more options, such as loading only part of the tracking data or loading any provider through [kloppy][kloppy-integration-url].
 
-### Open Data
-A great project just released tracking and event data for open use. In total, 2 games of the 1st bundesliga and 5 of the 2nd bundesliga were open sourced [here](https://www.nature.com/articles/s41597-025-04505-y). The dataset was open sources via the CC-BY 4.0 licence, so please consider this when you make use of the data. The data is automatically downloaded and saved locally when you use the `get_open_game` function from DataBallPy. The match information can be imported from `databallpy.utils.constants.OPEN_GAME_IDS_DFL`:
+## Events in SPADL
 
-```python
-OPEN_GAME_IDS_DFL = {
-    "J03WMX": "1. FC Köln vs. FC Bayern München",
-    "J03WN1": "VfL Bochum 1848 vs. Bayer 04 Leverkusen",
-    "J03WPY": "Fortuna Düsseldorf vs. 1. FC Nürnberg",
-    "J03WOH": "Fortuna Düsseldorf vs. SSV Jahn Regensburg",
-    "J03WQQ": "Fortuna Düsseldorf vs. FC St. Pauli",
-    "J03WOY": "Fortuna Düsseldorf vs. F.C. Hansa Rostock",
-    "J03WR9": "Fortuna Düsseldorf vs. 1. FC Kaiserslautern",
-}
-```
+All event data is translated to the SPADL vocabulary (Decroos et al., 2019) in the `action_type`, `action_result` and `action_bodypart` columns, while `original_event` keeps the provider's event. The `databallpy_event` column is deprecated and will be removed in v0.11.0.
 
-See [the documentation][docs-url] of the `Game` object and the [example usage][example-url] for more options. Note that this package is developed to combine event and tracking data, for now both datastreams are necessary to create a `Game` object.
+- Carries (SPADL `dribble`) between consecutive actions of the same team are added to the event data when a game is loaded, so they are synchronised and visualised as well.
+- `game.to_spadl()` returns a [socceraction][socceraction-url]-compatible actions dataframe, in DataBallPy or SPADL coordinates and in the playing direction of your choice. Missing end locations of actions that move the ball (e.g. failed passes) are filled with the start of the next action.
 
-## Features
+## Synchronisation of tracking and event data
 
-### Preprocessing
+The timestamps and locations of event data rarely match the tracking data. DataBallPy aligns them with the Needleman-Wunsch algorithm, inspired by [sync.soccer][soccer-sync-url], which keeps the order of the events intact. Each SPADL action type is matched to the moment it describes:
 
-- [Data Filtering][filter-data-url]: Filter the data based on the quality of the tracking data.
-- [Adding velocity and Acceleration][velocity-acc-url]: Add velocity and acceleration to the tracking data.
+- **release**: passes, crosses, set pieces, clearances and bad touches, when the ball leaves the player;
+- **shot**: shots, when the ball leaves the player towards goal;
+- **arrival**: carries, take-ons, interceptions and keeper actions, when the ball arrives at the player;
+- **general**: tackles and own goals.
 
-
-### Synchronization of tracking and event data
-
-See our elaborate [synchronisation page][synchronisation-url] in the documentation for more information!
-
-Tracking and event data is often poorly synchronized. For instance, when taking the event data of Opta and tracking data of Tracab, you can sync the fist frame with the kick-off pass. Now you can sync the other events with the tracking data based on the time difference between the event and the kick off pass. If you do this, how get something like this:
-
-<video width="640" height="480" controls>
-  <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/not_synced.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+After `game.synchronise_tracking_and_event_data()` the event data has a `tracking_frame`, a `sync_certainty` and the ball location in that frame (`tracking_start_x`, `tracking_start_y`), while `start_x`/`start_y` keep the provider's location. Before and after synchronisation:
 
 https://user-images.githubusercontent.com/49450063/224564808-fa71735f-5510-464d-8499-9044227a02e8.mp4
 
-
-As you can see, the timing (and placing) of the events do not correspond good with the tracking data locations, especially when events follow up quickly or around shots. Using the methodology of [this][soccer-sync-url] article, this package is able to synchronize tracking and event data using the Needleman-Wunsch algorithm. 
-
-After running the following command, the events are better synchronized to the tracking data:
-
-```batch
-$ game.synchronise_tracking_and_event_data()
-```
-
-<video width="640" height="480" controls>
-  <source src="https://raw.githubusercontent.com/Alek050/databallpy/main/docs/example_data/synced.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
-
 https://user-images.githubusercontent.com/49450063/224564913-4091faf7-f6ef-4429-b132-7f93ce5e1d91.mp4
 
-For a more elaborate example of how we synchronize the tracking and event data, see the [Synchronisation Page][getting-started-url] in our [documentation][docs-url].
+See the [synchronisation page][synchronisation-url] for how it works and how to use your own cost functions.
 
-### Visualizations
+## Features
 
-DataBallPy offers a variety of visualizations to help you understand the data better. For example, you can visualize the tracking data with synchronised event as shown above. Also, you can visualize events and tracking data separately. For more information, see the [Visualizations Page][visualizations-url] in our [documentation][docs-url].
+**Preprocessing and visualisation**
+- [Data filtering][filter-data-url] and [velocity and acceleration][velocity-acc-url]
+- [Visualisations][visualizations-url]: plot events, tracking frames and videos with synchronised events
+- [Video analysis XML export][video-xml-url]: export events to video analysis software
 
-### Soccer Specific Metrics
+**Metrics**
+- [Covered distance][covered-distance-url] in velocity and acceleration zones
+- [Pressure][pressure-url] (Herold & Kempe, 2022)
+- [Team possession][team-possession-url] and [individual player possession][individual-possession-url] (Vidal-Codina et al., 2022)
+- [Simple expected goals (xG)][expected-goals-url]
+- [Expected threat (xT)][expected-threat-url] (Singh, 2018)
+- Space occupation: [Voronoi][voronoi-url] and [Gaussian][gaussian-space-occupation-url] (Fernández & Born, 2018)
+- [Dangerous Accessible Space][dangerous-accessible-space-url] (Bischofberger & Baca, 2025)
+- [Defensive structure optimisation][optimization-url]
 
-- [Covered Distance][covered-distance-url]: Calculate the covered distance in different velocity and acceleration zones.
-- [Pressure][pressure-url]: Calculate the pressure any player in the game (Herold & Kempe, 2022).
-- [Team Possession][team-possession-url]: Calculate the team possession based on the synchronised event data.
-- [Individual Player Possession][individual_possession-url]: Calculate the individual player possession based on the tracking data (Vidal-Codina et al., 2022).
-- [Simple Expected Goals (xG) model][Expected-Goals-url]: Calculate the simple expected goals model.
-- [Expected Threat model][Expected-Threat-url]: Calculate the expected threat model from Karun Singh to on ball events.
-- [Voronoi Model][Voronoi-url]: Calculate the Voronoi space occupation based on the tracking data.
-- [Gaussian Model][Guassian-space-occupation-url]: Calculate the Gaussian space occupation based on the tracking data (Fernandez & Born, 2018).
-- [Dangerous Accessible Space][dangerous-accessible-space-url]: Compute Dangerous accessible space (Bischofberger & Baca, 2025)
-- [Defensive Structure Optimization][optimization-url]: Optimize defensive positioning based on different objective functions.
+## Supported providers
 
-## Documentation
+| Provider | Event data | Tracking data |
+| --- | :---: | :---: |
+| Opta / StatsPerform (F7/F24 and MA2/MA13) | ✓ | |
+| Sportec Solutions (DFL) | ✓ | ✓ |
+| Tracab | | ✓ |
+| Metrica | ✓ | ✓ |
+| Inmotio | | ✓ |
+| SciSports | ✓ | |
+| StatsBomb | ✓ | |
+| FIFA | ✓ | |
+| InStat (deprecated, no SPADL) | ✓ | |
+| Any other [kloppy][kloppy-url] provider | ✓ | ✓ |
 
-The official documentation can be found [here][docs-url].
+Missing a provider? Please [open an issue](https://github.com/Alek050/databallpy/issues).
 
-## Providers
+## Open data
 
-Inherintly supported providers.
-
-Event data providers:
-- Opta
-- Metrica
-- Instat
-- SciSports
-- Sportec Solutions (for the DFL)
-- FIFA
-
-Tracking data providers:
-- Tracab (including Sportec Solutions format from the DFL)
-- Metrica
-- Inmotio
-
-Check the [integration between Kloppy and Databallpy](https://databallpy.readthedocs.io/en/main/getting_started/loading_in_a_game_page.html#databallpy-kloppy-integration) to parse any kloppy supported data provider into a DataBallPy `Game` object.
-
-## Seek Support
-To reach out to developers, maintainers, and the community in general, you can reply to and open new discussions in the [discussions field](https://github.com/Alek050/databallpy/discussions) of `databallpy`.
+`get_open_game()` downloads and caches one of the seven games (two 1. Bundesliga, five 2. Bundesliga) released by the DFL (Bassek et al., 2025, [Scientific Data][open-data-url]) under the CC-BY 4.0 licence. The available games are listed in `databallpy.utils.constants.OPEN_GAME_IDS_DFL`.
 
 ## Citing
 
-If you have used DataBallPy in you work, please consider citing the [corresponding papaer](https://joss.theoj.org/papers/10.21105/joss.10223).
+If you use DataBallPy in your work, please cite the [JOSS paper][joss-url]:
 
-```
+```bibtex
 @article{Oonk2026,
    author = {Gerard Alexander Oonk and Daan Grob and Matthias Kempe},
    doi = {10.21105/JOSS.10223},
@@ -239,41 +180,35 @@ If you have used DataBallPy in you work, please consider citing the [correspondi
 }
 ```
 
-## Contributing
+Please also cite the papers behind the methods you use (see below).
 
-Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.
+## Acknowledgements
 
-## Maintainers & owners
+DataBallPy builds on the work of others:
 
-- [Alek050](https://github.com/Alek050/)
+- **Packages**: [kloppy][kloppy-url] for loading many providers, [floodlight][floodlight-url] for its standardisation of soccer data, [socceraction][socceraction-url] for the SPADL format and [accessible-space][accessible-space-url] for Dangerous Accessible Space.
+- **Methods**:
+  - Synchronisation: [sync.soccer][soccer-sync-url] (Kwiatkowski)
+  - SPADL: Decroos, T., Bransen, L., Van Haaren, J., & Davis, J. (2019). Actions speak louder than goals: Valuing player actions in soccer. *KDD '19*.
+  - Pressure: Herold, M., & Kempe, M. (2022).
+  - Individual player possession: Vidal-Codina, F., et al. (2022).
+  - Expected threat: Singh, K. (2018).
+  - Gaussian space occupation: Fernández, J., & Born, L. (2018).
+  - Dangerous Accessible Space: Bischofberger, J., & Baca, A. (2025).
+- **Data**: the DFL and Sportec Solutions for the open dataset (Bassek et al., 2025), and the providers whose formats are supported.
 
-## Contributors
+## Contributing and support
 
-- [DaanGro](https://github.com/DaanGro/)
-- [rdghe](https://github.com/rdghe/)
-- [swopper050](https://github.com/Swopper050)
-- [maritsloots](https://github.com/maritsloots)
-- [jan-swiatek](https://github.com/jan-swiatek)
-- [UnravelSports](https://github.com/UnravelSports) 
-- [migvidal5](https://github.com/migvidal5)
-- [jonas-bischofberger](https://github.com/jonas-bischofberger)
-- [jiangyan yang](https://github.com/ouyang1030)
-- [amarshah1999](https://github.com/amarshah1999)
+Contributions are welcome, see the [contributing guidelines](https://databallpy.readthedocs.io/en/main/contributing/quick_overview.html). This project is released with a Code of Conduct; by contributing you agree to its terms. Questions and ideas are welcome in the [discussions](https://github.com/Alek050/databallpy/discussions). See the [CHANGELOG](CHANGELOG.md) for what changed in each version.
 
-## License
+**Maintainer**: [Alek050](https://github.com/Alek050/)
 
-`databallpy` was created by Alexander Oonk & Daan Grob. It is licensed under the terms of the MIT license.
+**Contributors**: [DaanGro](https://github.com/DaanGro/), [rdghe](https://github.com/rdghe/), [swopper050](https://github.com/Swopper050), [maritsloots](https://github.com/maritsloots), [jan-swiatek](https://github.com/jan-swiatek), [UnravelSports](https://github.com/UnravelSports), [migvidal5](https://github.com/migvidal5), [jonas-bischofberger](https://github.com/jonas-bischofberger), [ouyang1030](https://github.com/ouyang1030), [amarshah1999](https://github.com/amarshah1999)
 
 ## Similar projects
 
-Although we think this package helps when starting to analyse soccer data, other packages may be better suited for your specific needs. Make sure to check out the following packages as well:
-- [kloppy][kloppy-url]
-- [floodlight][floodlight-url]
-- [codeball](https://github.com/metrica-sports/codeball)
-- [socceraction](https://github.com/ML-KULeuven/socceraction)
+Other packages may suit your needs better, make sure to check out [kloppy][kloppy-url], [floodlight][floodlight-url], [socceraction][socceraction-url] and [codeball](https://github.com/metrica-sports/codeball). To get started with soccer data in general, see [Friends of Tracking](https://github.com/Friends-of-Tracking-Data-FoTD).
 
-And for a more specific toturials on how to get started with soccer data"
-- [Friends of Tracking](https://github.com/Friends-of-Tracking-Data-FoTD)
+## License
 
-
-
+DataBallPy was created by Alexander Oonk & Daan Grob and is licensed under the MIT license.

@@ -665,14 +665,20 @@ def create_smart_batches(tracking_data: pd.DataFrame) -> list[pd.Timestamp]:
 
         last_end_dt = end_dt
 
-    # add last datetime with some room for the last events
-    end_datetimes.append(last_end_dt + pd.to_timedelta(1, unit="h"))
+    # the last batch ends at the last tracking frame, events after the tracking data
+    # can not be synced (e.g. when only a part of the game is loaded)
+    end_datetimes.append(
+        tracking_data["datetime"].iloc[-1] + pd.to_timedelta(1, unit="ms")
+    )
 
     return end_datetimes
 
 
 def align_event_data_datetime(
-    event_data: pd.DataFrame, tracking_data: pd.DataFrame, offset: float = 1.0
+    event_data: pd.DataFrame,
+    tracking_data: pd.DataFrame,
+    offset: float = 1.0,
+    periods: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Function that aligns the datetimes of the event data and tracking data. This
     is done by substracting the difference between the first event and the first
@@ -686,6 +692,11 @@ def align_event_data_datetime(
             this way the event is synced to the last frame the ball is close to a
             player. Which often corresponds with the event (pass and shots).
             Defaults to 1.0.
+        periods (pd.DataFrame, optional): The periods of the game, with the
+            start_frame and start_datetime_td columns. If the tracking data of a period
+            starts after the start_frame (only a part of the period is loaded), the
+            start_datetime_td is used instead of the first tracking frame. Defaults to
+            None.
 
     Returns:
         pd.DataFrame: Event data with aligned datetimes
@@ -718,6 +729,24 @@ def align_event_data_datetime(
         datetime_first_tracking_frame = tracking_data_p[
             tracking_data_p["ball_status"] == "alive"
         ].iloc[0]["datetime"]
+
+        # if only a part of the period is loaded, the first tracking frame is not the
+        # kick off, use the start of the period instead
+        period_p = periods[periods["period_id"] == period] if periods is not None else []
+        if (
+            len(period_p) > 0
+            and period_p["start_frame"].iloc[0] != MISSING_INT
+            and pd.notna(period_p["start_datetime_td"].iloc[0])
+            and tracking_data_p["frame"].iloc[0] > period_p["start_frame"].iloc[0]
+        ):
+            period_start = pd.Timestamp(period_p["start_datetime_td"].iloc[0])
+            tracking_tz = tracking_data["datetime"].dt.tz
+            if period_start.tzinfo is None and tracking_tz is not None:
+                period_start = period_start.tz_localize("UTC").tz_convert(tracking_tz)
+            elif period_start.tzinfo is not None:
+                period_start = period_start.tz_convert(tracking_tz)
+            datetime_first_tracking_frame = period_start
+
         diff_datetime = datetime_first_event - datetime_first_tracking_frame
 
         event_data.loc[event_data_p.index, "datetime"] -= diff_datetime
