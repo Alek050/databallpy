@@ -6,8 +6,8 @@ import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers.utils import _add_spadl_columns
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.event_extras import create_all_event_extras
 from databallpy.utils.logging import create_logger
 
 LOGGER = create_logger(__name__)
@@ -78,8 +78,8 @@ def load_statsbomb_event_data(
             recalculated to meters in this function. Defaults to (105.0, 68.0)
 
     Returns:
-        Tuple[pd.DataFrame, Metadata, dict]: the event data of the gameh, the metadata,
-        and the databallpy_events.
+        Tuple[pd.DataFrame, Metadata, dict]: the event data of the game, the metadata,
+        and the extra information of the shot, pass and dribble events.
     """
     LOGGER.info(f"Loading Statsbomb event data: events_loc: {events_loc}")
     _check_input_values(loc=events_loc, str_type="events_loc")
@@ -257,7 +257,8 @@ def _load_event_data(
 
     Returns:
         Tuple[pd.DataFrame, dict, Metadata]: the event data of the game, the
-            databallpy_events, and the updated metadata
+            extra information of the shot, pass and dribble events, and the updated
+            metadata
     """
     with open(events_loc, "r", encoding="utf-8") as f:
         events_json = json.load(f)
@@ -411,45 +412,18 @@ def _load_event_data(
             databallpy_event = databallpy_mapping[event["type"]["name"]]
             event_data["databallpy_event"][id] = databallpy_event
             if databallpy_event == "shot":
-                shot_events[id] = _get_shot_event(
-                    event=event,
-                    id=id,
-                    pitch_dimensions=pitch_dimensions,
-                    periods=metadata.periods_frames,
-                    away_team_id=metadata.away_team_id,
-                    x_multiplier=x_multiplier,
-                    y_multiplier=y_multiplier,
-                    cell_offset=cell_offset,
-                )
+                shot_events[id] = _get_shot_event(event)
                 event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Goal"
                 )
 
             elif databallpy_event == "pass":
-                pass_events[id] = _get_pass_event(
-                    event=event,
-                    id=id,
-                    pitch_dimensions=pitch_dimensions,
-                    periods=metadata.periods_frames,
-                    away_team_id=metadata.away_team_id,
-                    x_multiplier=x_multiplier,
-                    y_multiplier=y_multiplier,
-                    cell_offset=cell_offset,
-                )
+                pass_events[id] = _get_pass_event(event)
                 event_data["is_successful"][id] = (
                     event[event_type_object].get("outcome") is None
                 )
             elif databallpy_event == "dribble":
-                dribble_events[id] = _get_dribble_event(
-                    event=event,
-                    id=id,
-                    pitch_dimensions=pitch_dimensions,
-                    periods=metadata.periods_frames,
-                    away_team_id=metadata.away_team_id,
-                    x_multiplier=x_multiplier,
-                    y_multiplier=y_multiplier,
-                    cell_offset=cell_offset,
-                )
+                dribble_events[id] = _get_dribble_event(event)
                 event_data["is_successful"][id] = (
                     event[event_type_object]["outcome"]["name"] == "Complete"
                 )
@@ -471,60 +445,27 @@ def _load_event_data(
     ] *= -1
     event_data = _add_spadl_columns(event_data)
 
-    id_jersey_map = (
-        pd.concat([metadata.home_players, metadata.away_players])[["id", "shirt_num"]]
-        .set_index("id")
-        .to_dict()["shirt_num"]
-    )
-    for event in {**shot_events, **pass_events, **dribble_events}.values():
-        if event.team_side == "away":
-            event.start_x *= -1
-            if isinstance(event, PassEvent):
-                event.end_x *= -1
-        else:
-            event.start_y *= -1
-            if isinstance(event, PassEvent):
-                event.end_y *= -1
-        event.jersey = id_jersey_map[event.player_id]
-
     return (
         event_data,
-        {
-            "shot_events": shot_events,
-            "pass_events": pass_events,
-            "dribble_events": dribble_events,
-        },
+        create_all_event_extras(
+            {
+                "shot_events": shot_events,
+                "pass_events": pass_events,
+                "dribble_events": dribble_events,
+            }
+        ),
         metadata,
     )
 
 
-def _get_shot_event(
-    event: dict,
-    id: int,
-    pitch_dimensions: tuple,
-    periods: pd.DataFrame,
-    away_team_id: int,
-    x_multiplier: float,
-    y_multiplier: float,
-    cell_offset: float,
-) -> ShotEvent:
-    """This function retrieves the shot event of a specific game.
+def _get_shot_event(event: dict) -> dict:
+    """This function retrieves the extra information of a shot event.
 
     Args:
         event (dict): the shot event.
-        id (int): the id of the event.
-        pitch_dimensions (tuple): pitch dimensions in x and y direction.
-        periods (pd.Dataframe): metadata.periods_frames dataframe
-        away_team_id (int): id of away team
-        x_multiplier (float): The value to multiply the x locations with to get to
-            meters. E.g. 105/120 = 0.875.
-        y_multiplier (float): The value to multiply the y locations with to get to
-            meters. E.g. 68/80 = 0.85.
-        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
-            from the locations to get the center of the cell.
 
     Returns:
-        ShotEvent: the shot event
+        dict: the extra information of the shot event
     """
 
     shot_outcome_mapping = {
@@ -538,56 +479,24 @@ def _get_shot_event(
         "Saved to Post": "miss_hit_post",
     }
 
-    close_to_ball_event_info = _get_close_to_ball_event_info(
-        event,
-        id,
-        pitch_dimensions,
-        away_team_id,
-        periods,
-        x_multiplier,
-        y_multiplier,
-        cell_offset,
-    )
-
-    return ShotEvent(
-        **close_to_ball_event_info,
-        related_event_id=event["related_events"],
-        outcome=event["shot"]["outcome"]["name"] == "Goal",
-        body_part=BODY_PART_MAPPING[event["shot"]["body_part"]["name"]],
-        possession_type=POSSESSION_TYPE_MAPPING[event["shot"]["type"]["name"]],
-        set_piece=SET_PIECE_TYPE_MAPPING[event["shot"]["type"]["name"]],
-        _xt=-1.0,
-        outcome_str=shot_outcome_mapping[event["shot"]["outcome"]["name"]],
-    )
+    return {
+        "related_event_id": event["related_events"],
+        "outcome": event["shot"]["outcome"]["name"] == "Goal",
+        "body_part": BODY_PART_MAPPING[event["shot"]["body_part"]["name"]],
+        "possession_type": POSSESSION_TYPE_MAPPING[event["shot"]["type"]["name"]],
+        "set_piece": SET_PIECE_TYPE_MAPPING[event["shot"]["type"]["name"]],
+        "outcome_str": shot_outcome_mapping[event["shot"]["outcome"]["name"]],
+    }
 
 
-def _get_pass_event(
-    event: dict,
-    id: int,
-    pitch_dimensions: tuple,
-    periods: pd.DataFrame,
-    away_team_id: int,
-    x_multiplier: float,
-    y_multiplier: float,
-    cell_offset: float,
-) -> PassEvent:
-    """This function retrieves the pass event of a specific game.
+def _get_pass_event(event: dict) -> dict:
+    """This function retrieves the extra information of a pass event.
 
     Args:
-        event (dict): the shot event.
-        id (int): the id of the event.
-        pitch_dimensions (tuple): pitch dimensions in x and y direction.
-        periods (pd.Dataframe): metadata.periods_frames dataframe
-        away_team_id (int): id of away team
-        x_multiplier (float): The value to multiply the x locations with to get to
-            meters. E.g. 105/120 = 0.875.
-        y_multiplier (float): The value to multiply the y locations with to get to
-            meters. E.g. 68/80 = 0.85.
-        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
-            from the locations to get the center of the cell.
+        event (dict): the pass event.
 
     Returns:
-        PassEvent: the pass event
+        dict: the extra information of the pass event
     """
 
     pass_type_mapping = {
@@ -620,148 +529,39 @@ def _get_pass_event(
     if "related_events" in event.keys():
         related_events = event["related_events"]
 
-    close_to_ball_event_info = _get_close_to_ball_event_info(
-        event,
-        id,
-        pitch_dimensions,
-        away_team_id,
-        periods,
-        x_multiplier,
-        y_multiplier,
-        cell_offset,
-    )
-
-    end_x, end_y = _location_to_meters(
-        event["pass"]["end_location"],
-        cell_offset,
-        pitch_dimensions,
-        x_multiplier,
-        y_multiplier,
-    )
-
-    return PassEvent(
-        **close_to_ball_event_info,
-        related_event_id=related_events,
-        end_x=end_x,
-        end_y=end_y,
-        outcome=False if "goal-assist" not in event["pass"].keys() else True,
-        body_part=body_part,
-        possession_type=possession_type,
-        set_piece=set_piece,
-        receiver_player_id=receiver_player_id,
-        _xt=-1.0,
-        outcome_str="unspecified",
-        pass_type=pass_type,
-    )
+    return {
+        "related_event_id": related_events,
+        "outcome": False if "goal-assist" not in event["pass"].keys() else True,
+        "body_part": body_part,
+        "possession_type": possession_type,
+        "set_piece": set_piece,
+        "receiver_player_id": receiver_player_id,
+        "outcome_str": "unspecified",
+        "pass_type": pass_type,
+    }
 
 
-def _get_dribble_event(
-    event: dict,
-    id: int,
-    pitch_dimensions: tuple,
-    periods: pd.DataFrame,
-    away_team_id: int,
-    x_multiplier: float,
-    y_multiplier: float,
-    cell_offset: float,
-) -> DribbleEvent:
-    """This function retrieves the dribble event
+def _get_dribble_event(event: dict) -> dict:
+    """This function retrieves the extra information of a dribble event.
 
     Args:
-        event (dict): the shot event.
-        id (int): the id of the event.
-        pitch_dimensions (tuple): pitch dimensions in x and y direction.
-        periods (pd.Dataframe): metadata.periods_frames dataframe
-        away_team_id (int): id of away team
-        x_multiplier (float): The value to multiply the x locations with to get to
-            meters. E.g. 105/120 = 0.875.
-        y_multiplier (float): The value to multiply the y locations with to get to
-            meters. E.g. 68/80 = 0.85.
-        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
-            from the locations to get the center of the cell.
+        event (dict): the dribble event.
 
     Returns:
-        DribbleEvent: the dribble event
+        dict: the extra information of the dribble event
     """
     related_events = None
     if "related_events" in event.keys():
         related_events = event["related_events"]
 
-    close_to_ball_event_info = _get_close_to_ball_event_info(
-        event,
-        id,
-        pitch_dimensions,
-        away_team_id,
-        periods,
-        x_multiplier,
-        y_multiplier,
-        cell_offset,
-    )
-
-    return DribbleEvent(
-        **close_to_ball_event_info,
-        related_event_id=related_events,
-        outcome=event["dribble"]["outcome"]["name"] == "Complete",
-        _xt=-1.0,
-        body_part="unspecified",
-        possession_type="unspecified",
-        set_piece="unspecified",
-        duel_type="unspecified",
-        with_opponent=None,
-    )
-
-
-def _get_close_to_ball_event_info(
-    event: dict,
-    id: int,
-    pitch_dimensions: tuple,
-    away_team_id: int,
-    periods: pd.DataFrame,
-    x_multiplier: float,
-    y_multiplier: float,
-    cell_offset: float,
-) -> dict:
-    """Function to get the base event data from the event based on
-    the CloseToBallEvent class.
-
-    Args:
-        event (dict): event
-        id (int): index
-        pitch_dimensions (tuple): pitch dimensions in x and y direction.
-        away_team_id (int): id of the away team
-        players (pd.DataFrame): dataframe with player information.
-        periods: metadata.periods_frames dataframe
-        x_multiplier (float): The value to multiply the x locations with to get to
-            meters. E.g. 105/120 = 0.875.
-        y_multiplier (float): The value to multiply the y locations with to get to
-            meters. E.g. 68/80 = 0.85.
-        cell_offset (float): half the size of a statsbomb cell in yards, subtracted
-            from the locations to get the center of the cell.
-
-    Returns:
-        dict: dictionary with the base event data: start_x, start_y, related_event_id
-    """
-
-    start_x, start_y = _location_to_meters(
-        event["location"], cell_offset, pitch_dimensions, x_multiplier, y_multiplier
-    )
-    seconds = _get_seconds(event)
     return {
-        "start_x": start_x,
-        "start_y": start_y,
-        "event_id": id,
-        "period_id": event["period"],
-        "minutes": event["minute"],
-        "seconds": seconds,
-        "datetime": pd.to_datetime(
-            periods["start_datetime_ed"][event["period"] - 1]
-            + pd.to_timedelta(event["minute"] * 60 + seconds, unit="seconds")
-        ),
-        "team_id": event["team"]["id"],
-        "team_side": "away" if event["team"]["id"] == away_team_id else "home",
-        "pitch_size": pitch_dimensions,
-        "player_id": event["player"]["id"],
-        "jersey": MISSING_INT,
+        "related_event_id": related_events,
+        "outcome": event["dribble"]["outcome"]["name"] == "Complete",
+        "body_part": "unspecified",
+        "possession_type": "unspecified",
+        "set_piece": "unspecified",
+        "duel_type": "unspecified",
+        "with_opponent": None,
     }
 
 

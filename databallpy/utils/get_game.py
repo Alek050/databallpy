@@ -36,8 +36,8 @@ from databallpy.data_parsers.tracking_data_parsers import (
 from databallpy.data_parsers.tracking_data_parsers.utils import (
     _quality_check_tracking_data,
 )
-from databallpy.events import IndividualCloseToBallEvent, PassEvent
 from databallpy.events.spadl import add_carries_to_event_data
+from databallpy.features.expected_values import get_xt
 from databallpy.game import Game
 from databallpy.schemas import (
     EventData,
@@ -50,7 +50,11 @@ from databallpy.utils.align_player_ids import (
     align_player_ids_name_similarity,
 )
 from databallpy.utils.constants import MISSING_INT
-from databallpy.utils.game_utils import create_event_attributes_dataframe
+from databallpy.utils.event_extras import (
+    EVENT_TYPES,
+    create_all_event_extras,
+    get_event_extras_from_dataframe,
+)
 from databallpy.utils.logging import create_logger, logging_wrapper
 from databallpy.utils.utils import get_databallpy_events, resolve_cache_dir
 
@@ -220,7 +224,7 @@ def get_game(
             frames=frames,
         )
         if not uses_event_data:
-            databallpy_events = {}
+            databallpy_events = create_all_event_extras({})
         if _check_game_class_:
             TrackingDataSchema.validate(tracking_data)
         uses_tracking_data = True
@@ -265,30 +269,24 @@ def get_game(
     if uses_tracking_data:
         changed_periods = tracking_metadata.periods_changed_playing_direction
 
-    shot_events = (
-        create_event_attributes_dataframe(databallpy_events["shot_events"])
-        if "shot_events" in databallpy_events.keys()
-        else pd.DataFrame()
-    )
-    pass_events = (
-        create_event_attributes_dataframe(databallpy_events["pass_events"])
-        if "pass_events" in databallpy_events.keys()
-        else pd.DataFrame()
-    )
-    dribble_events = (
-        create_event_attributes_dataframe(databallpy_events["dribble_events"])
-        if "dribble_events" in databallpy_events.keys()
-        else pd.DataFrame()
-    )
-
     if uses_event_data:
         event_data = _add_carries(
             event_data,
             tracking_metadata.pitch_dimensions
             if uses_tracking_data
             else event_metadata.pitch_dimensions,
-            [shot_events, pass_events, dribble_events],
+            list(databallpy_events.values()),
         )
+        # the xT is computed in the coordinates of the event data provider, like it
+        # was before the event data was rescaled to the tracking data dimensions
+        xt_event_data = event_data
+        if uses_tracking_data:
+            xt_event_data, _ = rescale_event_data(
+                event_metadata.pitch_dimensions,
+                tracking_metadata.pitch_dimensions,
+                event_data[["action_type", "team_id", "start_x", "start_y"]].copy(),
+            )
+        event_data["xt"] = get_xt(xt_event_data, event_metadata.home_team_id)
         home_players = event_metadata.home_players
         away_players = event_metadata.away_players
     else:
@@ -341,9 +339,9 @@ def get_game(
         away_players=away_players,
         country=event_metadata.country if uses_event_data else tracking_metadata.country,
         allow_synchronise_tracking_and_event_data=allow_synchronise,
-        shot_events=shot_events,
-        dribble_events=dribble_events,
-        pass_events=pass_events,
+        shot_extras=databallpy_events["shot_events"],
+        dribble_extras=databallpy_events["dribble_events"],
+        pass_extras=databallpy_events["pass_events"],
         _event_timestamp_is_precise=event_precise_timestamps[event_data_provider]
         if uses_event_data
         else False,
@@ -369,12 +367,16 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
             - tracking_data.parquet
             - event_data.parquet
             - periods.parquet
-            - pass_events.parquet
-            - shot_events.parquet
-            - dribble_events.parquet
+            - pass_extras.parquet
+            - shot_extras.parquet
+            - dribble_extras.parquet
             - away_players.parquet
             - home_players.parquet
             - metadata.json
+
+            Games saved with databallpy versions before v0.8.2 contain
+            pass_events.parquet, shot_events.parquet and dribble_events.parquet
+            instead of the extras files.
        path (str, optional): path of directory where game is saved. If not
         provided, the current working directory will be used.
 
@@ -397,13 +399,21 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
         "periods",
         "home_players",
         "away_players",
-        "dribble_events",
-        "shot_events",
-        "pass_events",
+        *[f"{event_type}_extras" for event_type in EVENT_TYPES],
     ):
-        dataframe = pd.read_parquet(os.path.join(full_path, f"{dataframe_name}.parquet"))
-        for column in metadata.get("json_encoded_columns", {}).get(dataframe_name, []):
+        file_name = dataframe_name
+        if dataframe_name.endswith("_extras") and not os.path.exists(
+            os.path.join(full_path, f"{dataframe_name}.parquet")
+        ):
+            # games saved before v0.8.2 store all attributes of the events
+            file_name = dataframe_name.replace("_extras", "_events")
+        dataframe = pd.read_parquet(os.path.join(full_path, f"{file_name}.parquet"))
+        for column in metadata.get("json_encoded_columns", {}).get(file_name, []):
             dataframe[column] = _decode_json_column(dataframe[column])
+        if file_name != dataframe_name:
+            dataframe = get_event_extras_from_dataframe(
+                dataframe, dataframe_name.removesuffix("_extras")
+            )
         dataframes[dataframe_name] = dataframe
 
     # games saved before the SPADL columns were introduced do not have them yet, derive
@@ -425,6 +435,10 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
             event_data["action_type"] = event_data["action_type"].astype(object)
             event_data.loc[event_data["action_type"].isna(), "action_type"] = None
         dataframes["event_data"] = _add_spadl_columns(event_data)
+        if "xt" not in dataframes["event_data"].columns:
+            dataframes["event_data"]["xt"] = get_xt(
+                dataframes["event_data"], metadata["home_team_id"]
+            )
 
     return Game(
         tracking_data=TrackingData(
@@ -452,9 +466,9 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
         allow_synchronise_tracking_and_event_data=metadata[
             "allow_synchronise_tracking_and_event_data"
         ],
-        shot_events=dataframes["shot_events"],
-        dribble_events=dataframes["dribble_events"],
-        pass_events=dataframes["pass_events"],
+        shot_extras=dataframes["shot_extras"],
+        dribble_extras=dataframes["dribble_extras"],
+        pass_extras=dataframes["pass_extras"],
         _tracking_timestamp_is_precise=metadata["_tracking_timestamp_is_precise"],
         _event_timestamp_is_precise=metadata["_event_timestamp_is_precise"],
         _periods_changed_playing_direction=metadata[
@@ -568,7 +582,7 @@ def load_event_data(
         )
 
     # Get event data and event metadata
-    databallpy_events = {}
+    databallpy_events = create_all_event_extras({})
     if event_data_provider in ("opta", "statsperform"):
         event_data, event_metadata, databallpy_events = load_opta_event_data(
             f7_loc=event_metadata_loc, f24_loc=event_data_loc
@@ -680,27 +694,13 @@ def get_open_game(
         }
         event_data["team_name"] = event_data["team_id"].map(team_name_map)
 
-    shot_events = (
-        create_event_attributes_dataframe(databallpy_events["shot_events"])
-        if "shot_events" in databallpy_events.keys()
-        else pd.DataFrame()
-    )
-    pass_events = (
-        create_event_attributes_dataframe(databallpy_events["pass_events"])
-        if "pass_events" in databallpy_events.keys()
-        else pd.DataFrame()
-    )
-    dribble_events = (
-        create_event_attributes_dataframe(databallpy_events["dribble_events"])
-        if "dribble_events" in databallpy_events.keys()
-        else pd.DataFrame()
-    )
-
     event_data = _add_carries(
         event_data,
         metadata.pitch_dimensions,
-        [shot_events, pass_events, dribble_events],
+        list(databallpy_events.values()),
     )
+    if len(event_data) > 0:
+        event_data["xt"] = get_xt(event_data, metadata.home_team_id)
 
     game = Game(
         tracking_data=TrackingData(
@@ -721,9 +721,9 @@ def get_open_game(
         away_players=metadata.away_players,
         country=ed_metadata.country,
         allow_synchronise_tracking_and_event_data=True,
-        shot_events=shot_events,
-        dribble_events=dribble_events,
-        pass_events=pass_events,
+        shot_extras=databallpy_events["shot_events"],
+        dribble_extras=databallpy_events["dribble_events"],
+        pass_extras=databallpy_events["pass_events"],
         _tracking_timestamp_is_precise=True,
         _event_timestamp_is_precise=True,
         _periods_changed_playing_direction=(metadata.periods_changed_playing_direction),
@@ -808,17 +808,18 @@ def rescale_event_data(
     tracking_pitch_dimensions: list[float, float],
     event_pitch_dimensions: list[float, float],
     event_data: pd.DataFrame,
-    databallpy_events: dict[str, dict[str | int,]] = None,
-) -> tuple[pd.DataFrame, dict[str, dict[str | int, IndividualCloseToBallEvent]]]:
-    """Function to rescale the event data and databallpy events to the tracking data
-    dimensions if the event data is not scaled in the same dimensions of the tracking
-    data.
+    databallpy_events: dict[str, pd.DataFrame] | None = None,
+) -> tuple[pd.DataFrame, dict[str, pd.DataFrame] | None]:
+    """Function to rescale the event data to the tracking data dimensions if the
+    event data is not scaled in the same dimensions of the tracking data. The extra
+    information of the events holds no locations and is returned unchanged.
 
     Args:
         tracking_pitch_dimensions (list): pitch dimensions of the tracking data
         event_pitch_dimensions (list): pitch dimensions of the event data
         event_data (pd.DataFrame): event data
-        databallpy_events (dict): databallpy events
+        databallpy_events (dict): the extra information of the shot, pass and
+            dribble events
 
     Returns:
         Tuple[pd.DataFrame, dict]: rescaled event data and databallpy events
@@ -839,16 +840,9 @@ def rescale_event_data(
     y_correction = tracking_pitch_dimensions[1] / event_pitch_dimensions[1]
     event_data["start_x"] *= x_correction
     event_data["start_y"] *= y_correction
-
-    # correct the databallpy event instances as well
-    if databallpy_events is not None:
-        for dict_of_events in databallpy_events.values():
-            for event in dict_of_events.values():
-                event.start_x *= x_correction
-                event.start_y *= y_correction
-                if isinstance(event, PassEvent):
-                    event.end_x *= x_correction
-                    event.end_y *= y_correction
+    for col, correction in [("end_x", x_correction), ("end_y", y_correction)]:
+        if col in event_data.columns:
+            event_data[col] *= correction
 
     return event_data, databallpy_events
 
@@ -1065,6 +1059,18 @@ def get_game_from_kloppy(
             provider=event_data.provider,
         )
     databallpy_events = get_databallpy_events(event_data)
+    extras = {}
+    for event_type in EVENT_TYPES:
+        event_df = (
+            event_data[databallpy_events == event_type].rename(
+                columns={"is_successful": "outcome"}
+            )
+            if uses_event_data
+            else None
+        )
+        extras[f"{event_type}_extras"] = get_event_extras_from_dataframe(
+            event_df, event_type
+        )
     home_players, away_players = players_from_kloppy(
         event_dataset if uses_event_data else tracking_dataset
     )
@@ -1101,6 +1107,9 @@ def get_game_from_kloppy(
         else MISSING_INT
     )
 
+    if uses_event_data:
+        event_data["xt"] = get_xt(event_data, home_team.team_id)
+
     return Game(
         tracking_data=tracking_data,
         event_data=event_data,
@@ -1117,15 +1126,7 @@ def get_game_from_kloppy(
         away_formation=None,
         away_score=away_score,
         country=None,
-        shot_events=event_data[databallpy_events == "shot"]
-        if uses_event_data
-        else pd.DataFrame(),
-        dribble_events=event_data[databallpy_events == "dribble"]
-        if uses_event_data
-        else pd.DataFrame(),
-        pass_events=event_data[databallpy_events == "pass"]
-        if uses_event_data
-        else pd.DataFrame(),
+        **extras,
         allow_synchronise_tracking_and_event_data=True
         if uses_tracking_data and uses_event_data
         else False,

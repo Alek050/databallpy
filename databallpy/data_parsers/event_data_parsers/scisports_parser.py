@@ -9,8 +9,8 @@ from databallpy.data_parsers.event_data_parsers.utils import (
     _set_recoveries_to_non_action,
 )
 from databallpy.data_parsers.metadata import Metadata
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.event_extras import create_all_event_extras
 from databallpy.utils.logging import logging_wrapper
 
 BODY_PART_MAPPING = {
@@ -80,7 +80,7 @@ def load_scisports_event_data(
 
     Returns:
         Tuple[pd.DataFrame, Metadata, dict]: the event data of the game, the metadata,
-        and the databallpy_events.
+        and the extra information of the shot, pass and dribble events.
     """
     if not isinstance(pitch_dimensions, (tuple, list)) or len(pitch_dimensions) != 2:
         raise ValueError(
@@ -293,7 +293,8 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         metadata (Metadata): the metadata of the game.
 
     Returns:
-        Tuple[pd.DataFrame, dict]: the event data of the game and the databallpy_events
+        Tuple[pd.DataFrame, dict]: the event data of the game and the extra
+            information of the shot, pass and dribble events
     """
     with open(events_json, "r", encoding="utf-8") as f:
         events_json = json.load(f)
@@ -328,9 +329,6 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         "DEFENSIVE_DUEL": "tackle",
         "FOUL": "tackle",
     }
-    all_players = pd.concat(
-        [metadata.home_players, metadata.away_players], ignore_index=True
-    )
     shot_events = {}
     pass_events = {}
     dribble_events = {}
@@ -373,8 +371,6 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
         if event["subTypeName"] in SPADL_CARD_RESULTS:
             cards[id] = SPADL_CARD_RESULTS[event["subTypeName"]]
 
-        multiplier = [-1, 1][int(event["groupName"].lower() == "home")]
-
         if event["baseTypeName"] in databallpy_event_mapping:
             databallpy_event = databallpy_event_mapping[event["baseTypeName"]]
             if databallpy_event == "tackle":
@@ -386,13 +382,11 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
             event_data["databallpy_event"].append(databallpy_event)
             event_data["is_successful"].append(event["resultId"] == 1)
             if databallpy_event == "shot" and not event["playerId"] == -1:
-                shot_events[id] = _get_shot_event(event, id, all_players, multiplier)
+                shot_events[id] = _get_shot_event(event)
             elif databallpy_event == "pass" and not event["playerId"] == -1:
-                pass_events[id] = _get_pass_event(event, id, all_players, multiplier)
+                pass_events[id] = _get_pass_event(event)
             elif databallpy_event == "dribble" and not event["playerId"] == -1:
-                dribble_events[id] = _get_dribble_event(
-                    event, id, all_players, multiplier
-                )
+                dribble_events[id] = _get_dribble_event(event)
         else:
             event_data["databallpy_event"].append(None)
             event_data["is_successful"].append(None)
@@ -416,22 +410,13 @@ def _load_event_data(events_json: str, metadata: Metadata) -> tuple[pd.DataFrame
     )
     event_data = _add_spadl_columns(event_data)
 
-    for event in {
-        **shot_events,
-        **pass_events,
-        **dribble_events,
-    }.values():
-        row = event_data.loc[event_data["event_id"] == event.event_id]
-        event.minutes = row["minutes"].iloc[0]
-        event.seconds = row["seconds"].iloc[0]
-        event.datetime = row["datetime"].iloc[0]
-        event.pitch_size = metadata.pitch_dimensions
-
-    return event_data, {
-        "shot_events": shot_events,
-        "pass_events": pass_events,
-        "dribble_events": dribble_events,
-    }
+    return event_data, create_all_event_extras(
+        {
+            "shot_events": shot_events,
+            "pass_events": pass_events,
+            "dribble_events": dribble_events,
+        }
+    )
 
 
 def _get_scisports_spadl_action(
@@ -511,19 +496,14 @@ def _update_scisports_spadl_actions(
     return _add_card_results(event_data, cards)
 
 
-def _get_shot_event(
-    event: dict, id: int, players: pd.DataFrame, multiplier: int
-) -> ShotEvent:
-    """This function retrieves the shot event of a specific match.
+def _get_shot_event(event: dict) -> dict:
+    """This function retrieves the extra information of a shot event.
 
     Args:
         event (dict): the shot event.
-        id (int): the id of the event.
-        players (pd.DataFrame): the players of the match.
-        multiplier (int): the multiplier for the coordinates.
 
     Returns:
-        ShotEvent: the shot event of the game.
+        dict: the extra information of the shot event.
     """
 
     shot_result_mappping = {
@@ -532,43 +512,26 @@ def _get_shot_event(
         "WIDE": "miss_off_target",
         "POST": "miss_hit_post",
     }
-    return ShotEvent(
-        event_id=id,
-        period_id=event["partId"],
-        minutes=MISSING_INT,
-        seconds=MISSING_INT,
-        datetime=pd.to_datetime("NaT"),
-        start_x=event["startPosXM"] * multiplier,
-        start_y=event["startPosYM"] * multiplier,
-        team_id=event["teamId"],
-        team_side=event["groupName"].lower(),
-        pitch_size=(106.0, 68.0),
-        player_id=event["playerId"],
-        jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
-        outcome=bool(event["resultId"]),
-        related_event_id=MISSING_INT,
-        body_part=BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
-        possession_type="unspecified",
-        set_piece="unspecified",
-        _xt=-1.0,
-        outcome_str=shot_result_mappping[event["shotTypeName"]]
+    return {
+        "outcome": bool(event["resultId"]),
+        "related_event_id": MISSING_INT,
+        "body_part": BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
+        "possession_type": "unspecified",
+        "set_piece": "unspecified",
+        "outcome_str": shot_result_mappping[event["shotTypeName"]]
         if event["resultId"] == 0
         else "goal",
-    )
+    }
 
 
-def _get_pass_event(
-    event: dict, id: int, players: pd.DataFrame, multiplier: int
-) -> PassEvent:
-    """This function retrieves the pass event of a specific match.
+def _get_pass_event(event: dict) -> dict:
+    """This function retrieves the extra information of a pass event.
 
     Args:
         event (dict): the pass event.
-        id (int): the id of the event.
-        players (pd.DataFrame): the players of the match.
-        multiplier (int): the multiplier for the coordinates.
+
     Returns:
-        PassEvent: the pass event of the game.
+        dict: the extra information of the pass event.
     """
 
     pass_type_mapping = {
@@ -602,70 +565,37 @@ def _get_pass_event(
         "FREE_KICK": "free_kick",
         "GOALKEEPER_THROW": "no_set_piece",
     }
-    return PassEvent(
-        event_id=id,
-        period_id=event["partId"],
-        minutes=MISSING_INT,
-        seconds=MISSING_INT,
-        datetime=pd.to_datetime("NaT"),
-        start_x=event["startPosXM"] * multiplier,
-        start_y=event["startPosYM"] * multiplier,
-        team_id=event["teamId"],
-        team_side=event["groupName"].lower(),
-        pitch_size=(106.0, 68.0),
-        player_id=event["playerId"],
-        jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
-        outcome=bool(event["resultId"]),
-        related_event_id=MISSING_INT,
-        body_part=BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
-        possession_type="unspecified",
-        set_piece=set_piece_mapping[event["subTypeName"]],
-        _xt=-1.0,
-        outcome_str=event["resultName"].lower()
+    return {
+        "outcome": bool(event["resultId"]),
+        "related_event_id": MISSING_INT,
+        "body_part": BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
+        "possession_type": "unspecified",
+        "set_piece": set_piece_mapping[event["subTypeName"]],
+        "outcome_str": event["resultName"].lower()
         if event["subTypeName"] != "OFFSIDE_PASS"
         else "offside",
-        end_x=event["endPosXM"] * multiplier,
-        end_y=event["endPosYM"] * multiplier,
-        pass_type=pass_type_mapping[event["subTypeName"]],
-        receiver_player_id=event["receiverId"]
+        "pass_type": pass_type_mapping[event["subTypeName"]],
+        "receiver_player_id": event["receiverId"]
         if event["receiverTeamId"] == event["teamId"]
         else MISSING_INT,
-    )
+    }
 
 
-def _get_dribble_event(
-    event: dict, id: int, players: pd.DataFrame, multiplier: int
-) -> DribbleEvent:
-    """This function retrieves the dribble event of a specific match.
+def _get_dribble_event(event: dict) -> dict:
+    """This function retrieves the extra information of a dribble event.
 
     Args:
         event (dict): the dribble event.
-        id (int): the id of the event.
-        players (pd.DataFrame): the players of the match.
-        multiplier (int): the multiplier for the coordinates
 
     Returns:
-        DribbleEvent: the dribble event of the game.
+        dict: the extra information of the dribble event.
     """
-    return DribbleEvent(
-        event_id=id,
-        period_id=event["partId"],
-        minutes=MISSING_INT,
-        seconds=MISSING_INT,
-        datetime=pd.to_datetime("NaT"),
-        start_x=event["startPosXM"] * multiplier,
-        start_y=event["startPosYM"] * multiplier,
-        team_id=event["teamId"],
-        team_side=event["groupName"].lower(),
-        pitch_size=(106.0, 68.0),
-        player_id=event["playerId"],
-        jersey=players.loc[players["id"] == event["playerId"], "shirt_num"].iloc[0],
-        outcome=bool(event["resultId"]),
-        related_event_id=MISSING_INT,
-        body_part=BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
-        possession_type="unspecified",
-        set_piece="no_set_piece",
-        _xt=-1.0,
-        duel_type="offensive",
-        with_opponent=event["subTypeName"] == "TAKE_ON",
-    )
+    return {
+        "outcome": bool(event["resultId"]),
+        "related_event_id": MISSING_INT,
+        "body_part": BODY_PART_MAPPING.get(event["bodyPartName"], "other"),
+        "possession_type": "unspecified",
+        "set_piece": "no_set_piece",
+        "duel_type": "offensive",
+        "with_opponent": event["subTypeName"] == "TAKE_ON",
+    }

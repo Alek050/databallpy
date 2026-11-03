@@ -2115,7 +2115,7 @@ SHOT_INSTANCES_STATSBOMB = {
         body_part="left_foot",
         possession_type="open_play",
         set_piece="no_set_piece",
-        _xt=0.07851,
+        _xt=0.07634,
         outcome_str="miss_off_target",
     )
 }
@@ -2195,7 +2195,7 @@ DRIBBLE_INSTANCES_STATSBOMB = {
         body_part="unspecified",
         possession_type="unspecified",
         set_piece="unspecified",
-        _xt=0.0018614,
+        _xt=0.0197774,
         duel_type="unspecified",
         with_opponent=None,
     )
