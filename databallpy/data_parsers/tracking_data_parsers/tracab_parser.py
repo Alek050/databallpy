@@ -136,7 +136,7 @@ def load_sportec_open_tracking_data(
         tuple[pd.DataFrame, Metadata]: the tracking data and metadata class
 
     Reference:
-        Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
+        Bassek, M., Weber, H., Rein, R., & Memmert, D. (2025). An integrated
         dataset of synchronized spatiotemporal and event data in elite soccer.
     """
     metadata_url = _get_sportec_open_data_url(game_id, "metadata")
@@ -224,6 +224,9 @@ def _get_tracking_data_xml(
             frame_rate, n_frames_first_half = process_game_section(
                 frame_elements, game_section, frames_df, frame_rate, n_frames_first_half
             )
+        if event == "end" and elem.tag == "FrameSet":
+            # free the frames, otherwise the whole file is kept in memory
+            elem.clear()
 
     selection = _get_frame_selection(frames_df, period_id, frames)
     if selection is not None:
@@ -289,6 +292,7 @@ def _get_tracking_data_xml(
                     "home" if int(frame.get("BallPossession")) == 1 else "away"
                 )
                 data["datetime"][i] = frame.get("T")
+        elem.clear()
 
     df = pd.DataFrame(data)
     df["datetime"] = pd.to_datetime(df["datetime"], utc=True).dt.tz_convert(

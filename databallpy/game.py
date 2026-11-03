@@ -692,7 +692,10 @@ class Game:
         )
         # reduce standard error by aligning trakcing and event data on first event
         changed_event_data = align_event_data_datetime(
-            self.event_data.copy(), self.tracking_data, offset=offset
+            self.event_data.copy(),
+            self.tracking_data,
+            offset=offset,
+            periods=self.periods,
         )
         tracking_info, event_info = synchronise_tracking_and_event_data(
             tracking_data=self.tracking_data,
