@@ -915,7 +915,6 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
             (None, "dribble", {}, base_arrival_cost_function),
             (None, "tackle", {}, base_general_cost_ball_event),
             # custom cost functions, action type over databallpy event
-            ("cross", "pass", {"pass": custom}, custom),
             ("cross", "pass", {"pass": custom, "cross": custom2}, custom2),
             ("pass", "own_goal", {"own_goal": custom}, custom),
             (None, "dribble", {"dribble": custom}, custom),
@@ -926,6 +925,11 @@ class TestSynchroniseTrackingAndEventData(unittest.TestCase):
                     _get_cost_function(action_type, databallpy_event, cost_functions),
                     expected,
                 )
+
+        # selecting a cost function by the databallpy event is deprecated
+        with self.assertWarns(DeprecationWarning):
+            res = _get_cost_function("cross", "pass", {"pass": custom})
+        self.assertIs(res, custom)
 
     def test_get_ball_goal_angle_cost(self):
         tracking_data = pd.DataFrame(

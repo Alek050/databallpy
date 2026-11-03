@@ -7,7 +7,6 @@ import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers.statsbomb_parser import (
     _get_cell_offsets,
-    _get_close_to_ball_event_info,
     _get_dribble_event,
     _get_pass_event,
     _get_player_info,
@@ -21,17 +20,24 @@ from databallpy.data_parsers.event_data_parsers.statsbomb_parser import (
 )
 from databallpy.schemas import EventData
 from databallpy.utils.constants import SPADL_ACTION_TYPES, SPADL_RESULTS
-from databallpy.utils.utils import MISSING_INT
+from tests.event_extras_testing import (
+    assert_event_extras,
+    assert_event_extras_equal,
+    to_event_extras,
+)
 from tests.expected_outcomes import (
-    DRIBBLE_INSTANCES_STATSBOMB,
+    DRIBBLE_EVENTS_STATSBOMB,
     ED_STATSBOMB,
     MD_STATSBOMB,
-    PASS_INSTANCES_STATSBOMB,
-    SHOT_INSTANCES_STATSBOMB,
+    PASS_EVENTS_STATSBOMB,
+    SHOT_EVENTS_STATSBOMB,
 )
 from tests.pandas_testing import assert_frame_equal, to_list
 
 ED_STATSBOMB = pd.DataFrame(ED_STATSBOMB.copy())
+EXTRAS_STATSBOMB = to_event_extras(
+    SHOT_EVENTS_STATSBOMB, PASS_EVENTS_STATSBOMB, DRIBBLE_EVENTS_STATSBOMB
+)
 
 
 class TestStatsbombParser(unittest.TestCase):
@@ -105,20 +111,8 @@ class TestStatsbombParser(unittest.TestCase):
             pitch_dimensions=(105.0, 68.0),
         )
 
-        assert "shot_events" in outcome_dbp_events.keys()
-        for key, event in outcome_dbp_events["shot_events"].items():
-            assert key in SHOT_INSTANCES_STATSBOMB.keys()
-            assert event == SHOT_INSTANCES_STATSBOMB[key]
-
-        assert "pass_events" in outcome_dbp_events.keys()
-        for key, event in outcome_dbp_events["pass_events"].items():
-            assert key in PASS_INSTANCES_STATSBOMB.keys()
-            assert event == PASS_INSTANCES_STATSBOMB[key]
-
-        assert "dribble_events" in outcome_dbp_events.keys()
-        for key, event in outcome_dbp_events["dribble_events"].items():
-            assert key in DRIBBLE_INSTANCES_STATSBOMB.keys()
-            assert event == DRIBBLE_INSTANCES_STATSBOMB[key]
+        assert_event_extras(outcome_dbp_events, outcome_event_data)
+        assert_event_extras_equal(outcome_dbp_events, EXTRAS_STATSBOMB)
 
         assert_frame_equal(outcome_event_data, expected_outcome_event_data, rtol=1e-3)
         assert outcome_metadata == expected_outcome_metadata
@@ -136,131 +130,67 @@ class TestStatsbombParser(unittest.TestCase):
             )
         )
 
-        assert "shot_events" in outcome_dbp_events.keys()
-        for key, event in outcome_dbp_events["shot_events"].items():
-            assert key in SHOT_INSTANCES_STATSBOMB.keys()
-            assert event == SHOT_INSTANCES_STATSBOMB[key]
-
-        assert "pass_events" in outcome_dbp_events.keys()
-        for key, event in outcome_dbp_events["pass_events"].items():
-            assert key in PASS_INSTANCES_STATSBOMB.keys()
-            assert event == PASS_INSTANCES_STATSBOMB[key]
-
-        assert "dribble_events" in outcome_dbp_events.keys()
-        for key, event in outcome_dbp_events["dribble_events"].items():
-            assert key in DRIBBLE_INSTANCES_STATSBOMB.keys()
-            assert event == DRIBBLE_INSTANCES_STATSBOMB[key]
+        assert_event_extras(outcome_dbp_events, outcome_event_data)
+        assert_event_extras_equal(outcome_dbp_events, EXTRAS_STATSBOMB)
 
         assert_frame_equal(expected_outcome_event_data, outcome_event_data, rtol=1e-3)
         assert expected_outcome_metadata == outcome_metadata
 
-    def test_get_close_to_ball_event_info(self):
-        expected_outcome = {
-            "event_id": 0,
-            "period_id": 1,
-            "minutes": 0,
-            "seconds": 11.63,
-            "datetime": pd.to_datetime("2018-08-18 22:15:11.630+0000", utc=True),
-            "start_x": -30.05625,
-            "start_y": -32.6825,
-            "team_id": 217,
-            "team_side": "home",
-            "pitch_size": (105.0, 68.0),
-            "player_id": 5211,
-            "jersey": MISSING_INT,
-        }
-
-        with open(self.event_loc, "r", encoding="utf-8") as f:
-            input = json.load(f)[2]
-
-        outcome = _get_close_to_ball_event_info(
-            event=input,
-            id=0,
-            pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
-            away_team_id=MD_STATSBOMB.away_team_id,
-            periods=MD_STATSBOMB.periods_frames,
-            x_multiplier=105 / 120,
-            y_multiplier=68 / 80,
-            cell_offset=0.05,
-        )
-        for key in ["start_x", "start_y"]:
-            self.assertAlmostEqual(expected_outcome.pop(key), outcome.pop(key))
-        assert expected_outcome == outcome
-
     def test_get_shot_event(self):
-        expected_outcome = SHOT_INSTANCES_STATSBOMB[2].copy()
-        expected_outcome.start_y *= -1
-        expected_outcome.jersey = MISSING_INT
+        expected_outcome = {
+            "related_event_id": ["7fb36c67-4b6c-4c3d-bc52-4e1cd712e790"],
+            "outcome": False,
+            "body_part": "left_foot",
+            "possession_type": "open_play",
+            "set_piece": "no_set_piece",
+            "outcome_str": "miss_off_target",
+        }
         with open(self.event_loc, "r", encoding="utf-8") as f:
             input = json.load(f)[4]
 
-        res = _get_shot_event(
-            event=input,
-            id=2,
-            pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
-            periods=MD_STATSBOMB.periods_frames,
-            away_team_id=MD_STATSBOMB.away_team_id,
-            x_multiplier=105 / 120,
-            y_multiplier=68 / 80,
-            cell_offset=0.05,
-        )
-        assert expected_outcome == res
+        res = _get_shot_event(event=input)
+        self.assertDictEqual(res, expected_outcome)
 
         for outcome, expected in [
             ("Saved Off Target", "miss"),
             ("Saved to Post", "miss_hit_post"),
         ]:
             input["shot"]["outcome"]["name"] = outcome
-            res = _get_shot_event(
-                event=input,
-                id=2,
-                pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
-                periods=MD_STATSBOMB.periods_frames,
-                away_team_id=MD_STATSBOMB.away_team_id,
-                x_multiplier=105 / 120,
-                y_multiplier=68 / 80,
-                cell_offset=0.05,
-            )
-            assert res.outcome_str == expected
+            res = _get_shot_event(event=input)
+            assert res["outcome_str"] == expected
 
     def test_get_pass_event(self):
-        expected_outcome = PASS_INSTANCES_STATSBOMB[0].copy()
-        expected_outcome.start_y *= -1
-        expected_outcome.end_y *= -1
-        expected_outcome.jersey = MISSING_INT
+        expected_outcome = {
+            "related_event_id": ["994ee6b7-0e8b-4168-ac79-81c68ee580f7"],
+            "outcome": False,
+            "body_part": "left_foot",
+            "possession_type": "corner_kick",
+            "set_piece": "corner_kick",
+            "receiver_player_id": 5246,
+            "outcome_str": "unspecified",
+            "pass_type": "through_ball",
+        }
         with open(self.event_loc, "r", encoding="utf-8") as f:
             input = json.load(f)[2]
 
-        res = _get_pass_event(
-            event=input,
-            id=0,
-            pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
-            periods=MD_STATSBOMB.periods_frames,
-            away_team_id=MD_STATSBOMB.away_team_id,
-            x_multiplier=105 / 120,
-            y_multiplier=68 / 80,
-            cell_offset=0.05,
-        )
-        assert expected_outcome == res
+        res = _get_pass_event(event=input)
+        self.assertDictEqual(res, expected_outcome)
 
     def test_get_dribble_event(self):
-        expected_outcome = DRIBBLE_INSTANCES_STATSBOMB[3].copy()
-        expected_outcome.start_x *= -1
-        expected_outcome.jersey = MISSING_INT
+        expected_outcome = {
+            "related_event_id": ["4c601a79-df4f-4001-902b-6fc9788718eb"],
+            "outcome": False,
+            "body_part": "unspecified",
+            "possession_type": "unspecified",
+            "set_piece": "unspecified",
+            "duel_type": "unspecified",
+            "with_opponent": None,
+        }
         with open(self.event_loc, "r", encoding="utf-8") as f:
             input = json.load(f)[5]
 
-        res = _get_dribble_event(
-            event=input,
-            id=3,
-            pitch_dimensions=MD_STATSBOMB.pitch_dimensions,
-            periods=MD_STATSBOMB.periods_frames,
-            away_team_id=MD_STATSBOMB.away_team_id,
-            x_multiplier=105 / 120,
-            y_multiplier=68 / 80,
-            cell_offset=0.05,
-        )
-        assert expected_outcome == res
+        res = _get_dribble_event(event=input)
+        self.assertDictEqual(res, expected_outcome)
 
 
 def _statsbomb_event(name: str, info: dict | None = None) -> dict:
@@ -530,8 +460,7 @@ class TestStatsbombSpadl(unittest.TestCase):
         for col in ["original_event_id", "player_id", "team_id", "start_x", "start_y"]:
             self.assertEqual(interception[col], intercepting_pass[col])
         self.assertEqual(intercepting_pass["databallpy_event"], "pass")
-        self.assertListEqual(sorted(dbp_events["pass_events"].keys()), [1, 5])
-        self.assertEqual(dbp_events["pass_events"][1].event_id, 1)
+        self.assertListEqual(sorted(dbp_events["pass_events"]["event_id"]), [1, 5])
 
         # the own goal of the away team ends in the away goal on the right side
         own_goal = event_data.iloc[-1]

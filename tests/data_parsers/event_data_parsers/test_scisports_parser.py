@@ -1,7 +1,6 @@
 import json
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from databallpy.data_parsers.event_data_parsers.scisports_parser import (
@@ -16,10 +15,10 @@ from databallpy.data_parsers.event_data_parsers.scisports_parser import (
     _update_scisports_spadl_actions,
     load_scisports_event_data,
 )
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.schemas import EventData
 from databallpy.utils.constants import SPADL_ACTION_TYPES, SPADL_RESULTS
 from databallpy.utils.utils import MISSING_INT
+from tests.event_extras_testing import assert_event_extras
 from tests.expected_outcomes import ED_SCISPORTS, MD_SCISPORTS
 from tests.pandas_testing import assert_frame_equal, to_list
 
@@ -43,37 +42,7 @@ class TestSciSportsParser(unittest.TestCase):
             res_ed, res_md, res_dbe = load_scisports_event_data(file)
             assert_frame_equal(res_ed, self.expected_event_data)
             self.assertEqual(res_md, self.expected_metadata)
-
-            for key, event in {
-                **res_dbe["shot_events"],
-                **res_dbe["pass_events"],
-                **res_dbe["dribble_events"],
-            }.items():
-                row = self.expected_event_data.loc[
-                    self.expected_event_data["event_id"] == key
-                ].iloc[0]
-                databallpy_event = row["databallpy_event"]
-
-                self.assertAlmostEqual(event.event_id, key)
-                self.assertAlmostEqual(event.period_id, row["period_id"])
-                self.assertAlmostEqual(event.minutes, row["minutes"])
-                self.assertAlmostEqual(event.seconds, row["seconds"])
-                self.assertAlmostEqual(event.datetime, row["datetime"])
-                self.assertAlmostEqual(event.team_id, row["team_id"])
-                self.assertEqual(
-                    event.team_side, "home" if row["team_id"] == 100 else "away"
-                )
-                self.assertAlmostEqual(event.pitch_size, (106.0, 68.0))
-
-                if databallpy_event == "shot":
-                    self.assertIsInstance(event, ShotEvent)
-                    self.assertEqual(event.start_x, row["start_x"])
-                elif databallpy_event == "pass":
-                    self.assertIsInstance(event, PassEvent)
-                    self.assertTrue(event.end_y in [2.01, -20.8, 32.5])
-                elif databallpy_event == "dribble":
-                    self.assertIsInstance(event, DribbleEvent)
-                    self.assertEqual(event.start_y, row["start_y"])
+            assert_event_extras(res_dbe, self.expected_event_data)
 
     def test_load_scisports_event_data_errors(self):
         with self.assertRaises(FileNotFoundError):
@@ -102,37 +71,7 @@ class TestSciSportsParser(unittest.TestCase):
             self.json_loc, self.expected_metadata
         )
         assert_frame_equal(res_event_data, self.expected_event_data)
-
-        for key, event in {
-            **res_databallpy_events["shot_events"],
-            **res_databallpy_events["pass_events"],
-            **res_databallpy_events["dribble_events"],
-        }.items():
-            row = self.expected_event_data.loc[
-                self.expected_event_data["event_id"] == key
-            ].iloc[0]
-            databallpy_event = row["databallpy_event"]
-
-            self.assertAlmostEqual(event.event_id, key)
-            self.assertAlmostEqual(event.period_id, row["period_id"])
-            self.assertAlmostEqual(event.minutes, row["minutes"])
-            self.assertAlmostEqual(event.seconds, row["seconds"])
-            self.assertAlmostEqual(event.datetime, row["datetime"])
-            self.assertAlmostEqual(event.team_id, row["team_id"])
-            self.assertEqual(
-                event.team_side, "home" if row["team_id"] == 100 else "away"
-            )
-            self.assertAlmostEqual(event.pitch_size, (106.0, 68.0))
-
-            if databallpy_event == "shot":
-                self.assertIsInstance(event, ShotEvent)
-                self.assertEqual(event.start_x, row["start_x"])
-            elif databallpy_event == "pass":
-                self.assertIsInstance(event, PassEvent)
-                self.assertTrue(event.end_y in [2.01, -20.8, 32.5])
-            elif databallpy_event == "dribble":
-                self.assertIsInstance(event, DribbleEvent)
-                self.assertEqual(event.start_y, row["start_y"])
+        assert_event_extras(res_databallpy_events, self.expected_event_data)
 
     def test_get_shot_event(self):
         event = {
@@ -179,31 +118,15 @@ class TestSciSportsParser(unittest.TestCase):
             "sequenceEnd": 1,
             "synced": True,
         }
-        expected_shot = ShotEvent(
-            event_id=14,
-            period_id=2,
-            minutes=MISSING_INT,
-            seconds=MISSING_INT,
-            datetime=pd.to_datetime("NaT"),
-            start_x=-42.5,
-            start_y=0.0,
-            team_id=200,
-            team_side="away",
-            pitch_size=(106.0, 68.0),
-            player_id=201,
-            jersey=22,
-            outcome=True,
-            related_event_id=MISSING_INT,
-            _xt=-1.0,
-            body_part="left_foot",
-            possession_type="unspecified",
-            set_piece="unspecified",
-            outcome_str="goal",
-            y_target=np.nan,
-            z_target=np.nan,
-        )
-        players = pd.DataFrame({"id": [201], "shirt_num": [22]})
-        result = _get_shot_event(event, 14, players=players, multiplier=-1)
+        expected_shot = {
+            "outcome": True,
+            "related_event_id": MISSING_INT,
+            "body_part": "left_foot",
+            "possession_type": "unspecified",
+            "set_piece": "unspecified",
+            "outcome_str": "goal",
+        }
+        result = _get_shot_event(event)
         self.assertEqual(result, expected_shot)
 
     def test_get_pass_event(self):
@@ -251,33 +174,17 @@ class TestSciSportsParser(unittest.TestCase):
             "sequenceEnd": 1,
             "synced": True,
         }
-        expected_pass = PassEvent(
-            event_id=13,
-            period_id=1,
-            minutes=MISSING_INT,
-            seconds=MISSING_INT,
-            datetime=pd.to_datetime("NaT"),
-            start_x=24.01,
-            start_y=25.97,
-            team_id=100,
-            team_side="home",
-            pitch_size=(106.0, 68.0),
-            player_id=102,
-            jersey=22,
-            outcome=False,
-            related_event_id=MISSING_INT,
-            body_part="foot",
-            possession_type="unspecified",
-            set_piece="no_set_piece",
-            _xt=-1.0,
-            outcome_str="unsuccessful",
-            end_x=-35.1,
-            end_y=-20.8,
-            pass_type="cross",
-            receiver_player_id=MISSING_INT,
-        )
-        players = pd.DataFrame({"id": [102], "shirt_num": [22]})
-        result = _get_pass_event(event, 13, players=players, multiplier=1)
+        expected_pass = {
+            "outcome": False,
+            "related_event_id": MISSING_INT,
+            "body_part": "foot",
+            "possession_type": "unspecified",
+            "set_piece": "no_set_piece",
+            "outcome_str": "unsuccessful",
+            "pass_type": "cross",
+            "receiver_player_id": MISSING_INT,
+        }
+        result = _get_pass_event(event)
         self.assertEqual(result, expected_pass)
 
     def test_get_dribble_event(self):
@@ -325,30 +232,16 @@ class TestSciSportsParser(unittest.TestCase):
             "sequenceEnd": 1,
             "synced": True,
         }
-        expected_dribble = DribbleEvent(
-            event_id=12,
-            period_id=1,
-            minutes=MISSING_INT,
-            seconds=MISSING_INT,
-            datetime=pd.to_datetime("NaT"),
-            start_x=-17.68,
-            start_y=2.01,
-            team_id=100,
-            team_side="home",
-            pitch_size=(106.0, 68.0),
-            player_id=102,
-            jersey=32,
-            related_event_id=MISSING_INT,
-            _xt=-1.0,
-            body_part="foot",
-            possession_type="unspecified",
-            set_piece="no_set_piece",
-            duel_type="offensive",
-            outcome=True,
-            with_opponent=False,
-        )
-        players = pd.DataFrame({"id": [102], "shirt_num": [32]})
-        result = _get_dribble_event(event, 12, players, 1)
+        expected_dribble = {
+            "outcome": True,
+            "related_event_id": MISSING_INT,
+            "body_part": "foot",
+            "possession_type": "unspecified",
+            "set_piece": "no_set_piece",
+            "duel_type": "offensive",
+            "with_opponent": False,
+        }
+        result = _get_dribble_event(event)
         self.assertEqual(result, expected_dribble)
 
     def test_get_scisports_spadl_action(self):

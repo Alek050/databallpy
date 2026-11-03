@@ -71,11 +71,15 @@ def synchronise_tracking_and_event_data(
             The keys of the dictionary are SPADL action types (e.g. 'cross') or
             databallpy events ('pass', 'shot', 'dribble', 'tackle', 'own_goal'), the
             values are the cost functions. A cost function of the action type has
-            priority over the one of the databallpy event. The cost functions will be
-            called with the tracking data and the event as arguments. The cost
-            functions should return an array containing the cost of the similarity
-            between the tracking data and the event, scaled between 0 and 1. If no
-            cost functions are passed, the default cost functions are used.
+            priority over the one of the databallpy event. Selecting the cost function
+            of an event with a SPADL action type by its databallpy event (except
+            'own_goal') is deprecated and will be removed in v0.11.0, use the action
+            types as keys instead (e.g. 'take_on' instead of 'dribble'). The cost
+            functions will be called with the tracking data and the event as
+            arguments. The cost functions should return an array containing the cost
+            of the similarity between the tracking data and the event, scaled between
+            0 and 1. If no cost functions are passed, the default cost functions are
+            used.
         n_batches (int, str): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = "smart".
@@ -286,6 +290,16 @@ def _get_cost_function(
     if isinstance(action_type, str) and action_type in cost_functions:
         return cost_functions[action_type]
     if databallpy_event in cost_functions:
+        # own goals have no SPADL action type of their own to key by
+        if isinstance(action_type, str) and databallpy_event != "own_goal":
+            warnings.warn(
+                f"Selecting the cost function of a '{action_type}' event by its "
+                f"databallpy event '{databallpy_event}' is deprecated and will be "
+                "removed in v0.11.0. Use the SPADL action type as key in "
+                "cost_functions instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         return cost_functions[databallpy_event]
     if databallpy_event == "own_goal":
         return base_general_cost_ball_event

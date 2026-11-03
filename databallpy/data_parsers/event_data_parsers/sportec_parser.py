@@ -16,8 +16,8 @@ from databallpy.data_parsers.sportec_metadata_parser import (
     _get_sportec_metadata,
     _get_sportec_open_data_url,
 )
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.event_extras import create_all_event_extras
 from databallpy.utils.logging import logging_wrapper
 
 SPORTEC_SET_PIECES_MAP = {
@@ -87,7 +87,7 @@ SPADL_OUT_OF_PLAY_RESTARTS = ["throw_in", "goalkick", "corner_crossed", "corner_
 @logging_wrapper(__file__)
 def load_sportec_event_data(
     event_data_loc: str, metadata_loc: str
-) -> tuple[pd.DataFrame, Metadata, dict[str, dict]]:
+) -> tuple[pd.DataFrame, Metadata, dict[str, pd.DataFrame]]:
     """Base function to load the sportec/DFL event data.
 
     Args:
@@ -98,8 +98,9 @@ def load_sportec_event_data(
         FileNotFoundError: If the event or metadata location is not found
 
     Returns:
-        tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
-            metadata, and the databallpy events dictionary.
+        tuple[pd.DataFrame, Metadata, dict[str, pd.DataFrame]]: The event data, the
+            event metadata, and the extra information of the shot, pass and dribble
+            events.
     """
 
     metadata = _get_sportec_metadata(metadata_loc, only_event_data=True)
@@ -131,7 +132,7 @@ def load_sportec_event_data(
 @logging_wrapper(__file__)
 def load_sportec_open_event_data(
     game_id: str, cache_path: Path
-) -> tuple[pd.DataFrame, Metadata, dict[str, dict]]:
+) -> tuple[pd.DataFrame, Metadata, dict[str, pd.DataFrame]]:
     """Function to (down)load on open game from Sportec/Tracab
 
     Args:
@@ -139,8 +140,9 @@ def load_sportec_open_event_data(
         cache_path (Path): path to cache files.
 
     Returns:
-        tuple[pd.DataFrame, Metadata, dict[str, dict]]: The event data, the event
-            metadata, and the databallpy events dictionary.
+        tuple[pd.DataFrame, Metadata, dict[str, pd.DataFrame]]: The event data, the
+            event metadata, and the extra information of the shot, pass and dribble
+            events.
 
     Reference:
         Bassek, M., Weber, H., Rein, R., & Memmert,D. (2024). An integrated
@@ -167,7 +169,7 @@ def load_sportec_open_event_data(
 @logging_wrapper(__file__)
 def _get_sportec_event_data(
     event_data_loc: str, metadata: Metadata
-) -> tuple[pd.DataFrame, dict[str, dict]]:
+) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     """Functionto get the event data and the metadata for sportec/DFL
     based data.
 
@@ -176,7 +178,8 @@ def _get_sportec_event_data(
         metadata (Metadata): Metadata object of the game
 
     Returns:
-        tuple[pd.DataFrame, dict[str, dict]]: the event data and the databallpy events
+        tuple[pd.DataFrame, dict[str, pd.DataFrame]]: the event data and the extra
+            information of the shot, pass and dribble events
     """
     with open(event_data_loc, "rb") as f:
         encoding = chardet.detect(f.read())["encoding"]
@@ -255,7 +258,7 @@ def _get_sportec_event_data(
 
         kwargs["start_x"] = float(event.get("X-Position", np.nan)) - pitch_center[0]
         kwargs["start_y"] = float(event.get("Y-Position", np.nan)) - pitch_center[1]
-        # kept apart from kwargs, which are passed to the databallpy events
+        # kept apart from kwargs, which are also used for the event extras
         spadl_kwargs = {
             "source_x": float(
                 event.get("X-Source-Position", event.get("X-Position", np.nan))
@@ -292,15 +295,15 @@ def _get_sportec_event_data(
         ) = _get_sportec_spadl_action(event, kwargs["set_piece"])
 
         if event.tag == "ShotAtGoal":
-            kwargs, shot_event = _handle_shot_event(event, metadata, kwargs)
-            databallpy_events["shot_events"][shot_event.event_id] = shot_event
+            kwargs = _handle_shot_event(event, kwargs)
+            databallpy_events["shot_events"][kwargs["event_id"]] = dict(kwargs)
         elif event.tag == "Play":
-            kwargs, pass_event = _handle_play_event(event, metadata, kwargs)
-            databallpy_events["pass_events"][pass_event.event_id] = pass_event
+            kwargs = _handle_play_event(event, kwargs)
+            databallpy_events["pass_events"][kwargs["event_id"]] = dict(kwargs)
         elif event.tag == "TacklingGame":
-            kwargs, dbp_event = _handle_tackling_game_event(event, metadata, kwargs)
-            if isinstance(dbp_event, DribbleEvent):
-                databallpy_events["dribble_events"][dbp_event.event_id] = dbp_event
+            kwargs = _handle_tackling_game_event(event, kwargs)
+            if kwargs.get("databallpy_event") == "dribble":
+                databallpy_events["dribble_events"][kwargs["event_id"]] = dict(kwargs)
 
         if "outcome" in kwargs.keys():
             kwargs["is_successful"] = kwargs.pop("outcome")
@@ -331,7 +334,7 @@ def _get_sportec_event_data(
     event_data["is_successful"] = event_data["is_successful"].astype("boolean")
     event_data = _add_spadl_columns(event_data)
 
-    return event_data, databallpy_events
+    return event_data, create_all_event_extras(databallpy_events)
 
 
 def _initialize_search_variables(
@@ -488,28 +491,24 @@ def _update_sportec_spadl_passes(event_data: pd.DataFrame) -> pd.DataFrame:
     return event_data.drop(columns=["source_x", "source_y"])
 
 
-def _handle_tackling_game_event(
-    event: ET.Element, metadata: Metadata, kwargs_dict: dict
-) -> tuple[dict, DribbleEvent | None]:
+def _handle_tackling_game_event(event: ET.Element, kwargs_dict: dict) -> dict:
     """Funtion to handle tackling game events. Only dribbles
     are now  considered since it is not clear when a tackle was performed.
 
     Args:
         event (ET.Element): The TacklingGame event
-        metadata (Metadata): The metadata of the event data
-        kwargs_dict (dict): The kwargs for event_data and databallpy events
+        kwargs_dict (dict): The kwargs for event_data and the event extras
 
     Returns:
-        tuple[dict, DribbleEvent | None]: The updated kwargs for the
-        event data, and the dribble event or None if it was not a dribble event
+        dict: The updated kwargs for the event data and, if it was a dribble, the
+            extra information of the dribble event
     """
     if not isinstance(event, ET.Element):
         event = ET.fromstring(str(event))
     kwargs_dict["original_event"] = event.get("WinnerResult", event.tag)
     if not event.get("WinnerResult") == "dribbledAround":
-        return kwargs_dict, None
+        return kwargs_dict
 
-    kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
     kwargs_dict["outcome"] = event.get("DribbleEvaluation") == "successful"
     kwargs_dict["body_part"] = "foot"
     kwargs_dict["possession_type"] = "open_play"
@@ -517,32 +516,22 @@ def _handle_tackling_game_event(
     kwargs_dict["with_opponent"] = True
     kwargs_dict["related_event_id"] = None
     kwargs_dict["databallpy_event"] = "dribble"
-
-    temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
-
-    dribble_event = DribbleEvent(
-        **{k: v for k, v in kwargs_dict.items() if k not in temp_exclude} | {"_xt": -1}
-    )
-    return kwargs_dict, dribble_event
+    return kwargs_dict
 
 
-def _handle_shot_event(
-    event: ET.Element, metadata: Metadata, kwargs_dict: dict
-) -> tuple[dict, ShotEvent]:
+def _handle_shot_event(event: ET.Element, kwargs_dict: dict) -> dict:
     """Funtion to handle ShotAtGoal events from sportec
 
     Args:
         event (ET.Element): The ShotAtGoal event
-        metadata (Metadata): The metadata of the event data
-        kwargs_dict (dict): The kwargs for event_data and databallpy events
+        kwargs_dict (dict): The kwargs for event_data and the event extras
 
     Returns:
-        tuple[dict, ShotEvent]: The updated kwargs for the event data, and
-        the databallpy shot event
+        dict: The updated kwargs for the event data and the extra information of
+            the shot event
     """
     if not isinstance(event, ET.Element):
         event = ET.fromstring(str(event))
-    kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
 
     _first_child_tag = next(iter(event)).tag
     kwargs_dict["original_event"] = _first_child_tag
@@ -556,32 +545,22 @@ def _handle_shot_event(
     )
     kwargs_dict["outcome"] = SPORTEC_SHOT_OUTCOMES[_first_child_tag] == "goal"
     kwargs_dict["outcome_str"] = SPORTEC_SHOT_OUTCOMES[_first_child_tag]
-
-    temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
-
-    shot_event = ShotEvent(
-        **{k: v for k, v in kwargs_dict.items() if k not in temp_exclude} | {"_xt": -1}
-    )
-    return kwargs_dict, shot_event
+    return kwargs_dict
 
 
-def _handle_play_event(
-    event: ET.Element, metadata: Metadata, kwargs_dict: dict
-) -> tuple[dict, PassEvent]:
+def _handle_play_event(event: ET.Element, kwargs_dict: dict) -> dict:
     """Funtion to handle Play events from sportec
 
     Args:
         event (ET.Element): The Play event
-        metadata (Metadata): The metadata of the event data
-        kwargs_dict (dict): The kwargs for event_data and databallpy events
+        kwargs_dict (dict): The kwargs for event_data and the event extras
 
     Returns:
-        tuple[dict, PassEvent]: The updated kwargs for the event data, and
-        the databallpy pass event
+        dict: The updated kwargs for the event data and the extra information of
+            the pass event
     """
     if not isinstance(event, ET.Element):
         event = ET.fromstring(str(event))
-    kwargs_dict = _get_base_on_ball_event_kwargs(metadata, kwargs_dict)
     _first_child_tag = next(iter(event)).tag
     kwargs_dict["original_event"] = _first_child_tag
     kwargs_dict["databallpy_event"] = "pass"
@@ -592,41 +571,6 @@ def _handle_play_event(
         "open_play" if event.get("FromOpenPlay") == "true" else "unspecified"
     )
     kwargs_dict["outcome_str"] = "unspecified"
-    kwargs_dict["end_x"] = np.nan
-    kwargs_dict["end_y"] = np.nan
     kwargs_dict["pass_type"] = "cross" if _first_child_tag == "Cross" else "unspecified"
     kwargs_dict["receiver_player_id"] = event.get("Recipient", None)
-
-    temp_exclude = ["original_event", "original_event_id", "databallpy_event"]
-
-    pass_event = PassEvent(
-        **{k: v for k, v in kwargs_dict.items() if k not in temp_exclude} | {"_xt": -1}
-    )
-    return kwargs_dict, pass_event
-
-
-def _get_base_on_ball_event_kwargs(metadata: Metadata, kwargs_dict: dict) -> dict:
-    """Function to get the base on ball event info.
-    "team_side", "pitch_size", and "jersey"
-
-    Args:
-        metadata (Metadata): metadata of the event data
-        kwargs_dict (dict): The kwargs for event_data and databallpy events
-
-    Returns:
-        dict: The updated kwargs for event_data and databallpy events
-    """
-    kwargs_dict["team_side"] = (
-        "home" if kwargs_dict["team_id"] == metadata.home_team_id else "away"
-    )
-    kwargs_dict["pitch_size"] = metadata.pitch_dimensions
-    players = (
-        metadata.home_players
-        if kwargs_dict["team_side"] == "home"
-        else metadata.away_players
-    )
-    kwargs_dict["jersey"] = players.loc[
-        players["id"] == kwargs_dict["player_id"], "shirt_num"
-    ].iloc[0]
-
     return kwargs_dict

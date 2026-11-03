@@ -15,17 +15,21 @@ from databallpy.data_parsers.event_data_parsers.fifa_parser import (
     _determine_period_flips,
     _get_fifa_spadl_action,
     _get_game_score,
+    _get_pass_extras,
     _get_player_info,
+    _get_shot_extras,
     _get_transformed_coordinates,
     _load_event_data,
     _load_metadata,
-    _make_pass_instance,
-    _make_shot_event_instance,
     load_fifa_event_data,
 )
-from databallpy.events import PassEvent, ShotEvent
 from databallpy.schemas import EventData
 from databallpy.utils.constants import MISSING_INT, SPADL_ACTION_TYPES, SPADL_RESULTS
+from databallpy.utils.event_extras import create_all_event_extras
+from tests.event_extras_testing import (
+    assert_event_extras,
+    assert_event_extras_equal,
+)
 from tests.pandas_testing import assert_frame_equal
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "test_data")
@@ -172,152 +176,43 @@ ED_FIFA = pd.DataFrame(
     }
 )
 
-PASS_INSTANCES_FIFA = {
-    2: PassEvent(
-        event_id=2,
-        period_id=1,
-        minutes=0,
-        seconds=5,
-        datetime=_evt_dt(5_000),
-        start_x=-26.25,
-        start_y=0.0,
-        pitch_size=[105.0, 68.0],
-        team_id=100,
-        team_side="home",
-        player_id=1002,
-        jersey=9,
-        related_event_id=MISSING_INT,
-        set_piece="no_set_piece",
-        possession_type="open_play",
-        body_part="right_foot",
-        outcome=True,
-        outcome_str="successful",
-        end_x=26.25,
-        end_y=0.0,
-        pass_type="unspecified",
-        _xt=-1.0,
-    ),
-    3: PassEvent(
-        event_id=3,
-        period_id=1,
-        minutes=0,
-        seconds=30,
-        datetime=_evt_dt(30_000),
-        start_x=26.25,
-        start_y=-17.0,
-        pitch_size=[105.0, 68.0],
-        team_id=200,
-        team_side="away",
-        player_id=2002,
-        jersey=9,
-        related_event_id=MISSING_INT,
-        set_piece="no_set_piece",
-        possession_type="open_play",
-        body_part="left_foot",
-        outcome=True,
-        outcome_str="successful",
-        end_x=0.0,
-        end_y=17.0,
-        pass_type="cross",
-        _xt=-1.0,
-    ),
+_PASS_FIFA = {
+    "related_event_id": MISSING_INT,
+    "set_piece": "no_set_piece",
+    "possession_type": "open_play",
+    "outcome": True,
+    "outcome_str": "successful",
 }
-
-SHOT_INSTANCES_FIFA = {
-    4: ShotEvent(
-        event_id=4,
-        period_id=1,
-        minutes=1,
-        seconds=0,
-        datetime=_evt_dt(60_000),
-        start_x=26.25,
-        start_y=0.0,
-        pitch_size=[105.0, 68.0],
-        team_id=200,
-        team_side="away",
-        player_id=2002,
-        jersey=9,
-        related_event_id=MISSING_INT,
-        set_piece="no_set_piece",
-        possession_type="open_play",
-        body_part="head",
-        outcome=False,
-        outcome_str="miss_on_target",
-        _xt=-1.0,
-    ),
-    5: ShotEvent(
-        event_id=5,
-        period_id=2,
-        minutes=61,
-        seconds=40,
-        datetime=_evt_dt(3_700_000),
-        start_x=-26.25,
-        start_y=0.0,
-        pitch_size=[105.0, 68.0],
-        team_id=100,
-        team_side="home",
-        player_id=1002,
-        jersey=9,
-        related_event_id=MISSING_INT,
-        set_piece="no_set_piece",
-        possession_type="open_play",
-        body_part="unspecified",
-        outcome=True,
-        outcome_str="goal",
-        _xt=-1.0,
-    ),
-    6: ShotEvent(
-        event_id=6,
-        period_id=2,
-        minutes=83,
-        seconds=20,
-        datetime=_evt_dt(5_000_000),
-        start_x=26.25,
-        start_y=0.0,
-        pitch_size=[105.0, 68.0],
-        team_id=200,
-        team_side="away",
-        player_id=2002,
-        jersey=9,
-        related_event_id=MISSING_INT,
-        set_piece="no_set_piece",
-        possession_type="open_play",
-        body_part="unspecified",
-        outcome=True,
-        outcome_str="goal",
-        _xt=-1.0,
-    ),
-    7: ShotEvent(
-        event_id=7,
-        period_id=2,
-        minutes=90,
-        seconds=0,
-        datetime=_evt_dt(5_400_000),
-        start_x=26.25,
-        start_y=-17.0,
-        pitch_size=[105.0, 68.0],
-        team_id=100,
-        team_side="home",
-        player_id=1001,
-        jersey=1,
-        related_event_id=MISSING_INT,
-        set_piece="no_set_piece",
-        possession_type="open_play",
-        body_part="unspecified",
-        outcome=False,
-        outcome_str="own_goal",
-        _xt=-1.0,
-    ),
+_SHOT_FIFA = {
+    "related_event_id": MISSING_INT,
+    "set_piece": "no_set_piece",
+    "possession_type": "open_play",
+    "body_part": "unspecified",
 }
+PASS_EXTRAS_FIFA = {
+    2: {**_PASS_FIFA, "body_part": "right_foot", "pass_type": "unspecified"},
+    3: {**_PASS_FIFA, "body_part": "left_foot", "pass_type": "cross"},
+}
+SHOT_EXTRAS_FIFA = {
+    4: {
+        **_SHOT_FIFA,
+        "body_part": "head",
+        "outcome": False,
+        "outcome_str": "miss_on_target",
+    },
+    5: {**_SHOT_FIFA, "outcome": True, "outcome_str": "goal"},
+    6: {**_SHOT_FIFA, "outcome": True, "outcome_str": "goal"},
+    7: {**_SHOT_FIFA, "outcome": False, "outcome_str": "own_goal"},
+}
+EXTRAS_FIFA = create_all_event_extras(
+    {"shot_events": SHOT_EXTRAS_FIFA, "pass_events": PASS_EXTRAS_FIFA}
+)
 
 
 class TestFifaParser(unittest.TestCase):
     def setUp(self):
         self.metadata_loc = METADATA_LOC
         self.events_loc = EVENTS_LOC
-        self._all_players = pd.concat(
-            [HOME_PLAYERS_FIFA, AWAY_PLAYERS_FIFA], ignore_index=True
-        )
 
     def test_load_fifa_event_data(self):
         event_data, metadata, dbp_events = load_fifa_event_data(
@@ -326,15 +221,8 @@ class TestFifaParser(unittest.TestCase):
         assert_frame_equal(event_data, ED_FIFA)
         assert metadata == MD_FIFA
 
-        assert "shot_events" in dbp_events
-        for key, event in dbp_events["shot_events"].items():
-            assert key in SHOT_INSTANCES_FIFA, f"Unexpected shot key {key}"
-            assert event == SHOT_INSTANCES_FIFA[key], f"Shot event {key} mismatch"
-
-        assert "pass_events" in dbp_events
-        for key, event in dbp_events["pass_events"].items():
-            assert key in PASS_INSTANCES_FIFA, f"Unexpected pass key {key}"
-            assert event == PASS_INSTANCES_FIFA[key], f"Pass event {key} mismatch"
+        assert_event_extras(dbp_events, event_data)
+        assert_event_extras_equal(dbp_events, EXTRAS_FIFA)
 
     def test_load_fifa_event_data_errors(self):
         with self.assertRaises(TypeError):
@@ -363,19 +251,17 @@ class TestFifaParser(unittest.TestCase):
 
     def test_load_event_data(self):
         event_data, dbp_events = _load_event_data(
-            self.events_loc,
-            home_team_id=100,
-            away_team_id=200,
-            players=self._all_players,
+            self.events_loc, home_team_id=100, away_team_id=200
         )
         self.assertEqual(len(event_data), 7)
         self.assertNotIn("player_name", event_data.columns)
         self.assertIn("shot_events", dbp_events)
         self.assertIn("pass_events", dbp_events)
-        self.assertEqual(set(dbp_events["pass_events"].keys()), {2, 3})
-        self.assertEqual(set(dbp_events["shot_events"].keys()), {4, 5, 6, 7})
+        self.assertEqual(set(dbp_events["pass_events"]["event_id"]), {2, 3})
+        self.assertEqual(set(dbp_events["shot_events"]["event_id"]), {4, 5, 6, 7})
+        assert_event_extras_equal(dbp_events, EXTRAS_FIFA)
 
-    def test_make_pass_instance(self):
+    def test_get_pass_extras(self):
         """Regular pass: right_foot, possession_complete, no line_break."""
         event = {
             "team_id": 100,
@@ -398,44 +284,10 @@ class TestFifaParser(unittest.TestCase):
             "x_location_end": 0.75,
             "y_location_end": 0.5,
         }
-        pass_event = _make_pass_instance(
-            event,
-            home_team_id=100,
-            away_team_id=200,
-            players=self._all_players,
-            id=2,
-            period_id=1,
-            flip_first_half=False,
-            flip_second_half=True,
-            kickoff_time=_KO_UTC,
-        )
-        expected = PassEvent(
-            event_id=2,
-            period_id=1,
-            minutes=0,
-            seconds=5,
-            datetime=_KO_UTC + pd.to_timedelta(5, unit="s"),
-            start_x=-26.25,
-            start_y=0.0,
-            pitch_size=[105.0, 68.0],
-            team_id=100,
-            team_side="home",
-            player_id=1002,
-            jersey=9,
-            related_event_id=MISSING_INT,
-            set_piece="no_set_piece",
-            possession_type="open_play",
-            body_part="right_foot",
-            outcome=True,
-            outcome_str="successful",
-            end_x=26.25,
-            end_y=0.0,
-            pass_type="unspecified",
-            _xt=-1.0,
-        )
-        assert pass_event == expected
+        pass_event = _get_pass_extras(event)
+        self.assertDictEqual(pass_event, PASS_EXTRAS_FIFA[2])
 
-    def test_make_cross_instance(self):
+    def test_get_pass_extras_cross(self):
         """Cross: pass_type='cross', left_foot, away team."""
         event = {
             "team_id": 200,
@@ -458,44 +310,10 @@ class TestFifaParser(unittest.TestCase):
             "x_location_end": 0.5,
             "y_location_end": 0.75,
         }
-        pass_event = _make_pass_instance(
-            event,
-            home_team_id=100,
-            away_team_id=200,
-            players=self._all_players,
-            id=3,
-            period_id=1,
-            flip_first_half=False,
-            flip_second_half=True,
-            kickoff_time=_KO_UTC,
-        )
-        expected = PassEvent(
-            event_id=3,
-            period_id=1,
-            minutes=0,
-            seconds=30,
-            datetime=_KO_UTC + pd.to_timedelta(30, unit="s"),
-            start_x=26.25,
-            start_y=-17.0,
-            pitch_size=[105.0, 68.0],
-            team_id=200,
-            team_side="away",
-            player_id=2002,
-            jersey=9,
-            related_event_id=MISSING_INT,
-            set_piece="no_set_piece",
-            possession_type="open_play",
-            body_part="left_foot",
-            outcome=True,
-            outcome_str="successful",
-            end_x=0.0,
-            end_y=17.0,
-            pass_type="cross",
-            _xt=-1.0,
-        )
-        assert pass_event == expected
+        pass_event = _get_pass_extras(event)
+        self.assertDictEqual(pass_event, PASS_EXTRAS_FIFA[3])
 
-    def test_make_shot_event_instance_on_target(self):
+    def test_get_shot_extras_on_target(self):
         """attempt_at_goal with outcome='on_target' → miss_on_target."""
         event = {
             "team_id": 200,
@@ -518,41 +336,10 @@ class TestFifaParser(unittest.TestCase):
             "x_location_end": None,
             "y_location_end": None,
         }
-        shot_event = _make_shot_event_instance(
-            event,
-            home_team_id=100,
-            away_team_id=200,
-            players=self._all_players,
-            id=4,
-            period_id=1,
-            flip_first_half=False,
-            flip_second_half=True,
-            kickoff_time=_KO_UTC,
-        )
-        expected = ShotEvent(
-            event_id=4,
-            period_id=1,
-            minutes=1,
-            seconds=0,
-            datetime=_KO_UTC + pd.to_timedelta(60, unit="s"),
-            start_x=26.25,
-            start_y=0.0,
-            pitch_size=[105.0, 68.0],
-            team_id=200,
-            team_side="away",
-            player_id=2002,
-            jersey=9,
-            related_event_id=MISSING_INT,
-            set_piece="no_set_piece",
-            possession_type="open_play",
-            body_part="head",
-            outcome=False,
-            outcome_str="miss_on_target",
-            _xt=-1.0,
-        )
-        assert shot_event == expected
+        shot_event = _get_shot_extras(event)
+        self.assertDictEqual(shot_event, SHOT_EXTRAS_FIFA[4])
 
-    def test_make_shot_event_instance_goal(self):
+    def test_get_shot_extras_goal(self):
         """Standalone 'goal' event (FIFA records scored goals separately)."""
         event = {
             "team_id": 100,
@@ -575,41 +362,10 @@ class TestFifaParser(unittest.TestCase):
             "x_location_end": None,
             "y_location_end": None,
         }
-        shot_event = _make_shot_event_instance(
-            event,
-            home_team_id=100,
-            away_team_id=200,
-            players=self._all_players,
-            id=5,
-            period_id=2,
-            flip_first_half=False,
-            flip_second_half=True,
-            kickoff_time=_KO_UTC,
-        )
-        expected = ShotEvent(
-            event_id=5,
-            period_id=2,
-            minutes=61,
-            seconds=40,
-            datetime=_KO_UTC + pd.to_timedelta(3700, unit="s"),
-            start_x=-26.25,
-            start_y=0.0,
-            pitch_size=[105.0, 68.0],
-            team_id=100,
-            team_side="home",
-            player_id=1002,
-            jersey=9,
-            related_event_id=MISSING_INT,
-            set_piece="no_set_piece",
-            possession_type="open_play",
-            body_part="unspecified",
-            outcome=True,
-            outcome_str="goal",
-            _xt=-1.0,
-        )
-        assert shot_event == expected
+        shot_event = _get_shot_extras(event)
+        self.assertDictEqual(shot_event, SHOT_EXTRAS_FIFA[5])
 
-    def test_make_shot_event_instance_own_goal(self):
+    def test_get_shot_extras_own_goal(self):
         """own_goal: outcome=False, outcome_str='own_goal', coords flipped in P2."""
         event = {
             "team_id": 100,
@@ -632,39 +388,8 @@ class TestFifaParser(unittest.TestCase):
             "x_location_end": None,
             "y_location_end": None,
         }
-        shot_event = _make_shot_event_instance(
-            event,
-            home_team_id=100,
-            away_team_id=200,
-            players=self._all_players,
-            id=7,
-            period_id=2,
-            flip_first_half=False,
-            flip_second_half=True,
-            kickoff_time=_KO_UTC,
-        )
-        expected = ShotEvent(
-            event_id=7,
-            period_id=2,
-            minutes=90,
-            seconds=0,
-            datetime=_KO_UTC + pd.to_timedelta(5400, unit="s"),
-            start_x=26.25,
-            start_y=-17.0,
-            pitch_size=[105.0, 68.0],
-            team_id=100,
-            team_side="home",
-            player_id=1001,
-            jersey=1,
-            related_event_id=MISSING_INT,
-            set_piece="no_set_piece",
-            possession_type="open_play",
-            body_part="unspecified",
-            outcome=False,
-            outcome_str="own_goal",
-            _xt=-1.0,
-        )
-        assert shot_event == expected
+        shot_event = _get_shot_extras(event)
+        self.assertDictEqual(shot_event, SHOT_EXTRAS_FIFA[7])
 
     def test_get_transformed_coordinates_no_flip(self):
         """Period 1, flip_first_half=False: linear rescale only."""
@@ -774,10 +499,7 @@ class TestFifaParser(unittest.TestCase):
     def test_get_game_score(self):
         """home=1 (one goal), away=2 (one goal + one own-goal by home)."""
         event_data, _ = _load_event_data(
-            self.events_loc,
-            home_team_id=100,
-            away_team_id=200,
-            players=self._all_players,
+            self.events_loc, home_team_id=100, away_team_id=200
         )
         home_score, away_score = _get_game_score(event_data, 100, 200)
         self.assertEqual(home_score, 1)

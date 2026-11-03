@@ -44,12 +44,13 @@ class TestGameSerialization(unittest.TestCase):
         game = self._get_ma_game()
         values = ["00123", "-999", MISSING_INT, None, np.int64(42), "42"]
         game.event_data.loc[game.event_data.index[:6], "player_id"] = values
-        game.pass_events["receiver_player_id"] = game.pass_events[
+        game.pass_extras["receiver_player_id"] = game.pass_extras[
             "receiver_player_id"
         ].astype(object)
-        game.pass_events.loc[game.pass_events.index[:2], "receiver_player_id"] = (
+        game.pass_extras.loc[game.pass_extras.index[:2], "receiver_player_id"] = (
             pd.Series(["hplayermaid01", MISSING_INT], dtype=object)
         )
+        self.assertEqual(game.pass_events["receiver_player_id"].iloc[0], "hplayermaid01")
         self._assert_round_trip(game)
 
     def test_pandas_score_round_trip(self):

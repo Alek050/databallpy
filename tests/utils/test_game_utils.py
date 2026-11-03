@@ -69,7 +69,8 @@ class TestMatchUtils(unittest.TestCase):
             1: Event(1, "pass", "home"),
             2: Event(2, "shot", "away"),
         }
-        df = create_event_attributes_dataframe(events)
+        with self.assertWarns(DeprecationWarning):
+            df = create_event_attributes_dataframe(events)
         expected_df = pd.DataFrame(
             {
                 "event_id": [1, 2],
@@ -79,7 +80,8 @@ class TestMatchUtils(unittest.TestCase):
         )
         assert_frame_equal(df, expected_df)
 
-        df = create_event_attributes_dataframe({})
+        with self.assertWarns(DeprecationWarning):
+            df = create_event_attributes_dataframe({})
         assert_frame_equal(df, pd.DataFrame())
 
 

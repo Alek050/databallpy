@@ -22,8 +22,8 @@ from databallpy.data_parsers.metrica_metadata_parser import (
     _get_td_channels,
     _update_metadata,
 )
-from databallpy.events import DribbleEvent, PassEvent, ShotEvent
 from databallpy.utils.constants import MISSING_INT
+from databallpy.utils.event_extras import EVENT_TYPES, create_all_event_extras
 from databallpy.utils.logging import logging_wrapper
 from databallpy.utils.utils import _to_float, _to_int
 
@@ -62,7 +62,8 @@ def load_metrica_event_data(
         type (str)
 
     Returns:
-        Tuple[pd.DataFrame, Metadata, dict]: The event data and the metadata, and databallpy events
+        Tuple[pd.DataFrame, Metadata, dict]: The event data, the metadata, and the
+            extra information of the shot, pass and dribble events
     """
     if isinstance(event_data_loc, str) and "{" not in event_data_loc:
         if not os.path.exists(metadata_loc):
@@ -117,12 +118,7 @@ def load_metrica_event_data(
         event_data, metadata.home_team_id, metadata.away_team_id
     )
     event_data = _update_metrica_spadl_actions(event_data, cards)
-    databallpy_events = _get_databallpy_events(
-        event_data,
-        metadata.pitch_dimensions,
-        metadata.home_team_id,
-        pd.concat([metadata.home_players, metadata.away_players], ignore_index=True),
-    )
+    databallpy_events = _get_event_extras(event_data)
     return event_data, metadata, databallpy_events
 
 
@@ -443,208 +439,54 @@ def _is_in_subtypes(subtypes: list[dict] | dict, name: str) -> bool:
     return result
 
 
-@logging_wrapper(__file__)
-def _get_databallpy_events(
-    event_data: pd.DataFrame,
-    pitch_dimensions: tuple[float, float],
-    home_team_id: int,
-    all_players: pd.DataFrame,
-) -> dict:
-    """Function to get the databallpy events from the event data
+def _get_event_extras(event_data: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """Function to get the extra information of the shot, pass and dribble events
+    from the event data
 
     Args:
         event_data (pd.DataFrame): event data
-        pitch_dimensions (tuple): dimensions of the pitch
-        home_team_id (int): id of the home team
-        all_players (pd.DataFrame): metadata of all the players
 
     Returns:
-        dict: dictionary with the databallpy events
+        dict[str, pd.DataFrame]: the extra information of the shot, pass and dribble
+            events
     """
-    shot_events = {}
-    pass_events = {}
-    dribble_events = {}
-
-    shot_mask = event_data["databallpy_event"] == "shot"
-    shot_events = (
-        {
-            shot.event_id: shot
-            for shot in event_data[shot_mask].apply(
-                _get_shot_event,
-                pitch_dimensions=pitch_dimensions,
-                home_team_id=home_team_id,
-                players=all_players,
-                axis=1,
-            )
+    events = {}
+    for event_type in EVENT_TYPES:
+        rows = event_data[event_data["databallpy_event"] == event_type]
+        events[f"{event_type}_events"] = {
+            row.event_id: _get_extras(row, event_type) for row in rows.itertuples()
         }
-        if shot_mask.sum() > 0
-        else {}
-    )
+    return create_all_event_extras(events)
 
-    pass_maks = event_data["databallpy_event"] == "pass"
-    pass_events = (
-        {
-            pass_.event_id: pass_
-            for pass_ in event_data[pass_maks].apply(
-                _get_pass_event,
-                pitch_dimensions=pitch_dimensions,
-                home_team_id=home_team_id,
-                players=all_players,
-                axis=1,
-            )
-        }
-        if pass_maks.sum() > 0
-        else {}
-    )
 
-    dribble_mask = event_data["databallpy_event"] == "dribble"
-    dribble_events = (
-        {
-            dribble.event_id: dribble
-            for dribble in event_data[dribble_mask].apply(
-                _get_dribble_event,
-                pitch_dimensions=pitch_dimensions,
-                home_team_id=home_team_id,
-                players=all_players,
-                axis=1,
-            )
-        }
-        if dribble_mask.sum() > 0
-        else {}
-    )
+def _get_extras(row, event_type: str) -> dict:
+    """Function to get the extra information of a shot, pass or dribble event from a
+    row of the metrica event data
 
-    databallpy_events = {
-        "shot_events": shot_events,
-        "pass_events": pass_events,
-        "dribble_events": dribble_events,
+    Args:
+        row (namedtuple): row of the metrica event data
+        event_type (str): the event type, one of "shot", "pass" or "dribble"
+
+    Returns:
+        dict: the extra information of the event
+    """
+    extras = {
+        "outcome": bool(row.is_successful),
+        "related_event_id": MISSING_INT,
+        "body_part": "unspecified",
+        "possession_type": "unspecified",
+        "set_piece": "unspecified",
     }
-    return databallpy_events
-
-
-def _get_shot_event(
-    row: pd.Series,
-    pitch_dimensions: tuple[float, float],
-    home_team_id: int,
-    players: pd.DataFrame,
-) -> ShotEvent:
-    """Function to return a ShotEvent object from a row of the metrica
-      event data
-
-    Args:
-        row (pd.Series): row of the metrica event data with a shot event
-        pitch_dimensions (tuple): dimensions of the pitch
-        home_team_id (int): id of the home team
-        players: pd.DataFrame: Metadata of the players
-
-    Returns:
-        ShotEvent: ShotEvent object
-    """
-    return ShotEvent(
-        event_id=row.event_id,
-        period_id=row.period_id,
-        minutes=row.minutes,
-        seconds=row.seconds,
-        datetime=row.datetime,
-        start_x=row.start_x,
-        start_y=row.start_y,
-        team_id=row.team_id,
-        team_side="home" if row.team_id == home_team_id else "away",
-        pitch_size=pitch_dimensions,
-        player_id=row.player_id,
-        jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.is_successful),
-        related_event_id=MISSING_INT,
-        body_part="unspecified",
-        possession_type="unspecified",
-        set_piece="unspecified",
-        _xt=np.nan,
-        outcome_str=["miss", "goal"][row.is_successful],
-    )
-
-
-def _get_pass_event(
-    row: pd.Series,
-    pitch_dimensions: tuple[float, float],
-    home_team_id: int,
-    players: pd.DataFrame,
-) -> PassEvent:
-    """Function to return a PassEvent object from a row of the metrica
-     event data.
-
-    Args:
-        row (pd.Series): row of the metrica event data with a pass event
-        pitch_dimensions (tuple): dimensions of the pitch
-        home_team_id (int): id of the home team
-        players: pd.DataFrame: Metadata of the players
-
-    Returns:
-        PassEvent: PassEvent object
-    """
-    return PassEvent(
-        event_id=row.event_id,
-        period_id=row.period_id,
-        minutes=row.minutes,
-        seconds=row.seconds,
-        datetime=row.datetime,
-        start_x=row.start_x,
-        start_y=row.start_y,
-        team_id=row.team_id,
-        team_side="home" if row.team_id == home_team_id else "away",
-        pitch_size=pitch_dimensions,
-        player_id=row.player_id,
-        jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.is_successful),
-        related_event_id=MISSING_INT,
-        body_part="unspecified",
-        possession_type="unspecified",
-        set_piece="unspecified",
-        _xt=np.nan,
-        outcome_str=["unsuccessful", "successful"][row.is_successful]
-        if not pd.isnull(row.is_successful)
-        else "not_specified",
-        end_x=row.end_x,
-        end_y=row.end_y,
-        pass_type="unspecified",
-    )
-
-
-def _get_dribble_event(
-    row: pd.Series,
-    pitch_dimensions: tuple[float, float],
-    home_team_id: int,
-    players: pd.DataFrame,
-) -> DribbleEvent:
-    """Function to return a DribbleEvent object from a row of the metrica
-     event data.
-
-    Args:
-        row (pd.Series): row of the metrica event data with a dribble event
-        pitch_dimensions (tuple): dimensions of the pitch
-        home_team_id (int): id of the home team
-        players: pd.DataFrame: Metadata of the players
-
-    Returns:
-        DribbleEvent: DribbleEvent object
-    """
-    return DribbleEvent(
-        event_id=row.event_id,
-        period_id=row.period_id,
-        minutes=row.minutes,
-        seconds=row.seconds,
-        datetime=row.datetime,
-        start_x=row.start_x,
-        start_y=row.start_y,
-        team_id=row.team_id,
-        team_side="home" if row.team_id == home_team_id else "away",
-        pitch_size=pitch_dimensions,
-        player_id=row.player_id,
-        jersey=players.loc[players["id"] == row.player_id, "shirt_num"].iloc[0],
-        outcome=bool(row.is_successful),
-        related_event_id=MISSING_INT,
-        body_part="unspecified",
-        possession_type="unspecified",
-        set_piece="unspecified",
-        _xt=np.nan,
-        duel_type="unspecified",
-        with_opponent=False,
-    )
+    if event_type == "shot":
+        extras["outcome_str"] = "goal" if row.is_successful else "miss"
+    elif event_type == "pass":
+        extras["outcome_str"] = (
+            ("successful" if row.is_successful else "unsuccessful")
+            if not pd.isnull(row.is_successful)
+            else "not_specified"
+        )
+        extras["pass_type"] = "unspecified"
+    else:
+        extras["duel_type"] = "unspecified"
+        extras["with_opponent"] = False
+    return extras
