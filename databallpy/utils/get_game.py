@@ -370,11 +370,13 @@ def get_saved_game(name: str, path: str | None = None) -> Game:
             - pass_extras.parquet
             - shot_extras.parquet
             - dribble_extras.parquet
-            (or pass_events.parquet, shot_events.parquet and dribble_events.parquet
-            for games saved with databallpy versions before v0.8.2)
             - away_players.parquet
             - home_players.parquet
             - metadata.json
+
+            Games saved with databallpy versions before v0.8.2 contain
+            pass_events.parquet, shot_events.parquet and dribble_events.parquet
+            instead of the extras files.
        path (str, optional): path of directory where game is saved. If not
         provided, the current working directory will be used.
 

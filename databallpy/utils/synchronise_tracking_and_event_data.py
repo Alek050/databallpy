@@ -76,9 +76,10 @@ def synchronise_tracking_and_event_data(
             'own_goal') is deprecated and will be removed in v0.11.0, use the action
             types as keys instead (e.g. 'take_on' instead of 'dribble'). The cost
             functions will be called with the tracking data and the event as
-            arguments. The cost functions should return an array containing the cost of the similarity
-            between the tracking data and the event, scaled between 0 and 1. If no
-            cost functions are passed, the default cost functions are used.
+            arguments. The cost functions should return an array containing the cost
+            of the similarity between the tracking data and the event, scaled between
+            0 and 1. If no cost functions are passed, the default cost functions are
+            used.
         n_batches (int, str): the number of batches that are created.
             A higher number of batches reduces the time the code takes to load, but
             reduces the accuracy for events close to the splits. Default = "smart".
